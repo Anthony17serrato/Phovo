@@ -2,7 +2,6 @@ package com.serratocreations.kanbanboard.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.serratocreations.kanbanboard.data.db.entity.KanbanItem
 import com.serratocreations.kanbanboard.data.repository.KanbanItemRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
