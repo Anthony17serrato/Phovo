@@ -60,6 +60,8 @@ kotlin {
             implementation(libs.androidx.activity.compose)
         }
         commonMain.dependencies {
+            implementation(compose.components.resources)
+            implementation(projects.core.designsystem)
             implementation(libs.androidx.lifecycle.viewmodel.compose)
         }
         desktopMain.dependencies {

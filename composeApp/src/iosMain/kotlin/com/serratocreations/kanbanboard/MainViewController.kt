@@ -1,6 +1,6 @@
 package com.serratocreations.kanbanboard
 
 import androidx.compose.ui.window.ComposeUIViewController
-import com.serratocreations.kanbanboard.presentation.App
+import com.serratocreations.kanbanboard.ui.PhovoApp
 
-fun MainViewController() = ComposeUIViewController { App() }
+fun MainViewController() = ComposeUIViewController { PhovoApp() }

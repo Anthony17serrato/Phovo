@@ -1,4 +1,4 @@
-package com.serratocreations.kanbanboard.presentation
+package com.serratocreations.kanbanboard.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

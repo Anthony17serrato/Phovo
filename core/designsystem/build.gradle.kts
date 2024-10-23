@@ -43,6 +43,10 @@ kotlin {
                 api(compose.material3AdaptiveNavigationSuite)
                 api(compose.runtime)
                 api(compose.ui)
+                api(libs.compose.adaptive)
+                api(libs.compose.adaptive.layout)
+                api(libs.compose.adaptive.navigation)
+                api(libs.compose.foundation.layout)
             }
         }
         val commonTest by getting {
@@ -54,7 +58,7 @@ kotlin {
 }
 
 android {
-    namespace = "org.jetbrains.kotlinx.multiplatform.library.template"
+    namespace = "com.serratocreations.phovo.core.designsystem"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
     defaultConfig {
         minSdk = libs.versions.android.minSdk.get().toInt()
