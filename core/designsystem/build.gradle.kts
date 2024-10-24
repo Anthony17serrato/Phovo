@@ -40,13 +40,16 @@ kotlin {
                 api(compose.material)
                 api(compose.foundation)
                 api(compose.material3)
-                api(compose.material3AdaptiveNavigationSuite)
+                //api(compose.material3AdaptiveNavigationSuite)
                 api(compose.runtime)
                 api(compose.ui)
                 api(libs.compose.adaptive)
                 api(libs.compose.adaptive.layout)
                 api(libs.compose.adaptive.navigation)
                 api(libs.compose.foundation.layout)
+                api(libs.compose.material.navigation)
+                api(libs.compose.navigation)
+                api(libs.compose.navigation.common)
             }
         }
         val commonTest by getting {

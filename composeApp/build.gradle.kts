@@ -8,6 +8,7 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsCompose)
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.serialization)
 }
 
 kotlin {
@@ -63,6 +64,7 @@ kotlin {
             implementation(compose.components.resources)
             implementation(projects.core.designsystem)
             implementation(libs.androidx.lifecycle.viewmodel.compose)
+            implementation(libs.serialization.json)
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
