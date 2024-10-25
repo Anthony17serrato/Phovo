@@ -40,7 +40,7 @@ kotlin {
                 api(compose.material)
                 api(compose.foundation)
                 api(compose.material3)
-                //api(compose.material3AdaptiveNavigationSuite)
+                api(compose.material3AdaptiveNavigationSuite)
                 api(compose.runtime)
                 api(compose.ui)
                 api(libs.compose.adaptive)

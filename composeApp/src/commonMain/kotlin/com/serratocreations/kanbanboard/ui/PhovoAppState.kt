@@ -15,6 +15,7 @@ import com.serratocreations.kanbanboard.navigation.TopLevelDestination
 import com.serratocreations.kanbanboard.navigation.TopLevelDestination.FOR_YOU
 import com.serratocreations.kanbanboard.navigation.TopLevelDestination.INTERESTS
 import com.serratocreations.kanbanboard.navigation.TopLevelDestination.BOOKMARKS
+import com.serratocreations.kanbanboard.navigation.navigateToBookmarks
 import kotlinx.coroutines.CoroutineScope
 
 @Composable

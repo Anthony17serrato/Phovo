@@ -4,19 +4,19 @@ import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavOptions
 import androidx.navigation.compose.composable
-import com.serratocreations.kanbanboard.ui.BookmarksRoute
+import com.serratocreations.kanbanboard.ui.ForYouRoute
 import kotlinx.serialization.Serializable
 
-@Serializable object BookmarksRoute
+@Serializable object ForYouRoute
 
-fun NavController.navigateToBookmarks(navOptions: NavOptions) =
-    navigate(route = BookmarksRoute, navOptions)
+fun NavController.navigateToForYou(navOptions: NavOptions) =
+    navigate(route = ForYouRoute, navOptions)
 
-fun NavGraphBuilder.bookmarksScreen(
+fun NavGraphBuilder.forYouScreen(
     onTopicClick: (String) -> Unit,
     onShowSnackbar: suspend (String, String?) -> Boolean,
 ) {
-    composable<BookmarksRoute> {
-        BookmarksRoute(onTopicClick, onShowSnackbar)
+    composable<ForYouRoute> {
+        ForYouRoute(onTopicClick, onShowSnackbar)
     }
 }
