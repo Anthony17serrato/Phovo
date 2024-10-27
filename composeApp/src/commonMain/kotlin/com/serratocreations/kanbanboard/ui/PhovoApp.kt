@@ -14,10 +14,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarDuration.Short
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult.ActionPerformed
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
@@ -28,13 +26,17 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.semantics.semantics
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
+import com.serratocreations.kanbanboard.navigation.PhovoNavHost
 import com.serratocreations.phovo.core.designsystem.component.PhovoBackground
 import com.serratocreations.phovo.core.designsystem.component.PhovoNavigationSuiteScaffold
+import com.serratocreations.phovo.core.designsystem.component.PhovoTopAppBar
 import com.serratocreations.phovo.core.designsystem.icon.PhovoIcons
+import kanbanboard.composeapp.generated.resources.Res
+import kanbanboard.composeapp.generated.resources.feature_settings_top_app_bar_action_icon_description
+import kanbanboard.composeapp.generated.resources.feature_settings_top_app_bar_navigation_icon_description
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import kotlin.reflect.KClass
@@ -42,7 +44,7 @@ import kotlin.reflect.KClass
 @Composable
 @Preview
 fun PhovoApp(
-    appState: PhovoAppState,
+    appState: PhovoAppState = rememberPhovoAppState(),
     modifier: Modifier = Modifier,
     windowAdaptiveInfo: WindowAdaptiveInfo = currentWindowAdaptiveInfo()
 ) {
@@ -124,17 +126,17 @@ internal fun PhovoApp(
                         titleRes = destination.titleTextId,
                         navigationIcon = PhovoIcons.Search,
                         navigationIconContentDescription = stringResource(
-                            id = settingsR.string.feature_settings_top_app_bar_navigation_icon_description,
+                            Res.string.feature_settings_top_app_bar_navigation_icon_description,
                         ),
-                        actionIcon = NiaIcons.Settings,
+                        actionIcon = PhovoIcons.Settings,
                         actionIconContentDescription = stringResource(
-                            id = settingsR.string.feature_settings_top_app_bar_action_icon_description,
+                            Res.string.feature_settings_top_app_bar_action_icon_description,
                         ),
                         colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                             containerColor = Color.Transparent,
                         ),
-                        onActionClick = { onTopAppBarActionClick() },
-                        onNavigationClick = { appState.navigateToSearch() },
+                        /*onActionClick = { onTopAppBarActionClick() },*/
+                        /*onNavigationClick = { appState.navigateToSearch() },*/
                     )
                 }
 
@@ -150,13 +152,6 @@ internal fun PhovoApp(
                 ) {
                     PhovoNavHost(
                         appState = appState,
-                        onShowSnackbar = { message, action ->
-                            snackbarHostState.showSnackbar(
-                                message = message,
-                                actionLabel = action,
-                                duration = Short,
-                            ) == ActionPerformed
-                        },
                     )
                 }
 

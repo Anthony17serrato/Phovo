@@ -12,11 +12,8 @@ import kotlinx.serialization.Serializable
 fun NavController.navigateToForYou(navOptions: NavOptions) =
     navigate(route = ForYouRoute, navOptions)
 
-fun NavGraphBuilder.forYouScreen(
-    onTopicClick: (String) -> Unit,
-    onShowSnackbar: suspend (String, String?) -> Boolean,
-) {
+fun NavGraphBuilder.forYouScreen() {
     composable<ForYouRoute> {
-        ForYouRoute(onTopicClick, onShowSnackbar)
+        ForYouRoute()
     }
 }

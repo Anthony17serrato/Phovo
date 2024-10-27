@@ -12,11 +12,8 @@ import kotlinx.serialization.Serializable
 fun NavController.navigateToBookmarks(navOptions: NavOptions) =
     navigate(route = BookmarksRoute, navOptions)
 
-fun NavGraphBuilder.bookmarksScreen(
-    onTopicClick: (String) -> Unit,
-    onShowSnackbar: suspend (String, String?) -> Boolean,
-) {
+fun NavGraphBuilder.bookmarksScreen() {
     composable<BookmarksRoute> {
-        BookmarksRoute(onTopicClick, onShowSnackbar)
+        BookmarksRoute()
     }
 }

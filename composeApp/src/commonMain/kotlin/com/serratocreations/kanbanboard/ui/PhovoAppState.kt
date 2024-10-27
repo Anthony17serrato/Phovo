@@ -16,6 +16,8 @@ import com.serratocreations.kanbanboard.navigation.TopLevelDestination.FOR_YOU
 import com.serratocreations.kanbanboard.navigation.TopLevelDestination.INTERESTS
 import com.serratocreations.kanbanboard.navigation.TopLevelDestination.BOOKMARKS
 import com.serratocreations.kanbanboard.navigation.navigateToBookmarks
+import com.serratocreations.kanbanboard.navigation.navigateToForYou
+import com.serratocreations.kanbanboard.navigation.navigateToInterests
 import kotlinx.coroutines.CoroutineScope
 
 @Composable
@@ -81,11 +83,9 @@ class PhovoAppState(
         when (topLevelDestination) {
             FOR_YOU -> navController.navigateToForYou(topLevelNavOptions)
             BOOKMARKS -> navController.navigateToBookmarks(topLevelNavOptions)
-            INTERESTS -> navController.navigateToInterests(null, topLevelNavOptions)
+            INTERESTS -> navController.navigateToInterests(topLevelNavOptions)
         }
     }
-
-    fun navigateToSearch() = navController.navigateToSearch()
 }
 
 ///**

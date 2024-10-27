@@ -12,11 +12,8 @@ import kotlinx.serialization.Serializable
 fun NavController.navigateToInterests(navOptions: NavOptions) =
     navigate(route = InterestsRoute, navOptions)
 
-fun NavGraphBuilder.interestsScreen(
-    onTopicClick: (String) -> Unit,
-    onShowSnackbar: suspend (String, String?) -> Boolean,
-) {
+fun NavGraphBuilder.interestsScreen() {
     composable<InterestsRoute> {
-        InterestsRoute(onTopicClick, onShowSnackbar)
+        InterestsRoute()
     }
 }

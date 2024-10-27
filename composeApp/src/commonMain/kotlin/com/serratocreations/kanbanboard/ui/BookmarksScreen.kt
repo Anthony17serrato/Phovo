@@ -23,8 +23,6 @@ import org.jetbrains.compose.resources.painterResource
 
 @Composable
 internal fun BookmarksRoute(
-    onTopicClick: (String) -> Unit,
-    onShowSnackbar: suspend (String, String?) -> Boolean,
     modifier: Modifier = Modifier,
     kanbanViewModel: KanbanViewModel = viewModel { KanbanViewModel() }
 ) {
