@@ -34,6 +34,7 @@ import com.serratocreations.phovo.core.designsystem.component.PhovoBackground
 import com.serratocreations.phovo.core.designsystem.component.PhovoNavigationSuiteScaffold
 import com.serratocreations.phovo.core.designsystem.component.PhovoTopAppBar
 import com.serratocreations.phovo.core.designsystem.icon.PhovoIcons
+import com.serratocreations.phovo.core.designsystem.theme.PhovoTheme
 import kanbanboard.composeapp.generated.resources.Res
 import kanbanboard.composeapp.generated.resources.feature_settings_top_app_bar_action_icon_description
 import kanbanboard.composeapp.generated.resources.feature_settings_top_app_bar_navigation_icon_description
@@ -48,13 +49,15 @@ fun PhovoApp(
     modifier: Modifier = Modifier,
     windowAdaptiveInfo: WindowAdaptiveInfo = currentWindowAdaptiveInfo()
 ) {
-    PhovoBackground(modifier = modifier) {
-        val snackbarHostState = remember { SnackbarHostState() }
-        PhovoApp(
-            appState = appState,
-            snackbarHostState = snackbarHostState,
-            windowAdaptiveInfo = windowAdaptiveInfo,
-        )
+    PhovoTheme {
+        PhovoBackground(modifier = modifier) {
+            val snackbarHostState = remember { SnackbarHostState() }
+            PhovoApp(
+                appState = appState,
+                snackbarHostState = snackbarHostState,
+                windowAdaptiveInfo = windowAdaptiveInfo,
+            )
+        }
     }
 }
 
