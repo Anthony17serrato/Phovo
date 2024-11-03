@@ -1,4 +1,4 @@
-rootProject.name = "KanbanBoard"
+rootProject.name = "Phovo"
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {

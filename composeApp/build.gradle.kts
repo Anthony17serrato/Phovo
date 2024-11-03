@@ -74,7 +74,7 @@ kotlin {
 }
 
 android {
-    namespace = "com.serratocreations.kanbanboard"
+    namespace = "com.serratocreations.phovo"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     sourceSets["main"].manifest.srcFile("src/androidMain/AndroidManifest.xml")
@@ -82,7 +82,7 @@ android {
     sourceSets["main"].resources.srcDirs("src/commonMain/resources")
 
     defaultConfig {
-        applicationId = "com.serratocreations.kanbanboard"
+        applicationId = "com.serratocreations.phovo"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
@@ -109,11 +109,11 @@ android {
 
 compose.desktop {
     application {
-        mainClass = "com.serratocreations.kanbanboard.MainKt"
+        mainClass = "com.serratocreations.phovo.MainKt"
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "com.serratocreations.kanbanboard"
+            packageName = "com.serratocreations.phovo"
             packageVersion = "1.0.0"
         }
     }

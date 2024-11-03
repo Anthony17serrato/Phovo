@@ -3,7 +3,7 @@
 The `build-logic` folder defines project-specific convention plugins, used to keep a single
 source of truth for common module configurations.
 
-This approach is heavily based on[build-logic](../../../Desktop/KanbanBoard/build-logic)
+This approach is heavily based on[build-logic](../../../Desktop/Phovo/build-logic)
 [https://developer.squareup.com/blog/herding-elephants/](https://developer.squareup.com/blog/herding-elephants/)
 and
 [https://github.com/jjohannes/idiomatic-gradle](https://github.com/jjohannes/idiomatic-gradle).
