@@ -1,8 +1,8 @@
-package com.serratocreations.kanbanboard.ui
+package com.serratocreations.phovo.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.serratocreations.kanbanboard.data.repository.KanbanItemRepository
+import com.serratocreations.phovo.data.repository.PhovoItemRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
@@ -10,13 +10,13 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-open class KanbanViewModel: ViewModel() {
+open class PhovoViewModel: ViewModel() {
     private val _kanbanUiState = MutableStateFlow(emptyList<String>())
     val kanbanUiState = _kanbanUiState.asStateFlow()
 
     init {
         viewModelScope.launch {
-            KanbanItemRepository.kanbanItemsFlow().map {
+            PhovoItemRepository.phovoItemsFlow().map {
                 it.map { item -> item.title }
             }.collect { kanbanItems ->
                 _kanbanUiState.update {
@@ -25,7 +25,7 @@ open class KanbanViewModel: ViewModel() {
             }
         }
     }
-    suspend fun getKanbanItems() = KanbanItemRepository.kanbanItemsFlow().map {
+    suspend fun getPhovoItems() = PhovoItemRepository.phovoItemsFlow().map {
         it.first().title
     }.first()
 
