@@ -15,16 +15,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.serratocreations.phovo.Greeting
 import phovo.composeapp.generated.resources.Res
 import phovo.composeapp.generated.resources.compose_multiplatform
 import org.jetbrains.compose.resources.painterResource
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 internal fun BookmarksRoute(
     modifier: Modifier = Modifier,
-    phovoViewModel: PhovoViewModel = viewModel { PhovoViewModel() }
+    phovoViewModel: PhovoViewModel = koinViewModel()
 ) {
     val bookmarksState by phovoViewModel.kanbanUiState.collectAsStateWithLifecycle()
     BookmarksScreen(

@@ -9,8 +9,10 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.koin.android.annotation.KoinViewModel
 
-open class PhovoViewModel: ViewModel() {
+@KoinViewModel
+class PhovoViewModel: ViewModel() {
     private val _kanbanUiState = MutableStateFlow(emptyList<String>())
     val kanbanUiState = _kanbanUiState.asStateFlow()
 
