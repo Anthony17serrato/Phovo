@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.serratocreations.phovo.Greeting
+import com.serratocreations.phovo.data.db.entity.PhovoItem
 import phovo.composeapp.generated.resources.Res
 import phovo.composeapp.generated.resources.compose_multiplatform
 import org.jetbrains.compose.resources.painterResource
@@ -26,7 +27,7 @@ internal fun InterestsRoute(
     modifier: Modifier = Modifier,
     phovoViewModel: PhovoViewModel = koinViewModel()
 ) {
-    val bookmarksState by phovoViewModel.kanbanUiState.collectAsStateWithLifecycle()
+    val bookmarksState by phovoViewModel.phovoUiState.collectAsStateWithLifecycle()
     InterestsScreen(
         bookmarksState = bookmarksState,
         modifier = modifier
@@ -36,7 +37,7 @@ internal fun InterestsRoute(
 @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
 @Composable
 internal fun InterestsScreen(
-    bookmarksState: List<String>,
+    bookmarksState: List<PhovoItem>,
     modifier: Modifier = Modifier,
 ) {
     var showContent by remember { mutableStateOf(false) }
