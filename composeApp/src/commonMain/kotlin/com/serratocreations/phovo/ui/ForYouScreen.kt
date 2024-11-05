@@ -3,18 +3,17 @@ package com.serratocreations.phovo.ui
 import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.Text
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.serratocreations.phovo.data.db.entity.PhovoItem
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -36,12 +35,17 @@ internal fun ForYouScreen(
     modifier: Modifier = Modifier,
 ) {
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        /**
-         * import androidx.compose.foundation.lazy.items
-         */
-        LazyColumn {
-            items(bookmarksState) { item ->
-                Text(item.toString())
+        LazyVerticalGrid(
+            columns = GridCells.Adaptive(minSize = 100.dp)
+        ) {
+            items(
+                bookmarksState,
+                key = { item -> item.name }
+            ) { photo ->
+                AsyncImage(
+                    model = photo.uri,
+                    contentDescription = null,
+                )
             }
         }
     }

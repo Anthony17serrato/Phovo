@@ -65,6 +65,7 @@ kotlin {
             implementation(projects.core.designsystem)
             implementation(libs.androidx.lifecycle.viewmodel.compose)
             implementation(libs.serialization.json)
+            implementation(libs.coil.compose)
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)

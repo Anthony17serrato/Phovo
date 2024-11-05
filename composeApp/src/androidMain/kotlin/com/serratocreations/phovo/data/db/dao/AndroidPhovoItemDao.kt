@@ -2,11 +2,12 @@ package com.serratocreations.phovo.data.db.dao
 
 import android.content.ContentUris
 import android.content.Context
-import android.net.Uri
+import coil3.Uri
 import android.provider.MediaStore
 import android.os.Build
+import coil3.toCoilUri
 import com.serratocreations.phovo.data.db.entity.PhovoItem
-import com.serratocreations.phovo.data.db.entity.PhovoVideoItem
+import com.serratocreations.phovo.data.db.entity.PhovoImageItem
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 
@@ -19,58 +20,56 @@ class AndroidPhovoItemDao(
 
     override fun allItemsFlow(): Flow<List<PhovoItem>> {
         // TODO add observability of updates
-        val videoList = mutableListOf<PhovoVideoItem>()
+        val videoList = mutableListOf<PhovoImageItem>()
 
         val collection =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                MediaStore.Video.Media.getContentUri(
+                MediaStore.Images.Media.getContentUri(
                     MediaStore.VOLUME_EXTERNAL
                 )
             } else {
-                MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI
             }
 
         val projection = arrayOf(
-            MediaStore.Video.Media._ID,
-            MediaStore.Video.Media.DISPLAY_NAME,
-            MediaStore.Video.Media.DURATION,
-            MediaStore.Video.Media.SIZE
+            MediaStore.Images.Media._ID,
+            MediaStore.Images.Media.DISPLAY_NAME,
+            MediaStore.Images.Media.SIZE
         )
+        val selection = "${MediaStore.MediaColumns.RELATIVE_PATH} LIKE ?"
+        val selectionArgs = arrayOf("DCIM/Camera%")
 
         // Display videos in alphabetical order based on their display name.
-        val sortOrder = "${MediaStore.Video.Media.DISPLAY_NAME} ASC"
+        val sortOrder = "${MediaStore.Images.Media.DISPLAY_NAME} ASC"
 
         val query = context.contentResolver.query(
             collection,
             projection,
-            null,
-            null,
+            selection,
+            selectionArgs,
             sortOrder
         )
         query?.use { cursor ->
             // Cache column indices.
-            val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media._ID)
+            val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
             val nameColumn =
-                cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DISPLAY_NAME)
-            val durationColumn =
-                cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DURATION)
-            val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.SIZE)
+                cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME)
+            val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.SIZE)
 
             while (cursor.moveToNext()) {
                 // Get values of columns for a given video.
                 val id = cursor.getLong(idColumn)
                 val name = cursor.getString(nameColumn)
-                val duration = cursor.getInt(durationColumn)
                 val size = cursor.getInt(sizeColumn)
 
                 val contentUri: Uri = ContentUris.withAppendedId(
-                    MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                     id
-                )
+                ).toCoilUri()
 
                 // Stores column values and the contentUri in a local object
                 // that represents the media file.
-                videoList += PhovoVideoItem(contentUri, name, duration, size)
+                videoList += PhovoImageItem(contentUri, name, size)
             }
         }
         return flowOf(videoList)
