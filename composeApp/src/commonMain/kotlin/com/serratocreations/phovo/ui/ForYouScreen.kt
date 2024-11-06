@@ -1,7 +1,9 @@
 package com.serratocreations.phovo.ui
 
 import androidx.annotation.VisibleForTesting
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -12,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.serratocreations.phovo.data.db.entity.PhovoItem
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import org.koin.compose.viewmodel.koinViewModel
@@ -36,7 +39,9 @@ internal fun ForYouScreen(
 ) {
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         LazyVerticalGrid(
-            columns = GridCells.Adaptive(minSize = 100.dp)
+            columns = GridCells.Adaptive(minSize = 80.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             items(
                 bookmarksState,
@@ -45,6 +50,8 @@ internal fun ForYouScreen(
                 AsyncImage(
                     model = photo.uri,
                     contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = modifier.aspectRatio(1f)
                 )
             }
         }

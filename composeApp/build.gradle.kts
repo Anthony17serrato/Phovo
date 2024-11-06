@@ -97,6 +97,8 @@ android {
     buildTypes {
         getByName("release") {
             isMinifyEnabled = false
+            // TODO Update when ready to release
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
     compileOptions {
