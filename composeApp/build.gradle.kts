@@ -61,11 +61,12 @@ kotlin {
             implementation(libs.androidx.activity.compose)
         }
         commonMain.dependencies {
-            implementation(compose.components.resources)
+            // Project dependencies
             implementation(projects.core.designsystem)
-            implementation(libs.androidx.lifecycle.viewmodel.compose)
+            implementation(projects.feature.photos)
+
+            implementation(compose.components.resources)
             implementation(libs.serialization.json)
-            implementation(libs.coil.compose)
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)

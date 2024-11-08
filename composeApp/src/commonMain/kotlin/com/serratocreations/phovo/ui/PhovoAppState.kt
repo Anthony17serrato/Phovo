@@ -11,12 +11,12 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navOptions
+import com.serratocreations.phovo.feature.photos.navigation.navigateToForYou
 import com.serratocreations.phovo.navigation.TopLevelDestination
 import com.serratocreations.phovo.navigation.TopLevelDestination.FOR_YOU
 import com.serratocreations.phovo.navigation.TopLevelDestination.INTERESTS
 import com.serratocreations.phovo.navigation.TopLevelDestination.BOOKMARKS
 import com.serratocreations.phovo.navigation.navigateToBookmarks
-import com.serratocreations.phovo.navigation.navigateToForYou
 import com.serratocreations.phovo.navigation.navigateToInterests
 import kotlinx.coroutines.CoroutineScope
 

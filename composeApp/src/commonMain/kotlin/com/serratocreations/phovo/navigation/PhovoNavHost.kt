@@ -3,6 +3,8 @@ package com.serratocreations.phovo.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
+import com.serratocreations.phovo.feature.photos.navigation.ForYouRoute
+import com.serratocreations.phovo.feature.photos.navigation.forYouScreen
 import com.serratocreations.phovo.ui.PhovoAppState
 
 /**

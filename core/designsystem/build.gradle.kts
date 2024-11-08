@@ -9,7 +9,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 //put your multiplatform dependencies here
-                api(compose.components.resources)
+                implementation(compose.components.resources)
                 api(compose.components.uiToolingPreview)
                 api(compose.materialIconsExtended)
                 api(compose.material)

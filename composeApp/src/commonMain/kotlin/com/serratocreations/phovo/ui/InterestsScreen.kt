@@ -16,7 +16,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.serratocreations.phovo.Greeting
-import com.serratocreations.phovo.data.db.entity.PhovoItem
+import com.serratocreations.phovo.feature.photos.data.db.entity.PhovoItem
+import com.serratocreations.phovo.feature.photos.PhovoViewModel
 import phovo.composeapp.generated.resources.Res
 import phovo.composeapp.generated.resources.compose_multiplatform
 import org.jetbrains.compose.resources.painterResource
