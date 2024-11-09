@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
-    id(libs.plugins.phovo.koin.get().pluginId)
+    id(libs.plugins.phovo.kmp.application.koin.get().pluginId)
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsCompose)
@@ -105,14 +105,6 @@ android {
     dependencies {
         debugImplementation(libs.compose.ui.tooling)
     }
-}
-
-dependencies {
-    add("kspCommonMainMetadata", libs.koin.ksp.compiler)
-    add("kspAndroid", libs.koin.ksp.compiler)
-    add("kspIosX64", libs.koin.ksp.compiler)
-    add("kspIosArm64", libs.koin.ksp.compiler)
-    add("kspIosSimulatorArm64", libs.koin.ksp.compiler)
 }
 
 compose.desktop {

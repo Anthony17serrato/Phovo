@@ -1,5 +1,5 @@
 plugins {
-    id(libs.plugins.phovo.kmp.library.get().pluginId)
+    id(libs.plugins.phovo.kmp.library.library.get().pluginId)
     alias(libs.plugins.jetbrainsCompose)
     alias(libs.plugins.compose.compiler)
 }

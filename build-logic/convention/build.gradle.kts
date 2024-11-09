@@ -57,9 +57,13 @@ gradlePlugin {
             id = "phovo.kmp.library"
             implementationClass = "KmpLibraryConventionPlugin"
         }
-        register("koin") {
-            id = "phovo.koin"
-            implementationClass = "KoinConventionPlugin"
+        register("kmpApplicationKoin") {
+            id = "phovo.kmp.application.koin"
+            implementationClass = "KmpApplicationKoinConventionPlugin"
+        }
+        register("kmpLibraryKoin") {
+            id = "phovo.kmp.library.koin"
+            implementationClass = "KmpLibraryKoinConventionPlugin"
         }
     }
 }

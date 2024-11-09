@@ -77,5 +77,6 @@ compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "
 serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 
 # Plugins defined by this project
-phovo-kmp-library = { id = "phovo.kmp.library" }
-phovo-koin = { id = "phovo.koin" }
+phovo-kmp-library-library = { id = "phovo.kmp.library" }
+phovo-kmp-application-koin = { id = "phovo.kmp.application.koin" }
+phovo-kmp-library-koin = { id = "phovo.kmp.library.koin" }
