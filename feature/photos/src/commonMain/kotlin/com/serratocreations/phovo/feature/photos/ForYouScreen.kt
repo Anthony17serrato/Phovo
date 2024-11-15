@@ -17,6 +17,9 @@ import com.serratocreations.phovo.feature.photos.data.db.entity.PhovoItem
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import coil3.compose.LocalPlatformContext
+import coil3.request.ImageRequest
+import com.serratocreations.phovo.feature.photos.util.HEICImageDecoderFactory
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -38,17 +41,25 @@ internal fun ForYouScreen(
     modifier: Modifier = Modifier,
 ) {
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        //Text(bookmarksState.size.toString())
         LazyVerticalGrid(
             columns = GridCells.Adaptive(minSize = 80.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             items(
-                bookmarksState,
-                key = { item -> item.name }
+                bookmarksState
             ) { photo ->
+                val builder = ImageRequest.Builder(LocalPlatformContext.current)
+                    .data(photo.uri)
+                println(photo.uri.path)
+                if (photo.uri.path?.substringAfterLast('.').equals("HEIC", ignoreCase = true)) {
+                    builder.decoderFactory { result, options, imageLoader ->
+                        HEICImageDecoderFactory().create(result, options, imageLoader)
+                    }
+                }
                 AsyncImage(
-                    model = photo.uri,
+                    model = builder.build(),
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     modifier = modifier.aspectRatio(1f)

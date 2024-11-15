@@ -6,7 +6,6 @@ ksp = "2.0.21-1.0.26"
 android-compileSdk = "34"
 android-minSdk = "24"
 android-targetSdk = "34"
-
 androidx-activityCompose = "1.9.3"
 androidx-appcompat = "1.7.0"
 androidx-constraintlayout = "2.1.4"
@@ -27,6 +26,7 @@ jetbrains-compose = "1.7.0"
 material-navigation = "1.7.0-beta02"
 navigation-compose = "2.8.0-alpha10"
 serialization-json = "1.7.3"
+skiko = "0.8.4"
 junit = "4.13.2"
 
 [libraries]
@@ -61,6 +61,7 @@ koin-compose =  { group = "io.insert-koin", name = "koin-compose", version.ref =
 koin-compose-vm =  { group = "io.insert-koin", name = "koin-compose-viewmodel", version.ref = "koin" }
 koin-annotations = { group = "io.insert-koin", name = "koin-annotations", version.ref = "koin-annotations" }
 koin-ksp-compiler = { group = "io.insert-koin", name = "koin-ksp-compiler", version.ref = "koin-annotations" }
+skiko = { module = "org.jetbrains.skiko:skiko", version.ref = "skiko" }
 # Dependencies of the included build-logic
 android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "androidGradlePlugin" }
 compose-gradlePlugin = { module = "org.jetbrains.kotlin:compose-compiler-gradle-plugin", version.ref = "kotlin" }

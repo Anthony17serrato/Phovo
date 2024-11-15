@@ -7,7 +7,7 @@ import android.provider.MediaStore
 import android.os.Build
 import coil3.toCoilUri
 import com.serratocreations.phovo.feature.photos.data.db.entity.PhovoItem
-import com.serratocreations.phovo.feature.photos.db.entity.PhovoImageItem
+import com.serratocreations.phovo.feature.photos.data.db.entity.PhovoImageItem
 import com.serratocreations.phovo.feature.photos.data.db.dao.PhovoItemDao
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf

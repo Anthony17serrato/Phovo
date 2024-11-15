@@ -16,11 +16,17 @@ kotlin {
 
                 implementation(libs.serialization.json)
                 implementation(libs.coil.compose)
+                implementation("org.jetbrains.kotlinx:kotlinx-io:0.1.16")
             }
         }
         val commonTest by getting {
             dependencies {
                 implementation(libs.kotlin.test)
+            }
+        }
+        iosMain {
+            dependencies {
+                implementation(libs.skiko)
             }
         }
     }
