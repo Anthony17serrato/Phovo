@@ -33,6 +33,7 @@ class IosHeicImageDecoder(
     }
 
     override suspend fun decode(): DecodeResult {
+        println("IosHeicImageDecoder decode")
         val originalBytes = source.source().use { it.readByteArray() }
         val jpegBytes = originalBytes.toJpegBytes()
         val image = Image.makeFromEncoded(jpegBytes)

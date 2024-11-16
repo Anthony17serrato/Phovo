@@ -20,6 +20,7 @@ import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import com.serratocreations.phovo.feature.photos.util.HEICImageDecoderFactory
+import com.serratocreations.phovo.feature.photos.util.PlatformFetcherFactory
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -51,13 +52,14 @@ internal fun ForYouScreen(
                 bookmarksState
             ) { photo ->
                 val builder = ImageRequest.Builder(LocalPlatformContext.current)
-                    .data(photo.uri)
-                println(photo.uri.path)
-                if (photo.uri.path?.substringAfterLast('.').equals("HEIC", ignoreCase = true)) {
-                    builder.decoderFactory { result, options, imageLoader ->
+                    .fetcherFactory { data: Any, options, imageLoader ->
+                        PlatformFetcherFactory().create(data, options, imageLoader)
+                    }
+                    .decoderFactory { result, options, imageLoader ->
                         HEICImageDecoderFactory().create(result, options, imageLoader)
                     }
-                }
+                    .data(photo.uri)
+                println(photo.uri.toString())
                 AsyncImage(
                     model = builder.build(),
                     contentDescription = null,
