@@ -16,9 +16,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.serratocreations.phovo.feature.photos.data.db.entity.PhovoItem
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import coil3.ImageLoader
 import coil3.compose.AsyncImage
-import coil3.compose.LocalPlatformContext
-import coil3.request.ImageRequest
+import coil3.compose.setSingletonImageLoaderFactory
+import coil3.request.crossfade
 import com.serratocreations.phovo.feature.photos.util.getPlatformDecoderFactory
 import com.serratocreations.phovo.feature.photos.util.getPlatformFetcherFactory
 import org.koin.compose.viewmodel.koinViewModel
@@ -28,6 +29,16 @@ internal fun ForYouRoute(
     modifier: Modifier = Modifier,
     phovoViewModel: PhovoViewModel = koinViewModel()
 ) {
+    // TODO move to root composable https://coil-kt.github.io/coil/image_loaders/
+    setSingletonImageLoaderFactory { context ->
+        ImageLoader.Builder(context)
+            .crossfade(true)
+            .components {
+                add(getPlatformFetcherFactory())
+                add(getPlatformDecoderFactory())
+            }
+            .build()
+    }
     val bookmarksState by phovoViewModel.phovoUiState.collectAsStateWithLifecycle()
     ForYouScreen(
         bookmarksState = bookmarksState,
@@ -42,7 +53,6 @@ internal fun ForYouScreen(
     modifier: Modifier = Modifier,
 ) {
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        //Text(bookmarksState.size.toString())
         LazyVerticalGrid(
             columns = GridCells.Adaptive(minSize = 80.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -51,17 +61,9 @@ internal fun ForYouScreen(
             items(
                 bookmarksState
             ) { photo ->
-                val builder = ImageRequest.Builder(LocalPlatformContext.current)
-                    .fetcherFactory { data: Any, options, imageLoader ->
-                        getPlatformFetcherFactory().create(data, options, imageLoader)
-                    }
-                    .decoderFactory { result, options, imageLoader ->
-                        getPlatformDecoderFactory().create(result, options, imageLoader)
-                    }
-                    .data(photo.uri)
                 println(photo.uri.toString())
                 AsyncImage(
-                    model = builder.build(),
+                    model = photo.uri,
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     modifier = modifier.aspectRatio(1f)
