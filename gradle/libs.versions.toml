@@ -13,6 +13,7 @@ androidx-core-ktx = "1.13.1"
 androidx-espresso-core = "3.6.1"
 androidx-material = "1.12.0"
 androidx-test-junit = "1.2.1"
+coil = "3.0.0"
 kmp-viewmodel-compose = "2.8.0"
 kmp-swing = "1.9.0"
 koin = "4.0.0"
@@ -25,6 +26,7 @@ jetbrains-compose = "1.7.0"
 material-navigation = "1.7.0-beta02"
 navigation-compose = "2.8.0-alpha10"
 serialization-json = "1.7.3"
+skiko = "0.8.4"
 junit = "4.13.2"
 
 [libraries]
@@ -39,6 +41,7 @@ androidx-material = { group = "com.google.android.material", name = "material", 
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "androidx-constraintlayout" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
 androidx-lifecycle-viewmodel-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "kmp-viewmodel-compose" }
+coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
 compose-adaptive = { group = "org.jetbrains.compose.material3.adaptive", name = "adaptive", version.ref = "material3-adaptive" }
 compose-adaptive-layout = { group = "org.jetbrains.compose.material3.adaptive", name = "adaptive-layout", version.ref = "material3-adaptive" }
 compose-adaptive-navigation = { group = "org.jetbrains.compose.material3.adaptive", name = "adaptive-navigation", version.ref = "material3-adaptive" }
@@ -58,6 +61,7 @@ koin-compose =  { group = "io.insert-koin", name = "koin-compose", version.ref =
 koin-compose-vm =  { group = "io.insert-koin", name = "koin-compose-viewmodel", version.ref = "koin" }
 koin-annotations = { group = "io.insert-koin", name = "koin-annotations", version.ref = "koin-annotations" }
 koin-ksp-compiler = { group = "io.insert-koin", name = "koin-ksp-compiler", version.ref = "koin-annotations" }
+skiko = { module = "org.jetbrains.skiko:skiko", version.ref = "skiko" }
 # Dependencies of the included build-logic
 android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "androidGradlePlugin" }
 compose-gradlePlugin = { module = "org.jetbrains.kotlin:compose-compiler-gradle-plugin", version.ref = "kotlin" }

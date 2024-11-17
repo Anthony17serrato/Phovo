@@ -61,9 +61,11 @@ kotlin {
             implementation(libs.androidx.activity.compose)
         }
         commonMain.dependencies {
-            implementation(compose.components.resources)
+            // Project dependencies
             implementation(projects.core.designsystem)
-            implementation(libs.androidx.lifecycle.viewmodel.compose)
+            implementation(projects.feature.photos)
+
+            implementation(compose.components.resources)
             implementation(libs.serialization.json)
         }
         desktopMain.dependencies {
@@ -96,6 +98,8 @@ android {
     buildTypes {
         getByName("release") {
             isMinifyEnabled = false
+            // TODO Update when ready to release
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
     compileOptions {

@@ -22,4 +22,8 @@ dependencyResolutionManagement {
 }
 
 include(":composeApp")
+// Core
 include(":core:designsystem")
+
+// Features
+include(":feature:photos")

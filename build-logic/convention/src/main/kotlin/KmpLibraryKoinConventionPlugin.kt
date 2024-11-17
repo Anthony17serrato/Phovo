@@ -26,7 +26,7 @@ class KmpLibraryKoinConventionPlugin : Plugin<Project> {
         with(target) {
             apply(plugin = "com.android.library")
             apply(plugin = "org.jetbrains.kotlin.multiplatform")
-            apply("com.google.devtools.ksp")
+            apply(plugin = "com.google.devtools.ksp")
 
             val extension = extensions.getByType<LibraryExtension>()
             configureKmpKoin(extension)
