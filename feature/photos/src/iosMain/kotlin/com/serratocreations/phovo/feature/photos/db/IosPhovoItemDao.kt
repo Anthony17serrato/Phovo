@@ -64,43 +64,6 @@ class IosPhovoItemDao() : PhovoItemDao {
         assets.enumerateObjectsUsingBlock { obj, _, _ ->
             val asset = obj as PHAsset
             urls.add("phasset://${asset.localIdentifier}")
-//            val resourceOptions = PHAssetResourceRequestOptions()
-//            resourceOptions.networkAccessAllowed = true
-//
-//            val resources = PHAssetResource.assetResourcesForAsset(asset)
-//
-//            // Safely cast the first resource to PHAssetResource
-//            val resource = resources.firstOrNull() as? PHAssetResource ?: return@enumerateObjectsUsingBlock
-//            resource.assetLocalIdentifier
-//            println("Resource $resource")
-//            val tempDir = NSTemporaryDirectory()
-//            val tempFileURL = NSURL.fileURLWithPath("$tempDir/${resource.originalFilename}")
-//            launch {
-//                // Delete existing file if it exists
-//                val fileManager = NSFileManager.defaultManager
-//                tempFileURL.path?.let { pathNotNull ->
-//                    if (fileManager.fileExistsAtPath(pathNotNull)) {
-//                        fileManager.removeItemAtURL(tempFileURL, null)
-//                    }
-//                }
-//                val result = suspendCoroutine { continuation ->
-//                    PHAssetResourceManager.defaultManager().writeDataForAssetResource(
-//                        resource,
-//                        tempFileURL,
-//                        options = resourceOptions,
-//                        completionHandler = { error ->
-//                            if (error == null) {
-//                                println("Success $tempFileURL")
-//                                continuation.resume(tempFileURL)
-//                            } else {
-//                                println("PHAssetResourceManager completion error $error")
-//                                continuation.resume(null)
-//                            }
-//                        }
-//                    )
-//                }
-//                result?.let { urls.add(it) }
-//            }
         }
         println("IosPhovoItemDao urls $urls")
         return@coroutineScope urls
