@@ -27,7 +27,7 @@ import platform.posix.memcpy
 class IosHeicImageDecoder(
     source: ImageSource,
     options: Options
-): HeicImageDecoder(source, options) {
+): PlatformImageDecoder(source, options) {
     companion object {
         private const val COMPRESSION = 0.8
     }

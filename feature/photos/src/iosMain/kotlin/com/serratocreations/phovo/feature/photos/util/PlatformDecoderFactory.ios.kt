@@ -7,8 +7,17 @@ import coil3.request.Options
 import okio.BufferedSource
 import okio.ByteString.Companion.encodeUtf8
 
-// Decoder logic
+actual fun getPlatformDecoderFactory(): Decoder.Factory = HEICImageDecoderFactory()
+
 class HEICImageDecoderFactory : Decoder.Factory {
+    companion object {
+        private val HEIF_HEADER_FTYP = "ftyp".encodeUtf8()
+        private val HEIF_BRAND_MIF1 = "mif1".encodeUtf8()
+        private val HEIF_BRAND_HEIC = "heic".encodeUtf8()
+        private val HEIF_BRAND_HEIX = "heix".encodeUtf8()
+        private val HEIF_BRAND_AVIF = "avif".encodeUtf8()
+        private val HEIF_BRAND_AVIS = "avis".encodeUtf8()
+    }
 
     override fun create(
         result: SourceFetchResult,
@@ -17,19 +26,12 @@ class HEICImageDecoderFactory : Decoder.Factory {
     ): Decoder? {
         return if (isHeif(result.source.source())) {
             println("HEICImageDecoderFactory Is Heif")
-            getPlatformHeicDecoder(result.source, options)
+            IosHeicImageDecoder(result.source, options)
         } else {
             println("HEICImageDecoderFactory Is Not Heif")
             null
         }
     }
-
-    private val HEIF_HEADER_FTYP = "ftyp".encodeUtf8()
-    private val HEIF_BRAND_MIF1 = "mif1".encodeUtf8()
-    private val HEIF_BRAND_HEIC = "heic".encodeUtf8()
-    private val HEIF_BRAND_HEIX = "heix".encodeUtf8()
-    private val HEIF_BRAND_AVIF = "avif".encodeUtf8()
-    private val HEIF_BRAND_AVIS = "avis".encodeUtf8()
 
     /**
      * Return 'true' if the [source] contains a HEIF image. The [source] is not consumed.
