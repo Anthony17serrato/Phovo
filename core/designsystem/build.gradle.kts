@@ -12,7 +12,6 @@ kotlin {
                 implementation(compose.components.resources)
                 api(compose.components.uiToolingPreview)
                 api(compose.materialIconsExtended)
-                api(compose.material)
                 api(compose.foundation)
                 api(compose.material3)
                 api(compose.material3AdaptiveNavigationSuite)

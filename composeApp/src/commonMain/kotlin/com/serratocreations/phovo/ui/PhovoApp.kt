@@ -40,6 +40,7 @@ import phovo.composeapp.generated.resources.feature_settings_top_app_bar_action_
 import phovo.composeapp.generated.resources.feature_settings_top_app_bar_navigation_icon_description
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import phovo.composeapp.generated.resources.app_name
 import kotlin.reflect.KClass
 
 @Composable
@@ -123,10 +124,12 @@ internal fun PhovoApp(
                 val destination = appState.currentTopLevelDestination
                 var shouldShowTopAppBar = false
 
-                if (destination != null) {
+                //if (destination != null) {
                     shouldShowTopAppBar = true
                     PhovoTopAppBar(
-                        titleRes = destination.titleTextId,
+                        // Currently navigation between screens results in a null destination for some ms
+                        // resulting in UI jank. File an issue if not resolved https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-navigation-routing.html
+                        titleRes = destination?.titleTextId ?: Res.string.app_name,
                         navigationIcon = PhovoIcons.Search,
                         navigationIconContentDescription = stringResource(
                             Res.string.feature_settings_top_app_bar_navigation_icon_description,
@@ -141,7 +144,7 @@ internal fun PhovoApp(
                         /*onActionClick = { onTopAppBarActionClick() },*/
                         /*onNavigationClick = { appState.navigateToSearch() },*/
                     )
-                }
+                //}
 
                 Box(
                     // Workaround for https://issuetracker.google.com/338478720
