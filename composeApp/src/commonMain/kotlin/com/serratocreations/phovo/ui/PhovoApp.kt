@@ -128,7 +128,7 @@ internal fun PhovoApp(
                     shouldShowTopAppBar = true
                     PhovoTopAppBar(
                         // Currently navigation between screens results in a null destination for some ms
-                        // resulting in UI jank. File an issue if not resolved https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-navigation-routing.html
+                        // resulting in UI jank. Follow issue https://youtrack.jetbrains.com/issue/CMP-7087/currentBackStackEntryAsState-briefly-null-when-navigating-between-destinations
                         titleRes = destination?.titleTextId ?: Res.string.app_name,
                         navigationIcon = PhovoIcons.Search,
                         navigationIconContentDescription = stringResource(
