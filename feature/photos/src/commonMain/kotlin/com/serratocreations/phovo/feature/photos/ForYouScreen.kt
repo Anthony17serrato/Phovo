@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.runtime.Composable
@@ -20,6 +21,7 @@ import coil3.ImageLoader
 import coil3.compose.AsyncImage
 import coil3.compose.setSingletonImageLoaderFactory
 import coil3.request.crossfade
+import com.serratocreations.phovo.core.designsystem.component.CallToActionComponent
 import com.serratocreations.phovo.feature.photos.util.getPlatformDecoderFactory
 import com.serratocreations.phovo.feature.photos.util.getPlatformFetcherFactory
 import org.koin.compose.viewmodel.koinViewModel
@@ -58,6 +60,15 @@ internal fun ForYouScreen(
             verticalArrangement = Arrangement.spacedBy(4.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
+            item(
+                span = { GridItemSpan(maxLineSpan) }
+            ) {
+                CallToActionComponent(
+                    actionTitle = "Finish setup",
+                    actionDescription = "Get more from your gallery",
+                    onClick = { /* TODO */ }
+                )
+            }
             items(
                 bookmarksState
             ) { photo ->
