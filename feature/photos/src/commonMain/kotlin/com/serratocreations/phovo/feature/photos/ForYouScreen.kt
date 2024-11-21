@@ -22,7 +22,6 @@ import coil3.compose.AsyncImage
 import coil3.compose.setSingletonImageLoaderFactory
 import coil3.request.crossfade
 import com.serratocreations.phovo.core.designsystem.component.CallToActionComponent
-import com.serratocreations.phovo.feature.photos.util.getPlatformDecoderFactory
 import com.serratocreations.phovo.feature.photos.util.getPlatformFetcherFactory
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -37,7 +36,6 @@ internal fun ForYouRoute(
             .crossfade(true)
             .components {
                 add(getPlatformFetcherFactory())
-                add(getPlatformDecoderFactory())
             }
             .build()
     }
