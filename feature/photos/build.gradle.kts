@@ -10,12 +10,12 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                //put your multiplatform dependencies here
-                implementation(compose.components.resources)
                 implementation(projects.core.designsystem)
 
+                implementation(compose.components.resources)
                 implementation(libs.serialization.json)
                 implementation(libs.coil.compose)
+                implementation(libs.kotlin.datetime)
             }
         }
         val commonTest by getting {

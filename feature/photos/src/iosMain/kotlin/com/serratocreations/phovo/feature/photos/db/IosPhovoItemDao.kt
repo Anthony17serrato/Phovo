@@ -20,7 +20,7 @@ class IosPhovoItemDao() : PhovoItemDao {
     override fun allItemsFlow(): Flow<List<PhovoItem>> {
         return flow {
             requestPhotoLibraryPermission()
-            emit(fetchGalleryImageURLs().map { PhovoImageItem(it.toUri(), "", 0) })
+            emit(fetchGalleryImageURLs().map { PhovoImageItem(it.toUri(), "",null, 0) })
         }
     }
 
