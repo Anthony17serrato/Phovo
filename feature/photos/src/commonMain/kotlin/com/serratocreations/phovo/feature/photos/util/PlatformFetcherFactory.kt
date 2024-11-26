@@ -8,7 +8,7 @@ expect fun getPlatformFetcherFactory(): Fetcher.Factory<Any>
 
 class DefaultPlatformFetcherFactory : Fetcher.Factory<Any> {
     override fun create(data: Any, options: Options, imageLoader: ImageLoader): Fetcher? {
-        // No-op default fetcher factory
+        // No-op default fetcher factory(delegates to another fetcher)
         return null
     }
 }

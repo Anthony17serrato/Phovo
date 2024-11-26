@@ -6,6 +6,6 @@ import kotlinx.datetime.LocalDateTime
 interface PhovoItem {
     val uri: Uri
     val name: String
-    val dateTaken: LocalDateTime?
+    val dateInFeed: LocalDateTime
     val size: Int
 }

@@ -4,5 +4,5 @@ import kotlinx.datetime.Month
 
 data class DateHeaderPhotoUiItem(
     val month: Month,
-    val year: String
+    val year: Int
 ) : PhotoUiItem

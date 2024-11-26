@@ -3,21 +3,20 @@ package com.serratocreations.phovo.feature.photos.db.dao
 import android.annotation.SuppressLint
 import android.content.ContentUris
 import android.content.Context
-// TODO follow warning guidance
-import android.media.ExifInterface
 import coil3.Uri
 import android.provider.MediaStore
 import android.os.Build
+import androidx.core.database.getLongOrNull
 import coil3.toCoilUri
 import com.serratocreations.phovo.feature.photos.data.db.entity.PhovoItem
 import com.serratocreations.phovo.feature.photos.data.db.entity.PhovoImageItem
 import com.serratocreations.phovo.feature.photos.data.db.dao.PhovoItemDao
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.datetime.toKotlinLocalDateTime
-import java.time.LocalDateTime as JavaLocalDateTime
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.LocalDateTime as KotlinLocalDateTime
-import java.time.format.DateTimeFormatter
 
 class AndroidPhovoItemDao(
     context: Context
@@ -46,7 +45,8 @@ class AndroidPhovoItemDao(
             MediaStore.Images.Media._ID,
             MediaStore.Images.Media.DISPLAY_NAME,
             MediaStore.Images.Media.SIZE,
-            MediaStore.Images.Media.DATE_TAKEN
+            MediaStore.Images.Media.DATE_TAKEN,
+            MediaStore.Images.Media.DATE_ADDED
         )
         val selection = "${MediaStore.MediaColumns.RELATIVE_PATH} LIKE ?"
         val selectionArgs = arrayOf("DCIM/Camera%")
@@ -67,6 +67,8 @@ class AndroidPhovoItemDao(
             val nameColumn =
                 cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME)
             val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.SIZE)
+            val dateAddedColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_ADDED)
+            val dateTakenColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_TAKEN)
 
             while (cursor.moveToNext()) {
                 // Get values of columns for a given video.
@@ -78,27 +80,15 @@ class AndroidPhovoItemDao(
                     id
                 )
                 val contentUri: Uri = androidUri.toCoilUri()
-
-                // read file metadata
-                var exifDate: KotlinLocalDateTime? = null
-                resolver.openInputStream(androidUri)?.use { stream ->
-                    val exif = ExifInterface(stream)
-                    val exifDateFormatter = DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss")
-                    var exifDateString = exif.getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL)
-                    if (exifDateString == null) {
-                        exifDateString = exif.getAttribute(ExifInterface.TAG_DATETIME)
-                    }
-                    if (exifDateString != null) {
-                        exifDate = JavaLocalDateTime.parse(exifDateString, exifDateFormatter).toKotlinLocalDateTime()
-                    }
-                }
+                val dateInFeed = cursor.getLongOrNull(dateTakenColumn)?.utcMsToLocalDateTime()
+                    ?: (cursor.getLong(dateAddedColumn)*1000).utcMsToLocalDateTime()
 
                 // Stores column values and the contentUri in a local object
                 // that represents the media file.
                 videoList += PhovoImageItem(
                     uri = contentUri,
                     name = name,
-                    dateTaken = exifDate,
+                    dateInFeed = dateInFeed,
                     size = size
                 )
             }
@@ -108,5 +98,13 @@ class AndroidPhovoItemDao(
 
     override fun updatePhovoItem(phovoItem: PhovoItem): Boolean {
         TODO("Not yet implemented")
+    }
+
+    private fun Long.utcMsToLocalDateTime(): KotlinLocalDateTime {
+        // Convert seconds to milliseconds
+        val instant = Instant.fromEpochMilliseconds(this)
+
+        // Convert to LocalDateTime in the system's default time zone
+        return instant.toLocalDateTime(TimeZone.currentSystemDefault())
     }
 }
