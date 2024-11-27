@@ -5,10 +5,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -85,7 +87,13 @@ internal fun ForYouScreen(
             ) { item ->
                 when (item) {
                     is DateHeaderPhotoUiItem -> {
-                        Text(item.month.toString())
+                        Text(
+                            // TODO: month must come from a localized string, consider an enum class with
+                            //  string res values
+                            text = "${item.month} ${item.year ?: ""}",
+                            style = MaterialTheme.typography.headlineSmall,
+                            modifier = modifier.padding(16.dp)
+                        )
                     }
                     is ImagePhotoUiItem -> {
                         AsyncImage(

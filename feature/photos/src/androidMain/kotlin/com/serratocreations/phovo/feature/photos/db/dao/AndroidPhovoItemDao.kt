@@ -1,11 +1,15 @@
 package com.serratocreations.phovo.feature.photos.db.dao
 
 import android.annotation.SuppressLint
+import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.Context
-import coil3.Uri
+// TODO follow suggestion
+import android.media.ExifInterface
+import android.net.Uri
 import android.provider.MediaStore
 import android.os.Build
+import android.util.Log
 import androidx.core.database.getLongOrNull
 import coil3.toCoilUri
 import com.serratocreations.phovo.feature.photos.data.db.entity.PhovoItem
@@ -16,7 +20,10 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import java.time.format.DateTimeFormatter
 import kotlinx.datetime.LocalDateTime as KotlinLocalDateTime
+import java.time.LocalDateTime as JavaLocalDateTime
+import kotlinx.datetime.toKotlinLocalDateTime
 
 class AndroidPhovoItemDao(
     context: Context
@@ -49,7 +56,7 @@ class AndroidPhovoItemDao(
             MediaStore.Images.Media.DATE_ADDED
         )
         val selection = "${MediaStore.MediaColumns.RELATIVE_PATH} LIKE ?"
-        val selectionArgs = arrayOf("DCIM/Camera%")
+        val selectionArgs = arrayOf("DCIM%")
 
         // Display videos in alphabetical order based on their display name.
         val sortOrder = "${MediaStore.Images.Media.DATE_TAKEN} DESC"
@@ -79,9 +86,14 @@ class AndroidPhovoItemDao(
                     MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                     id
                 )
-                val contentUri: Uri = androidUri.toCoilUri()
+                val contentUri = androidUri.toCoilUri()
                 val dateInFeed = cursor.getLongOrNull(dateTakenColumn)?.utcMsToLocalDateTime()
-                    ?: (cursor.getLong(dateAddedColumn)*1000).utcMsToLocalDateTime()
+                    ?: run {
+                        Log.w("AndroidPhovoItemDao", "Could not get date taken for $name")
+                        // try to parse the date from exif data, if all fails fallback to date added.
+                        resolver.parseDateTakenFromExif(androidUri)
+                            ?: (cursor.getLong(dateAddedColumn)*1000).utcMsToLocalDateTime()
+                    }
 
                 // Stores column values and the contentUri in a local object
                 // that represents the media file.
@@ -107,4 +119,19 @@ class AndroidPhovoItemDao(
         // Convert to LocalDateTime in the system's default time zone
         return instant.toLocalDateTime(TimeZone.currentSystemDefault())
     }
+
+    // TODO Address lint
+    @SuppressLint("NewApi")
+    private fun ContentResolver.parseDateTakenFromExif(uri: Uri) : KotlinLocalDateTime? =
+        openInputStream(uri)?.use { stream ->
+            val exif = ExifInterface(stream)
+            val exifDateFormatter = DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss")
+            var exifDateString = exif.getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL)
+            if (exifDateString == null) {
+                exifDateString = exif.getAttribute(ExifInterface.TAG_DATETIME)
+            }
+            if (exifDateString != null) {
+                return@use JavaLocalDateTime.parse(exifDateString, exifDateFormatter).toKotlinLocalDateTime()
+            } else return@use null
+        }
 }
