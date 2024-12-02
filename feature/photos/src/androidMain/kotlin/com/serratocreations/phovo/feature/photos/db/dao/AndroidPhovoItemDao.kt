@@ -30,10 +30,6 @@ class AndroidPhovoItemDao(
 ) : PhovoItemDao {
     private val resolver = context.contentResolver
 
-    override fun addItem(phovoItem: PhovoItem) {
-        TODO("Not yet implemented")
-    }
-
     @SuppressLint("NewApi")
     override fun allItemsFlow(): Flow<List<PhovoItem>> {
         // TODO add observability of updates
@@ -106,10 +102,6 @@ class AndroidPhovoItemDao(
             }
         }
         return flowOf(videoList)
-    }
-
-    override fun updatePhovoItem(phovoItem: PhovoItem): Boolean {
-        TODO("Not yet implemented")
     }
 
     private fun Long.utcMsToLocalDateTime(): KotlinLocalDateTime {

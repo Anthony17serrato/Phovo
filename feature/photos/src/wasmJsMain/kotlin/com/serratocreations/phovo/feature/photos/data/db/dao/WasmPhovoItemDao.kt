@@ -5,15 +5,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 
 class WasmPhovoItemDao : PhovoItemDao {
-    override fun addItem(phovoItem: PhovoItem) {
-        TODO("Not yet implemented")
-    }
-
     override fun allItemsFlow(): Flow<List<PhovoItem>> {
         return flowOf(emptyList())
-    }
-
-    override fun updatePhovoItem(phovoItem: PhovoItem): Boolean {
-        TODO("Not yet implemented")
     }
 }

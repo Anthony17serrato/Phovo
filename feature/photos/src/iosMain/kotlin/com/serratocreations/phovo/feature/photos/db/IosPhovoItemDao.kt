@@ -8,24 +8,22 @@ import com.serratocreations.phovo.feature.photos.data.db.entity.PhovoImageItem
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.flow
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toKotlinInstant
+import kotlinx.datetime.toLocalDateTime
 import platform.Photos.*
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
-class IosPhovoItemDao() : PhovoItemDao {
-    override fun addItem(phovoItem: PhovoItem) {
-        TODO("Not yet implemented")
-    }
+class IosPhovoItemDao : PhovoItemDao {
 
     override fun allItemsFlow(): Flow<List<PhovoItem>> {
         return flow {
             requestPhotoLibraryPermission()
-            emit(fetchGalleryImageURLs().map { PhovoImageItem(it.toUri(), "", TODO(), 0) })
+            emit(
+                fetchGalleryImageURLs()
+            )
         }
-    }
-
-    override fun updatePhovoItem(phovoItem: PhovoItem): Boolean {
-        TODO("Not yet implemented")
     }
 
     private suspend fun requestPhotoLibraryPermission() = suspendCoroutine { continuation ->
@@ -53,19 +51,28 @@ class IosPhovoItemDao() : PhovoItemDao {
     }
 
     @OptIn(ExperimentalForeignApi::class)
-    private suspend fun fetchGalleryImageURLs(): List<String> = coroutineScope {
+    private suspend fun fetchGalleryImageURLs(): List<PhovoImageItem> = coroutineScope {
         val status = PHPhotoLibrary.authorizationStatus()
         println("Photo Library Authorization Status: $status")
         val fetchOptions = PHFetchOptions()
         val assets = PHAsset.fetchAssetsWithMediaType(PHAssetMediaTypeImage, fetchOptions)
-        val urls = mutableListOf<String>()
+        val imageItems = mutableListOf<PhovoImageItem>()
 
         // Enumerate the assets using the block-based approach
         assets.enumerateObjectsUsingBlock { obj, _, _ ->
             val asset = obj as PHAsset
-            urls.add("phasset://${asset.localIdentifier}")
+            val instant = asset.creationDate?.toKotlinInstant()
+            // TODO: Instead of excluding images where date could not be determined parse the date from exif data
+            val localDateTime = instant?.toLocalDateTime(TimeZone.currentSystemDefault()) ?: return@enumerateObjectsUsingBlock
+            val phovoImageItem = PhovoImageItem(
+                uri = "phasset://${asset.localIdentifier}".toUri(),
+                name = "",
+                dateInFeed = localDateTime,
+                size = 0
+            )
+            imageItems.add(phovoImageItem)
         }
-        println("IosPhovoItemDao urls $urls")
-        return@coroutineScope urls
+        println("IosPhovoItemDao images $imageItems")
+        return@coroutineScope imageItems.toList()
     }
 }
