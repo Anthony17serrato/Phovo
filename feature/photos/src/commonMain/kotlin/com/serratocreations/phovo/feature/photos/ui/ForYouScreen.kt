@@ -1,20 +1,22 @@
-package com.serratocreations.phovo.feature.photos
+package com.serratocreations.phovo.feature.photos.ui
 
 import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.serratocreations.phovo.feature.photos.data.db.entity.PhovoItem
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil3.ImageLoader
@@ -22,6 +24,9 @@ import coil3.compose.AsyncImage
 import coil3.compose.setSingletonImageLoaderFactory
 import coil3.request.crossfade
 import com.serratocreations.phovo.core.designsystem.component.CallToActionComponent
+import com.serratocreations.phovo.feature.photos.ui.model.DateHeaderPhotoUiItem
+import com.serratocreations.phovo.feature.photos.ui.model.ImagePhotoUiItem
+import com.serratocreations.phovo.feature.photos.ui.model.PhotoUiItem
 import com.serratocreations.phovo.feature.photos.util.getPlatformFetcherFactory
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -39,9 +44,9 @@ internal fun ForYouRoute(
             }
             .build()
     }
-    val bookmarksState by phovoViewModel.phovoUiState.collectAsStateWithLifecycle()
+    val photosState by phovoViewModel.phovoUiState.collectAsStateWithLifecycle()
     ForYouScreen(
-        bookmarksState = bookmarksState,
+        photosState = photosState,
         modifier = modifier
     )
 }
@@ -49,7 +54,7 @@ internal fun ForYouRoute(
 @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
 @Composable
 internal fun ForYouScreen(
-    bookmarksState: List<PhovoItem>,
+    photosState: List<PhotoUiItem>,
     modifier: Modifier = Modifier,
 ) {
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -68,15 +73,37 @@ internal fun ForYouScreen(
                 )
             }
             items(
-                bookmarksState
-            ) { photo ->
-                println(photo.uri.toString())
-                AsyncImage(
-                    model = photo.uri,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = modifier.aspectRatio(1f)
-                )
+                items = photosState,
+                span = { item ->
+                    when (item) {
+                        is DateHeaderPhotoUiItem -> {
+                            GridItemSpan(maxLineSpan)
+                        }
+                        is ImagePhotoUiItem -> {
+                            GridItemSpan(1)
+                        }
+                    }
+                }
+            ) { item ->
+                when (item) {
+                    is DateHeaderPhotoUiItem -> {
+                        Text(
+                            // TODO: month must come from a localized string, consider an enum class with
+                            //  string res values
+                            text = "${item.month} ${item.year ?: ""}",
+                            style = MaterialTheme.typography.headlineSmall,
+                            modifier = modifier.padding(16.dp)
+                        )
+                    }
+                    is ImagePhotoUiItem -> {
+                        AsyncImage(
+                            model = item.uri,
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = modifier.aspectRatio(1f)
+                        )
+                    }
+                }
             }
         }
     }

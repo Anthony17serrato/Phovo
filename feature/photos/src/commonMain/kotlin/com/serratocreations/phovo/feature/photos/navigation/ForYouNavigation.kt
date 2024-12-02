@@ -4,7 +4,7 @@ import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavOptions
 import androidx.navigation.compose.composable
-import com.serratocreations.phovo.feature.photos.ForYouRoute
+import com.serratocreations.phovo.feature.photos.ui.ForYouRoute
 import kotlinx.serialization.Serializable
 
 @Serializable
