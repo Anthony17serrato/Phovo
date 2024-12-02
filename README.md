@@ -5,6 +5,10 @@ This is a Kotlin Multiplatform project targeting Android, iOS, Desktop and WASM(
 ### iOS, Android, Browser and Desktop Applications
 All applications are developed within a single codebase using [Kotlin Multiplatform technology](https://kotlinlang.org/docs/multiplatform.html). The UI is implemented using [Compose Multiplatform UI framework](https://www.jetbrains.com/lp/compose-multiplatform/).
 
+### Screenshots
+| Android | iOS | Web | Desktop |
+| --- | --- | --- | --- |
+
 ## How to build and run
 
 Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…
