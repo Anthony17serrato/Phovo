@@ -8,7 +8,7 @@ All applications are developed within a single codebase using [Kotlin Multiplatf
 ### Screenshots
 | Android | iOS | Web | Desktop |
 | --- | --- | --- | --- |
-| ![Android screenshot](https://github.com/Anthony17serrato/Phovo/blob/main/docs/images/Screenshot_20241202_134207.png) | ![iOS screenshot](https://github.com/Anthony17serrato/Phovo/blob/main/docs/images/Simulator%20Screenshot%20-%20iPhone%2016%20-%202024-12-02%20at%2013.43.23.png) |  |  |
+| <img src="https://github.com/Anthony17serrato/Phovo/blob/main/docs/images/Screenshot_20241202_134207.png" width="200" height="400" /> | <img src="https://github.com/Anthony17serrato/Phovo/blob/main/docs/images/Simulator%20Screenshot%20-%20iPhone%2016%20-%202024-12-02%20at%2013.43.23.png" width="200" height="400" /> |  |  |
 
 ## How to build and run
 
