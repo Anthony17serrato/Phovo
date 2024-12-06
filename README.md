@@ -6,9 +6,11 @@ This is a Kotlin Multiplatform project targeting Android, iOS, Desktop and WASM(
 All applications are developed within a single codebase using [Kotlin Multiplatform technology](https://kotlinlang.org/docs/multiplatform.html). The UI is implemented using [Compose Multiplatform UI framework](https://www.jetbrains.com/lp/compose-multiplatform/).
 
 ### Screenshots
-| Android | iOS | Web | Desktop |
-| --- | --- | --- | --- |
-| <img src="https://github.com/Anthony17serrato/Phovo/blob/main/docs/images/Screenshot_20241202_134207.png" width="200" height="400" /> | <img src="https://github.com/Anthony17serrato/Phovo/blob/main/docs/images/Simulator%20Screenshot%20-%20iPhone%2016%20-%202024-12-02%20at%2013.43.23.png" width="200" height="400" /> |  |  |
+#### Android
+<img src="https://github.com/Anthony17serrato/Phovo/blob/main/docs/images/Screenshot_20241202_134207.png" width="200" height="425" /> 
+
+#### iOS
+<img src="https://github.com/Anthony17serrato/Phovo/blob/main/docs/images/Simulator%20Screenshot%20-%20iPhone%2016%20-%202024-12-02%20at%2013.43.23.png" width="200" height="425" />
 
 ## How to build and run
 
