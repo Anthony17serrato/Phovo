@@ -2,12 +2,14 @@ package com.serratocreations.phovo.navigation
 
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.serratocreations.phovo.core.designsystem.icon.PhovoIcons
-import com.serratocreations.phovo.feature.photos.navigation.ForYouRoute
+import com.serratocreations.phovo.feature.photos.navigation.PhotosRoute
 import phovo.composeapp.generated.resources.Res
-import phovo.composeapp.generated.resources.app_name
 import phovo.composeapp.generated.resources.feature_bookmarks_title
 import phovo.composeapp.generated.resources.feature_search_interests
 import org.jetbrains.compose.resources.StringResource
+import phovo.composeapp.generated.resources.app_name
+import phovo.feature.photos.generated.resources.feature_photos_title
+import phovo.feature.photos.generated.resources.Res as photosRes
 import kotlin.reflect.KClass
 
 enum class TopLevelDestination(
@@ -17,12 +19,12 @@ enum class TopLevelDestination(
     val titleTextId: StringResource,
     val route: KClass<*>,
 ) {
-    FOR_YOU(
-        selectedIcon = PhovoIcons.Upcoming,
-        unselectedIcon = PhovoIcons.UpcomingBorder,
-        iconTextId = Res.string.app_name,
+    PHOTOS(
+        selectedIcon = PhovoIcons.Photo,
+        unselectedIcon = PhovoIcons.PhotoBorder,
+        iconTextId = photosRes.string.feature_photos_title,
         titleTextId = Res.string.app_name,
-        route = ForYouRoute::class,
+        route = PhotosRoute::class,
     ),
     BOOKMARKS(
         selectedIcon = PhovoIcons.Bookmarks,

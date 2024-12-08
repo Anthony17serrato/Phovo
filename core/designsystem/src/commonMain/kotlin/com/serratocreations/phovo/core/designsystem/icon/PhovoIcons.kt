@@ -6,6 +6,7 @@ import androidx.compose.material.icons.automirrored.rounded.ShortText
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.Bookmarks
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Photo
 import androidx.compose.material.icons.outlined.Upcoming
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Bookmark
@@ -16,6 +17,7 @@ import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Grid3x3
 import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.Photo
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Upcoming
@@ -36,6 +38,8 @@ object PhovoIcons {
     val Search = Icons.Rounded.Search
     val Settings = Icons.Rounded.Settings
     val ShortText = Icons.AutoMirrored.Rounded.ShortText
+    val Photo = Icons.Rounded.Photo
+    val PhotoBorder = Icons.Outlined.Photo
     val Upcoming = Icons.Rounded.Upcoming
     val UpcomingBorder = Icons.Outlined.Upcoming
     val ViewDay = Icons.Rounded.ViewDay

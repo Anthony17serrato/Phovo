@@ -31,7 +31,7 @@ import com.serratocreations.phovo.feature.photos.util.getPlatformFetcherFactory
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-internal fun ForYouRoute(
+internal fun PhotosRoute(
     modifier: Modifier = Modifier,
     phovoViewModel: PhovoViewModel = koinViewModel()
 ) {
@@ -45,7 +45,7 @@ internal fun ForYouRoute(
             .build()
     }
     val photosState by phovoViewModel.phovoUiState.collectAsStateWithLifecycle()
-    ForYouScreen(
+    PhotosScreen(
         photosState = photosState,
         modifier = modifier
     )
@@ -53,7 +53,7 @@ internal fun ForYouRoute(
 
 @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
 @Composable
-internal fun ForYouScreen(
+internal fun PhotosScreen(
     photosState: List<PhotoUiItem>,
     modifier: Modifier = Modifier,
 ) {

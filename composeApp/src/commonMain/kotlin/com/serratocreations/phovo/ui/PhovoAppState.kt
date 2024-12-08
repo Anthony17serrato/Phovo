@@ -13,7 +13,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navOptions
 import com.serratocreations.phovo.feature.photos.navigation.navigateToForYou
 import com.serratocreations.phovo.navigation.TopLevelDestination
-import com.serratocreations.phovo.navigation.TopLevelDestination.FOR_YOU
+import com.serratocreations.phovo.navigation.TopLevelDestination.PHOTOS
 import com.serratocreations.phovo.navigation.TopLevelDestination.INTERESTS
 import com.serratocreations.phovo.navigation.TopLevelDestination.BOOKMARKS
 import com.serratocreations.phovo.navigation.navigateToBookmarks
@@ -81,7 +81,7 @@ class PhovoAppState(
         }
 
         when (topLevelDestination) {
-            FOR_YOU -> navController.navigateToForYou(topLevelNavOptions)
+            PHOTOS -> navController.navigateToForYou(topLevelNavOptions)
             BOOKMARKS -> navController.navigateToBookmarks(topLevelNavOptions)
             INTERESTS -> navController.navigateToInterests(topLevelNavOptions)
         }

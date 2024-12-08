@@ -4,17 +4,17 @@ import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavOptions
 import androidx.navigation.compose.composable
-import com.serratocreations.phovo.feature.photos.ui.ForYouRoute
+import com.serratocreations.phovo.feature.photos.ui.PhotosRoute
 import kotlinx.serialization.Serializable
 
 @Serializable
-object ForYouRoute
+object PhotosRoute
 
 fun NavController.navigateToForYou(navOptions: NavOptions) =
-    navigate(route = ForYouRoute, navOptions)
+    navigate(route = PhotosRoute, navOptions)
 
-fun NavGraphBuilder.forYouScreen() {
-    composable<ForYouRoute> {
-        ForYouRoute()
+fun NavGraphBuilder.photosScreen() {
+    composable<PhotosRoute> {
+        PhotosRoute()
     }
 }

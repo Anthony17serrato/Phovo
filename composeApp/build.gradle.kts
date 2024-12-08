@@ -122,3 +122,9 @@ compose.desktop {
         }
     }
 }
+
+// TODO move to compose convention plugin
+compose.resources {
+    publicResClass = true
+    generateResClass = auto
+}

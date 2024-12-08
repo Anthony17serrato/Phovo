@@ -34,3 +34,9 @@ kotlin {
 android {
     namespace = "com.serratocreations.phovo.feature.photos"
 }
+
+// TODO move to compose convention plugin
+compose.resources {
+    publicResClass = true
+    generateResClass = auto
+}
