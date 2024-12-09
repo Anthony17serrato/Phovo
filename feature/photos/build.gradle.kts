@@ -1,8 +1,7 @@
 plugins {
     id(libs.plugins.phovo.kmp.library.library.get().pluginId)
     id(libs.plugins.phovo.kmp.library.koin.get().pluginId)
-    alias(libs.plugins.jetbrainsCompose)
-    alias(libs.plugins.compose.compiler)
+    id(libs.plugins.phovo.kmp.library.compose.get().pluginId)
     alias(libs.plugins.serialization)
 }
 
@@ -33,10 +32,4 @@ kotlin {
 
 android {
     namespace = "com.serratocreations.phovo.feature.photos"
-}
-
-// TODO move to compose convention plugin
-compose.resources {
-    publicResClass = true
-    generateResClass = auto
 }

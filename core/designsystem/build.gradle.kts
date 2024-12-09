@@ -1,7 +1,6 @@
 plugins {
     id(libs.plugins.phovo.kmp.library.library.get().pluginId)
-    alias(libs.plugins.jetbrainsCompose)
-    alias(libs.plugins.compose.compiler)
+    id(libs.plugins.phovo.kmp.library.compose.get().pluginId)
 }
 
 kotlin {

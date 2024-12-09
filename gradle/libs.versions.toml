@@ -66,7 +66,8 @@ kotlin-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", 
 skiko = { module = "org.jetbrains.skiko:skiko", version.ref = "skiko" }
 # Dependencies of the included build-logic
 android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "androidGradlePlugin" }
-compose-gradlePlugin = { module = "org.jetbrains.kotlin:compose-compiler-gradle-plugin", version.ref = "kotlin" }
+compose-compiler-gradlePlugin = { module = "org.jetbrains.kotlin:compose-compiler-gradle-plugin", version.ref = "kotlin" }
+compose-gradlePlugin = { module = "org.jetbrains.compose:compose-gradle-plugin", version.ref = "jetbrains-compose" }
 kotlin-gradlePlugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
 ksp-gradlePlugin = { group = "com.google.devtools.ksp", name = "com.google.devtools.ksp.gradle.plugin", version.ref = "ksp" }
 
@@ -86,3 +87,5 @@ serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref 
 phovo-kmp-library-library = { id = "phovo.kmp.library" }
 phovo-kmp-application-koin = { id = "phovo.kmp.application.koin" }
 phovo-kmp-library-koin = { id = "phovo.kmp.library.koin" }
+phovo-kmp-library-compose = { id = "phovo.kmp.library.compose" }
+phovo-kmp-application-compose = { id = "phovo.kmp.application.compose" }

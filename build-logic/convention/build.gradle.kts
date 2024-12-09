@@ -37,9 +37,10 @@ kotlin {
 
 dependencies {
     compileOnly(libs.android.gradlePlugin)
-    compileOnly(libs.compose.gradlePlugin)
+    compileOnly(libs.compose.compiler.gradlePlugin)
     compileOnly(libs.kotlin.gradlePlugin)
     compileOnly(libs.ksp.gradlePlugin)
+    compileOnly(libs.compose.gradlePlugin)
     //compileOnly(libs.room.gradlePlugin)
     //implementation(libs.truth)
 }
@@ -64,6 +65,14 @@ gradlePlugin {
         register("kmpLibraryKoin") {
             id = "phovo.kmp.library.koin"
             implementationClass = "KmpLibraryKoinConventionPlugin"
+        }
+        register("kmpLibraryCompose") {
+            id = "phovo.kmp.library.compose"
+            implementationClass = "KmpLibraryComposeConventionPlugin"
+        }
+        register("kmpApplicationCompose") {
+            id = "phovo.kmp.application.compose"
+            implementationClass = "KmpApplicationComposeConventionPlugin"
         }
     }
 }

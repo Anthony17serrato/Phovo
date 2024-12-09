@@ -4,10 +4,9 @@ import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     id(libs.plugins.phovo.kmp.application.koin.get().pluginId)
+    id(libs.plugins.phovo.kmp.application.compose.get().pluginId)
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidApplication)
-    alias(libs.plugins.jetbrainsCompose)
-    alias(libs.plugins.compose.compiler)
     alias(libs.plugins.serialization)
 }
 
@@ -121,10 +120,4 @@ compose.desktop {
             packageVersion = "1.0.0"
         }
     }
-}
-
-// TODO move to compose convention plugin
-compose.resources {
-    publicResClass = true
-    generateResClass = auto
 }
