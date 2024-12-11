@@ -85,6 +85,7 @@ serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref 
 
 # Plugins defined by this project
 phovo-kmp-library-library = { id = "phovo.kmp.library" }
+phovo-kmp-application-application = { id = "phovo.kmp.application" }
 phovo-kmp-application-koin = { id = "phovo.kmp.application.koin" }
 phovo-kmp-library-koin = { id = "phovo.kmp.library.koin" }
 phovo-kmp-library-compose = { id = "phovo.kmp.library.compose" }

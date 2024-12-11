@@ -4,10 +4,10 @@ import com.android.build.api.dsl.CommonExtension
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.configure
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
 
 /**
  * Configure base Kotlin Multiplatform with Android options
@@ -30,28 +30,58 @@ internal fun Project.configureKotlinAndroid(
             //isCoreLibraryDesugaringEnabled = true
         }
     }
-
-    configureKotlinMultiplatform()
 }
 
-private fun Project.configureKotlinMultiplatform() {
+internal fun Project.configureKotlinMultiplatform(isApplication: Boolean) {
     configure<KotlinMultiplatformExtension> {
         jvm("desktop")
 
         androidTarget {
-            @OptIn(ExperimentalKotlinGradlePluginApi::class)
-            compilerOptions {
-                jvmTarget.set(JvmTarget.JVM_11)
+            compilations.all {
+                compileTaskProvider.configure {
+                    compilerOptions {
+                        jvmTarget.set(JvmTarget.JVM_11)
+                    }
+                }
             }
         }
 
         @OptIn(ExperimentalWasmDsl::class)
         wasmJs {
-            browser()
+            if (isApplication) {
+                moduleName = "composeApp"
+                browser {
+                    commonWebpackConfig {
+                        outputFileName = "composeApp.js"
+                        devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
+                            static = (static ?: mutableListOf()).apply {
+                                // Serve sources to debug inside browser
+                                add(project.projectDir.path)
+                            }
+                        }
+                    }
+                }
+                binaries.executable()
+            } else {
+                browser()
+            }
         }
 
-        iosX64()
-        iosArm64()
-        iosSimulatorArm64()
+        if (isApplication) {
+            listOf(
+                iosX64(),
+                iosArm64(),
+                iosSimulatorArm64()
+            ).forEach { iosTarget ->
+                iosTarget.binaries.framework {
+                    baseName = "ComposeApp"
+                    isStatic = true
+                }
+            }
+        } else {
+            iosX64()
+            iosArm64()
+            iosSimulatorArm64()
+        }
     }
 }

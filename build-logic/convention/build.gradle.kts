@@ -74,5 +74,10 @@ gradlePlugin {
             id = "phovo.kmp.application.compose"
             implementationClass = "KmpApplicationComposeConventionPlugin"
         }
+        register("kmpApplication") {
+            id = "phovo.kmp.application"
+            implementationClass = "KmpApplicationConventionPlugin"
+        }
+
     }
 }

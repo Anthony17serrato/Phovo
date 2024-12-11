@@ -9,6 +9,7 @@ plugins {
     alias(libs.plugins.serialization) apply false
     alias(libs.plugins.kotlin.ksp) apply false
     id(libs.plugins.phovo.kmp.library.library.get().pluginId) apply false
+    id(libs.plugins.phovo.kmp.application.application.get().pluginId) apply false
     id(libs.plugins.phovo.kmp.application.koin.get().pluginId) apply false
     id(libs.plugins.phovo.kmp.library.koin.get().pluginId) apply false
     id(libs.plugins.phovo.kmp.library.compose.get().pluginId) apply false

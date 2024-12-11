@@ -1,5 +1,6 @@
 import com.android.build.gradle.LibraryExtension
 import com.serratocreations.phovo.buildlogic.configureKotlinAndroid
+import com.serratocreations.phovo.buildlogic.configureKotlinMultiplatform
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.configure
@@ -14,6 +15,7 @@ class KmpLibraryConventionPlugin : Plugin<Project> {
 
             extensions.configure<LibraryExtension> {
                 configureKotlinAndroid(this)
+                configureKotlinMultiplatform(isApplication = false)
                 defaultConfig.targetSdk = 34
                 defaultConfig.testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
                 testOptions.animationsDisabled = true
