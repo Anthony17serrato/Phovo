@@ -19,12 +19,13 @@ import androidx.compose.material3.adaptive.navigationsuite.ExperimentalMaterial3
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteDefaults
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteItemColors
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
-import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScope
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.window.core.layout.WindowWidthSizeClass
 import com.serratocreations.phovo.core.designsystem.icon.PhovoIcons
 import com.serratocreations.phovo.core.designsystem.theme.PhovoTheme
 
@@ -179,8 +180,13 @@ fun PhovoNavigationSuiteScaffold(
     windowAdaptiveInfo: WindowAdaptiveInfo = currentWindowAdaptiveInfo(),
     content: @Composable () -> Unit,
 ) {
-    val layoutType = NavigationSuiteScaffoldDefaults
-        .calculateFromAdaptiveInfo(windowAdaptiveInfo)
+    val layoutType = when (windowAdaptiveInfo.windowSizeClass.windowWidthSizeClass) {
+        WindowWidthSizeClass.COMPACT -> NavigationSuiteType.NavigationBar
+        WindowWidthSizeClass.MEDIUM -> NavigationSuiteType.NavigationRail
+        WindowWidthSizeClass.EXPANDED -> NavigationSuiteType.NavigationDrawer
+        else -> NavigationSuiteType.NavigationBar
+    }
+
     val navigationSuiteItemColors = NavigationSuiteItemColors(
         navigationBarItemColors = NavigationBarItemDefaults.colors(
             selectedIconColor = PhovoNavigationDefaults.navigationSelectedItemColor(),
@@ -201,6 +207,7 @@ fun PhovoNavigationSuiteScaffold(
             unselectedIconColor = PhovoNavigationDefaults.navigationContentColor(),
             selectedTextColor = PhovoNavigationDefaults.navigationSelectedItemColor(),
             unselectedTextColor = PhovoNavigationDefaults.navigationContentColor(),
+            selectedContainerColor = PhovoNavigationDefaults.navigationIndicatorColor(),
         ),
     )
 
