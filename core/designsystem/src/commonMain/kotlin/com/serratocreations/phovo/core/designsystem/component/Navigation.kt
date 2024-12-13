@@ -2,6 +2,7 @@ package com.serratocreations.phovo.core.designsystem.component
 
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -216,6 +217,9 @@ fun PhovoNavigationSuiteScaffold(
             PhovoNavigationSuiteScope(
                 navigationSuiteScope = this,
                 navigationSuiteItemColors = navigationSuiteItemColors,
+                modifier = if (layoutType == NavigationSuiteType.NavigationDrawer) {
+                    Modifier.padding(start = 12.dp, end = 12.dp)
+                } else { Modifier }
             ).run(navigationSuiteItems)
         },
         layoutType = layoutType,
@@ -224,7 +228,7 @@ fun PhovoNavigationSuiteScaffold(
             navigationBarContentColor = PhovoNavigationDefaults.navigationContentColor(),
             navigationRailContainerColor = Color.Transparent,
         ),
-        modifier = modifier,
+        modifier = modifier
     ) {
         content()
     }
@@ -237,6 +241,7 @@ fun PhovoNavigationSuiteScaffold(
 class PhovoNavigationSuiteScope internal constructor(
     private val navigationSuiteScope: NavigationSuiteScope,
     private val navigationSuiteItemColors: NavigationSuiteItemColors,
+    private val modifier: Modifier = Modifier
 ) {
     fun item(
         selected: Boolean,
@@ -257,7 +262,7 @@ class PhovoNavigationSuiteScope internal constructor(
         },
         label = label,
         colors = navigationSuiteItemColors,
-        modifier = modifier,
+        modifier = modifier.then(this.modifier),
     )
 }
 
