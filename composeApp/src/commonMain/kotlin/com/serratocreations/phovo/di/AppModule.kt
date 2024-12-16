@@ -1,5 +1,6 @@
 package com.serratocreations.phovo.di
 
+import com.serratocreations.phovo.feature.connections.di.connectionsFeatureModule
 import com.serratocreations.phovo.feature.photos.di.photosFeatureModule
 import org.koin.core.annotation.ComponentScan
 import org.koin.core.annotation.Module
@@ -9,7 +10,7 @@ import org.koin.ksp.generated.*
 
 fun initKoin(appDeclaration: KoinAppDeclaration = {}) = startKoin {
     appDeclaration()
-    modules(AppModule().module, photosFeatureModule())
+    modules(AppModule().module, photosFeatureModule(), connectionsFeatureModule())
 }
 
 // called by IOS in iOSApp.swift
