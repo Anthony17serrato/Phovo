@@ -1,6 +1,6 @@
 package com.serratocreations.phovo.core.designsystem.component
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -30,21 +30,22 @@ fun CallToActionComponent(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
         ),
+        onClick = onClick,
         modifier = modifier
-            .clickable(onClick = onClick)
             .fillMaxWidth()
             .padding(16.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Start
         ) {
             Icon(
                 imageVector = PhovoIcons.Info,
                 contentDescription = null,
                 modifier = Modifier.padding(start = 16.dp)
             )
-            Column(Modifier.padding(start = 16.dp)) {
+            Column(Modifier.padding(start = 16.dp).weight(1f)) {
                 Text(
                     text = actionTitle,
                     modifier = Modifier.padding(top = 16.dp),
@@ -55,11 +56,10 @@ fun CallToActionComponent(
                 Text(
                     text = actionDescription,
                     modifier = Modifier.padding(bottom = 16.dp),
-                    textAlign = TextAlign.Center,
+                    textAlign = TextAlign.Start,
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
-            Spacer(Modifier.weight(1f))
             Icon(
                 imageVector = PhovoIcons.ChevronRight,
                 contentDescription = null,
