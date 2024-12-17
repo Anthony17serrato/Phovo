@@ -3,13 +3,15 @@ package com.serratocreations.phovo.navigation
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.serratocreations.phovo.core.designsystem.icon.PhovoIcons
 import com.serratocreations.phovo.feature.photos.navigation.PhotosRoute
+import com.serratocreations.phovo.feature.connections.navigation.ConnectionsRoute
 import phovo.composeapp.generated.resources.Res
 import phovo.composeapp.generated.resources.feature_bookmarks_title
-import phovo.composeapp.generated.resources.feature_search_interests
 import org.jetbrains.compose.resources.StringResource
 import phovo.composeapp.generated.resources.app_name
 import phovo.feature.photos.generated.resources.feature_photos_title
 import phovo.feature.photos.generated.resources.Res as photosRes
+import phovo.feature.connections.generated.resources.Res as connectionsRes
+import phovo.feature.connections.generated.resources.feature_connections_title
 import kotlin.reflect.KClass
 
 enum class TopLevelDestination(
@@ -33,11 +35,11 @@ enum class TopLevelDestination(
         titleTextId = Res.string.feature_bookmarks_title,
         route = BookmarksRoute::class,
     ),
-    INTERESTS(
-        selectedIcon = PhovoIcons.Grid3x3,
-        unselectedIcon = PhovoIcons.Grid3x3,
-        iconTextId = Res.string.feature_search_interests,
-        titleTextId = Res.string.feature_search_interests,
-        route = InterestsRoute::class,
+    Connections(
+        selectedIcon = PhovoIcons.Dns,
+        unselectedIcon = PhovoIcons.DnsBorder,
+        iconTextId = connectionsRes.string.feature_connections_title,
+        titleTextId = connectionsRes.string.feature_connections_title,
+        route = ConnectionsRoute::class,
     ),
 }

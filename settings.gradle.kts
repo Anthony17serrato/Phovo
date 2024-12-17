@@ -27,3 +27,4 @@ include(":core:designsystem")
 
 // Features
 include(":feature:photos")
+include(":feature:connections")
