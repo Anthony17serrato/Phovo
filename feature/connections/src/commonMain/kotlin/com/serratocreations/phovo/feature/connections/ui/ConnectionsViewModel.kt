@@ -26,20 +26,23 @@ class ConnectionsViewModel(
         observeDeviceServerConfigurationState()
     }
 
+    fun configureAsServer() {
+        serverConfigManager?.configureDeviceAsServer()
+    }
+
     private fun observeDeviceServerConfigurationState() {
         serverConfigManager?.let { serverConfigManagerNotNull ->
             serverConfigManagerNotNull.observeDeviceServerConfigurationState()
                 .onEach { configStatus ->
                     _connectionsUiState.update {
                         it.copy(
-                            isCurrentDeviceServerConfigured = configStatus != ConfigStatus.NotConfigured
+                            isCurrentDeviceServerConfigured = configStatus !is ConfigStatus.NotConfigured
                         )
                     }
                 }
                 .launchIn(viewModelScope)
         }
     }
-
 }
 
 data class ConnectionsUiState(

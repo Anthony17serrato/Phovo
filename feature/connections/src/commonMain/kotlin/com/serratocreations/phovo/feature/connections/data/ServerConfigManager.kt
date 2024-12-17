@@ -4,10 +4,15 @@ import kotlinx.coroutines.flow.Flow
 
 interface ServerConfigManager {
     fun observeDeviceServerConfigurationState(): Flow<ConfigStatus>
+    fun configureDeviceAsServer()
 }
 
-enum class ConfigStatus {
-    NotConfigured,
+sealed interface ConfigStatus {
+    data object NotConfigured: ConfigStatus
+    data class Configured(val serverState: ServerState): ConfigStatus
+}
+
+enum class ServerState {
     Online,
     Offline
 }

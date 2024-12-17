@@ -28,13 +28,13 @@ internal fun ConnectionsScreen(
     modifier: Modifier = Modifier,
 ) {
     val connectionsUiState by connectionsViewModel.connectionsUiState.collectAsStateWithLifecycle()
-    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         if (connectionsUiState.doesCurrentDeviceSupportServer) {
             AnimatedVisibility(connectionsUiState.isCurrentDeviceServerConfigured.not()) {
                 CallToActionComponent(
                     actionTitle = "Configure as server",
                     actionDescription = "Configure this device as a Phovo backup server. Your photos and media will be securely backed up to this device.",
-                    onClick = { /* TODO */ }
+                    onClick = connectionsViewModel::configureAsServer
                 )
             }
         }

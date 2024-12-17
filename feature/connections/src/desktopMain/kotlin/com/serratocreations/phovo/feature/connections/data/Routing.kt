@@ -1,4 +1,4 @@
-package com.serratocreations.phovo
+package com.serratocreations.phovo.feature.connections.data
 
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.json
