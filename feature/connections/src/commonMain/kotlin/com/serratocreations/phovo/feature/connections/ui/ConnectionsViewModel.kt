@@ -3,6 +3,7 @@ package com.serratocreations.phovo.feature.connections.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.serratocreations.phovo.feature.connections.data.ConfigStatus
+import com.serratocreations.phovo.feature.connections.data.DesktopServerConfigManager
 import com.serratocreations.phovo.feature.connections.data.ServerConfigManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,10 +15,10 @@ import org.koin.android.annotation.KoinViewModel
 @KoinViewModel
 class ConnectionsViewModel(
     /** Only available on desktop clients. */
-    private val serverConfigManager: ServerConfigManager?
+    private val serverConfigManager: ServerConfigManager
 ): ViewModel() {
     private val initialState = ConnectionsUiState(
-        doesCurrentDeviceSupportServer = serverConfigManager != null
+        doesCurrentDeviceSupportServer = serverConfigManager is DesktopServerConfigManager
     )
     private val _connectionsUiState = MutableStateFlow(initialState)
     val connectionsUiState = _connectionsUiState.asStateFlow()
@@ -27,12 +28,14 @@ class ConnectionsViewModel(
     }
 
     fun configureAsServer() {
-        serverConfigManager?.configureDeviceAsServer()
+        if (serverConfigManager is DesktopServerConfigManager) {
+            serverConfigManager.configureDeviceAsServer()
+        }
     }
 
     private fun observeDeviceServerConfigurationState() {
-        serverConfigManager?.let { serverConfigManagerNotNull ->
-            serverConfigManagerNotNull.observeDeviceServerConfigurationState()
+        if (serverConfigManager is DesktopServerConfigManager) {
+            serverConfigManager.observeDeviceServerConfigurationState()
                 .onEach { configStatus ->
                     _connectionsUiState.update {
                         it.copy(
