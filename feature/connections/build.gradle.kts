@@ -22,12 +22,16 @@ kotlin {
         }
         val desktopMain by getting {
             dependencies {
-                implementation("io.ktor:ktor-server-status-pages:3.0.2")
-                implementation("io.ktor:ktor-server-core:3.0.2")  // Ktor core server
-                implementation("io.ktor:ktor-server-netty:3.0.2") // Netty engine for Ktor server
-                implementation("io.ktor:ktor-serialization-kotlinx-json:3.0.2")  // JSON serialization
-                implementation("io.ktor:ktor-server-content-negotiation:3.0.2")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.0")  // Kotlinx Serialization library
+                implementation(libs.ktor.server.core)
+                implementation(libs.ktor.server.status.pages)
+                implementation(libs.ktor.server.netty)
+                implementation(libs.ktor.serialization)
+                implementation(libs.ktor.server.content.negotiation)
+            }
+        }
+        val wasmJsMain by getting {
+            dependencies {
+                implementation("io.ktor:ktor-client-js:3.0.2")
             }
         }
     }
