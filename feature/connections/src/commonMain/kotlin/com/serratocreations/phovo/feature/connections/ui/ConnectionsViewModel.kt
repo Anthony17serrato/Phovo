@@ -35,11 +35,12 @@ class ConnectionsViewModel(
 
     private fun observeDeviceServerConfigurationState() {
         if (serverConfigManager is DesktopServerConfigManager) {
-            serverConfigManager.observeDeviceServerConfigurationState()
-                .onEach { configStatus ->
+            serverConfigManager.observeDeviceServerConfigurationState(viewModelScope)
+                .onEach { serverConfigState ->
                     _connectionsUiState.update {
                         it.copy(
-                            isCurrentDeviceServerConfigured = configStatus !is ConfigStatus.NotConfigured
+                            isCurrentDeviceServerConfigured = serverConfigState.configStatus !is ConfigStatus.NotConfigured,
+                            serverEventLogs = serverConfigState.serverEventLogs
                         )
                     }
                 }
@@ -55,5 +56,6 @@ data class ConnectionsUiState(
      * Determines if the current device supports being configured as a Phovo server.
      * Only desktop clients support being configured as a Phovo server.
      */
-    val doesCurrentDeviceSupportServer: Boolean = false
+    val doesCurrentDeviceSupportServer: Boolean = false,
+    val serverEventLogs: List<String> = emptyList()
 )

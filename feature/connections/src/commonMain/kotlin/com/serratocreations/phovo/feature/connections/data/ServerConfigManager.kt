@@ -1,11 +1,12 @@
 package com.serratocreations.phovo.feature.connections.data
 
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 
 interface ServerConfigManager
 
 interface DesktopServerConfigManager: ServerConfigManager {
-    fun observeDeviceServerConfigurationState(): Flow<ConfigStatus>
+    fun observeDeviceServerConfigurationState(scope: CoroutineScope): Flow<ServerConfigState>
     fun configureDeviceAsServer()
 }
 
@@ -24,3 +25,8 @@ enum class ServerState {
     Online,
     Offline
 }
+
+data class ServerConfigState(
+    val configStatus: ConfigStatus? = null,
+    val serverEventLogs: List<String> = emptyList()
+)

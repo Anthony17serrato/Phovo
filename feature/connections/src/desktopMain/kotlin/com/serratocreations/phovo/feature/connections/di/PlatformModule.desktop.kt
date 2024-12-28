@@ -5,5 +5,5 @@ import com.serratocreations.phovo.feature.connections.data.ServerConfigManager
 import org.koin.dsl.module
 
 internal actual fun platformModule() = module {
-    single<ServerConfigManager> { DesktopServerConfigManagerImpl() }
+    single<ServerConfigManager> { DesktopServerConfigManagerImpl(get()) }
 }

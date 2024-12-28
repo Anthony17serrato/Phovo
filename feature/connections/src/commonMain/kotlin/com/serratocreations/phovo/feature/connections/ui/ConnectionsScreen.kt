@@ -2,8 +2,10 @@ package com.serratocreations.phovo.feature.connections.ui
 
 import androidx.annotation.VisibleForTesting
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -28,15 +30,20 @@ internal fun ConnectionsScreen(
     modifier: Modifier = Modifier,
 ) {
     val connectionsUiState by connectionsViewModel.connectionsUiState.collectAsStateWithLifecycle()
-    Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+    LazyColumn(modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         if (connectionsUiState.doesCurrentDeviceSupportServer) {
-            AnimatedVisibility(connectionsUiState.isCurrentDeviceServerConfigured.not()) {
-                CallToActionComponent(
-                    actionTitle = "Configure as server",
-                    actionDescription = "Configure this device as a Phovo backup server. Your photos and media will be securely backed up to this device.",
-                    onClick = connectionsViewModel::configureAsServer
-                )
+            item {
+                AnimatedVisibility(connectionsUiState.isCurrentDeviceServerConfigured.not()) {
+                    CallToActionComponent(
+                        actionTitle = "Configure as server",
+                        actionDescription = "Configure this device as a Phovo backup server. Your photos and media will be securely backed up to this device.",
+                        onClick = connectionsViewModel::configureAsServer
+                    )
+                }
             }
+        }
+        items(connectionsUiState.serverEventLogs) { eventLog ->
+            Text(text = eventLog)
         }
     }
 }

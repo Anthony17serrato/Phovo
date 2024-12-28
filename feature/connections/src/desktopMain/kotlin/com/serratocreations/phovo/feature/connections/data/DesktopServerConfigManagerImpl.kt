@@ -1,5 +1,6 @@
 package com.serratocreations.phovo.feature.connections.data
 
+import com.serratocreations.phovo.data.photos.repository.PhovoItemRepository
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.GlobalScope
@@ -17,19 +18,23 @@ import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.update
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import org.koin.core.annotation.Singleton
+import java.time.LocalDateTime
 
-class DesktopServerConfigManagerImpl(): DesktopServerConfigManager {
+@Singleton
+class DesktopServerConfigManagerImpl(
+    private val phovoItemRepository: PhovoItemRepository
+): DesktopServerConfigManager {
     // Caches the current config state for new subscribers
-    private val serverState = MutableSharedFlow<ConfigStatus>(replay = 1)
-
-    init {
-        // TODO: fetch the initial server state from room
-        serverState.tryEmit(ConfigStatus.NotConfigured)
-    }
+    private val serverConfigState = MutableStateFlow(ServerConfigState())
 
     private val routingConfig: Application.() -> Unit = {
         install(StatusPages) {
@@ -45,7 +50,7 @@ class DesktopServerConfigManagerImpl(): DesktopServerConfigManager {
             staticResources("/content", "mycontent")
 
             get("/") {
-                println("get")
+                phovoItemRepository.addServerEventLog("get ${LocalDateTime.now()}")
                 call.respond(HttpStatusCode.OK, "Phovo server is running")
             }
 
@@ -54,7 +59,7 @@ class DesktopServerConfigManagerImpl(): DesktopServerConfigManager {
                 val photo = call.receive<Photo>()
 
                 // Log received data
-                println("Received photo URI: ${photo.uri} and Date Taken: ${photo.dateTaken}")
+                phovoItemRepository.addServerEventLog("upload photo URI: ${photo.uri} and Date Taken: ${photo.dateTaken}")
 
                 // Respond with a success message
                 call.respond(HttpStatusCode.Created, "Photo uploaded successfully")
@@ -62,18 +67,31 @@ class DesktopServerConfigManagerImpl(): DesktopServerConfigManager {
         }
     }
 
-    override fun observeDeviceServerConfigurationState(): Flow<ConfigStatus> {
-        return serverState.asSharedFlow()
+    override fun observeDeviceServerConfigurationState(scope: CoroutineScope): Flow<ServerConfigState> {
+        scope.observeDeviceServerConfigurationState()
+        return serverConfigState.asStateFlow()
+    }
+
+    private fun CoroutineScope.observeDeviceServerConfigurationState() {
+        // TODO: fetch the initial server state from room
+        serverConfigState.update { it.copy(configStatus = ConfigStatus.NotConfigured) }
+        phovoItemRepository.serverEventLogsFlow().onEach { logs ->
+            serverConfigState.update { it.copy(serverEventLogs = logs) }
+        }.launchIn(this)
     }
 
     // TODO: Configure and use application scope
     override fun configureDeviceAsServer() {
         GlobalScope.launch {
-            serverState.emit(ConfigStatus.NotConfigured)
+            serverConfigState.update {
+                it.copy(configStatus = ConfigStatus.NotConfigured)
+            }
             launch {
                 embeddedServer(factory = Netty, port = 8080, host = "0.0.0.0", module = routingConfig)
                     .start(wait = false)
-                serverState.emit(ConfigStatus.Configured(ServerState.Online))
+                serverConfigState.update {
+                    it.copy(configStatus = ConfigStatus.Configured(ServerState.Online))
+                }
             }
             // TODO Save server config to room db
         }
