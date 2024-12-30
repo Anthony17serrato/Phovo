@@ -5,6 +5,7 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.ShortText
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.Bookmarks
+import androidx.compose.material.icons.outlined.Dns
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Photo
 import androidx.compose.material.icons.outlined.Upcoming
@@ -15,7 +16,7 @@ import androidx.compose.material.icons.rounded.Bookmarks
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.Grid3x3
+import androidx.compose.material.icons.rounded.Dns
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Photo
 import androidx.compose.material.icons.rounded.Search
@@ -32,7 +33,8 @@ object PhovoIcons {
     val BookmarksBorder = Icons.Outlined.Bookmarks
     val Check = Icons.Rounded.Check
     val Close = Icons.Rounded.Close
-    val Grid3x3 = Icons.Rounded.Grid3x3
+    val Dns = Icons.Rounded.Dns
+    val DnsBorder = Icons.Outlined.Dns
     val MoreVert = Icons.Default.MoreVert
     val Person = Icons.Rounded.Person
     val Search = Icons.Rounded.Search

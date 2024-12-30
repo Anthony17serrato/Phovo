@@ -2,7 +2,7 @@ package com.serratocreations.phovo.feature.photos.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.serratocreations.phovo.feature.photos.data.repository.PhovoItemRepository
+import com.serratocreations.phovo.data.photos.repository.PhovoItemRepository
 import com.serratocreations.phovo.feature.photos.ui.model.DateHeaderPhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.PhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.toImagePhotoUiItem

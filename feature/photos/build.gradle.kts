@@ -10,6 +10,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation(projects.core.designsystem)
+                implementation(projects.data.photos)
 
                 implementation(compose.components.resources)
                 implementation(libs.serialization.json)

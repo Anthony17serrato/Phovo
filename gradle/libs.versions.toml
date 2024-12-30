@@ -3,6 +3,7 @@
 androidGradlePlugin = "8.5.2"
 kotlin = "2.0.21"
 ksp = "2.0.21-1.0.26"
+
 kotlinx-datetime = "0.6.1"
 android-compileSdk = "34"
 android-minSdk = "24"
@@ -19,6 +20,7 @@ kmp-viewmodel-compose = "2.8.0"
 kmp-swing = "1.9.0"
 koin = "4.0.0"
 koin-annotations = "1.4.0"
+ktor = "3.0.2"
 material3-adaptive = "1.0.0"
 foundation = "1.7.0"
 androidx-datastore = "1.1.1"
@@ -63,6 +65,11 @@ koin-compose-vm =  { group = "io.insert-koin", name = "koin-compose-viewmodel", 
 koin-annotations = { group = "io.insert-koin", name = "koin-annotations", version.ref = "koin-annotations" }
 koin-ksp-compiler = { group = "io.insert-koin", name = "koin-ksp-compiler", version.ref = "koin-annotations" }
 kotlin-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinx-datetime"}
+ktor-server-status-pages = { group = "io.ktor", name = "ktor-server-status-pages", version.ref = "ktor" }
+ktor-server-core = { group = "io.ktor", name = "ktor-server-core", version.ref = "ktor" }
+ktor-server-netty = { group = "io.ktor", name = "ktor-server-netty", version.ref = "ktor" }
+ktor-serialization = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktor" }
+ktor-server-content-negotiation = { group = "io.ktor", name = "ktor-server-content-negotiation", version.ref = "ktor" }
 skiko = { module = "org.jetbrains.skiko:skiko", version.ref = "skiko" }
 # Dependencies of the included build-logic
 android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "androidGradlePlugin" }

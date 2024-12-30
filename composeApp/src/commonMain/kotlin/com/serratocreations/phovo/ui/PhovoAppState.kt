@@ -14,10 +14,10 @@ import androidx.navigation.navOptions
 import com.serratocreations.phovo.feature.photos.navigation.navigateToForYou
 import com.serratocreations.phovo.navigation.TopLevelDestination
 import com.serratocreations.phovo.navigation.TopLevelDestination.PHOTOS
-import com.serratocreations.phovo.navigation.TopLevelDestination.INTERESTS
+import com.serratocreations.phovo.navigation.TopLevelDestination.Connections
 import com.serratocreations.phovo.navigation.TopLevelDestination.BOOKMARKS
 import com.serratocreations.phovo.navigation.navigateToBookmarks
-import com.serratocreations.phovo.navigation.navigateToInterests
+import com.serratocreations.phovo.feature.connections.navigation.navigateToConnections
 import kotlinx.coroutines.CoroutineScope
 
 @Composable
@@ -83,7 +83,7 @@ class PhovoAppState(
         when (topLevelDestination) {
             PHOTOS -> navController.navigateToForYou(topLevelNavOptions)
             BOOKMARKS -> navController.navigateToBookmarks(topLevelNavOptions)
-            INTERESTS -> navController.navigateToInterests(topLevelNavOptions)
+            Connections -> navController.navigateToConnections(topLevelNavOptions)
         }
     }
 }
