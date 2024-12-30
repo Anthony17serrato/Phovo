@@ -25,7 +25,7 @@ As mentioned in the guidelines modularization can be done by feature or by layer
 - For cases where a feature is small and all platforms may adopt the same UI, the module in the `feature` directory will contain [UI, Domain, and Data layers](https://developer.android.com/topic/architecture)
 - For cases where a feature is large and/or specific targets require different UI layer implementations, modularization will be done by both feature and layer.
 
-<img src="https://github.com/Anthony17serrato/Phovo/blob/main/docs/images/PhovoModularization.jpg" />
+<img src="https://github.com/Anthony17serrato/Phovo/blob/main/docs/images/PhovoModularization.png" />
 
 ## Troubleshooting WASM issues
 When adding new dependencies WASM may require a yarn lock upgrade
