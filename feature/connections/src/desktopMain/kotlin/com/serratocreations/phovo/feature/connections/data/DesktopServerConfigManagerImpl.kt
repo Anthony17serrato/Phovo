@@ -2,6 +2,9 @@ package com.serratocreations.phovo.feature.connections.data
 
 import com.serratocreations.phovo.data.photos.repository.PhovoItemRepository
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.content.PartData
+import io.ktor.http.content.forEachPart
+import io.ktor.http.content.streamProvider
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.Flow
@@ -12,7 +15,7 @@ import io.ktor.server.application.*
 import io.ktor.server.http.content.staticResources
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.statuspages.StatusPages
-import io.ktor.server.request.receive
+import io.ktor.server.request.receiveMultipart
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
@@ -24,9 +27,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.koin.core.annotation.Singleton
+import java.io.File
 import java.time.LocalDateTime
 
 @Singleton
@@ -55,14 +58,48 @@ class DesktopServerConfigManagerImpl(
             }
 
             post("/upload") {
-                // Receive the photo data as a JSON object
-                val photo = call.receive<Photo>()
+//                // Receive the photo data as a JSON object
+//                val photo = call.receive<PhovoImageItem>()
+//
+//                // Log received data
+//                phovoItemRepository.addServerEventLog("upload photo $photo")
+//
+//                // Respond with a success message
+//                call.respond(HttpStatusCode.Created, "Photo uploaded successfully")
 
-                // Log received data
-                phovoItemRepository.addServerEventLog("upload photo URI: ${photo.uri} and Date Taken: ${photo.dateTaken}")
+                println("reached upload api")
+                // Receive the uploaded file
+                val multipart = call.receiveMultipart()
+                var fileName: String? = null
 
-                // Respond with a success message
-                call.respond(HttpStatusCode.Created, "Photo uploaded successfully")
+                multipart.forEachPart { part ->
+                    if (part is PartData.FileItem) {
+                        fileName = part.originalFileName
+                        println("upload filename $fileName")
+                        val fileBytes = part.streamProvider().readBytes()
+
+                        val file = File("uploads/${fileName ?: "unknown.jpg"}")
+                        if (!file.parentFile.exists()) {
+                            file.parentFile.mkdirs()  // Create the necessary directories
+                        }
+
+                        try {
+                            file.writeBytes(fileBytes)
+                        } catch (e: Exception) {
+                            println("Failed to save file: ${e.message}")
+                        }
+
+                        phovoItemRepository.addServerEventLog("File uploaded ${file.absolutePath}")
+                    }
+                    part.dispose()
+                }
+
+                // Respond with success
+                if (fileName != null) {
+                    call.respond(HttpStatusCode.Created, "File uploaded successfully: $fileName")
+                } else {
+                    call.respond(HttpStatusCode.BadRequest, "No file uploaded")
+                }
             }
         }
     }
@@ -97,6 +134,3 @@ class DesktopServerConfigManagerImpl(
         }
     }
 }
-
-@Serializable
-data class Photo(val uri: String, val dateTaken: String) // Placeholder for your photo data class

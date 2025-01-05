@@ -32,7 +32,7 @@ kotlin {
         }
         val wasmJsMain by getting {
             dependencies {
-                implementation("io.ktor:ktor-client-js:3.0.2")
+
             }
         }
     }
