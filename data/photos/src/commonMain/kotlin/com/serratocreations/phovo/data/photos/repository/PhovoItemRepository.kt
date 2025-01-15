@@ -4,19 +4,18 @@ import com.serratocreations.phovo.data.photos.db.dao.PhovoItemDao
 import com.serratocreations.phovo.data.photos.db.entity.PhovoImageItem
 import com.serratocreations.phovo.data.photos.db.entity.PhovoItem
 import com.serratocreations.phovo.data.photos.network.PhotosNetworkDataSource
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.koin.core.annotation.Singleton
 
-@Singleton
 class PhovoItemRepository(
     private val localPhotosDataSource: PhovoItemDao,
-    private val remotePhotosDataSource: PhotosNetworkDataSource
+    private val remotePhotosDataSource: PhotosNetworkDataSource,
+    private val appScope: CoroutineScope
 ) {
     private val eventLogs = MutableStateFlow(emptyList<String>())
 
@@ -38,7 +37,7 @@ class PhovoItemRepository(
     fun serverEventLogsFlow() : Flow<List<String>> = eventLogs.asSharedFlow()
 
     fun syncImage(imageItem: List<PhovoImageItem>) {
-        GlobalScope.launch {
+        appScope.launch {
             imageItem.forEach {
                 remotePhotosDataSource.syncImage(it)
             }

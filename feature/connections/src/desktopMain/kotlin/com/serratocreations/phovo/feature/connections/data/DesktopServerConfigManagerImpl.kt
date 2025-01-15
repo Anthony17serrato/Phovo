@@ -6,7 +6,6 @@ import io.ktor.http.content.PartData
 import io.ktor.http.content.forEachPart
 import io.ktor.http.content.streamProvider
 import io.ktor.serialization.kotlinx.json.json
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import io.ktor.server.engine.embeddedServer
@@ -21,6 +20,7 @@ import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -28,13 +28,13 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.serialization.json.Json
-import org.koin.core.annotation.Singleton
 import java.io.File
 import java.time.LocalDateTime
 
-@Singleton
 class DesktopServerConfigManagerImpl(
-    private val phovoItemRepository: PhovoItemRepository
+    private val phovoItemRepository: PhovoItemRepository,
+    private val appScope: CoroutineScope,
+    private val ioDispatcher: CoroutineDispatcher
 ): DesktopServerConfigManager {
     // Caches the current config state for new subscribers
     private val serverConfigState = MutableStateFlow(ServerConfigState())
@@ -117,13 +117,12 @@ class DesktopServerConfigManagerImpl(
         }.launchIn(this)
     }
 
-    // TODO: Configure and use application scope
     override fun configureDeviceAsServer() {
-        GlobalScope.launch {
+        appScope.launch {
             serverConfigState.update {
                 it.copy(configStatus = ConfigStatus.NotConfigured)
             }
-            launch {
+            launch(ioDispatcher) {
                 embeddedServer(factory = Netty, port = 8080, host = "0.0.0.0", module = routingConfig)
                     .start(wait = false)
                 serverConfigState.update {
