@@ -6,6 +6,7 @@ import coil3.decode.ImageSource
 import coil3.fetch.FetchResult
 import coil3.fetch.SourceFetchResult
 import coil3.request.Options
+import com.serratocreations.phovo.core.common.util.toByteArray
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
@@ -20,7 +21,6 @@ import platform.Foundation.create
 import platform.Photos.*
 import platform.UIKit.UIImage
 import platform.UIKit.UIImageJPEGRepresentation
-import platform.posix.memcpy
 import kotlin.coroutines.resume
 
 class PhAssetFetcher(data: Any, options: Options) : PlatformFetcher(data, options) {
@@ -83,15 +83,6 @@ class PhAssetFetcher(data: Any, options: Options) : PlatformFetcher(data, option
                         source.rangeEquals(8, HEIF_BRAND_AVIS))   // AV1 Image Sequence
     }
 
-    // Move to common util if useful
-    @OptIn(ExperimentalForeignApi::class)
-    private fun NSData.toByteArray(): ByteArray {
-        val byteArray = ByteArray(this.length.toInt())
-        byteArray.usePinned { pinned ->
-            memcpy(pinned.addressOf(0), this.bytes, this.length)
-        }
-        return byteArray
-    }
     @OptIn(ExperimentalForeignApi::class)
     private fun NSData.toJpegBytes(): ByteArray = memScoped {
         val image = UIImage(data = this@toJpegBytes)

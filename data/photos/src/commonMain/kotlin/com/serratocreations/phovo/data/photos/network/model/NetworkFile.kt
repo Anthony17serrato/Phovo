@@ -4,11 +4,12 @@ import coil3.Uri
 
 interface NetworkFile {
     val uri: Uri
-    val fileName: String?
 
-    fun exists(): Boolean
+    suspend fun fileName(): String
 
-    fun readBytes(): ByteArray
+    suspend fun exists(): Boolean
+
+    suspend fun readBytes(): ByteArray?
 }
 
 expect fun getNetworkFile(uri: Uri, name: String): NetworkFile

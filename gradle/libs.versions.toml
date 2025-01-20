@@ -11,18 +11,19 @@ android-targetSdk = "34"
 androidx-activityCompose = "1.9.3"
 coil = "3.0.0"
 kmp-swing = "1.9.0"
+kmp-viewmodel-compose = "2.8.0"
 koin = "4.0.0"
 koin-annotations = "1.4.0"
 ktor = "3.0.2"
 material3-adaptive = "1.0.0"
 foundation = "1.7.0"
 androidx-datastore = "1.1.1"
-androidx-compose = "1.7.6"
+androidx-compose = "1.7.4"
 jetbrains-compose = "1.7.0"
 material-navigation = "1.7.0-beta02"
 navigation-compose = "2.8.0-alpha10"
 serialization-json = "1.7.3"
-skiko = "0.8.15"
+skiko = "0.8.4"
 junit = "4.13.2"
 
 [libraries]
@@ -30,6 +31,7 @@ kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotl
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
+androidx-lifecycle-viewmodel-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "kmp-viewmodel-compose" }
 coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
 compose-adaptive = { group = "org.jetbrains.compose.material3.adaptive", name = "adaptive", version.ref = "material3-adaptive" }
 compose-adaptive-layout = { group = "org.jetbrains.compose.material3.adaptive", name = "adaptive-layout", version.ref = "material3-adaptive" }
@@ -53,6 +55,8 @@ koin-ksp-compiler = { group = "io.insert-koin", name = "koin-ksp-compiler", vers
 kotlin-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinx-datetime"}
 ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
 ktor-client-okhttp = { group = "io.ktor", name = "ktor-client-okhttp", version.ref = "ktor" }
+ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
+ktor-client-js = { group = "io.ktor", name = "ktor-client-js", version.ref = "ktor" }
 ktor-client-content-negotiation = { group = "io.ktor", name = "ktor-client-content-negotiation", version.ref = "ktor" }
 ktor-server-status-pages = { group = "io.ktor", name = "ktor-server-status-pages", version.ref = "ktor" }
 ktor-server-core = { group = "io.ktor", name = "ktor-server-core", version.ref = "ktor" }

@@ -74,10 +74,10 @@ class DesktopServerConfigManagerImpl(
 
                 multipart.forEachPart { part ->
                     if (part is PartData.FileItem) {
-                        fileName = part.originalFileName
+                        fileName = "${System.currentTimeMillis()}_${part.originalFileName}"
                         println("upload filename $fileName")
                         val fileBytes = part.streamProvider().readBytes()
-
+                        println("Read bytes")
                         val file = File("uploads/${fileName ?: "unknown.jpg"}")
                         if (!file.parentFile.exists()) {
                             file.parentFile.mkdirs()  // Create the necessary directories

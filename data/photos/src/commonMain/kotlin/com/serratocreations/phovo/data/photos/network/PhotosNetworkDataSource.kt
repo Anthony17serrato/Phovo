@@ -18,7 +18,7 @@ class PhotosNetworkDataSource(private val client: HttpClient) {
 //            setBody(imageItem)
 //        }
 //        println(response.status)
-
+        println("syncImage $imageItem")
         val file = getNetworkFile(imageItem.uri, imageItem.name)
 
         if (!file.exists()) {
@@ -27,16 +27,18 @@ class PhotosNetworkDataSource(private val client: HttpClient) {
         }
 
         try {
+            val bytes = file.readBytes() ?: throw UnsupportedOperationException("Could not read bytes for $file")
+            val fileName = file.fileName()
             val response: HttpResponse = client.submitFormWithBinaryData(
                 url = "http://10.0.0.71:8080/upload",
                 formData = formData {
-                    append("file", file.readBytes(), Headers.build {
-                        append(HttpHeaders.ContentDisposition, "filename=${file.fileName}")
+                    append("file", bytes, Headers.build {
+                        append(HttpHeaders.ContentDisposition, "filename=${fileName}")
                     })
                 }
             )
             println("Response: ${response.status}")
-        } catch (e: Exception) {
+        } catch (e: UnsupportedOperationException) {
             println("Failed to upload file: ${e.message}")
         }
     }

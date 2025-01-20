@@ -6,11 +6,13 @@ import java.io.File
 
 class DesktopNetworkFile(
     override val uri: Uri,
-    override val fileName: String
+    private val fileName: String
 ) : NetworkFile {
     private val file = File(DesktopUri.create(uri.toString()))
 
-    override fun exists(): Boolean = file.exists()
+    override suspend fun fileName(): String = fileName
 
-    override fun readBytes() = file.readBytes()
+    override suspend fun exists(): Boolean = file.exists()
+
+    override suspend fun readBytes() = file.readBytes()
 }
