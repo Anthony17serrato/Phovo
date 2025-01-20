@@ -17,6 +17,8 @@ kotlin {
             // Project dependencies
             implementation(projects.core.designsystem)
             implementation(projects.feature.photos)
+            implementation(projects.feature.connections)
+            implementation(projects.core.common)
 
             implementation(compose.components.resources)
             implementation(libs.serialization.json)
