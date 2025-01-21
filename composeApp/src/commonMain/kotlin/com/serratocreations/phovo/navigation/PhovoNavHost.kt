@@ -5,7 +5,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import com.serratocreations.phovo.feature.photos.navigation.PhotosRoute
 import com.serratocreations.phovo.feature.photos.navigation.photosScreen
-import com.serratocreations.phovo.feature.connections.navigation.connectionsScreen
+import com.serratocreations.phovo.feature.connections.navigation.connectionsDetailsScreen
 import com.serratocreations.phovo.ui.PhovoAppState
 
 /**
@@ -28,6 +28,6 @@ fun PhovoNavHost(
     ) {
         photosScreen()
         bookmarksScreen()
-        connectionsScreen()
+        connectionsDetailsScreen()
     }
 }

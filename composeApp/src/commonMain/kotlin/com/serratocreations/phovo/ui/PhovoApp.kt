@@ -40,7 +40,6 @@ import phovo.composeapp.generated.resources.feature_settings_top_app_bar_action_
 import phovo.composeapp.generated.resources.feature_settings_top_app_bar_navigation_icon_description
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import phovo.composeapp.generated.resources.app_name
 import kotlin.reflect.KClass
 
 @Composable
@@ -124,12 +123,12 @@ internal fun PhovoApp(
                 val destination = appState.currentTopLevelDestination
                 var shouldShowTopAppBar = false
 
-                //if (destination != null) {
+                if (destination != null) {
                     shouldShowTopAppBar = true
                     PhovoTopAppBar(
                         // Currently navigation between screens results in a null destination for some ms
                         // resulting in UI jank. Follow issue https://youtrack.jetbrains.com/issue/CMP-7087/currentBackStackEntryAsState-briefly-null-when-navigating-between-destinations
-                        titleRes = destination?.titleTextId ?: Res.string.app_name,
+                        titleRes = destination.titleTextId,
                         navigationIcon = PhovoIcons.Search,
                         navigationIconContentDescription = stringResource(
                             Res.string.feature_settings_top_app_bar_navigation_icon_description,
@@ -142,9 +141,9 @@ internal fun PhovoApp(
                             containerColor = Color.Transparent,
                         ),
                         /*onActionClick = { onTopAppBarActionClick() },*/
-                        /*onNavigationClick = { appState.navigateToSearch() },*/
+                        onNavigationClick = { appState.navController.popBackStack() },
                     )
-                //}
+                }
 
                 Box(
                     // Workaround for https://issuetracker.google.com/338478720

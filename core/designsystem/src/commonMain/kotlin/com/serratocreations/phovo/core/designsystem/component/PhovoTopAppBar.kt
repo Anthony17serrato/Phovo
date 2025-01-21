@@ -1,5 +1,6 @@
 package com.serratocreations.phovo.core.designsystem.component
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -19,7 +20,7 @@ import org.jetbrains.compose.resources.stringResource
 @Composable
 fun PhovoTopAppBar(
     titleRes: StringResource,
-    navigationIcon: ImageVector,
+    navigationIcon: ImageVector?,
     navigationIconContentDescription: String,
     actionIcon: ImageVector,
     actionIconContentDescription: String,
@@ -31,12 +32,16 @@ fun PhovoTopAppBar(
     CenterAlignedTopAppBar(
         title = { Text(text = stringResource(titleRes)) },
         navigationIcon = {
-            IconButton(onClick = onNavigationClick) {
-                Icon(
-                    imageVector = navigationIcon,
-                    contentDescription = navigationIconContentDescription,
-                    tint = MaterialTheme.colorScheme.onSurface,
-                )
+            AnimatedVisibility(navigationIcon != null) {
+                navigationIcon?.let { iconNotNull ->
+                    IconButton(onClick = onNavigationClick) {
+                        Icon(
+                            imageVector = iconNotNull,
+                            contentDescription = navigationIconContentDescription,
+                            tint = MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                }
             }
         },
         actions = {
