@@ -12,6 +12,9 @@ All applications are developed within a single codebase using [Kotlin Multiplatf
 #### iOS
 <img src="https://github.com/Anthony17serrato/Phovo/blob/main/docs/images/Simulator%20Screenshot%20-%20iPhone%2016%20-%202024-12-02%20at%2013.43.23.png" width="200" height="425" />
 
+#### Desktop
+<img src="https://github.com/Anthony17serrato/Phovo/blob/main/docs/images/desktop_screenshot.png" width="800" height="500" />
+
 ## How to build and run
 
 Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…
