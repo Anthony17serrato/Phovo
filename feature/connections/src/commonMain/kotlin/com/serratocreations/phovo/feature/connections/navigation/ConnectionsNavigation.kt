@@ -21,6 +21,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavOptions
 import androidx.navigation.NavOptionsBuilder
@@ -56,19 +57,6 @@ fun NavGraphBuilder.connectionsDetailsScreen() {
     composable<ConnectionsHomeRoute> {
         ConnectionsDetailScreen()
     }
-//    // Nested nav graph
-//    navigation<ConnectionsGraph>(startDestination = ConnectionsHome) {
-//
-//        composable<ConfigGettingStarted> { backStackEntry ->
-//            val parentEntry = remember(backStackEntry) {
-//                navController.getBackStackEntry<ConnectionsGraph>()
-//            }
-//            val connectionsViewModel: ConnectionsViewModel = koinViewModel(viewModelStoreOwner = parentEntry)
-//            ConfigGettingStartedScreen(
-//                connectionsViewModel = connectionsViewModel,
-//            )
-//        }
-//    }
 }
 
 fun NavGraphBuilder.serverConfigScreens(
@@ -113,11 +101,11 @@ internal fun ConnectionsDetailScreen(
     val listDetailNavigator = rememberListDetailPaneScaffoldNavigator(
         scaffoldDirective = calculatePaneScaffoldDirective(windowAdaptiveInfo),
         initialDestinationHistory = listOfNotNull(
-            ThreePaneScaffoldDestinationItem(ListDetailPaneScaffoldRole.List),
-            ThreePaneScaffoldDestinationItem<Nothing>(ListDetailPaneScaffoldRole.Detail).takeIf {
-                // TODO: check  state or have some default Pane to show if the user has not selected anything
-                true
-            },
+            ThreePaneScaffoldDestinationItem<Nothing>(ListDetailPaneScaffoldRole.List),
+//            ThreePaneScaffoldDestinationItem<Nothing>(ListDetailPaneScaffoldRole.Detail).takeIf {
+//                // TODO: check  state or have some default Pane to show if the user has not selected anything
+//                true
+//            },
         ),
     )
     // TODO: BackHandler api is still in development for Compose Multiplatform See:
@@ -143,10 +131,12 @@ internal fun ConnectionsDetailScreen(
     fun onConfigServerClickShowDetailPane() {
         onConfigClick()
         if (listDetailNavigator.isDetailPaneVisible()) {
-            // If the detail pane was visible, then use the nestedNavController navigate call
-            // directly
-            nestedNavController.navigateToConfigGettingStarted {
-                popUpTo<DetailPaneNavHostRoute>()
+            if (nestedNavController.currentDestination?.hasRoute(ConfigGettingStartedRoute::class)?.not() == true) {
+                // If the detail pane was visible, then use the nestedNavController navigate call
+                // directly
+                nestedNavController.navigateToConfigGettingStarted {
+                    popUpTo<DetailPaneNavHostRoute>()
+                }
             }
         } else {
             // Otherwise, recreate the NavHost entirely, and start at the new destination
