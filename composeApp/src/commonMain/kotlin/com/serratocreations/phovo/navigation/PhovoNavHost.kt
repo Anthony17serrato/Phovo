@@ -3,10 +3,14 @@ package com.serratocreations.phovo.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.navigation
 import com.serratocreations.phovo.feature.photos.navigation.PhotosRoute
 import com.serratocreations.phovo.feature.photos.navigation.photosScreen
 import com.serratocreations.phovo.feature.connections.navigation.connectionsDetailsScreen
 import com.serratocreations.phovo.ui.PhovoAppState
+import kotlinx.serialization.Serializable
+
+@Serializable data object PhovoBaseRoute
 
 /**
  * Top-level navigation graph. Navigation is organized as explained at
@@ -23,11 +27,13 @@ fun PhovoNavHost(
     val navController = appState.navController
     NavHost(
         navController = navController,
-        startDestination = PhotosRoute,
+        startDestination = PhovoBaseRoute,
         modifier = modifier,
     ) {
-        photosScreen()
-        bookmarksScreen()
-        connectionsDetailsScreen()
+        navigation<PhovoBaseRoute>(startDestination = PhotosRoute) {
+            photosScreen()
+            bookmarksScreen()
+            connectionsDetailsScreen(appState.appLevelVmStoreOwner)
+        }
     }
 }

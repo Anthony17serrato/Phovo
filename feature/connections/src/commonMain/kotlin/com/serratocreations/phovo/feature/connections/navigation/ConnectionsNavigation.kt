@@ -19,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -28,6 +29,7 @@ import androidx.navigation.NavOptionsBuilder
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.serratocreations.phovo.core.common.ui.PhovoViewModel
 import com.serratocreations.phovo.feature.connections.ui.ConfigGettingStartedScreen
 import com.serratocreations.phovo.feature.connections.ui.ConnectionsHomeRoute
 import com.serratocreations.phovo.feature.connections.ui.ConnectionsUiState
@@ -53,9 +55,12 @@ fun NavController.navigateToConnections(navOptions: NavOptions? = null) {
     navigate(route = ConnectionsHomeRoute, navOptions)
 }
 
-fun NavGraphBuilder.connectionsDetailsScreen() {
+fun NavGraphBuilder.connectionsDetailsScreen(
+    appLevelVmStoreOwner: ViewModelStoreOwner
+) {
     composable<ConnectionsHomeRoute> {
-        ConnectionsDetailScreen()
+        val phovoViewModel: PhovoViewModel = koinViewModel(viewModelStoreOwner = appLevelVmStoreOwner)
+        ConnectionsDetailScreen(phovoViewModel = phovoViewModel)
     }
 }
 
@@ -68,7 +73,7 @@ fun NavGraphBuilder.serverConfigScreens(
         val parentEntry = remember(backStackEntry) {
             navController.getBackStackEntry<DetailPaneNavHostRoute>()
         }
-        val connectionsViewModel: ConnectionsViewModel = koinViewModel(viewModelStoreOwner = parentEntry)
+        val connectionsViewModel: ConnectionsViewModel = koinViewModel()
         ConfigGettingStartedScreen(
             connectionsViewModel = connectionsViewModel,
             showBackButton = showBackButton,
@@ -79,13 +84,14 @@ fun NavGraphBuilder.serverConfigScreens(
 
 @Composable
 internal fun ConnectionsDetailScreen(
+    phovoViewModel: PhovoViewModel,
     connectionsViewModel: ConnectionsViewModel = koinViewModel(),
     windowAdaptiveInfo: WindowAdaptiveInfo = currentWindowAdaptiveInfo()
 ) {
     val connectionsUiState by connectionsViewModel.connectionsUiState.collectAsStateWithLifecycle()
     ConnectionsDetailScreen(
         connectionsUiState = connectionsUiState,
-        onConfigClick = {/* TODO */},
+        toggleBackVisibility = phovoViewModel::showBackButtonIfRequired,
         // connectionsViewModel::configureAsServer,
         windowAdaptiveInfo = windowAdaptiveInfo
     )
@@ -95,7 +101,7 @@ internal fun ConnectionsDetailScreen(
 @Composable
 internal fun ConnectionsDetailScreen(
     connectionsUiState: ConnectionsUiState,
-    onConfigClick: () -> Unit,
+    toggleBackVisibility: (Boolean) -> Unit,
     windowAdaptiveInfo: WindowAdaptiveInfo,
 ) {
     val listDetailNavigator = rememberListDetailPaneScaffoldNavigator(
@@ -129,7 +135,7 @@ internal fun ConnectionsDetailScreen(
     }
 
     fun onConfigServerClickShowDetailPane() {
-        onConfigClick()
+        toggleBackVisibility(true)
         if (listDetailNavigator.isDetailPaneVisible()) {
             if (nestedNavController.currentDestination?.hasRoute(ConfigGettingStartedRoute::class)?.not() == true) {
                 // If the detail pane was visible, then use the nestedNavController navigate call
