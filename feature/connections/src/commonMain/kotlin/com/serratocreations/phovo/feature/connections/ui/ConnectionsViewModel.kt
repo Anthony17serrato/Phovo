@@ -47,6 +47,30 @@ class ConnectionsViewModel(
                 .launchIn(viewModelScope)
         }
     }
+
+    fun showConfigPane() {
+        _connectionsUiState.update {
+            it.copy(
+                currentConnectionsPane = ConnectionsPane.ConfigGettingStarted(it.currentConnectionsPane)
+            )
+        }
+    }
+
+    /**
+     * @return [Boolean] indicating if there are any remaining panes to navigate back to.
+     */
+    fun onBackClick(): Boolean {
+        var canNavigateBack = false
+        _connectionsUiState.update { currentUiState ->
+            currentUiState.currentConnectionsPane.previousPane?.let { previousPane ->
+                canNavigateBack = previousPane.previousPane != null
+                currentUiState.copy(
+                    currentConnectionsPane = previousPane
+                )
+            } ?: currentUiState
+        }
+        return canNavigateBack
+    }
 }
 
 data class ConnectionsUiState(
@@ -57,5 +81,13 @@ data class ConnectionsUiState(
      * Only desktop clients support being configured as a Phovo server.
      */
     val doesCurrentDeviceSupportServer: Boolean = false,
-    val serverEventLogs: List<String> = emptyList()
+    val serverEventLogs: List<String> = emptyList(),
+    val currentConnectionsPane: ConnectionsPane = ConnectionsPane.Home
 )
+
+sealed class ConnectionsPane(open val previousPane: ConnectionsPane? = null) {
+    data object Home : ConnectionsPane()
+    // Placeholder for the default second pane
+    data object DefaultSecondPane : ConnectionsPane()
+    data class ConfigGettingStarted(override val previousPane: ConnectionsPane) : ConnectionsPane(previousPane)
+}

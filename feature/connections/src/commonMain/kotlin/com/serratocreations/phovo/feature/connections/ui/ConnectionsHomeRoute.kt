@@ -14,13 +14,12 @@ import com.serratocreations.phovo.core.designsystem.component.CallToActionCompon
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-internal fun ConnectionsHomeRoute(
+internal fun ConnectionsHomeScreen(
     onConfigClick: () -> Unit,
     connectionsViewModel: ConnectionsViewModel = koinViewModel(),
     modifier: Modifier = Modifier
 ) {
     val connectionsUiState by connectionsViewModel.connectionsUiState.collectAsStateWithLifecycle()
-
     ConnectionsHomeScreen(
         uiState = connectionsUiState,
         onConfigClick = onConfigClick,

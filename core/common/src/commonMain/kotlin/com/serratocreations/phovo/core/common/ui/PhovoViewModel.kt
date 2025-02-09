@@ -11,9 +11,6 @@ class PhovoViewModel: ViewModel() {
     private val _phovoUiState = MutableStateFlow(PhovoUiState())
     val phovoUiState = _phovoUiState.asStateFlow()
 
-    /**
-     * Updates UI state to show back button in cases where it is required such as on smaller devices
-     */
     fun showBackButtonIfRequired(show: Boolean) {
         _phovoUiState.value = _phovoUiState.value.copy(
             canBackButtonBeShown = show
@@ -38,6 +35,7 @@ class PhovoViewModel: ViewModel() {
 }
 
 data class PhovoUiState(
+    /** Back button will be shown when in single pane view */
     val canBackButtonBeShown: Boolean = false,
-    val navigationUpClicked: Boolean = false,
+    val navigationUpClicked: Boolean = false
 )

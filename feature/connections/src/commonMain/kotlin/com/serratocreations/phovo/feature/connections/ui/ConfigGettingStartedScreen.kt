@@ -25,9 +25,7 @@ import phovo.feature.connections.generated.resources.Res
 @OptIn(ExperimentalResourceApi::class)
 @Composable
 internal fun ConfigGettingStartedScreen(
-    connectionsViewModel: ConnectionsViewModel,
     showBackButton: Boolean,
-    onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Card(
