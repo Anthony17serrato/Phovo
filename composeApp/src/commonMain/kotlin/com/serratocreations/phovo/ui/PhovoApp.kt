@@ -26,6 +26,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -73,14 +74,15 @@ fun PhovoApp(
 internal fun PhovoApp(
     appState: PhovoAppState,
     snackbarHostState: SnackbarHostState,
+    viewModelStoreOwner: ViewModelStoreOwner = checkNotNull(LocalViewModelStoreOwner.current) {
+        "No ViewModelStoreOwner was provided via LocalViewModelStoreOwner"
+    },
+    phovoViewModel: PhovoViewModel = koinViewModel(viewModelStoreOwner = viewModelStoreOwner),
     modifier: Modifier = Modifier,
     windowAdaptiveInfo: WindowAdaptiveInfo = currentWindowAdaptiveInfo(),
 ) {
     val currentDestination = appState.currentDestination
-    appState.appLevelVmStoreOwner = checkNotNull(LocalViewModelStoreOwner.current) {
-        "No ViewModelStoreOwner was provided via LocalViewModelStoreOwner"
-    }
-    val phovoViewModel: PhovoViewModel = koinViewModel(viewModelStoreOwner = appState.appLevelVmStoreOwner)
+    appState.appLevelVmStoreOwner = viewModelStoreOwner
     val appLevelUiState by phovoViewModel.phovoUiState.collectAsState()
 
     PhovoNavigationSuiteScaffold(
@@ -150,7 +152,7 @@ internal fun PhovoApp(
                             containerColor = Color.Transparent,
                         ),
                         /*onActionClick = { onTopAppBarActionClick() },*/
-                        onNavigationClick = { appState.navController.popBackStack() },
+                        onNavigationClick = phovoViewModel::onNavigationClick//{ appState.navController.popBackStack() },
                     )
                 }
 

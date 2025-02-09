@@ -6,7 +6,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.navigation
 import com.serratocreations.phovo.feature.photos.navigation.PhotosRoute
 import com.serratocreations.phovo.feature.photos.navigation.photosScreen
-import com.serratocreations.phovo.feature.connections.navigation.connectionsDetailsScreen
+import com.serratocreations.phovo.feature.connections.ui.connectionsDetailsScreen
 import com.serratocreations.phovo.ui.PhovoAppState
 import kotlinx.serialization.Serializable
 

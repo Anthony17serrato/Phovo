@@ -19,7 +19,7 @@ import com.serratocreations.phovo.navigation.TopLevelDestination.PHOTOS
 import com.serratocreations.phovo.navigation.TopLevelDestination.Connections
 import com.serratocreations.phovo.navigation.TopLevelDestination.BOOKMARKS
 import com.serratocreations.phovo.navigation.navigateToBookmarks
-import com.serratocreations.phovo.feature.connections.navigation.navigateToConnections
+import com.serratocreations.phovo.feature.connections.ui.navigateToConnections
 import kotlinx.coroutines.CoroutineScope
 
 @Composable

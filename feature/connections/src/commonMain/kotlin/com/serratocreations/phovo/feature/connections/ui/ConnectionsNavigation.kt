@@ -1,4 +1,4 @@
-package com.serratocreations.phovo.feature.connections.navigation
+package com.serratocreations.phovo.feature.connections.ui
 
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.WindowAdaptiveInfo
@@ -12,6 +12,7 @@ import androidx.compose.material3.adaptive.layout.calculatePaneScaffoldDirective
 import androidx.compose.material3.adaptive.navigation.ThreePaneScaffoldNavigator
 import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -30,10 +31,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.serratocreations.phovo.core.common.ui.PhovoViewModel
-import com.serratocreations.phovo.feature.connections.ui.ConfigGettingStartedScreen
-import com.serratocreations.phovo.feature.connections.ui.ConnectionsHomeRoute
-import com.serratocreations.phovo.feature.connections.ui.ConnectionsUiState
-import com.serratocreations.phovo.feature.connections.ui.ConnectionsViewModel
 import kotlinx.serialization.Serializable
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.uuid.ExperimentalUuidApi
@@ -89,11 +86,13 @@ internal fun ConnectionsDetailScreen(
     windowAdaptiveInfo: WindowAdaptiveInfo = currentWindowAdaptiveInfo()
 ) {
     val connectionsUiState by connectionsViewModel.connectionsUiState.collectAsStateWithLifecycle()
+
     ConnectionsDetailScreen(
         connectionsUiState = connectionsUiState,
         toggleBackVisibility = phovoViewModel::showBackButtonIfRequired,
         // connectionsViewModel::configureAsServer,
-        windowAdaptiveInfo = windowAdaptiveInfo
+        windowAdaptiveInfo = windowAdaptiveInfo,
+        phovoViewModel = phovoViewModel
     )
 }
 
@@ -103,7 +102,9 @@ internal fun ConnectionsDetailScreen(
     connectionsUiState: ConnectionsUiState,
     toggleBackVisibility: (Boolean) -> Unit,
     windowAdaptiveInfo: WindowAdaptiveInfo,
+    phovoViewModel: PhovoViewModel
 ) {
+    val appUiState by phovoViewModel.phovoUiState.collectAsStateWithLifecycle()
     val listDetailNavigator = rememberListDetailPaneScaffoldNavigator(
         scaffoldDirective = calculatePaneScaffoldDirective(windowAdaptiveInfo),
         initialDestinationHistory = listOfNotNull(
@@ -121,8 +122,7 @@ internal fun ConnectionsDetailScreen(
 //    }
 
     var nestedNavHostStartRoute by remember {
-        val route =
-            ConfigGettingStartedRoute//selectedTopicId?.let { TopicRoute(id = it) } ?: TopicPlaceholderRoute
+        val route = ConfigGettingStartedRoute
         mutableStateOf(route)
     }
     var nestedNavKey by rememberSaveable(
@@ -132,6 +132,13 @@ internal fun ConnectionsDetailScreen(
     }
     val nestedNavController = key(nestedNavKey) {
         rememberNavController()
+    }
+
+    LaunchedEffect(appUiState.navigationUpClicked) {
+        if (appUiState.navigationUpClicked) {
+            nestedNavController.popBackStack()
+            listDetailNavigator.navigateTo(ListDetailPaneScaffoldRole.List)
+        }
     }
 
     fun onConfigServerClickShowDetailPane() {

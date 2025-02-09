@@ -2,7 +2,7 @@ package com.serratocreations.phovo.navigation
 
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.serratocreations.phovo.core.designsystem.icon.PhovoIcons
-import com.serratocreations.phovo.feature.connections.navigation.ConnectionsHomeRoute
+import com.serratocreations.phovo.feature.connections.ui.ConnectionsHomeRoute
 import com.serratocreations.phovo.feature.photos.navigation.PhotosRoute
 import phovo.composeapp.generated.resources.Res
 import phovo.composeapp.generated.resources.feature_bookmarks_title
