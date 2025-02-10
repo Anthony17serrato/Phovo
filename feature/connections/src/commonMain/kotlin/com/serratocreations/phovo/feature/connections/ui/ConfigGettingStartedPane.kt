@@ -24,7 +24,7 @@ import phovo.feature.connections.generated.resources.Res
 
 @OptIn(ExperimentalResourceApi::class)
 @Composable
-internal fun ConfigGettingStartedScreen(
+internal fun ConfigGettingStartedPane(
     showBackButton: Boolean,
     modifier: Modifier = Modifier,
 ) {

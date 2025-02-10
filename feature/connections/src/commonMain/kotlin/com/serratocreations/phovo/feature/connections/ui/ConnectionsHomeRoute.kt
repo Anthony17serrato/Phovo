@@ -14,7 +14,7 @@ import com.serratocreations.phovo.core.designsystem.component.CallToActionCompon
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-internal fun ConnectionsHomeScreen(
+internal fun ConnectionsHomePane(
     onConfigClick: () -> Unit,
     connectionsViewModel: ConnectionsViewModel = koinViewModel(),
     modifier: Modifier = Modifier

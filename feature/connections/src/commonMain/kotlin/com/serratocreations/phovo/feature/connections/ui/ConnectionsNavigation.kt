@@ -1,10 +1,13 @@
 package com.serratocreations.phovo.feature.connections.ui
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.adaptive.WindowAdaptiveInfo
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
@@ -33,13 +36,6 @@ fun NavGraphBuilder.connectionsDetailsScreen(
     }
 }
 
-
-//ConfigGettingStartedScreen(
-//    connectionsViewModel = connectionsViewModel,
-//    showBackButton = showBackButton,
-//    onBackClick = onBackClick
-//)
-
 @Composable
 internal fun ConnectionsDetailsNavigation(
     phovoViewModel: PhovoViewModel,
@@ -64,8 +60,15 @@ internal fun ConnectionsDetailsNavigation(
     }
 
     when (paneMode) {
-        // TODO Create two pane content
-        PhovoPaneMode.TwoPane, PhovoPaneMode.SinglePane -> {
+        PhovoPaneMode.TwoPane -> {
+            ConnectionsTwoPaneContent(
+                currentPane = connectionsUiState.currentConnectionsPane,
+                connectionsUiState = connectionsUiState,
+                appUiState = appUiState,
+                onConfigServerClickShowDetailPane = ::onConfigServerClickShowDetailPane
+            )
+        }
+        PhovoPaneMode.SinglePane -> {
             ConnectionsSinglePaneContent(
                 currentPane = connectionsUiState.currentConnectionsPane,
                 connectionsUiState = connectionsUiState,
@@ -82,6 +85,31 @@ internal fun ConnectionsDetailsNavigation(
 //        phovoViewModel = phovoViewModel
 //    )
 }
+@Composable
+fun ConnectionsTwoPaneContent(
+    currentPane: ConnectionsPane,
+    connectionsUiState: ConnectionsUiState,
+    appUiState: PhovoUiState,
+    onConfigServerClickShowDetailPane: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        // First pane is permanently home pane
+        ConnectionsHomePane(
+            onConfigClick = onConfigServerClickShowDetailPane,
+            modifier = modifier.weight(1f)
+            /*highlightSelectedTopic = listDetailNavigator.isDetailPaneVisible(),*/
+        )
+        currentPane.setNavigationContent(
+            onConfigClick = onConfigServerClickShowDetailPane,
+            paneMode = PhovoPaneMode.TwoPane,
+            modifier = modifier.weight(1f)
+        )
+    }
+}
 
 @Composable
 fun ConnectionsSinglePaneContent(
@@ -90,17 +118,40 @@ fun ConnectionsSinglePaneContent(
     appUiState: PhovoUiState,
     onConfigServerClickShowDetailPane: () -> Unit
 ) {
-    when (currentPane) {
+    currentPane.setNavigationContent(
+        onConfigClick = onConfigServerClickShowDetailPane,
+        paneMode = PhovoPaneMode.SinglePane
+    )
+}
+
+@Composable
+private fun ConnectionsPane.setNavigationContent(
+    onConfigClick: () -> Unit,
+    paneMode: PhovoPaneMode,
+    modifier: Modifier = Modifier
+) {
+    return when (this) {
         ConnectionsPane.Home -> {
-            ConnectionsHomeScreen(
-                onConfigClick = onConfigServerClickShowDetailPane,
-                /*highlightSelectedTopic = listDetailNavigator.isDetailPaneVisible(),*/
-            )
+            when (paneMode) {
+                PhovoPaneMode.TwoPane -> {
+                    ConnectionsDefaultPane(modifier = modifier)
+                }
+                PhovoPaneMode.SinglePane -> {
+                    ConnectionsHomePane(
+                        onConfigClick = onConfigClick,
+                        modifier = modifier
+                        /*highlightSelectedTopic = listDetailNavigator.isDetailPaneVisible(),*/
+                    )
+                }
+            }
         }
-        ConnectionsPane.DefaultSecondPane -> TODO()
+        ConnectionsPane.DefaultSecondPane -> ConnectionsDefaultPane(
+            modifier = modifier
+        )
         is ConnectionsPane.ConfigGettingStarted -> {
-            ConfigGettingStartedScreen(
-                showBackButton = true
+            ConfigGettingStartedPane(
+                showBackButton = true,
+                modifier = modifier
             )
         }
     }
