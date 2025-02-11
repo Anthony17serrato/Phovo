@@ -25,7 +25,7 @@ import phovo.feature.connections.generated.resources.Res
 @OptIn(ExperimentalResourceApi::class)
 @Composable
 internal fun ConfigGettingStartedPane(
-    showBackButton: Boolean,
+    onClickBackup: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Card(
@@ -59,7 +59,7 @@ internal fun ConfigGettingStartedPane(
                 contentDescription = null
             )
             Spacer(modifier = Modifier.height(32.dp))
-            Button(onClick = {  }) {
+            Button(onClick = onClickBackup) {
                 Text("Turn on backup")
             }
             TextButton(onClick = {  }) {

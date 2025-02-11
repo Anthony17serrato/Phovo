@@ -20,7 +20,7 @@ internal fun ConnectionsHomePane(
     modifier: Modifier = Modifier
 ) {
     val connectionsUiState by connectionsViewModel.connectionsUiState.collectAsStateWithLifecycle()
-    ConnectionsHomeScreen(
+    ConnectionsHomePane(
         uiState = connectionsUiState,
         onConfigClick = onConfigClick,
         modifier = modifier
@@ -28,7 +28,7 @@ internal fun ConnectionsHomePane(
 }
 
 @Composable
-internal fun ConnectionsHomeScreen(
+internal fun ConnectionsHomePane(
     uiState: ConnectionsUiState,
     onConfigClick: () -> Unit,
     modifier: Modifier = Modifier

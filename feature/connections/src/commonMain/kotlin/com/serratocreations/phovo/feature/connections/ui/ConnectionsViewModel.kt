@@ -48,11 +48,16 @@ class ConnectionsViewModel(
         }
     }
 
-    fun showConfigPane() {
-        _connectionsUiState.update {
-            it.copy(
-                currentConnectionsPane = ConnectionsPane.ConfigGettingStarted(it.currentConnectionsPane)
-            )
+    fun navigateToPane(pane: PaneId) {
+        _connectionsUiState.update { currentPane ->
+            val previousPane = currentPane.currentConnectionsPane
+            val newPane = when (pane) {
+                PaneId.Home -> ConnectionsPane.Home
+                PaneId.DefaultSecondPane -> ConnectionsPane.DefaultSecondPane
+                PaneId.ConfigGettingStarted -> ConnectionsPane.ConfigGettingStarted(previousPane)
+                PaneId.ConfigStorageSelection -> ConnectionsPane.ConfigStorageSelection(previousPane)
+            }
+            currentPane.copy(currentConnectionsPane = newPane)
         }
     }
 
@@ -85,9 +90,32 @@ data class ConnectionsUiState(
     val currentConnectionsPane: ConnectionsPane = ConnectionsPane.Home
 )
 
-sealed class ConnectionsPane(open val previousPane: ConnectionsPane? = null) {
-    data object Home : ConnectionsPane()
+sealed class ConnectionsPane(
+    open val previousPane: ConnectionsPane? = null,
+    val paneId: PaneId
+) {
+    data object Home : ConnectionsPane(paneId = PaneId.Home)
     // Placeholder for the default second pane
-    data object DefaultSecondPane : ConnectionsPane()
-    data class ConfigGettingStarted(override val previousPane: ConnectionsPane) : ConnectionsPane(previousPane)
+    data object DefaultSecondPane : ConnectionsPane(paneId = PaneId.DefaultSecondPane)
+
+    data class ConfigGettingStarted(
+        override val previousPane: ConnectionsPane
+    ) : ConnectionsPane(
+        previousPane = previousPane,
+        paneId = PaneId.ConfigGettingStarted
+    )
+
+    data class ConfigStorageSelection(
+        override val previousPane: ConnectionsPane
+    ) : ConnectionsPane(
+        previousPane = previousPane,
+        paneId = PaneId.ConfigStorageSelection
+    )
+}
+
+enum class PaneId {
+    Home,
+    DefaultSecondPane,
+    ConfigGettingStarted,
+    ConfigStorageSelection
 }

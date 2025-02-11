@@ -50,13 +50,15 @@ internal fun ConnectionsDetailsNavigation(
             val canNavigateBack = connectionsViewModel.onBackClick()
             phovoViewModel.showBackButtonIfRequired(canNavigateBack)
             phovoViewModel.onNavigationUpClickHandled()
+            if (connectionsUiState.currentConnectionsPane.previousPane == null) {
+                phovoViewModel.showBackButtonIfRequired(false)
+            }
         }
     }
 
-    fun onConfigServerClickShowDetailPane() {
+    fun navigate(pane: PaneId) {
         phovoViewModel.showBackButtonIfRequired(true)
-        connectionsViewModel.showConfigPane()
-        // Navigate
+        connectionsViewModel.navigateToPane(pane)
     }
 
     when (paneMode) {
@@ -65,7 +67,7 @@ internal fun ConnectionsDetailsNavigation(
                 currentPane = connectionsUiState.currentConnectionsPane,
                 connectionsUiState = connectionsUiState,
                 appUiState = appUiState,
-                onConfigServerClickShowDetailPane = ::onConfigServerClickShowDetailPane
+                navigate = ::navigate
             )
         }
         PhovoPaneMode.SinglePane -> {
@@ -73,7 +75,7 @@ internal fun ConnectionsDetailsNavigation(
                 currentPane = connectionsUiState.currentConnectionsPane,
                 connectionsUiState = connectionsUiState,
                 appUiState = appUiState,
-                onConfigServerClickShowDetailPane = ::onConfigServerClickShowDetailPane
+                navigate = ::navigate
             )
         }
     }
@@ -90,7 +92,7 @@ fun ConnectionsTwoPaneContent(
     currentPane: ConnectionsPane,
     connectionsUiState: ConnectionsUiState,
     appUiState: PhovoUiState,
-    onConfigServerClickShowDetailPane: () -> Unit,
+    navigate: (pane: PaneId) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -99,12 +101,12 @@ fun ConnectionsTwoPaneContent(
     ) {
         // First pane is permanently home pane
         ConnectionsHomePane(
-            onConfigClick = onConfigServerClickShowDetailPane,
+            onConfigClick = { navigate(PaneId.ConfigGettingStarted) },
             modifier = modifier.weight(1f)
             /*highlightSelectedTopic = listDetailNavigator.isDetailPaneVisible(),*/
         )
         currentPane.setNavigationContent(
-            onConfigClick = onConfigServerClickShowDetailPane,
+            navigate = navigate,
             paneMode = PhovoPaneMode.TwoPane,
             modifier = modifier.weight(1f)
         )
@@ -116,17 +118,17 @@ fun ConnectionsSinglePaneContent(
     currentPane: ConnectionsPane,
     connectionsUiState: ConnectionsUiState,
     appUiState: PhovoUiState,
-    onConfigServerClickShowDetailPane: () -> Unit
+    navigate: (pane: PaneId) -> Unit
 ) {
     currentPane.setNavigationContent(
-        onConfigClick = onConfigServerClickShowDetailPane,
+        navigate = navigate,
         paneMode = PhovoPaneMode.SinglePane
     )
 }
 
 @Composable
 private fun ConnectionsPane.setNavigationContent(
-    onConfigClick: () -> Unit,
+    navigate: (pane: PaneId) -> Unit,
     paneMode: PhovoPaneMode,
     modifier: Modifier = Modifier
 ) {
@@ -138,7 +140,7 @@ private fun ConnectionsPane.setNavigationContent(
                 }
                 PhovoPaneMode.SinglePane -> {
                     ConnectionsHomePane(
-                        onConfigClick = onConfigClick,
+                        onConfigClick = { navigate(PaneId.ConfigGettingStarted) },
                         modifier = modifier
                         /*highlightSelectedTopic = listDetailNavigator.isDetailPaneVisible(),*/
                     )
@@ -150,7 +152,12 @@ private fun ConnectionsPane.setNavigationContent(
         )
         is ConnectionsPane.ConfigGettingStarted -> {
             ConfigGettingStartedPane(
-                showBackButton = true,
+                onClickBackup = { navigate(PaneId.ConfigStorageSelection) },
+                modifier = modifier
+            )
+        }
+        is ConnectionsPane.ConfigStorageSelection -> {
+            ConfigStorageSelectionPane(
                 modifier = modifier
             )
         }
