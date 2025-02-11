@@ -2,8 +2,8 @@ package com.serratocreations.phovo.navigation
 
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.serratocreations.phovo.core.designsystem.icon.PhovoIcons
+import com.serratocreations.phovo.feature.connections.ui.ConnectionsHomeRoute
 import com.serratocreations.phovo.feature.photos.navigation.PhotosRoute
-import com.serratocreations.phovo.feature.connections.navigation.ConnectionsRoute
 import phovo.composeapp.generated.resources.Res
 import phovo.composeapp.generated.resources.feature_bookmarks_title
 import org.jetbrains.compose.resources.StringResource
@@ -40,6 +40,6 @@ enum class TopLevelDestination(
         unselectedIcon = PhovoIcons.DnsBorder,
         iconTextId = connectionsRes.string.feature_connections_title,
         titleTextId = connectionsRes.string.feature_connections_title,
-        route = ConnectionsRoute::class,
+        route = ConnectionsHomeRoute::class,
     ),
 }

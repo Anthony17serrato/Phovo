@@ -15,6 +15,7 @@ kotlin {
 
                 implementation(compose.components.resources)
                 implementation(libs.serialization.json)
+                implementation(libs.coil.compose)
             }
         }
         val commonTest by getting {
