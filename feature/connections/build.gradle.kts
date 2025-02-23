@@ -45,13 +45,3 @@ kotlin {
 android {
     namespace = "com.serratocreations.phovo.feature.connections"
 }
-// File picker desktop config
-compose.desktop {
-    application {
-        nativeDistributions {
-            linux {
-                modules("jdk.security.auth")
-            }
-        }
-    }
-}

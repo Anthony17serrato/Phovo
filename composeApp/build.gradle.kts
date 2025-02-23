@@ -37,3 +37,14 @@ android {
         debugImplementation(libs.compose.ui.tooling)
     }
 }
+
+// File picker desktop config
+compose.desktop {
+    application {
+        nativeDistributions {
+            linux {
+                modules("jdk.security.auth")
+            }
+        }
+    }
+}
