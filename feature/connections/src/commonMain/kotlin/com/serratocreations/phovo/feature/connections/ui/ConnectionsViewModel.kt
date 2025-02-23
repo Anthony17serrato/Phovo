@@ -2,9 +2,12 @@ package com.serratocreations.phovo.feature.connections.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.serratocreations.phovo.core.designsystem.component.PhovoNavOptions
+import com.serratocreations.phovo.core.designsystem.component.PhovoRoute
 import com.serratocreations.phovo.feature.connections.data.ConfigStatus
 import com.serratocreations.phovo.feature.connections.data.DesktopServerConfigManager
 import com.serratocreations.phovo.feature.connections.data.ServerConfigManager
+import com.serratocreations.phovo.feature.connections.data.model.ServerConfig
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
@@ -29,7 +32,10 @@ class ConnectionsViewModel(
 
     fun configureAsServer() {
         if (serverConfigManager is DesktopServerConfigManager) {
-            serverConfigManager.configureDeviceAsServer()
+            // Todo safely handle null scenario(unlikely)
+            _connectionsUiState.value.selectedDirectory?.let { directory ->
+                serverConfigManager.configureDeviceAsServer(ServerConfig(directory))
+            }
         }
     }
 
@@ -48,14 +54,23 @@ class ConnectionsViewModel(
         }
     }
 
-    fun navigateToPane(pane: PaneId) {
+    fun navigateToPane(pane: PaneId, vararg options: PhovoNavOptions) {
         _connectionsUiState.update { currentPane ->
-            val previousPane = currentPane.currentConnectionsPane
-            val newPane = when (pane) {
-                PaneId.Home -> ConnectionsPane.Home
-                PaneId.DefaultSecondPane -> ConnectionsPane.DefaultSecondPane
-                PaneId.ConfigGettingStarted -> ConnectionsPane.ConfigGettingStarted(previousPane)
-                PaneId.ConfigStorageSelection -> ConnectionsPane.ConfigStorageSelection(previousPane)
+            val shouldNavigateBack = options.filterIsInstance<PhovoNavOptions.NavigateToBackstack>()
+                .map { true }.firstOrNull() ?: false
+            var previousPane = currentPane.currentConnectionsPane
+            val newPane = if (shouldNavigateBack){
+                while (previousPane.paneId != pane) {
+                    previousPane = previousPane.previousPane ?: break
+                }
+                previousPane
+            }else {
+                when (pane) {
+                    PaneId.Home -> ConnectionsPane.Home
+                    PaneId.DefaultSecondPane -> ConnectionsPane.DefaultSecondPane
+                    PaneId.ConfigGettingStarted -> ConnectionsPane.ConfigGettingStarted(previousPane)
+                    PaneId.ConfigStorageSelection -> ConnectionsPane.ConfigStorageSelection(previousPane)
+                }
             }
             currentPane.copy(currentConnectionsPane = newPane)
         }
@@ -76,6 +91,12 @@ class ConnectionsViewModel(
         }
         return canNavigateBack
     }
+
+    fun setSelectedDirectory(selectedDirectory: String) {
+        _connectionsUiState.update { currentUiState ->
+            currentUiState.copy(selectedDirectory = selectedDirectory)
+        }
+    }
 }
 
 data class ConnectionsUiState(
@@ -87,7 +108,8 @@ data class ConnectionsUiState(
      */
     val doesCurrentDeviceSupportServer: Boolean = false,
     val serverEventLogs: List<String> = emptyList(),
-    val currentConnectionsPane: ConnectionsPane = ConnectionsPane.Home
+    val currentConnectionsPane: ConnectionsPane = ConnectionsPane.Home,
+    val selectedDirectory: String? = null
 )
 
 sealed class ConnectionsPane(
@@ -113,7 +135,7 @@ sealed class ConnectionsPane(
     )
 }
 
-enum class PaneId {
+enum class PaneId: PhovoRoute {
     Home,
     DefaultSecondPane,
     ConfigGettingStarted,

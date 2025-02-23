@@ -16,6 +16,8 @@ kotlin {
                 implementation(compose.components.resources)
                 implementation(libs.serialization.json)
                 implementation(libs.coil.compose)
+                implementation(libs.filekit.core)
+                implementation(libs.filekit.compose)
             }
         }
         val commonTest by getting {
@@ -42,4 +44,14 @@ kotlin {
 
 android {
     namespace = "com.serratocreations.phovo.feature.connections"
+}
+// File picker desktop config
+compose.desktop {
+    application {
+        nativeDistributions {
+            linux {
+                modules("jdk.security.auth")
+            }
+        }
+    }
 }

@@ -16,8 +16,8 @@ import androidx.navigation.NavOptions
 import androidx.navigation.compose.composable
 import androidx.window.core.layout.WindowWidthSizeClass
 import com.serratocreations.phovo.core.common.ui.PhovoPaneMode
-import com.serratocreations.phovo.core.common.ui.PhovoUiState
 import com.serratocreations.phovo.core.common.ui.PhovoViewModel
+import com.serratocreations.phovo.core.designsystem.component.PhovoNavOptions
 import kotlinx.serialization.Serializable
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -53,28 +53,36 @@ internal fun ConnectionsDetailsNavigation(
             if (connectionsUiState.currentConnectionsPane.previousPane == null) {
                 phovoViewModel.showBackButtonIfRequired(false)
             }
+            // TODO: BackHandler api is still in development for Compose Multiplatform See:
+//          https://youtrack.jetbrains.com/issue/CMP-4419
+//          BackHandler(listDetailNavigator.canNavigateBack()) {
+//              listDetailNavigator.navigateBack()
+//          }
         }
     }
 
-    fun navigate(pane: PaneId) {
+    fun navigate(connectionsNavigation: ConnectionsNavigation) {
         phovoViewModel.showBackButtonIfRequired(true)
-        connectionsViewModel.navigateToPane(pane)
+        connectionsViewModel.navigateToPane(
+            connectionsNavigation.pane,
+            *connectionsNavigation.options.toTypedArray()
+        )
     }
 
     when (paneMode) {
         PhovoPaneMode.TwoPane -> {
             ConnectionsTwoPaneContent(
+                connectionsViewModel = connectionsViewModel,
                 currentPane = connectionsUiState.currentConnectionsPane,
                 connectionsUiState = connectionsUiState,
-                appUiState = appUiState,
                 navigate = ::navigate
             )
         }
         PhovoPaneMode.SinglePane -> {
             ConnectionsSinglePaneContent(
+                connectionsViewModel = connectionsViewModel,
                 currentPane = connectionsUiState.currentConnectionsPane,
                 connectionsUiState = connectionsUiState,
-                appUiState = appUiState,
                 navigate = ::navigate
             )
         }
@@ -89,10 +97,10 @@ internal fun ConnectionsDetailsNavigation(
 }
 @Composable
 fun ConnectionsTwoPaneContent(
+    connectionsViewModel: ConnectionsViewModel,
     currentPane: ConnectionsPane,
     connectionsUiState: ConnectionsUiState,
-    appUiState: PhovoUiState,
-    navigate: (pane: PaneId) -> Unit,
+    navigate: (connectionsNavigation: ConnectionsNavigation) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -101,11 +109,12 @@ fun ConnectionsTwoPaneContent(
     ) {
         // First pane is permanently home pane
         ConnectionsHomePane(
-            onConfigClick = { navigate(PaneId.ConfigGettingStarted) },
+            onConfigClick = { navigate(ConnectionsNavigation(PaneId.ConfigGettingStarted)) },
             modifier = modifier.weight(1f)
-            /*highlightSelectedTopic = listDetailNavigator.isDetailPaneVisible(),*/
         )
         currentPane.setNavigationContent(
+            connectionsViewModel = connectionsViewModel,
+            connectionsUiState = connectionsUiState,
             navigate = navigate,
             paneMode = PhovoPaneMode.TwoPane,
             modifier = modifier.weight(1f)
@@ -115,12 +124,14 @@ fun ConnectionsTwoPaneContent(
 
 @Composable
 fun ConnectionsSinglePaneContent(
+    connectionsViewModel: ConnectionsViewModel,
     currentPane: ConnectionsPane,
     connectionsUiState: ConnectionsUiState,
-    appUiState: PhovoUiState,
-    navigate: (pane: PaneId) -> Unit
+    navigate: (connectionsNavigation: ConnectionsNavigation) -> Unit,
 ) {
     currentPane.setNavigationContent(
+        connectionsViewModel = connectionsViewModel,
+        connectionsUiState = connectionsUiState,
         navigate = navigate,
         paneMode = PhovoPaneMode.SinglePane
     )
@@ -128,7 +139,9 @@ fun ConnectionsSinglePaneContent(
 
 @Composable
 private fun ConnectionsPane.setNavigationContent(
-    navigate: (pane: PaneId) -> Unit,
+    connectionsViewModel: ConnectionsViewModel,
+    connectionsUiState: ConnectionsUiState,
+    navigate: (connectionsNavigation: ConnectionsNavigation) -> Unit,
     paneMode: PhovoPaneMode,
     modifier: Modifier = Modifier
 ) {
@@ -140,7 +153,7 @@ private fun ConnectionsPane.setNavigationContent(
                 }
                 PhovoPaneMode.SinglePane -> {
                     ConnectionsHomePane(
-                        onConfigClick = { navigate(PaneId.ConfigGettingStarted) },
+                        onConfigClick = { navigate(ConnectionsNavigation(PaneId.ConfigGettingStarted)) },
                         modifier = modifier
                         /*highlightSelectedTopic = listDetailNavigator.isDetailPaneVisible(),*/
                     )
@@ -152,26 +165,31 @@ private fun ConnectionsPane.setNavigationContent(
         )
         is ConnectionsPane.ConfigGettingStarted -> {
             ConfigGettingStartedPane(
-                onClickBackup = { navigate(PaneId.ConfigStorageSelection) },
+                onClickBackup = { navigate(ConnectionsNavigation(PaneId.ConfigStorageSelection)) },
                 modifier = modifier
             )
         }
         is ConnectionsPane.ConfigStorageSelection -> {
             ConfigStorageSelectionPane(
+                onSelectedDirectory = connectionsViewModel::setSelectedDirectory,
+                selectedDirectory = connectionsUiState.selectedDirectory,
+                onClickEnableServer = {
+                    connectionsViewModel.configureAsServer()
+                    navigate(ConnectionsNavigation(PaneId.Home, setOf(PhovoNavOptions.NavigateToBackstack)))
+                },
                 modifier = modifier
             )
         }
     }
 }
 
-// TODO: BackHandler api is still in development for Compose Multiplatform See:
-//  https://youtrack.jetbrains.com/issue/CMP-4419
-//    BackHandler(listDetailNavigator.canNavigateBack()) {
-//        listDetailNavigator.navigateBack()
-//    }
-
 private val WindowAdaptiveInfo.getPaneMode: PhovoPaneMode
     get() = when (this.windowSizeClass.windowWidthSizeClass) {
         WindowWidthSizeClass.EXPANDED -> PhovoPaneMode.TwoPane
         else -> PhovoPaneMode.SinglePane
     }
+
+data class ConnectionsNavigation(
+    val pane: PaneId,
+    val options: Set<PhovoNavOptions> = emptySet()
+)

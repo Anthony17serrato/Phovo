@@ -1,5 +1,6 @@
 package com.serratocreations.phovo.feature.connections.data
 
+import com.serratocreations.phovo.feature.connections.data.model.ServerConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 
@@ -7,7 +8,7 @@ interface ServerConfigManager
 
 interface DesktopServerConfigManager: ServerConfigManager {
     fun observeDeviceServerConfigurationState(scope: CoroutineScope): Flow<ServerConfigState>
-    fun configureDeviceAsServer()
+    fun configureDeviceAsServer(serverConfig: ServerConfig)
 }
 
 /**
