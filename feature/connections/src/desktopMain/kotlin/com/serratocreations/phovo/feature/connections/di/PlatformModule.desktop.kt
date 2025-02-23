@@ -11,6 +11,7 @@ internal actual fun platformModule() = module {
     single<ServerConfigManager> {
         DesktopServerConfigManagerImpl(
             phovoItemRepository = get(),
+            serverConfigDataSource = get(),
             appScope = get(named(APPLICATION_SCOPE)),
             ioDispatcher = get(named(IO_DISPATCHER))
         )

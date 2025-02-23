@@ -1,6 +1,5 @@
 package com.serratocreations.phovo.feature.connections.ui
 
-import androidx.annotation.VisibleForTesting
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,34 +14,38 @@ import com.serratocreations.phovo.core.designsystem.component.CallToActionCompon
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-internal fun ConnectionsRoute(
+internal fun ConnectionsHomePane(
+    onConfigClick: () -> Unit,
+    connectionsViewModel: ConnectionsViewModel = koinViewModel(),
     modifier: Modifier = Modifier
 ) {
-    ConnectionsScreen(
+    val connectionsUiState by connectionsViewModel.connectionsUiState.collectAsStateWithLifecycle()
+    ConnectionsHomePane(
+        uiState = connectionsUiState,
+        onConfigClick = onConfigClick,
         modifier = modifier
     )
 }
 
-@VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
 @Composable
-internal fun ConnectionsScreen(
-    connectionsViewModel: ConnectionsViewModel = koinViewModel(),
-    modifier: Modifier = Modifier,
+internal fun ConnectionsHomePane(
+    uiState: ConnectionsUiState,
+    onConfigClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    val connectionsUiState by connectionsViewModel.connectionsUiState.collectAsStateWithLifecycle()
     LazyColumn(modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        if (connectionsUiState.doesCurrentDeviceSupportServer) {
+        if (uiState.doesCurrentDeviceSupportServer) {
             item {
-                AnimatedVisibility(connectionsUiState.isCurrentDeviceServerConfigured.not()) {
+                AnimatedVisibility(uiState.isCurrentDeviceServerConfigured.not()) {
                     CallToActionComponent(
                         actionTitle = "Configure as server",
                         actionDescription = "Configure this device as a Phovo backup server. Your photos and media will be securely backed up to this device.",
-                        onClick = connectionsViewModel::configureAsServer
+                        onClick = onConfigClick
                     )
                 }
             }
         }
-        items(connectionsUiState.serverEventLogs) { eventLog ->
+        items(uiState.serverEventLogs) { eventLog ->
             Text(text = eventLog)
         }
     }

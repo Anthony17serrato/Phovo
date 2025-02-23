@@ -357,3 +357,9 @@ object PhovoNavigationDefaults {
     @Composable
     fun navigationIndicatorColor() = MaterialTheme.colorScheme.primaryContainer
 }
+
+sealed interface PhovoNavOptions {
+    data object NavigateToBackstack : PhovoNavOptions
+}
+
+interface PhovoRoute

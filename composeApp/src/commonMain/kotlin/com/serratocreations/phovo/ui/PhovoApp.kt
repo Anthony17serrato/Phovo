@@ -26,9 +26,12 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
+import com.serratocreations.phovo.core.common.ui.PhovoViewModel
 import com.serratocreations.phovo.navigation.PhovoNavHost
 import com.serratocreations.phovo.core.designsystem.component.PhovoBackground
 import com.serratocreations.phovo.core.designsystem.component.PhovoNavigationSuiteScaffold
@@ -40,7 +43,7 @@ import phovo.composeapp.generated.resources.feature_settings_top_app_bar_action_
 import phovo.composeapp.generated.resources.feature_settings_top_app_bar_navigation_icon_description
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import phovo.composeapp.generated.resources.app_name
+import org.koin.compose.viewmodel.koinViewModel
 import kotlin.reflect.KClass
 
 @Composable
@@ -71,10 +74,17 @@ fun PhovoApp(
 internal fun PhovoApp(
     appState: PhovoAppState,
     snackbarHostState: SnackbarHostState,
+    viewModelStoreOwner: ViewModelStoreOwner = checkNotNull(LocalViewModelStoreOwner.current) {
+        "No ViewModelStoreOwner was provided via LocalViewModelStoreOwner"
+    },
+    phovoViewModel: PhovoViewModel = koinViewModel(viewModelStoreOwner = viewModelStoreOwner),
     modifier: Modifier = Modifier,
     windowAdaptiveInfo: WindowAdaptiveInfo = currentWindowAdaptiveInfo(),
 ) {
     val currentDestination = appState.currentDestination
+    appState.appLevelVmStoreOwner = viewModelStoreOwner
+    val appLevelUiState by phovoViewModel.phovoUiState.collectAsState()
+
     PhovoNavigationSuiteScaffold(
         navigationSuiteItems = {
             appState.topLevelDestinations.forEach { destination ->
@@ -124,13 +134,13 @@ internal fun PhovoApp(
                 val destination = appState.currentTopLevelDestination
                 var shouldShowTopAppBar = false
 
-                //if (destination != null) {
+                if (destination != null) {
                     shouldShowTopAppBar = true
                     PhovoTopAppBar(
                         // Currently navigation between screens results in a null destination for some ms
                         // resulting in UI jank. Follow issue https://youtrack.jetbrains.com/issue/CMP-7087/currentBackStackEntryAsState-briefly-null-when-navigating-between-destinations
-                        titleRes = destination?.titleTextId ?: Res.string.app_name,
-                        navigationIcon = PhovoIcons.Search,
+                        titleRes = destination.titleTextId,
+                        navigationIcon = if (appLevelUiState.canBackButtonBeShown) PhovoIcons.ArrowBack else PhovoIcons.Search,
                         navigationIconContentDescription = stringResource(
                             Res.string.feature_settings_top_app_bar_navigation_icon_description,
                         ),
@@ -142,9 +152,9 @@ internal fun PhovoApp(
                             containerColor = Color.Transparent,
                         ),
                         /*onActionClick = { onTopAppBarActionClick() },*/
-                        /*onNavigationClick = { appState.navigateToSearch() },*/
+                        onNavigationClick = phovoViewModel::onNavigationClick//{ appState.navController.popBackStack() },
                     )
-                //}
+                }
 
                 Box(
                     // Workaround for https://issuetracker.google.com/338478720

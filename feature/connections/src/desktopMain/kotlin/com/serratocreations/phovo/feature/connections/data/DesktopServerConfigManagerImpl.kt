@@ -1,6 +1,8 @@
 package com.serratocreations.phovo.feature.connections.data
 
 import com.serratocreations.phovo.data.photos.repository.PhovoItemRepository
+import com.serratocreations.phovo.feature.connections.data.dao.ServerConfigDao
+import com.serratocreations.phovo.feature.connections.data.model.ServerConfig
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.PartData
 import io.ktor.http.content.forEachPart
@@ -33,6 +35,7 @@ import java.time.LocalDateTime
 
 class DesktopServerConfigManagerImpl(
     private val phovoItemRepository: PhovoItemRepository,
+    private val serverConfigDataSource: ServerConfigDao,
     private val appScope: CoroutineScope,
     private val ioDispatcher: CoroutineDispatcher
 ): DesktopServerConfigManager {
@@ -117,7 +120,7 @@ class DesktopServerConfigManagerImpl(
         }.launchIn(this)
     }
 
-    override fun configureDeviceAsServer() {
+    override fun configureDeviceAsServer(serverConfig: ServerConfig) {
         appScope.launch {
             serverConfigState.update {
                 it.copy(configStatus = ConfigStatus.NotConfigured)
