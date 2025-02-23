@@ -22,6 +22,7 @@ import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,7 +31,8 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.serialization.json.Json
-import java.io.File
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.time.LocalDateTime
 
 class DesktopServerConfigManagerImpl(
@@ -73,35 +75,38 @@ class DesktopServerConfigManagerImpl(
                 println("reached upload api")
                 // Receive the uploaded file
                 val multipart = call.receiveMultipart()
-                var fileName: String? = null
+                var exception: Exception? = null
 
                 multipart.forEachPart { part ->
                     if (part is PartData.FileItem) {
-                        fileName = "${System.currentTimeMillis()}_${part.originalFileName}"
-                        println("upload filename $fileName")
-                        val fileBytes = part.streamProvider().readBytes()
-                        println("Read bytes")
-                        val file = File("uploads/${fileName ?: "unknown.jpg"}")
-                        if (!file.parentFile.exists()) {
-                            file.parentFile.mkdirs()  // Create the necessary directories
-                        }
-
                         try {
+                            val directory = serverConfigDataSource.serverConfigInMemoryDataSource
+                                .value.backupDirectory + "/DO_NOT_DELETE_PHOVO/"
+                            val dirPath = Paths.get(directory)
+                            if (!Files.exists(dirPath)) {
+                                Files.createDirectories(dirPath)
+                            }
+                            val fileName = "${System.currentTimeMillis()}_${part.originalFileName}"
+                            val file = dirPath.resolve(fileName).let { path ->
+                                Files.createFile(path).toFile()
+                            }
+                            println("upload filename $fileName")
+                            val fileBytes = part.streamProvider().readBytes()
+                            println("Read bytes")
                             file.writeBytes(fileBytes)
+                            phovoItemRepository.addServerEventLog("File uploaded ${file.absolutePath}")
                         } catch (e: Exception) {
-                            println("Failed to save file: ${e.message}")
+                            if (e is CancellationException) throw e else exception = e
                         }
-
-                        phovoItemRepository.addServerEventLog("File uploaded ${file.absolutePath}")
                     }
                     part.dispose()
                 }
 
                 // Respond with success
-                if (fileName != null) {
-                    call.respond(HttpStatusCode.Created, "File uploaded successfully: $fileName")
+                if (exception == null) {
+                    call.respond(HttpStatusCode.Created, "File uploaded successfully")
                 } else {
-                    call.respond(HttpStatusCode.BadRequest, "No file uploaded")
+                    call.respond(HttpStatusCode.BadRequest, "No file uploaded $exception")
                 }
             }
         }
@@ -122,6 +127,7 @@ class DesktopServerConfigManagerImpl(
 
     override fun configureDeviceAsServer(serverConfig: ServerConfig) {
         appScope.launch {
+            serverConfigDataSource.updateServerConfig(serverConfig)
             serverConfigState.update {
                 it.copy(configStatus = ConfigStatus.NotConfigured)
             }
