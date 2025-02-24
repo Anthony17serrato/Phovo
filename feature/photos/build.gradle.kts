@@ -12,6 +12,7 @@ kotlin {
                 implementation(projects.core.designsystem)
                 implementation(projects.core.common)
                 implementation(projects.data.photos)
+                implementation(projects.data.server)
 
                 implementation(compose.components.resources)
                 implementation(libs.serialization.json)

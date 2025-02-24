@@ -1,4 +1,4 @@
-package com.serratocreations.phovo.feature.connections.data.repository
+package com.serratocreations.phovo.data.server.data.repository
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
