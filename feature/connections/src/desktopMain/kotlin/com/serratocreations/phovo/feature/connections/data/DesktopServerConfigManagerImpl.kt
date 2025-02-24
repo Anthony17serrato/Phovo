@@ -1,8 +1,8 @@
 package com.serratocreations.phovo.feature.connections.data
 
 import com.serratocreations.phovo.data.photos.repository.PhovoItemRepository
-import com.serratocreations.phovo.feature.connections.data.dao.ServerConfigDao
 import com.serratocreations.phovo.feature.connections.data.model.ServerConfig
+import com.serratocreations.phovo.feature.connections.data.repository.ServerConfigRepository
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.PartData
 import io.ktor.http.content.forEachPart
@@ -27,6 +27,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
@@ -37,7 +38,7 @@ import java.time.LocalDateTime
 
 class DesktopServerConfigManagerImpl(
     private val phovoItemRepository: PhovoItemRepository,
-    private val serverConfigDataSource: ServerConfigDao,
+    private val serverConfigRepository: ServerConfigRepository,
     private val appScope: CoroutineScope,
     private val ioDispatcher: CoroutineDispatcher
 ): DesktopServerConfigManager {
@@ -80,8 +81,8 @@ class DesktopServerConfigManagerImpl(
                 multipart.forEachPart { part ->
                     if (part is PartData.FileItem) {
                         try {
-                            val directory = serverConfigDataSource.serverConfigInMemoryDataSource
-                                .value.backupDirectory + "/DO_NOT_DELETE_PHOVO/"
+                            val directory = serverConfigRepository.observeServerConfig().first()
+                                .backupDirectory
                             val dirPath = Paths.get(directory)
                             if (!Files.exists(dirPath)) {
                                 Files.createDirectories(dirPath)
@@ -127,7 +128,7 @@ class DesktopServerConfigManagerImpl(
 
     override fun configureDeviceAsServer(serverConfig: ServerConfig) {
         appScope.launch {
-            serverConfigDataSource.updateServerConfig(serverConfig)
+            serverConfigRepository.updateServerConfig(serverConfig)
             serverConfigState.update {
                 it.copy(configStatus = ConfigStatus.NotConfigured)
             }

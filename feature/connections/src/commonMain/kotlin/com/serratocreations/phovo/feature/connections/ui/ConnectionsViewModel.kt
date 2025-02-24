@@ -94,7 +94,7 @@ class ConnectionsViewModel(
 
     fun setSelectedDirectory(selectedDirectory: String) {
         _connectionsUiState.update { currentUiState ->
-            currentUiState.copy(selectedDirectory = selectedDirectory)
+            currentUiState.copy(selectedDirectory = "$selectedDirectory/DO_NOT_DELETE_PHOVO/")
         }
     }
 }
