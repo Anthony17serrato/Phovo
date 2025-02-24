@@ -32,3 +32,4 @@ include(":feature:connections")
 
 // Data
 include(":data:photos")
+include(":data:server")

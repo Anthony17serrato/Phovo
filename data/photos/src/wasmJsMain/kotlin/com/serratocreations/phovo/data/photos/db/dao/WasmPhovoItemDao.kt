@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 
 class WasmPhovoItemDao : PhovoItemDao {
-    override fun allItemsFlow(): Flow<List<PhovoItem>> {
+    override fun allItemsFlow(localDirectory: String?): Flow<List<PhovoItem>> {
         return flowOf(emptyList())
     }
 }

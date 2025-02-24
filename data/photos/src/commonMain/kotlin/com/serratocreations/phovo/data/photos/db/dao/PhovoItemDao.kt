@@ -4,5 +4,8 @@ import com.serratocreations.phovo.data.photos.db.entity.PhovoItem
 import kotlinx.coroutines.flow.Flow
 
 interface PhovoItemDao {
-    fun allItemsFlow() : Flow<List<PhovoItem>>
+    /**
+     * Currently local directory is only used for desktop clients to fetch backed up images.
+     */
+    fun allItemsFlow(localDirectory: String? = null) : Flow<List<PhovoItem>>
 }

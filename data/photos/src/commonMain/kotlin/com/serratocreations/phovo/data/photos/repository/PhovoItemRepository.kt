@@ -1,5 +1,7 @@
 package com.serratocreations.phovo.data.photos.repository
 
+import com.serratocreations.phovo.core.common.Platform
+import com.serratocreations.phovo.core.common.getPlatform
 import com.serratocreations.phovo.data.photos.db.dao.PhovoItemDao
 import com.serratocreations.phovo.data.photos.db.entity.PhovoImageItem
 import com.serratocreations.phovo.data.photos.db.entity.PhovoItem
@@ -14,9 +16,9 @@ class PhovoItemRepository(
     private val remotePhotosDataSource: PhotosNetworkDataSource,
     private val appScope: CoroutineScope
 ) {
-    fun phovoItemsFlow() : Flow<List<PhovoItem>> =
-        localPhotosDataSource.allItemsFlow().map { items ->
-            syncImage(items.filterIsInstance<PhovoImageItem>())
+    fun phovoItemsFlow(localDirectory: String? = null) : Flow<List<PhovoItem>> =
+        localPhotosDataSource.allItemsFlow(localDirectory).map { items ->
+            if (getPlatform() != Platform.Desktop) syncImage(items.filterIsInstance<PhovoImageItem>())
             items.sortedByDescending {
                 it.dateInFeed
             }

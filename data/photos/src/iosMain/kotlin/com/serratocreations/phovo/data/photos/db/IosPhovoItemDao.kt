@@ -17,7 +17,7 @@ import kotlin.coroutines.suspendCoroutine
 
 class IosPhovoItemDao : PhovoItemDao {
 
-    override fun allItemsFlow(): Flow<List<PhovoItem>> {
+    override fun allItemsFlow(localDirectory: String?): Flow<List<PhovoItem>> {
         return flow {
             requestPhotoLibraryPermission()
             emit(

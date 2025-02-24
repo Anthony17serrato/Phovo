@@ -1,7 +1,7 @@
-package com.serratocreations.phovo.feature.connections.data.repository
+package com.serratocreations.phovo.data.server.data.repository
 
-import com.serratocreations.phovo.feature.connections.data.dao.ServerConfigDao
-import com.serratocreations.phovo.feature.connections.data.model.ServerConfig
+import com.serratocreations.phovo.data.server.data.dao.ServerConfigDao
+import com.serratocreations.phovo.data.server.data.model.ServerConfig
 import org.koin.core.annotation.Singleton
 
 @Singleton
