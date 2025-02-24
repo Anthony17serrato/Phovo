@@ -30,7 +30,7 @@ class AndroidPhovoItemDao(
     private val resolver = context.contentResolver
 
     @SuppressLint("NewApi")
-    override fun allItemsFlow(): Flow<List<PhovoItem>> {
+    override fun allItemsFlow(localDirectory: String?): Flow<List<PhovoItem>> {
         // TODO add observability of updates
         val videoList = mutableListOf<PhovoImageItem>()
 

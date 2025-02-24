@@ -1,6 +1,6 @@
-package com.serratocreations.phovo.feature.connections.data
+package com.serratocreations.phovo.data.server.data
 
-import com.serratocreations.phovo.feature.connections.data.model.ServerConfig
+import com.serratocreations.phovo.data.server.data.model.ServerConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 

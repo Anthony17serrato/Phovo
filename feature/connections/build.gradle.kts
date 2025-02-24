@@ -11,6 +11,7 @@ kotlin {
             dependencies {
                 implementation(projects.core.designsystem)
                 implementation(projects.core.common)
+                implementation(projects.data.server)
 
                 implementation(compose.components.resources)
                 implementation(libs.serialization.json)
@@ -26,11 +27,7 @@ kotlin {
         }
         val desktopMain by getting {
             dependencies {
-                implementation(libs.ktor.server.core)
-                implementation(libs.ktor.server.status.pages)
-                implementation(libs.ktor.server.netty)
-                implementation(libs.ktor.serialization)
-                implementation(libs.ktor.server.content.negotiation)
+
             }
         }
         val wasmJsMain by getting {
