@@ -1,8 +1,8 @@
 package com.serratocreations.phovo.feature.connections.data
 
-import com.serratocreations.phovo.data.photos.repository.PhovoItemRepository
 import com.serratocreations.phovo.feature.connections.data.model.ServerConfig
 import com.serratocreations.phovo.feature.connections.data.repository.ServerConfigRepository
+import com.serratocreations.phovo.feature.connections.data.repository.ServerEventsRepository
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.PartData
 import io.ktor.http.content.forEachPart
@@ -37,8 +37,8 @@ import java.nio.file.Paths
 import java.time.LocalDateTime
 
 class DesktopServerConfigManagerImpl(
-    private val phovoItemRepository: PhovoItemRepository,
     private val serverConfigRepository: ServerConfigRepository,
+    private val serverEventsRepository: ServerEventsRepository,
     private val appScope: CoroutineScope,
     private val ioDispatcher: CoroutineDispatcher
 ): DesktopServerConfigManager {
@@ -59,7 +59,7 @@ class DesktopServerConfigManagerImpl(
             staticResources("/content", "mycontent")
 
             get("/") {
-                phovoItemRepository.addServerEventLog("get ${LocalDateTime.now()}")
+                serverEventsRepository.addServerEventLog("get ${LocalDateTime.now()}")
                 call.respond(HttpStatusCode.OK, "Phovo server is running")
             }
 
@@ -95,7 +95,7 @@ class DesktopServerConfigManagerImpl(
                             val fileBytes = part.streamProvider().readBytes()
                             println("Read bytes")
                             file.writeBytes(fileBytes)
-                            phovoItemRepository.addServerEventLog("File uploaded ${file.absolutePath}")
+                            serverEventsRepository.addServerEventLog("File uploaded ${file.absolutePath}")
                         } catch (e: Exception) {
                             if (e is CancellationException) throw e else exception = e
                         }
@@ -121,7 +121,7 @@ class DesktopServerConfigManagerImpl(
     private fun CoroutineScope.observeDeviceServerConfigurationState() {
         // TODO: fetch the initial server state from room
         serverConfigState.update { it.copy(configStatus = ConfigStatus.NotConfigured) }
-        phovoItemRepository.serverEventLogsFlow().onEach { logs ->
+        serverEventsRepository.serverEventLogsFlow().onEach { logs ->
             serverConfigState.update { it.copy(serverEventLogs = logs) }
         }.launchIn(this)
     }

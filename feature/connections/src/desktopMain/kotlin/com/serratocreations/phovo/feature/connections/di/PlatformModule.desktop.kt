@@ -10,8 +10,8 @@ import org.koin.dsl.module
 internal actual fun platformModule() = module {
     single<ServerConfigManager> {
         DesktopServerConfigManagerImpl(
-            phovoItemRepository = get(),
             serverConfigRepository = get(),
+            serverEventsRepository = get(),
             appScope = get(named(APPLICATION_SCOPE)),
             ioDispatcher = get(named(IO_DISPATCHER))
         )
