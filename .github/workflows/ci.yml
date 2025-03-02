@@ -7,7 +7,7 @@ on:
   pull_request:
 
 jobs:
-  build:
+  build-kmp:
     runs-on: self-hosted
     steps:
       - name: Checkout code
@@ -19,5 +19,6 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Build Desktop
-        run: ./gradlew run composeApp:run
+      - name: Build KMP
+        run: ./gradlew :composeApp:assemble
+
