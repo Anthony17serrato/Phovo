@@ -19,5 +19,5 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Build Kotlin Multiplatform
-        run: ./gradlew build
+      - name: Build Desktop
+        run: ./gradlew run composeApp:run
