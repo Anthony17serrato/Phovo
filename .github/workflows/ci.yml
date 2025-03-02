@@ -19,7 +19,7 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
       - name: Create local.properties
-        run: echo "sdk.dir=$ANDROID_HOME" > local.properties
+        run: echo "sdk.dir=/home/anthony17/Android/Sdk" > local.properties
       - name: Build KMP
         run: ./gradlew :composeApp:assemble
 
