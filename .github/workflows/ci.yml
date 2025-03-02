@@ -21,5 +21,4 @@ jobs:
       - name: Create local.properties
         run: echo "sdk.dir=/home/anthony17/Android/Sdk" > local.properties
       - name: Build KMP
-        run: ./gradlew testDebugUnitTest
-
+        run: ./gradlew build -x compileKotlinWasm -x wasmJsTest
