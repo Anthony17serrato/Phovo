@@ -7,7 +7,7 @@ on:
   pull_request:
 
 jobs:
-  compile-desktop:
+  compile-kmp:
     runs-on: self-hosted
     steps:
       - name: Checkout code
@@ -23,3 +23,9 @@ jobs:
       # Currently Raspberry Pi cannot build WASM due to ARM64 issues https://youtrack.jetbrains.com/issue/KT-70100/wasmJs-Target-Fails-to-Compile-on-ARM64-Linux
       - name: Compile Desktop
         run: ./gradlew compileKotlinDesktop
+      - name: Compile Android
+        run: ./gradlew compileKotlinAndroid
+      - name: Compile Web
+        run: ./gradlew compileKotlinWasmJs
+# Not sure this can be compiled on linux        
+#./gradlew compileKotlinIos  # iOS target
