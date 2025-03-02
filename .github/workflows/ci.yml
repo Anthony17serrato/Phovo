@@ -18,10 +18,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v2
-        with:
-          android-sdk-path: '/home/anthony17/Android/Sdk'
       - name: Build KMP
         run: ./gradlew :composeApp:assemble
 
