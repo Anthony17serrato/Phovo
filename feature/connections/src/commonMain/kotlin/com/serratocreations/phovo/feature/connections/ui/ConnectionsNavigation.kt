@@ -2,7 +2,6 @@ package com.serratocreations.phovo.feature.connections.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
-import androidx.compose.material3.adaptive.WindowAdaptiveInfo
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -14,10 +13,10 @@ import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavOptions
 import androidx.navigation.compose.composable
-import androidx.window.core.layout.WindowWidthSizeClass
 import com.serratocreations.phovo.core.common.ui.PhovoPaneMode
 import com.serratocreations.phovo.core.common.ui.PhovoViewModel
 import com.serratocreations.phovo.core.designsystem.component.PhovoNavOptions
+import com.serratocreations.phovo.core.designsystem.util.getPaneMode
 import kotlinx.serialization.Serializable
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -182,12 +181,6 @@ private fun ConnectionsPane.setNavigationContent(
         }
     }
 }
-
-private val WindowAdaptiveInfo.getPaneMode: PhovoPaneMode
-    get() = when (this.windowSizeClass.windowWidthSizeClass) {
-        WindowWidthSizeClass.EXPANDED -> PhovoPaneMode.TwoPane
-        else -> PhovoPaneMode.SinglePane
-    }
 
 data class ConnectionsNavigation(
     val pane: PaneId,
