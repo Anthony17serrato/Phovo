@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -19,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import androidx.window.core.layout.WindowWidthSizeClass
 import coil3.ImageLoader
 import coil3.compose.AsyncImage
 import coil3.compose.setSingletonImageLoaderFactory
@@ -56,10 +58,18 @@ internal fun PhotosRoute(
 internal fun PhotosScreen(
     photosState: List<PhotoUiItem>,
     modifier: Modifier = Modifier,
+    width: WindowWidthSizeClass = currentWindowAdaptiveInfo().windowSizeClass.windowWidthSizeClass
 ) {
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         LazyVerticalGrid(
-            columns = GridCells.Adaptive(minSize = 80.dp),
+            columns = GridCells.Adaptive(
+                minSize = when (width) {
+                    WindowWidthSizeClass.COMPACT -> 80.dp
+                    WindowWidthSizeClass.MEDIUM -> 120.dp
+                    WindowWidthSizeClass.EXPANDED -> 160.dp
+                    else -> 80.dp
+                }
+            ),
             verticalArrangement = Arrangement.spacedBy(4.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {

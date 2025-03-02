@@ -86,8 +86,10 @@ class PhovoAppState(
             // Pop up to the start destination of the graph to
             // avoid building up a large stack of destinations
             // on the back stack as users select items
-            popUpTo(navController.graph.findStartDestination().id) {
-                saveState = true
+            navController.graph.findStartDestination().route?.let {
+                popUpTo(it) {
+                    saveState = true
+                }
             }
             // Avoid multiple copies of the same destination when
             // reselecting the same item

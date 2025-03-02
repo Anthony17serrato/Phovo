@@ -4,10 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.serratocreations.phovo.core.designsystem.component.PhovoNavOptions
 import com.serratocreations.phovo.core.designsystem.component.PhovoRoute
-import com.serratocreations.phovo.feature.connections.data.ConfigStatus
-import com.serratocreations.phovo.feature.connections.data.DesktopServerConfigManager
-import com.serratocreations.phovo.feature.connections.data.ServerConfigManager
-import com.serratocreations.phovo.feature.connections.data.model.ServerConfig
+import com.serratocreations.phovo.data.server.data.ConfigStatus
+import com.serratocreations.phovo.data.server.data.DesktopServerConfigManager
+import com.serratocreations.phovo.data.server.data.ServerConfigManager
+import com.serratocreations.phovo.data.server.data.model.ServerConfig
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
@@ -94,7 +94,7 @@ class ConnectionsViewModel(
 
     fun setSelectedDirectory(selectedDirectory: String) {
         _connectionsUiState.update { currentUiState ->
-            currentUiState.copy(selectedDirectory = "$selectedDirectory/DO_NOT_DELETE_PHOVO/")
+            currentUiState.copy(selectedDirectory = "$selectedDirectory/DO_NOT_DELETE_PHOVO")
         }
     }
 }

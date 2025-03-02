@@ -20,6 +20,7 @@ kotlin {
                 implementation(libs.ktor.client.core)
                 implementation(libs.ktor.serialization)
                 implementation(libs.ktor.client.content.negotiation)
+                implementation("com.ashampoo:kim:0.20")
             }
         }
         val commonTest by getting {

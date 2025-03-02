@@ -1,8 +1,8 @@
-package com.serratocreations.phovo.feature.connections.data
+package com.serratocreations.phovo.data.server.data
 
-import com.serratocreations.phovo.feature.connections.data.model.ServerConfig
-import com.serratocreations.phovo.feature.connections.data.repository.ServerConfigRepository
-import com.serratocreations.phovo.feature.connections.data.repository.ServerEventsRepository
+import com.serratocreations.phovo.data.server.data.model.ServerConfig
+import com.serratocreations.phovo.data.server.data.repository.ServerConfigRepository
+import com.serratocreations.phovo.data.server.data.repository.ServerEventsRepository
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.PartData
 import io.ktor.http.content.forEachPart
@@ -81,8 +81,9 @@ class DesktopServerConfigManagerImpl(
                 multipart.forEachPart { part ->
                     if (part is PartData.FileItem) {
                         try {
+                            // TODO better !! handling
                             val directory = serverConfigRepository.observeServerConfig().first()
-                                .backupDirectory
+                                .backupDirectory!! + "/"
                             val dirPath = Paths.get(directory)
                             if (!Files.exists(dirPath)) {
                                 Files.createDirectories(dirPath)

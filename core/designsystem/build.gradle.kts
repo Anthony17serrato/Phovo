@@ -9,6 +9,7 @@ kotlin {
             dependencies {
                 //put your multiplatform dependencies here
                 implementation(compose.components.resources)
+                implementation(projects.core.common)
                 api(compose.components.uiToolingPreview)
                 api(compose.materialIconsExtended)
                 api(compose.foundation)
