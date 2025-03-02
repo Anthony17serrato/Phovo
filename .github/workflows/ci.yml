@@ -18,7 +18,8 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-
+      - name: Bash
+        run: source ~/.bashrc
       - name: Build KMP
         run: ./gradlew :composeApp:assemble
 
