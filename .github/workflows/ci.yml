@@ -24,7 +24,7 @@ jobs:
       - name: Compile Desktop
         run: ./gradlew compileKotlinDesktop
       - name: Compile Android
-        run: ./gradlew compileKotlinAndroid
+        run: ./gradlew compileDebugKotlinAndroid
       - name: Compile Web
         run: ./gradlew compileKotlinWasmJs
 # Not sure this can be compiled on linux        
