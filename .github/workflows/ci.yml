@@ -22,14 +22,4 @@ jobs:
         run: echo "sdk.dir=/home/anthony17/Android/Sdk" > local.properties
       # Currently Raspberry Pi cannot build WASM due to ARM64 issues https://youtrack.jetbrains.com/issue/KT-70100/wasmJs-Target-Fails-to-Compile-on-ARM64-Linux
       - name: Build KMP
-        run: ./gradlew build \
-          -x compileDevelopmentExecutableKotlinWasmJs \
-          -x compileDevelopmentExecutableKotlinWasmJsOptimize \
-          -x compileKotlinWasmJs \
-          -x compileProductionExecutableKotlinWasmJs \
-          -x compileProductionExecutableKotlinWasmJsOptimize \
-          -x compileTestDevelopmentExecutableKotlinWasmJs \
-          -x compileTestDevelopmentExecutableKotlinWasmJsOptimize \
-          -x compileTestKotlinWasmJs \
-          -x compileTestProductionExecutableKotlinWasmJs \
-          -x compileTestProductionExecutableKotlinWasmJsOptimize
+        run: ./gradlew build -x compileDevelopmentExecutableKotlinWasmJs -x compileDevelopmentExecutableKotlinWasmJsOptimize -x compileKotlinWasmJs -x compileProductionExecutableKotlinWasmJs -x compileProductionExecutableKotlinWasmJsOptimize -x compileTestDevelopmentExecutableKotlinWasmJs -x compileTestDevelopmentExecutableKotlinWasmJsOptimize -x compileTestKotlinWasmJs -x compileTestProductionExecutableKotlinWasmJs -x compileTestProductionExecutableKotlinWasmJsOptimize
