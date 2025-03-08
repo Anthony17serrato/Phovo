@@ -1,6 +1,7 @@
 package com.serratocreations.phovo.data.photos.repository
 
 import com.serratocreations.phovo.core.common.Platform
+import com.serratocreations.phovo.core.common.di.ApplicationScope
 import com.serratocreations.phovo.core.common.getPlatform
 import com.serratocreations.phovo.data.photos.db.dao.PhovoItemDao
 import com.serratocreations.phovo.data.photos.db.entity.PhovoImageItem
@@ -10,11 +11,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import org.koin.core.annotation.Singleton
 
+@Singleton
 class PhovoItemRepository(
     private val localPhotosDataSource: PhovoItemDao,
     private val remotePhotosDataSource: PhotosNetworkDataSource,
-    private val appScope: CoroutineScope
+    @ApplicationScope private val appScope: CoroutineScope
 ) {
     fun phovoItemsFlow(localDirectory: String? = null) : Flow<List<PhovoItem>> =
         localPhotosDataSource.allItemsFlow(localDirectory).map { items ->

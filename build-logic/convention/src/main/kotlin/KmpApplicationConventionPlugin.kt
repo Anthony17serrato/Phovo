@@ -21,7 +21,7 @@ class KmpApplicationConventionPlugin : Plugin<Project> {
                 sourceSets["main"].res.srcDirs("src/androidMain/res")
                 sourceSets["main"].resources.srcDirs("src/commonMain/resources")
                 defaultConfig {
-                    targetSdk = 34
+                    targetSdk = 35
                     applicationId = "com.serratocreations.phovo"
                     versionCode = 1
                     versionName = "1.0"

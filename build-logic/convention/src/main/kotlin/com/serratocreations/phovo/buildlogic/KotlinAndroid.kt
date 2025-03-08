@@ -16,7 +16,7 @@ internal fun Project.configureKotlinAndroid(
     commonExtension: CommonExtension<*, *, *, *, *, *>,
 ) {
     commonExtension.apply {
-        compileSdk = 34
+        compileSdk = 35
 
         defaultConfig {
             minSdk = 21
@@ -34,6 +34,10 @@ internal fun Project.configureKotlinAndroid(
 
 internal fun Project.configureKotlinMultiplatform(isApplication: Boolean) {
     configure<KotlinMultiplatformExtension> {
+        compilerOptions {
+            freeCompilerArgs.add("-Xexpect-actual-classes")
+        }
+
         jvm("desktop")
 
         androidTarget {
