@@ -9,9 +9,9 @@ import org.koin.core.context.startKoin
 import org.koin.dsl.KoinAppDeclaration
 import org.koin.ksp.generated.*
 
-fun initKoin(appDeclaration: KoinAppDeclaration = {}) = startKoin {
-    appDeclaration()
+fun initKoin(config: KoinAppDeclaration? = null) = startKoin {
     modules(AppModule().module, connectionsFeatureModule(), commonModule())
+    config?.invoke(this)
 }
 
 // called by IOS in iOSApp.swift

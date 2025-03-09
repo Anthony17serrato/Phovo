@@ -1,5 +1,8 @@
 package com.serratocreations.phovo.data.photos.di
 
+import android.content.Context
+import com.serratocreations.phovo.data.photos.db.dao.AndroidPhovoItemDao
+import com.serratocreations.phovo.data.photos.db.dao.PhovoItemDao
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -17,4 +20,8 @@ internal actual class PhotosDataPlatformModule {
             json()
         }
     }
+
+    // Workaround for Koin Annotations bug... Can't annotate class with @Singleton
+    @Singleton
+    fun phovoItemDao(context: Context): PhovoItemDao = AndroidPhovoItemDao(context)
 }
