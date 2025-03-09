@@ -25,7 +25,8 @@ import java.time.LocalDateTime as JavaLocalDateTime
 import kotlinx.datetime.toKotlinLocalDateTime
 import org.koin.core.annotation.Singleton
 
-@Singleton
+// https://github.com/InsertKoinIO/koin/issues/2146
+@Singleton(binds = [PhovoItemDao::class])
 class AndroidPhovoItemDao(
     context: Context
 ) : PhovoItemDao {

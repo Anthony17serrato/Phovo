@@ -2,7 +2,7 @@ package com.serratocreations.phovo.data.photos.network.model
 
 import android.content.Context
 import coil3.Uri
-import com.serratocreations.phovo.core.common.di.IO_DISPATCHER
+import com.serratocreations.phovo.core.common.di.IoDispatcher
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import org.koin.core.component.KoinComponent
@@ -15,7 +15,7 @@ class AndroidNetworkFile(
     val fileName: String
 ) : NetworkFile, KoinComponent {
     private val context: Context by inject()
-    private val ioDispatcher: CoroutineDispatcher by inject(qualifier = named(IO_DISPATCHER))
+    private val ioDispatcher: CoroutineDispatcher by inject(named<IoDispatcher>())
 
     private val androidUri = AndroidUri.parse(uri.toString())
 
