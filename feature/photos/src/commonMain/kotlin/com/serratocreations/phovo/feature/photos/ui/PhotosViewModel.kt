@@ -20,7 +20,7 @@ import kotlinx.datetime.toLocalDateTime
 import org.koin.android.annotation.KoinViewModel
 
 @KoinViewModel
-class PhovoViewModel(
+class PhotosViewModel(
     private val phovoItemRepository: PhovoItemRepository,
     private val serverConfigRepository: ServerConfigRepository
 ): ViewModel() {

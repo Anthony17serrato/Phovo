@@ -35,7 +35,7 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 internal fun PhotosRoute(
     modifier: Modifier = Modifier,
-    phovoViewModel: PhovoViewModel = koinViewModel()
+    photosViewModel: PhotosViewModel = koinViewModel()
 ) {
     // TODO move to root composable https://coil-kt.github.io/coil/image_loaders/
     setSingletonImageLoaderFactory { context ->
@@ -46,7 +46,7 @@ internal fun PhotosRoute(
             }
             .build()
     }
-    val photosState by phovoViewModel.phovoUiState.collectAsStateWithLifecycle()
+    val photosState by photosViewModel.phovoUiState.collectAsStateWithLifecycle()
     PhotosScreen(
         photosState = photosState,
         modifier = modifier

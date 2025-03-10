@@ -60,6 +60,7 @@ internal fun Project.configureKotlinMultiplatform(isApplication: Boolean) {
                         devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
                             static = (static ?: mutableListOf()).apply {
                                 // Serve sources to debug inside browser
+                                add(project.rootDir.path)
                                 add(project.projectDir.path)
                             }
                         }
