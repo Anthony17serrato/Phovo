@@ -1,7 +1,7 @@
 package com.serratocreations.phovo.data.photos.network.model
 
 import coil3.Uri
-import com.serratocreations.phovo.core.common.di.IO_DISPATCHER
+import com.serratocreations.phovo.core.common.di.IoDispatcher
 import com.serratocreations.phovo.core.common.util.toByteArray
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
@@ -16,7 +16,7 @@ import kotlin.coroutines.suspendCoroutine
 class IosNetworkFile(
     override val uri: Uri
 ) : NetworkFile, KoinComponent {
-    private val ioDispatcher: CoroutineDispatcher by inject(qualifier = named(IO_DISPATCHER))
+    private val ioDispatcher: CoroutineDispatcher by inject(named<IoDispatcher>())
 
     override suspend fun exists(): Boolean {
         return resolveFileURL() != null

@@ -47,6 +47,8 @@ internal fun Project.configureKmpKoin(
         dependencies {
             add("kspCommonMainMetadata", libs.findLibrary("koin.ksp.compiler").get())
             add("kspAndroid", libs.findLibrary("koin.ksp.compiler").get())
+            add("kspWasmJs", libs.findLibrary("koin.ksp.compiler").get())
+            add("kspDesktop", libs.findLibrary("koin.ksp.compiler").get())
             add("kspIosX64", libs.findLibrary("koin.ksp.compiler").get())
             add("kspIosArm64", libs.findLibrary("koin.ksp.compiler").get())
             add("kspIosSimulatorArm64", libs.findLibrary("koin.ksp.compiler").get())

@@ -1,5 +1,7 @@
 package com.serratocreations.phovo.data.server.data
 
+import com.serratocreations.phovo.core.common.di.ApplicationScope
+import com.serratocreations.phovo.core.common.di.IoDispatcher
 import com.serratocreations.phovo.data.server.data.model.ServerConfig
 import com.serratocreations.phovo.data.server.data.repository.ServerConfigRepository
 import com.serratocreations.phovo.data.server.data.repository.ServerEventsRepository
@@ -32,15 +34,17 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.serialization.json.Json
+import org.koin.core.annotation.Singleton
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.LocalDateTime
 
+@Singleton(binds = [ServerConfigManager::class])
 class DesktopServerConfigManagerImpl(
     private val serverConfigRepository: ServerConfigRepository,
     private val serverEventsRepository: ServerEventsRepository,
-    private val appScope: CoroutineScope,
-    private val ioDispatcher: CoroutineDispatcher
+    @ApplicationScope private val appScope: CoroutineScope,
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ): DesktopServerConfigManager {
     // Caches the current config state for new subscribers
     private val serverConfigState = MutableStateFlow(ServerConfigState())

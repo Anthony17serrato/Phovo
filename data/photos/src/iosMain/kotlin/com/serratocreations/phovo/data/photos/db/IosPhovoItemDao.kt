@@ -11,10 +11,12 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toKotlinInstant
 import kotlinx.datetime.toLocalDateTime
+import org.koin.core.annotation.Singleton
 import platform.Photos.*
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
+@Singleton
 class IosPhovoItemDao : PhovoItemDao {
 
     override fun allItemsFlow(localDirectory: String?): Flow<List<PhovoItem>> {
