@@ -62,8 +62,18 @@ internal fun Project.configureKmpKoin(
         }
     }
 
+
+//    project.tasks.matching { it.name.contains("ksp") }.configureEach {
+//        if (name != "kspCommonMainKotlinMetadata") {
+//            dependsOn("kspCommonMainKotlinMetadata")
+//        }
+//    }
+
     extensions.configure<KspExtension> {
         // Enable Koin Viewmodel Annotation
         arg("KOIN_USE_COMPOSE_VIEWMODEL", "true")
+        // Does not work properly with KMP ComponentScan
+        //arg("KOIN_CONFIG_CHECK", "true")
+        arg("KOIN_LOG_TIMES", "true")
     }
 }

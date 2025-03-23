@@ -22,7 +22,7 @@ internal actual class PhotosDataPlatformModule {
     }
 
     // Workaround for Koin Annotations bug... Can't annotate class with @Singleton
-    // https://github.com/InsertKoinIO/koin/issues/2146
+    // https://github.com/InsertKoinIO/koin-annotations/issues/249
     @Singleton
     fun phovoItemDao(context: Context): PhovoItemDao = AndroidPhovoItemDao(context)
 }
