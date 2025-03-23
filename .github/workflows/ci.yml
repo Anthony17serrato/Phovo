@@ -18,8 +18,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-      - name: Create local.properties
-        run: echo "sdk.dir=/home/anthony17/Android/Sdk" > local.properties
       # Currently Raspberry Pi cannot build WASM due to ARM64 issues https://youtrack.jetbrains.com/issue/KT-70100/wasmJs-Target-Fails-to-Compile-on-ARM64-Linux
       - name: Build Project
         run: ./gradlew build
