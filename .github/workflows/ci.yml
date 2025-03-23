@@ -21,11 +21,11 @@ jobs:
       - name: Create local.properties
         run: echo "sdk.dir=/home/anthony17/Android/Sdk" > local.properties
       # Currently Raspberry Pi cannot build WASM due to ARM64 issues https://youtrack.jetbrains.com/issue/KT-70100/wasmJs-Target-Fails-to-Compile-on-ARM64-Linux
-      - name: Compile Desktop
-        run: ./gradlew compileKotlinDesktop
+      - name: Build Project
+        run: ./gradlew build
 #      - name: Compile Android
 #        run: ./gradlew compileDebugKotlinAndroid
-      - name: Compile Web
-        run: ./gradlew compileKotlinWasmJs
+#      - name: Compile Web
+#        run: ./gradlew compileKotlinWasmJs
 # Not sure this can be compiled on linux        
 #./gradlew compileKotlinIos  # iOS target
