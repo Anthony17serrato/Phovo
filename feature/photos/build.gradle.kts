@@ -11,6 +11,7 @@ kotlin {
             dependencies {
                 implementation(projects.core.designsystem)
                 implementation(projects.core.common)
+                implementation(projects.core.logger)
                 implementation(projects.data.photos)
                 implementation(projects.data.server)
 

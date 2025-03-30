@@ -5,6 +5,7 @@ import com.ashampoo.kim.Kim
 import com.ashampoo.kim.format.tiff.constant.ExifTag
 import com.ashampoo.kim.jvm.readMetadata
 import com.serratocreations.phovo.core.common.di.IoDispatcher
+import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.data.photos.db.entity.PhovoImageItem
 import com.serratocreations.phovo.data.photos.db.entity.PhovoItem
 import kotlinx.coroutines.CoroutineDispatcher
@@ -25,8 +26,11 @@ import java.time.format.DateTimeFormatter
 
 @Singleton
 class DesktopPhovoItemDao(
+    logger: PhovoLogger,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : PhovoItemDao {
+    private val log = logger.withTag("DesktopPhovoItemDao")
+
     // TODO temporary implementation, this API should observe the table of synced images from database
     override fun allItemsFlow(localDirectory: String?): Flow<List<PhovoItem>> {
         return channelFlow<List<PhovoItem>> {
@@ -40,7 +44,7 @@ class DesktopPhovoItemDao(
                 while (true) {
                     val directory = localDirectory?.let { File(it) }
                     if (directory == null || !directory.exists() || !directory.isDirectory) {
-                        println("Invalid directory: $localDirectory")
+                        log.e { "Invalid directory: $localDirectory" }
                         filesChannel.send(emptyList())
                     } else {
                         filesChannel.send(directory.listFiles()?.toList() ?: emptyList())

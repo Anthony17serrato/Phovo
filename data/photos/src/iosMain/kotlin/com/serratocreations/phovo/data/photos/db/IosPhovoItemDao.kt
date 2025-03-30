@@ -2,6 +2,7 @@ package com.serratocreations.phovo.data.photos.db
 
 import kotlinx.coroutines.flow.Flow
 import coil3.toUri
+import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.data.photos.db.dao.PhovoItemDao
 import com.serratocreations.phovo.data.photos.db.entity.PhovoImageItem
 import com.serratocreations.phovo.data.photos.db.entity.PhovoItem
@@ -17,7 +18,8 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
 @Singleton
-class IosPhovoItemDao : PhovoItemDao {
+class IosPhovoItemDao(logger: PhovoLogger) : PhovoItemDao {
+    private val log = logger.withTag("IosPhovoItemDao")
 
     override fun allItemsFlow(localDirectory: String?): Flow<List<PhovoItem>> {
         return flow {
@@ -32,19 +34,19 @@ class IosPhovoItemDao : PhovoItemDao {
         PHPhotoLibrary.requestAuthorization { status ->
             when (status) {
                 PHAuthorizationStatusAuthorized -> {
-                    println("Photo Library access granted")
+                    log.i { "Photo Library access granted" }
                     // Proceed with photo fetching logic
                 }
                 PHAuthorizationStatusDenied -> {
-                    println("Photo Library access denied")
+                    log.w { "Photo Library access denied" }
                     // Guide the user to settings if needed
                 }
                 PHAuthorizationStatusRestricted -> {
-                    println("Photo Library access restricted")
+                    log.w { "Photo Library access restricted" }
                     // Handle the case for restricted access (e.g., parental controls)
                 }
                 PHAuthorizationStatusNotDetermined -> {
-                    println("Photo Library access not determined")
+                    log.w { "Photo Library access not determined" }
                     // The user hasn't been asked yet, possibly retry request
                 }
             }
@@ -55,7 +57,7 @@ class IosPhovoItemDao : PhovoItemDao {
     @OptIn(ExperimentalForeignApi::class)
     private suspend fun fetchGalleryImageURLs(): List<PhovoImageItem> = coroutineScope {
         val status = PHPhotoLibrary.authorizationStatus()
-        println("Photo Library Authorization Status: $status")
+        log.i { "Photo Library Authorization Status: $status" }
         val fetchOptions = PHFetchOptions()
         val assets = PHAsset.fetchAssetsWithMediaType(PHAssetMediaTypeImage, fetchOptions)
         val imageItems = mutableListOf<PhovoImageItem>()
@@ -74,7 +76,7 @@ class IosPhovoItemDao : PhovoItemDao {
             )
             imageItems.add(phovoImageItem)
         }
-        println("IosPhovoItemDao images $imageItems")
+        log.i { "IosPhovoItemDao images $imageItems" }
         return@coroutineScope imageItems.toList()
     }
 }

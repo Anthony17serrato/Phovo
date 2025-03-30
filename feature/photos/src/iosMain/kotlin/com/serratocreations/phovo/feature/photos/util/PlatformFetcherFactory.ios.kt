@@ -10,7 +10,6 @@ actual fun getPlatformFetcherFactory(): Fetcher.Factory<Any> = PhAssetFetcherFac
 class PhAssetFetcherFactory : Fetcher.Factory<Any> {
     override fun create(data: Any, options: Options, imageLoader: ImageLoader): Fetcher? {
         val canFetchData = (data as? Uri)?.toString()?.startsWith("phasset://") ?: false
-        println("PlatformFetcherFactory canFetchData $canFetchData $data")
         return if (canFetchData) {
             PhAssetFetcher(data, options)
         } else null

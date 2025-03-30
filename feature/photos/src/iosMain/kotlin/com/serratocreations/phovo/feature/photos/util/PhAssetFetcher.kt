@@ -7,6 +7,7 @@ import coil3.fetch.FetchResult
 import coil3.fetch.SourceFetchResult
 import coil3.request.Options
 import com.serratocreations.phovo.core.common.util.toByteArray
+import com.serratocreations.phovo.core.logger.PhovoLogger
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
@@ -32,16 +33,17 @@ class PhAssetFetcher(data: Any, options: Options) : PlatformFetcher(data, option
         private val HEIF_BRAND_HEIX = "heix".encodeUtf8()
         private val HEIF_BRAND_AVIF = "avif".encodeUtf8()
         private val HEIF_BRAND_AVIS = "avis".encodeUtf8()
+        private val log = PhovoLogger.withTag("PhAssetFetcher")
     }
 
     override suspend fun fetch(): FetchResult? {
-        println("PhAssetFetcher fetch")
+        log.i { "PhAssetFetcher fetch" }
         val uri = data as Uri
         val localIdentifier = uri.toString().removePrefix("phasset://")
         val asset = fetchAssetByIdentifier(localIdentifier) ?: throw IllegalArgumentException("PHAsset not found.")
-        println("PhAssetFetcher asset found ${asset.localIdentifier}")
+        log.i { "PhAssetFetcher asset found ${asset.localIdentifier}" }
         val imageData = fetchImageData(asset) ?: return null
-        println("PhAssetFetcher imageData found ${imageData.length}")
+        log.i { ("PhAssetFetcher imageData found ${imageData.length}") }
         val source = ImageSource(
             source = Buffer().apply { write(imageData.toJpegBytes()) },
             fileSystem = options.fileSystem,

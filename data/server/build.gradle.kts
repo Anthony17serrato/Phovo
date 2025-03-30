@@ -10,6 +10,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation(projects.core.common)
+                implementation(projects.core.logger)
                 implementation(libs.serialization.json)
             }
         }

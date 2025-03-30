@@ -14,6 +14,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation(projects.core.common)
+                implementation(projects.core.logger)
                 implementation(libs.serialization.json)
                 implementation(libs.kotlin.datetime)
                 implementation(libs.coil.compose)
