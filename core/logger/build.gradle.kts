@@ -8,7 +8,6 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 api(libs.kermit.logging)
-                api(libs.kermit.logging.koin)
             }
         }
         val commonTest by getting {

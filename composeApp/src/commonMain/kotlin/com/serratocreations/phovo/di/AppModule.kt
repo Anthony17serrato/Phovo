@@ -1,7 +1,7 @@
 package com.serratocreations.phovo.di
 
-import co.touchlab.kermit.koin.KermitKoinLogger
 import com.serratocreations.phovo.core.common.di.CoreCommonModule
+import com.serratocreations.phovo.core.logger.KermitKoinLogger
 import com.serratocreations.phovo.core.logger.LoggerCommonModule
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.feature.connections.di.ConnectionsFeatureModule

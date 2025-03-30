@@ -47,7 +47,6 @@ serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serializ
 androidx-datastore = { module = "androidx.datastore:datastore", version.ref = "androidx-datastore" }
 jetbrains-swing = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-swing", version.ref = "kmp-swing" }
 kermit-logging = { group = "co.touchlab", name = "kermit", version.ref = "kermit" }
-kermit-logging-koin = { group = "co.touchlab", name = "kermit-koin", version.ref = "kermit" }
 koin-android =  { group = "io.insert-koin", name = "koin-android", version.ref = "koin" }
 koin-core =     { group = "io.insert-koin", name = "koin-core", version.ref = "koin" }
 koin-test =     { group = "io.insert-koin", name = "koin-test", version.ref = "koin" }
