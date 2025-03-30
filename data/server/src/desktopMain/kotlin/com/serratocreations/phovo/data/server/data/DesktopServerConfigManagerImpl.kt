@@ -2,6 +2,7 @@ package com.serratocreations.phovo.data.server.data
 
 import com.serratocreations.phovo.core.common.di.ApplicationScope
 import com.serratocreations.phovo.core.common.di.IoDispatcher
+import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.data.server.data.model.ServerConfig
 import com.serratocreations.phovo.data.server.data.repository.ServerConfigRepository
 import com.serratocreations.phovo.data.server.data.repository.ServerEventsRepository
@@ -41,6 +42,7 @@ import java.time.LocalDateTime
 
 @Singleton(binds = [ServerConfigManager::class])
 class DesktopServerConfigManagerImpl(
+    logger: PhovoLogger,
     private val serverConfigRepository: ServerConfigRepository,
     private val serverEventsRepository: ServerEventsRepository,
     @ApplicationScope private val appScope: CoroutineScope,
@@ -48,6 +50,7 @@ class DesktopServerConfigManagerImpl(
 ): DesktopServerConfigManager {
     // Caches the current config state for new subscribers
     private val serverConfigState = MutableStateFlow(ServerConfigState())
+    private val log = logger.withTag("DesktopServerConfigManagerImpl")
 
     private val routingConfig: Application.() -> Unit = {
         install(StatusPages) {
@@ -77,7 +80,7 @@ class DesktopServerConfigManagerImpl(
 //                // Respond with a success message
 //                call.respond(HttpStatusCode.Created, "Photo uploaded successfully")
 
-                println("reached upload api")
+                this@DesktopServerConfigManagerImpl.log.i { "reached upload api" }
                 // Receive the uploaded file
                 val multipart = call.receiveMultipart()
                 var exception: Exception? = null
@@ -96,9 +99,8 @@ class DesktopServerConfigManagerImpl(
                             val file = dirPath.resolve(fileName).let { path ->
                                 Files.createFile(path).toFile()
                             }
-                            println("upload filename $fileName")
+                            this@DesktopServerConfigManagerImpl.log.i { "upload filename $fileName" }
                             val fileBytes = part.streamProvider().readBytes()
-                            println("Read bytes")
                             file.writeBytes(fileBytes)
                             serverEventsRepository.addServerEventLog("File uploaded ${file.absolutePath}")
                         } catch (e: Exception) {

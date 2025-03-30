@@ -1,5 +1,6 @@
 package com.serratocreations.phovo.core.common.di
 
+import com.serratocreations.phovo.core.logger.PhovoLogger
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -43,9 +44,16 @@ class CoreCommonModule {
 
     @Singleton
     @ApplicationScope
-    fun applicationScope(@DefaultDispatcher defaultDispatcher: CoroutineDispatcher): CoroutineScope {
+    fun applicationScope(
+        logger: PhovoLogger,
+        @DefaultDispatcher defaultDispatcher: CoroutineDispatcher
+    ): CoroutineScope {
         val handler = CoroutineExceptionHandler { _, exception ->
-            println("CoroutineExceptionHandler got $exception")
+            logger.withTag("CoroutineExceptionHandler").e(exception) {
+                "Barnacles! @ApplicationScope CoroutineExceptionHandler caught an unhandled exception: $exception"
+            }
+            // re-throw the exception to crash the app
+            throw exception
         }
         return CoroutineScope(SupervisorJob() + defaultDispatcher + handler)
     }

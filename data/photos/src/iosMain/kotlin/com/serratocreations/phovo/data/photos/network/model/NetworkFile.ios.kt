@@ -3,6 +3,7 @@ package com.serratocreations.phovo.data.photos.network.model
 import coil3.Uri
 import com.serratocreations.phovo.core.common.di.IoDispatcher
 import com.serratocreations.phovo.core.common.util.toByteArray
+import com.serratocreations.phovo.core.logger.PhovoLogger
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import org.koin.core.component.KoinComponent
@@ -17,6 +18,7 @@ class IosNetworkFile(
     override val uri: Uri
 ) : NetworkFile, KoinComponent {
     private val ioDispatcher: CoroutineDispatcher by inject(named<IoDispatcher>())
+    private val log = PhovoLogger.withTag("IosNetworkFile")
 
     override suspend fun exists(): Boolean {
         return resolveFileURL() != null
@@ -26,11 +28,11 @@ class IosNetworkFile(
 
     override suspend fun readBytes(): ByteArray? {
         val fileURL = resolveFileURL() ?: run {
-            println("Cannot read file at $uri")
+            log.e { "Cannot read file at $uri" }
             return null
         }
         val data = NSData.dataWithContentsOfURL(fileURL) ?: run {
-            println("Cannot read file at $uri")
+            log.e { "Cannot read file at $uri" }
             return null
         }
 
@@ -55,7 +57,7 @@ class IosNetworkFile(
 
     private suspend fun getFileName(): String {
         val fileURL = resolveFileURL() ?: run {
-            println("Invalid URI or file does not exist: $uri")
+            log.e { "Invalid URI or file does not exist: $uri" }
             null
         }
         return fileURL?.lastPathComponent ?: "Unknown"

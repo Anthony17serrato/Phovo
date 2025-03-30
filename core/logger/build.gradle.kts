@@ -7,7 +7,8 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation(projects.core.logger)
+                api(libs.kermit.logging)
+                api(libs.kermit.logging.koin)
             }
         }
         val commonTest by getting {
@@ -19,5 +20,5 @@ kotlin {
 }
 
 android {
-    namespace = "com.serratocreations.phovo.core.common"
+    namespace = "com.serratocreations.phovo.core.logger"
 }

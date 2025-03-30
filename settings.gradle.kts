@@ -25,6 +25,7 @@ include(":composeApp")
 // Core
 include(":core:designsystem")
 include(":core:common")
+include(":core:logger")
 
 // Features
 include(":feature:photos")

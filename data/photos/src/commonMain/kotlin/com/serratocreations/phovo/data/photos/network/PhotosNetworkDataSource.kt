@@ -1,5 +1,6 @@
 package com.serratocreations.phovo.data.photos.network
 
+import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.data.photos.db.entity.PhovoImageItem
 import com.serratocreations.phovo.data.photos.network.model.getNetworkFile
 import io.ktor.client.HttpClient
@@ -11,18 +12,22 @@ import io.ktor.http.HttpHeaders
 import org.koin.core.annotation.Singleton
 
 @Singleton
-class PhotosNetworkDataSource(private val client: HttpClient) {
+class PhotosNetworkDataSource(
+    private val client: HttpClient,
+    logger: PhovoLogger
+) {
+    private val log = logger.withTag("PhotosNetworkDataSource")
+
     suspend fun syncImage(imageItem: PhovoImageItem) {
 //        val response: HttpResponse = client.post("http://10.0.0.71:8080/upload") {
 //            contentType(ContentType.Application.Json)
 //            setBody(imageItem)
 //        }
-//        println(response.status)
-        println("syncImage $imageItem")
+        log.i { "syncImage $imageItem" }
         val file = getNetworkFile(imageItem.uri, imageItem.name)
 
         if (!file.exists()) {
-            println("File not found at ${imageItem.uri}")
+            log.e { "File not found at ${imageItem.uri}" }
             return
         }
 
@@ -37,9 +42,9 @@ class PhotosNetworkDataSource(private val client: HttpClient) {
                     })
                 }
             )
-            println("Response: ${response.status}")
+            log.i { "Response: ${response.status}" }
         } catch (e: UnsupportedOperationException) {
-            println("Failed to upload file: ${e.message}")
+            log.e { "Failed to upload file: ${e.message}" }
         }
     }
 }
