@@ -10,6 +10,7 @@ import org.koin.core.annotation.Singleton
 object PhovoLogger : Logger(
     config = loggerConfigInit(
         platformLogWriter(),
+        platformFileLogWriter(),
         minSeverity = Severity.Info
     ),
     tag = "Phovo"

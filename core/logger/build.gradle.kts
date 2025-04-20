@@ -8,6 +8,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 api(libs.kermit.logging)
+                implementation(libs.kotlin.datetime)
             }
         }
         val commonTest by getting {
