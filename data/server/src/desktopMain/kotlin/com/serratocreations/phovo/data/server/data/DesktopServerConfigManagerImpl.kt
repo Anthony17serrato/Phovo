@@ -135,6 +135,7 @@ class DesktopServerConfigManagerImpl(
 
     override fun configureDeviceAsServer(serverConfig: ServerConfig) {
         appScope.launch {
+            log.i { "configureDeviceAsServer $serverConfig" }
             serverConfigRepository.updateServerConfig(serverConfig)
             serverConfigState.update {
                 it.copy(configStatus = ConfigStatus.NotConfigured)
