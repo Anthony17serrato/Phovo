@@ -23,7 +23,10 @@ internal fun Project.configureKmpRoom(
         iosArm64()
         iosSimulatorArm64()
 
-        // TODO: Review Hierarchical project structure https://kotlinlang.org/docs/multiplatform-hierarchy.html
+        // Apply the default hierarchy again. It'll create, for example, the iosMain source set:
+        // https://kotlinlang.org/docs/multiplatform-hierarchy.html
+        applyDefaultHierarchyTemplate()
+
         sourceSets.create("commonDesktopIosAndroid") {
             dependsOn(sourceSets.commonMain.get())
             sourceSets.iosMain.get().dependsOn(this)
