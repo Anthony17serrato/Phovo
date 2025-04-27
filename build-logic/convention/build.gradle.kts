@@ -41,7 +41,7 @@ dependencies {
     compileOnly(libs.kotlin.gradlePlugin)
     compileOnly(libs.ksp.gradlePlugin)
     compileOnly(libs.compose.gradlePlugin)
-    //compileOnly(libs.room.gradlePlugin)
+    compileOnly(libs.room.gradlePlugin)
     //implementation(libs.truth)
 }
 
@@ -78,6 +78,9 @@ gradlePlugin {
             id = "phovo.kmp.application"
             implementationClass = "KmpApplicationConventionPlugin"
         }
-
+        register("kmpLibraryRoom") {
+            id = "phovo.kmp.library.room"
+            implementationClass = "KmpLibraryRoomConventionPlugin"
+        }
     }
 }

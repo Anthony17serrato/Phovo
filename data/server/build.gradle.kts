@@ -2,11 +2,14 @@ plugins {
     id(libs.plugins.phovo.kmp.library.library.get().pluginId)
     id(libs.plugins.phovo.kmp.library.koin.get().pluginId)
     id(libs.plugins.phovo.kmp.library.compose.get().pluginId)
+    id(libs.plugins.phovo.kmp.library.room.get().pluginId)
     alias(libs.plugins.serialization)
 }
 
 kotlin {
     sourceSets {
+        val androidMain by getting
+
         val commonMain by getting {
             dependencies {
                 implementation(projects.core.common)
@@ -29,6 +32,11 @@ kotlin {
             }
         }
         val wasmJsMain by getting {
+            dependencies {
+
+            }
+        }
+        val commonDesktopIosAndroid by getting {
             dependencies {
 
             }
