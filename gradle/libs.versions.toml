@@ -23,8 +23,10 @@ ktor = "3.0.2"
 material3-adaptive = "1.0.1"
 material-navigation = "1.7.0-beta02"
 navigation-compose = "2.8.0-alpha10"
+room-kmp = "2.7.1"
 serialization-json = "1.7.3"
-skiko = "0.8.19"
+skiko = "0.9.3"
+sqlite = "2.5.0"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -65,6 +67,12 @@ ktor-server-core = { group = "io.ktor", name = "ktor-server-core", version.ref =
 ktor-server-netty = { group = "io.ktor", name = "ktor-server-netty", version.ref = "ktor" }
 ktor-serialization = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktor" }
 ktor-server-content-negotiation = { group = "io.ktor", name = "ktor-server-content-negotiation", version.ref = "ktor" }
+room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room-kmp"}
+room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room-kmp"}
+# NOTE: sqlite-bundled bundles a version of sqlite with all targets, this is good for testability
+# but may result in a bloated application size for IOS & Android targets(if app size becomes an issue
+# consider sqlite-framework for IOS/Android targets and bundled for desktop)
+room-bundled-sqlite = { group = "androidx.sqlite", name = "sqlite-bundled", version.ref = "sqlite" }
 skiko = { module = "org.jetbrains.skiko:skiko", version.ref = "skiko" }
 # Dependencies of the included build-logic
 android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "androidGradlePlugin" }
@@ -72,9 +80,14 @@ compose-compiler-gradlePlugin = { module = "org.jetbrains.kotlin:compose-compile
 compose-gradlePlugin = { module = "org.jetbrains.compose:compose-gradle-plugin", version.ref = "jetbrains-compose" }
 kotlin-gradlePlugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
 ksp-gradlePlugin = { group = "com.google.devtools.ksp", name = "com.google.devtools.ksp.gradle.plugin", version.ref = "ksp" }
+room-gradlePlugin = { group = "androidx.room", name = "room-gradle-plugin", version.ref = "room-kmp" }
 
 [bundles]
 koin-common-kmp = ["koin-core", "koin-compose", "koin-compose-vm"]
+# NOTE: room-bundled-sqlite bundles a version of sqlite with all targets, this is good for testability
+# but may result in a bloated application size for IOS & Android targets(if app size becomes an issue
+# consider sqlite-framework for IOS/Android targets and bundled for desktop)
+room-common-kmp = ["room-runtime", "room-bundled-sqlite"]
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "androidGradlePlugin" }
@@ -84,6 +97,7 @@ kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref =
 kotlin-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+room = { id = "androidx.room", version.ref = "room-kmp" }
 
 # Plugins defined by this project
 phovo-kmp-library-library = { id = "phovo.kmp.library" }
@@ -92,3 +106,4 @@ phovo-kmp-application-koin = { id = "phovo.kmp.application.koin" }
 phovo-kmp-library-koin = { id = "phovo.kmp.library.koin" }
 phovo-kmp-library-compose = { id = "phovo.kmp.library.compose" }
 phovo-kmp-application-compose = { id = "phovo.kmp.application.compose" }
+phovo-kmp-library-room = { id = "phovo.kmp.library.room" }
