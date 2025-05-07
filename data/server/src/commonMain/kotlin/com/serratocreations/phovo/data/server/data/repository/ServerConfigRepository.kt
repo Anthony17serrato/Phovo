@@ -1,12 +1,14 @@
 package com.serratocreations.phovo.data.server.data.repository
 
-import com.serratocreations.phovo.data.server.data.dao.ServerConfigDao
 import com.serratocreations.phovo.data.server.data.model.ServerConfig
-import org.koin.core.annotation.Singleton
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 
-@Singleton
-class ServerConfigRepository(private val serverConfigDao: ServerConfigDao) {
-    fun updateServerConfig(serverConfig: ServerConfig) = serverConfigDao.updateServerConfig(serverConfig)
+class IosAndroidWasmServerConfigRepository: ServerConfigRepository()
 
-    fun observeServerConfig() = serverConfigDao.observeServerConfig()
+abstract class ServerConfigRepository {
+    open fun observeServerConfig(): Flow<ServerConfig?> {
+        // TODO("Implement networkDataSource for IOS/Android/Wasm")
+        return flowOf(null)
+    }
 }

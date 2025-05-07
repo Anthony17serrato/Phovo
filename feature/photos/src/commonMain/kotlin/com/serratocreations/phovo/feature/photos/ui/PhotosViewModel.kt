@@ -30,7 +30,7 @@ class PhotosViewModel(
 
     init {
         viewModelScope.launch {
-            serverConfigRepository.observeServerConfig().map { it.backupDirectory }
+            serverConfigRepository.observeServerConfig().map { it?.backupDirectory }
                 .distinctUntilChanged().collectLatest { localDirectory ->
                     phovoItemRepository.phovoItemsFlow(localDirectory).collect { phovoItems ->
                         val uiItemList = mutableListOf<PhotoUiItem>()
