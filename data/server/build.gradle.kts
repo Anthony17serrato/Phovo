@@ -2,7 +2,6 @@ plugins {
     id(libs.plugins.phovo.kmp.library.library.get().pluginId)
     id(libs.plugins.phovo.kmp.library.koin.get().pluginId)
     id(libs.plugins.phovo.kmp.library.compose.get().pluginId)
-    id(libs.plugins.phovo.kmp.library.room.get().pluginId)
     alias(libs.plugins.serialization)
 }
 
@@ -14,6 +13,7 @@ kotlin {
             dependencies {
                 implementation(projects.core.common)
                 implementation(projects.core.logger)
+                implementation(projects.core.database)
                 implementation(libs.serialization.json)
             }
         }
@@ -32,11 +32,6 @@ kotlin {
             }
         }
         val wasmJsMain by getting {
-            dependencies {
-
-            }
-        }
-        val commonDesktopIosAndroid by getting {
             dependencies {
 
             }

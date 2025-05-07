@@ -4,7 +4,7 @@ import com.serratocreations.phovo.core.common.di.ApplicationScope
 import com.serratocreations.phovo.core.common.di.IoDispatcher
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.data.server.data.model.ServerConfig
-import com.serratocreations.phovo.data.server.data.repository.ServerConfigRepository
+import com.serratocreations.phovo.data.server.data.repository.DesktopServerConfigRepository
 import com.serratocreations.phovo.data.server.data.repository.ServerEventsRepository
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.PartData
@@ -43,7 +43,7 @@ import java.time.LocalDateTime
 @Singleton(binds = [ServerConfigManager::class])
 class DesktopServerConfigManagerImpl(
     logger: PhovoLogger,
-    private val serverConfigRepository: ServerConfigRepository,
+    private val serverConfigRepository: DesktopServerConfigRepository,
     private val serverEventsRepository: ServerEventsRepository,
     @ApplicationScope private val appScope: CoroutineScope,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
@@ -88,9 +88,11 @@ class DesktopServerConfigManagerImpl(
                 multipart.forEachPart { part ->
                     if (part is PartData.FileItem) {
                         try {
-                            // TODO better !! handling
                             val directory = serverConfigRepository.observeServerConfig().first()
-                                .backupDirectory!! + "/"
+                                ?.backupDirectory?.plus("/") ?: run {
+                                    this@DesktopServerConfigManagerImpl.log.i { "server config is null" }
+                                    return@forEachPart
+                                }
                             val dirPath = Paths.get(directory)
                             if (!Files.exists(dirPath)) {
                                 Files.createDirectories(dirPath)
