@@ -1,6 +1,7 @@
 package com.serratocreations.phovo.feature.photos.ui
 
 import androidx.annotation.VisibleForTesting
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
@@ -34,6 +35,7 @@ import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 internal fun PhotosRoute(
+    onPhotoClick: (String) -> Unit,
     modifier: Modifier = Modifier,
     photosViewModel: PhotosViewModel = koinViewModel()
 ) {
@@ -49,6 +51,7 @@ internal fun PhotosRoute(
     val photosState by photosViewModel.phovoUiState.collectAsStateWithLifecycle()
     PhotosScreen(
         photosState = photosState,
+        onPhotoClick = onPhotoClick,
         modifier = modifier
     )
 }
@@ -57,6 +60,7 @@ internal fun PhotosRoute(
 @Composable
 internal fun PhotosScreen(
     photosState: List<PhotoUiItem>,
+    onPhotoClick: (String) -> Unit,
     modifier: Modifier = Modifier,
     width: WindowWidthSizeClass = currentWindowAdaptiveInfo().windowSizeClass.windowWidthSizeClass
 ) {
@@ -110,7 +114,9 @@ internal fun PhotosScreen(
                             model = item.uri,
                             contentDescription = null,
                             contentScale = ContentScale.Crop,
-                            modifier = modifier.aspectRatio(1f)
+                            modifier = modifier
+                                .aspectRatio(1f)
+                                .clickable { onPhotoClick(item.uri.toString()) }
                         )
                     }
                 }
