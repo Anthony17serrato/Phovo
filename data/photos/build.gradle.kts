@@ -1,5 +1,5 @@
 plugins {
-    id(libs.plugins.phovo.kmp.library.library.get().pluginId)
+    id(libs.plugins.phovo.kmp.android.ios.desktop.web.library.get().pluginId)
     id(libs.plugins.phovo.kmp.library.koin.get().pluginId)
     alias(libs.plugins.serialization)
 }
@@ -21,6 +21,7 @@ kotlin {
                 implementation(libs.ktor.client.core)
                 implementation(libs.ktor.serialization)
                 implementation(libs.ktor.client.content.negotiation)
+                // Todo Use version catalog instead
                 implementation("com.ashampoo:kim:0.20")
             }
         }

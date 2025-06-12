@@ -54,9 +54,13 @@ tasks {
 
 gradlePlugin {
     plugins {
-        register("kmpLibrary") {
-            id = "phovo.kmp.library"
-            implementationClass = "KmpLibraryConventionPlugin"
+        register("kmpAndroidIosDesktopLibrary") {
+            id = "phovo.kmp.android.ios.desktop.library"
+            implementationClass = "KmpAndroidIosDesktopLibraryConventionPlugin"
+        }
+        register("kmpAndroidIosDesktopWebLibrary") {
+            id = "phovo.kmp.android.ios.desktop.web.library"
+            implementationClass = "KmpAndroidIosDesktopWebLibraryConventionPlugin"
         }
         register("kmpApplicationKoin") {
             id = "phovo.kmp.application.koin"

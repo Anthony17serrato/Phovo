@@ -10,6 +10,7 @@ class KmpLibraryRoomConventionPlugin: Plugin<Project> {
         with(target) {
             apply(plugin = "com.android.library")
             apply(plugin = "org.jetbrains.kotlin.multiplatform")
+            apply(plugin = "com.google.devtools.ksp")
             apply(plugin = "androidx.room")
 
             val extension = extensions.getByType<LibraryExtension>()

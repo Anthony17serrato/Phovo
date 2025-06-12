@@ -13,9 +13,9 @@ import org.koin.dsl.KoinAppDeclaration
 import org.koin.ksp.generated.*
 
 fun initKoin(config: KoinAppDeclaration? = null) = startKoin {
+    config?.invoke(this)
     logger(KermitKoinLogger(PhovoLogger.withTag("koin")))
     modules(AppModule().module)
-    config?.invoke(this)
 }
 
 // called by IOS in iOSApp.swift

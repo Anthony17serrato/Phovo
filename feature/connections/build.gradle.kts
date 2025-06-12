@@ -1,5 +1,5 @@
 plugins {
-    id(libs.plugins.phovo.kmp.library.library.get().pluginId)
+    id(libs.plugins.phovo.kmp.android.ios.desktop.web.library.get().pluginId)
     id(libs.plugins.phovo.kmp.library.koin.get().pluginId)
     id(libs.plugins.phovo.kmp.library.compose.get().pluginId)
     alias(libs.plugins.serialization)

@@ -1,5 +1,5 @@
 plugins {
-    id(libs.plugins.phovo.kmp.library.library.get().pluginId)
+    id(libs.plugins.phovo.kmp.android.ios.desktop.library.get().pluginId)
     id(libs.plugins.phovo.kmp.library.koin.get().pluginId)
     id(libs.plugins.phovo.kmp.library.room.get().pluginId)
 }
@@ -12,11 +12,11 @@ kotlin {
                 implementation(projects.core.common)
             }
         }
-        val commonDesktopIosAndroid by getting {
-            dependencies {
-
-            }
-        }
+//        val commonDesktopIosAndroid by getting {
+//            dependencies {
+//
+//            }
+//        }
     }
 }
 

@@ -32,47 +32,56 @@ internal fun Project.configureKotlinAndroid(
     }
 }
 
-internal fun Project.configureKotlinMultiplatform(isApplication: Boolean) {
+internal fun Project.configureKotlinMultiplatform(
+    isApplication: Boolean,
+    targetList: List<Targets> = Targets.values().asList()
+) {
     configure<KotlinMultiplatformExtension> {
         compilerOptions {
             freeCompilerArgs.add("-Xexpect-actual-classes")
         }
 
-        jvm("desktop")
-
-        androidTarget {
-            compilations.all {
-                compileTaskProvider.configure {
-                    compilerOptions {
-                        jvmTarget.set(JvmTarget.JVM_11)
-                    }
-                }
-            }
+        if (targetList.contains(Targets.DESKTOP)) {
+            jvm("desktop")
         }
 
-        @OptIn(ExperimentalWasmDsl::class)
-        wasmJs {
-            if (isApplication) {
-                moduleName = "composeApp"
-                browser {
-                    commonWebpackConfig {
-                        outputFileName = "composeApp.js"
-                        devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
-                            static = (static ?: mutableListOf()).apply {
-                                // Serve sources to debug inside browser
-                                add(project.rootDir.path)
-                                add(project.projectDir.path)
-                            }
+        if (targetList.contains(Targets.ANDROID)) {
+            androidTarget {
+                compilations.all {
+                    compileTaskProvider.configure {
+                        compilerOptions {
+                            jvmTarget.set(JvmTarget.JVM_11)
                         }
                     }
                 }
-                binaries.executable()
-            } else {
-                browser()
             }
         }
 
-        if (isApplication) {
+        if (targetList.contains(Targets.WASM)) {
+            @OptIn(ExperimentalWasmDsl::class)
+            wasmJs {
+                if (isApplication) {
+                    moduleName = "composeApp"
+                    browser {
+                        commonWebpackConfig {
+                            outputFileName = "composeApp.js"
+                            devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
+                                static = (static ?: mutableListOf()).apply {
+                                    // Serve sources to debug inside browser
+                                    add(project.rootDir.path)
+                                    add(project.projectDir.path)
+                                }
+                            }
+                        }
+                    }
+                    binaries.executable()
+                } else {
+                    browser()
+                }
+            }
+        }
+
+        if (isApplication && targetList.contains(Targets.IOS)) {
             listOf(
                 iosX64(),
                 iosArm64(),
@@ -83,7 +92,7 @@ internal fun Project.configureKotlinMultiplatform(isApplication: Boolean) {
                     isStatic = true
                 }
             }
-        } else {
+        } else if (targetList.contains(Targets.IOS)) {
             iosX64()
             iosArm64()
             iosSimulatorArm64()

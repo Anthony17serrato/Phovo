@@ -9,7 +9,8 @@ plugins {
     alias(libs.plugins.serialization) apply false
     alias(libs.plugins.kotlin.ksp) apply false
     alias(libs.plugins.room) apply false
-    id(libs.plugins.phovo.kmp.library.library.get().pluginId) apply false
+    id(libs.plugins.phovo.kmp.android.ios.desktop.web.library.get().pluginId) apply false
+    id(libs.plugins.phovo.kmp.android.ios.desktop.library.get().pluginId) apply false
     id(libs.plugins.phovo.kmp.application.application.get().pluginId) apply false
     id(libs.plugins.phovo.kmp.application.koin.get().pluginId) apply false
     id(libs.plugins.phovo.kmp.library.koin.get().pluginId) apply false
