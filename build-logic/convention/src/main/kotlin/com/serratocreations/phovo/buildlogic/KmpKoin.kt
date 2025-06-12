@@ -5,7 +5,6 @@ import com.google.devtools.ksp.gradle.KspExtension
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.dependencies
-import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 
@@ -15,21 +14,34 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 internal fun Project.configureKmpKoin(
     commonExtension: CommonExtension<*, *, *, *, *, *>,
 ) {
+    // Get the list of configured targets by examining the source sets
+    val configuredTargets = mutableSetOf<Targets>()
+
     extensions.configure<KotlinMultiplatformExtension> {
-        jvm("desktop")
+        val sourceSetNames = sourceSets.names
 
-        androidTarget()
-
-        @OptIn(ExperimentalWasmDsl::class)
-        wasmJs()
-
-        iosX64()
-        iosArm64()
-        iosSimulatorArm64()
-
-        sourceSets.androidMain.dependencies {
-            implementation(libs.findLibrary("koin.android").get())
+        // Check for iOS targets
+        if (sourceSetNames.any { it.startsWith("ios") }) {
+            configuredTargets.add(Targets.IOS)
         }
+
+        // Check for Desktop target
+        if (sourceSetNames.contains("desktopMain")) {
+            configuredTargets.add(Targets.DESKTOP)
+        }
+
+        // Check for WASM target
+        if (sourceSetNames.contains("wasmJsMain")) {
+            configuredTargets.add(Targets.WASM)
+        }
+        // Check for Android target
+        if (sourceSetNames.contains("androidMain")) {
+            configuredTargets.add(Targets.ANDROID)
+            sourceSets.androidMain.dependencies {
+                implementation(libs.findLibrary("koin.android").get())
+            }
+        }
+
         sourceSets.commonMain.dependencies {
             // Koin
             implementation(libs.findBundle("koin.common.kmp").get())
@@ -45,13 +57,27 @@ internal fun Project.configureKmpKoin(
 
     commonExtension.apply {
         dependencies {
+            // Common KSP compiler is always needed
             add("kspCommonMainMetadata", libs.findLibrary("koin.ksp.compiler").get())
-            add("kspAndroid", libs.findLibrary("koin.ksp.compiler").get())
-            add("kspWasmJs", libs.findLibrary("koin.ksp.compiler").get())
-            add("kspDesktop", libs.findLibrary("koin.ksp.compiler").get())
-            add("kspIosX64", libs.findLibrary("koin.ksp.compiler").get())
-            add("kspIosArm64", libs.findLibrary("koin.ksp.compiler").get())
-            add("kspIosSimulatorArm64", libs.findLibrary("koin.ksp.compiler").get())
+
+            // Add target-specific KSP compilers only for configured targets
+            if (configuredTargets.contains(Targets.ANDROID)) {
+                add("kspAndroid", libs.findLibrary("koin.ksp.compiler").get())
+            }
+
+            if (configuredTargets.contains(Targets.WASM)) {
+                add("kspWasmJs", libs.findLibrary("koin.ksp.compiler").get())
+            }
+
+            if (configuredTargets.contains(Targets.DESKTOP)) {
+                add("kspDesktop", libs.findLibrary("koin.ksp.compiler").get())
+            }
+
+            if (configuredTargets.contains(Targets.IOS)) {
+                add("kspIosX64", libs.findLibrary("koin.ksp.compiler").get())
+                add("kspIosArm64", libs.findLibrary("koin.ksp.compiler").get())
+                add("kspIosSimulatorArm64", libs.findLibrary("koin.ksp.compiler").get())
+            }
         }
     }
 

@@ -100,7 +100,8 @@ serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref 
 room = { id = "androidx.room", version.ref = "room-kmp" }
 
 # Plugins defined by this project
-phovo-kmp-library-library = { id = "phovo.kmp.library" }
+phovo-kmp-android-ios-desktop-web-library = { id = "phovo.kmp.android.ios.desktop.web.library" }
+phovo-kmp-android-ios-desktop-library = { id = "phovo.kmp.android.ios.desktop.library" }
 phovo-kmp-application-application = { id = "phovo.kmp.application" }
 phovo-kmp-application-koin = { id = "phovo.kmp.application.koin" }
 phovo-kmp-library-koin = { id = "phovo.kmp.library.koin" }
