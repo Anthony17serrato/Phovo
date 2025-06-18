@@ -1,7 +1,5 @@
 package com.serratocreations.phovo.data.server.data
 
-import com.serratocreations.phovo.core.common.di.ApplicationScope
-import com.serratocreations.phovo.core.common.di.IoDispatcher
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.data.server.data.model.ServerConfig
 import com.serratocreations.phovo.data.server.data.repository.DesktopServerConfigRepository
@@ -45,8 +43,8 @@ class DesktopServerConfigManagerImpl(
     logger: PhovoLogger,
     private val serverConfigRepository: DesktopServerConfigRepository,
     private val serverEventsRepository: ServerEventsRepository,
-    @ApplicationScope private val appScope: CoroutineScope,
-    @IoDispatcher private val ioDispatcher: CoroutineDispatcher
+    private val appScope: CoroutineScope,
+    private val ioDispatcher: CoroutineDispatcher
 ): DesktopServerConfigManager {
     // Caches the current config state for new subscribers
     private val serverConfigState = MutableStateFlow(ServerConfigState())

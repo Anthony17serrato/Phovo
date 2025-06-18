@@ -9,5 +9,4 @@ import org.koin.core.annotation.Module
 class ConnectionsFeatureModule
 
 @Module
-@ComponentScan("com.serratocreations.phovo.feature.connections")
 internal expect class ConnectionsFeaturePlatformModule()

@@ -4,7 +4,6 @@ import coil3.Uri
 import com.ashampoo.kim.Kim
 import com.ashampoo.kim.format.tiff.constant.ExifTag
 import com.ashampoo.kim.jvm.readMetadata
-import com.serratocreations.phovo.core.common.di.IoDispatcher
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.data.photos.db.entity.PhovoImageItem
 import com.serratocreations.phovo.data.photos.db.entity.PhovoItem
@@ -17,17 +16,15 @@ import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 import kotlinx.datetime.toKotlinLocalDateTime
-import org.koin.core.annotation.Singleton
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.LocalDateTime as JavaLocalDateTime
 import java.time.format.DateTimeFormatter
 
-@Singleton
 class DesktopPhovoItemDao(
     logger: PhovoLogger,
-    @IoDispatcher private val ioDispatcher: CoroutineDispatcher
+    private val ioDispatcher: CoroutineDispatcher
 ) : PhovoItemDao {
     private val log = logger.withTag("DesktopPhovoItemDao")
 

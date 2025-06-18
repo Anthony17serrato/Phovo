@@ -8,5 +8,4 @@ import org.koin.core.annotation.Module
 class ServerDataModule
 
 @Module
-@ComponentScan("com.serratocreations.phovo.data.server")
 internal expect class ServerDataPlatformModule()

@@ -1,6 +1,7 @@
 package com.serratocreations.phovo.buildlogic
 
 import com.android.build.api.dsl.CommonExtension
+import com.google.devtools.ksp.gradle.KspAATask
 import com.google.devtools.ksp.gradle.KspExtension
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.configure
@@ -21,21 +22,21 @@ internal fun Project.configureKmpKoin(
         val sourceSetNames = sourceSets.names
 
         // Check for iOS targets
-        if (sourceSetNames.any { it.startsWith("ios") }) {
+        if (sourceSetNames.any { it.startsWith("ios")}) {
             configuredTargets.add(Targets.IOS)
         }
 
         // Check for Desktop target
-        if (sourceSetNames.contains("desktopMain")) {
+        if (sourceSetNames.any { it.contains("desktopMain")}) {
             configuredTargets.add(Targets.DESKTOP)
         }
 
         // Check for WASM target
-        if (sourceSetNames.contains("wasmJsMain")) {
+        if (sourceSetNames.any { it.contains("wasmJsMain")}) {
             configuredTargets.add(Targets.WASM)
         }
         // Check for Android target
-        if (sourceSetNames.contains("androidMain")) {
+        if (sourceSetNames.any { it.contains("androidMain")}) {
             configuredTargets.add(Targets.ANDROID)
             sourceSets.androidMain.dependencies {
                 implementation(libs.findLibrary("koin.android").get())
@@ -88,12 +89,11 @@ internal fun Project.configureKmpKoin(
         }
     }
 
-
-//    project.tasks.matching { it.name.contains("ksp") }.configureEach {
-//        if (name != "kspCommonMainKotlinMetadata") {
-//            dependsOn("kspCommonMainKotlinMetadata")
-//        }
-//    }
+    project.tasks.withType(KspAATask::class.java).configureEach {
+        if (name != "kspCommonMainKotlinMetadata") {
+            dependsOn("kspCommonMainKotlinMetadata")
+        }
+    }
 
     extensions.configure<KspExtension> {
         // Enable Koin Viewmodel Annotation
