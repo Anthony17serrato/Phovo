@@ -24,8 +24,6 @@ import com.serratocreations.phovo.buildlogic.configureKmpKoin
 class KmpApplicationKoinConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
         with(target) {
-            apply(plugin = "com.android.application")
-            apply(plugin = "org.jetbrains.kotlin.multiplatform")
             apply(plugin = "com.google.devtools.ksp")
             apply(plugin = "phovo.kmp.application")
 

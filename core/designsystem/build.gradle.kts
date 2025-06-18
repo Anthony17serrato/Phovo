@@ -17,6 +17,7 @@ kotlin {
                 api(compose.material3AdaptiveNavigationSuite)
                 api(compose.runtime)
                 api(compose.ui)
+                api(libs.lifecycle.runtime.compose)
                 api(libs.compose.adaptive)
                 api(libs.compose.adaptive.layout)
                 api(libs.compose.adaptive.navigation)

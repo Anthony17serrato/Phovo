@@ -23,10 +23,7 @@ import java.time.format.DateTimeFormatter
 import kotlinx.datetime.LocalDateTime as KotlinLocalDateTime
 import java.time.LocalDateTime as JavaLocalDateTime
 import kotlinx.datetime.toKotlinLocalDateTime
-import org.koin.core.annotation.Singleton
 
-// https://github.com/InsertKoinIO/koin-annotations/issues/249
-@Singleton(binds = [PhovoItemDao::class])
 class AndroidPhovoItemDao(
     context: Context
 ) : PhovoItemDao {

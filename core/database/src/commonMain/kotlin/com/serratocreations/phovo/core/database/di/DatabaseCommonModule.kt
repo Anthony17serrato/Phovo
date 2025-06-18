@@ -29,5 +29,4 @@ class DatabaseCommonModule {
 }
 
 @Module
-@ComponentScan("com.serratocreations.phovo.core.database")
 expect class DatabasePlatformModule()

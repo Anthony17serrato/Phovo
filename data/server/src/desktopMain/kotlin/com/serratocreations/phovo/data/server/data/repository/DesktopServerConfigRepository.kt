@@ -5,9 +5,7 @@ import com.serratocreations.phovo.data.server.data.mapper.asEntity
 import com.serratocreations.phovo.data.server.data.mapper.asExternalModel
 import com.serratocreations.phovo.data.server.data.model.ServerConfig
 import kotlinx.coroutines.flow.map
-import org.koin.core.annotation.Factory
 
-@Factory(binds = [DesktopServerConfigRepository::class, ServerConfigRepository::class])
 class DesktopServerConfigRepository(
     private val localDataSource: ServerConfigDao
 ): ServerConfigRepository() {

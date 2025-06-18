@@ -1,9 +1,8 @@
-package com.serratocreations.phovo.data.photos.db
+package com.serratocreations.phovo.data.photos.db.dao
 
 import kotlinx.coroutines.flow.Flow
 import coil3.toUri
 import com.serratocreations.phovo.core.logger.PhovoLogger
-import com.serratocreations.phovo.data.photos.db.dao.PhovoItemDao
 import com.serratocreations.phovo.data.photos.db.entity.PhovoImageItem
 import com.serratocreations.phovo.data.photos.db.entity.PhovoItem
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -12,12 +11,10 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toKotlinInstant
 import kotlinx.datetime.toLocalDateTime
-import org.koin.core.annotation.Singleton
 import platform.Photos.*
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
-@Singleton
 class IosPhovoItemDao(logger: PhovoLogger) : PhovoItemDao {
     private val log = logger.withTag("IosPhovoItemDao")
 
