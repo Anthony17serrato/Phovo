@@ -11,7 +11,7 @@ All applications are developed within a single codebase using [Kotlin Multiplatf
 | <img src="https://github.com/Anthony17serrato/Phovo/blob/main/docs/images/Screenshot_20241202_134207.png"/> | <img src="https://github.com/Anthony17serrato/Phovo/blob/main/docs/images/Simulator%20Screenshot%20-%20iPhone%2016%20-%202024-12-02%20at%2013.43.23.png" /> |
 
 #### Desktop
-<img src="https://github.com/Anthony17serrato/Phovo/blob/main/docs/images/desktop_screenshot.png" width="800" height="500" />
+<img src="https://github.com/Anthony17serrato/Phovo/blob/main/docs/images/desktop_screenshot.png" style="max-width: 100%; height: auto;" />
 
 ## How to build and run
 
