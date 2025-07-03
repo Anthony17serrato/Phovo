@@ -1,5 +1,7 @@
 package com.serratocreations.phovo.navigation
 
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
@@ -21,30 +23,35 @@ import kotlinx.serialization.Serializable
  * The navigation graph defined in this file defines the different top-level routes. Navigation
  * within each route is handled using state and Back Handlers.
  */
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun PhovoNavHost(
     appState: PhovoAppState,
     modifier: Modifier = Modifier,
 ) {
     val navController = appState.navController
-    NavHost(
-        navController = navController,
-        startDestination = PhovoBaseRoute,
-        modifier = modifier,
-    ) {
-        navigation<PhovoBaseRoute>(startDestination = PhotosRoute) {
-            photosScreen(
-                onNavigateToPhotoDetail = { uri ->
-                    navController.navigateToPhotoDetail(uri)
-                }
-            )
-            photoDetailScreen(
-                onBackClick = {
-                    navController.popBackStack()
-                }
-            )
-            bookmarksScreen()
-            connectionsDetailsScreen(appState.appLevelVmStoreOwner)
+    SharedTransitionLayout {
+        NavHost(
+            navController = navController,
+            startDestination = PhovoBaseRoute,
+            modifier = modifier,
+        ) {
+            navigation<PhovoBaseRoute>(startDestination = PhotosRoute) {
+                photosScreen(
+                    sharedElementTransition = this@SharedTransitionLayout,
+                    onNavigateToPhotoDetail = { uri ->
+                        navController.navigateToPhotoDetail(uri)
+                    }
+                )
+                photoDetailScreen(
+                    sharedElementTransition = this@SharedTransitionLayout,
+                    onBackClick = {
+                        navController.popBackStack()
+                    }
+                )
+                bookmarksScreen()
+                connectionsDetailsScreen(appState.appLevelVmStoreOwner)
+            }
         }
     }
 }

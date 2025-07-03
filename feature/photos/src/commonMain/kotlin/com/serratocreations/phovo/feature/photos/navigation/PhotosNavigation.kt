@@ -1,9 +1,12 @@
 package com.serratocreations.phovo.feature.photos.navigation
 
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavOptions
 import androidx.navigation.compose.composable
+import androidx.navigation.toRoute
 import com.serratocreations.phovo.feature.photos.ui.PhotoDetailRoute
 import com.serratocreations.phovo.feature.photos.ui.PhotosRoute
 import kotlinx.serialization.Serializable
@@ -20,24 +23,32 @@ fun NavController.navigateToForYou(navOptions: NavOptions) =
 fun NavController.navigateToPhotoDetail(uri: String) =
     navigate(route = PhotoDetailRoute(uri))
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 fun NavGraphBuilder.photosScreen(
+    sharedElementTransition: SharedTransitionScope,
     onNavigateToPhotoDetail: (String) -> Unit
 ) {
     composable<PhotosRoute> {
         PhotosRoute(
-            onPhotoClick = onNavigateToPhotoDetail
+            onPhotoClick = onNavigateToPhotoDetail,
+            sharedElementTransition = sharedElementTransition,
+            animatedContentScope = this@composable,
         )
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 fun NavGraphBuilder.photoDetailScreen(
+    sharedElementTransition: SharedTransitionScope,
     onBackClick: () -> Unit
 ) {
     composable<PhotoDetailRoute> { backStackEntry ->
-        val uri = backStackEntry.arguments?.getString("uri") ?: ""
+        val route = backStackEntry.toRoute<PhotoDetailRoute>()
         PhotoDetailRoute(
-            uri = uri,
-            onBackClick = onBackClick
+            uri = route.uri,
+            onBackClick = onBackClick,
+            sharedElementTransition = sharedElementTransition,
+            animatedContentScope = this@composable,
         )
     }
 }
