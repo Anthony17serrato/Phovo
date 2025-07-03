@@ -1,6 +1,10 @@
 package com.serratocreations.phovo.feature.photos.ui
 
 import androidx.annotation.VisibleForTesting
+import androidx.compose.animation.AnimatedContentScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
@@ -9,7 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
@@ -32,8 +36,12 @@ import com.serratocreations.phovo.feature.photos.ui.model.PhotoUiItem
 import com.serratocreations.phovo.feature.photos.util.getPlatformFetcherFactory
 import org.koin.compose.viewmodel.koinViewModel
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 internal fun PhotosRoute(
+    onPhotoClick: (String) -> Unit,
+    sharedElementTransition: SharedTransitionScope,
+    animatedContentScope: AnimatedContentScope,
     modifier: Modifier = Modifier,
     photosViewModel: PhotosViewModel = koinViewModel()
 ) {
@@ -49,14 +57,21 @@ internal fun PhotosRoute(
     val photosState by photosViewModel.phovoUiState.collectAsStateWithLifecycle()
     PhotosScreen(
         photosState = photosState,
+        onPhotoClick = onPhotoClick,
+        sharedElementTransition =sharedElementTransition,
+        animatedContentScope = animatedContentScope,
         modifier = modifier
     )
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
 @Composable
 internal fun PhotosScreen(
     photosState: List<PhotoUiItem>,
+    onPhotoClick: (String) -> Unit,
+    sharedElementTransition: SharedTransitionScope,
+    animatedContentScope: AnimatedContentScope,
     modifier: Modifier = Modifier,
     width: WindowWidthSizeClass = currentWindowAdaptiveInfo().windowSizeClass.windowWidthSizeClass
 ) {
@@ -82,9 +97,9 @@ internal fun PhotosScreen(
                     onClick = { /* TODO */ }
                 )
             }
-            items(
+            itemsIndexed(
                 items = photosState,
-                span = { item ->
+                span = { index, item ->
                     when (item) {
                         is DateHeaderPhotoUiItem -> {
                             GridItemSpan(maxLineSpan)
@@ -94,7 +109,7 @@ internal fun PhotosScreen(
                         }
                     }
                 }
-            ) { item ->
+            ) { index, item ->
                 when (item) {
                     is DateHeaderPhotoUiItem -> {
                         Text(
@@ -105,12 +120,19 @@ internal fun PhotosScreen(
                             modifier = modifier.padding(16.dp)
                         )
                     }
-                    is ImagePhotoUiItem -> {
+                    is ImagePhotoUiItem -> with(sharedElementTransition) {
+                        val id = item.uri.toString()
                         AsyncImage(
                             model = item.uri,
                             contentDescription = null,
                             contentScale = ContentScale.Crop,
-                            modifier = modifier.aspectRatio(1f)
+                            modifier = modifier
+                                .aspectRatio(1f)
+                                .sharedElement(
+                                    sharedContentState = sharedElementTransition
+                                        .rememberSharedContentState(key = "image-$id"),
+                                    animatedVisibilityScope = animatedContentScope
+                                ).clickable { onPhotoClick(id) }
                         )
                     }
                 }
