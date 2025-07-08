@@ -10,13 +10,11 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -63,7 +61,7 @@ internal fun PhotoDetailScreen(
             model = uri,
             contentDescription = null,
             contentScale = ContentScale.Fit,
-            modifier = Modifier.fillMaxSize().sharedElement(
+            modifier = Modifier.sharedElement(
                 sharedContentState = sharedElementTransition
                     .rememberSharedContentState(key = "image-$uri"),
                 animatedVisibilityScope = animatedContentScope
@@ -71,51 +69,41 @@ internal fun PhotoDetailScreen(
         )
 
         with(animatedContentScope) {
-            // Scaffold with transparent gradient bar is placed on top of the image
-            Scaffold(
+            TopAppBar(
+                title = { },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Color.White // Ensure the icon is visible against any background
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent, // Make top bar background transparent
+                    navigationIconContentColor = Color.White
+                ),
                 modifier = Modifier
-                    .fillMaxWidth(),
-                containerColor = Color.Transparent, // Make scaffold background transparent
-                contentColor = Color.White, // Set content color to ensure visibility
-                topBar = {
-                    TopAppBar(
-                        title = { },
-                        navigationIcon = {
-                            IconButton(onClick = onBackClick) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = "Back",
-                                    tint = Color.White // Ensure the icon is visible against any background
-                                )
-                            }
+                    .renderInSharedTransitionScopeOverlay()
+                    .animateEnterExit(
+                        enter = fadeIn() + slideInVertically {
+                            -it
                         },
-                        colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = Color.Transparent, // Make top bar background transparent
-                            navigationIconContentColor = Color.White
-                        ),
-                        modifier = Modifier
-                            .renderInSharedTransitionScopeOverlay()
-                            .animateEnterExit(
-                                enter = fadeIn() + slideInVertically {
-                                    -it
-                                },
-                                exit = fadeOut() + slideOutVertically {
-                                    -it
-                                }
-                            ).background(
-                                Brush.verticalGradient(
-                                    colors = listOf(
-                                        Color.Black.copy(alpha = 0.7f), // Start with semi-transparent black
-                                        Color.Transparent // Fade to transparent
-                                    )
-                                )
-                            )
+                        exit = fadeOut() + slideOutVertically {
+                            -it
+                        }
                     )
-                }
-            ) { paddingValues ->
-                // TODO: place actual screen content here instead of in box
-                // Empty content as we've already placed our content in the Box
-            }
+                    .align(Alignment.TopStart) // Position at the top of the screen
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Black.copy(alpha = 0.7f), // Start with semi-transparent black
+                                Color.Transparent // Fade to transparent
+                            )
+                        )
+                    )
+            )
         }
     }
 }

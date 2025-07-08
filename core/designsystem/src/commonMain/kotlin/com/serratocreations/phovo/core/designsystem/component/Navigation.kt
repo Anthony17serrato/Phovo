@@ -178,11 +178,15 @@ fun PhovoNavigationRail(
 fun PhovoNavigationSuiteScaffold(
     navigationSuiteItems: PhovoNavigationSuiteScope.() -> Unit,
     modifier: Modifier = Modifier,
+    shouldShowNavBarOnCompactScreens: Boolean,
     windowAdaptiveInfo: WindowAdaptiveInfo = currentWindowAdaptiveInfo(),
     content: @Composable () -> Unit,
 ) {
     val layoutType = when (windowAdaptiveInfo.windowSizeClass.windowWidthSizeClass) {
-        WindowWidthSizeClass.COMPACT -> NavigationSuiteType.NavigationBar
+        WindowWidthSizeClass.COMPACT -> {
+            if (shouldShowNavBarOnCompactScreens) NavigationSuiteType.NavigationBar
+            else NavigationSuiteType.None
+        }
         WindowWidthSizeClass.MEDIUM -> NavigationSuiteType.NavigationRail
         WindowWidthSizeClass.EXPANDED -> NavigationSuiteType.NavigationDrawer
         else -> NavigationSuiteType.NavigationBar
