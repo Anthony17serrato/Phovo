@@ -9,6 +9,7 @@ import io.ktor.client.request.forms.submitFormWithBinaryData
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
+import kotlinx.io.IOException
 import org.koin.core.annotation.Singleton
 
 @Singleton
@@ -43,8 +44,16 @@ class PhotosNetworkDataSource(
                 }
             )
             log.i { "Response: ${response.status}" }
-        } catch (e: UnsupportedOperationException) {
-            log.e { "Failed to upload file: ${e.message}" }
+        } catch (e: Exception) {
+            when (e) {
+                is UnsupportedOperationException, is IOException -> {
+                    log.e { "Failed to upload file: ${e.message}" }
+                }
+                else -> {
+                    // rethrow any other exceptions
+                    throw e
+                }
+            }
         }
     }
 }

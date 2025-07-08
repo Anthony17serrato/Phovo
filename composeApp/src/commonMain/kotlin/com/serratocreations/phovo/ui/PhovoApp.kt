@@ -38,6 +38,7 @@ import com.serratocreations.phovo.core.designsystem.component.PhovoNavigationSui
 import com.serratocreations.phovo.core.designsystem.component.PhovoTopAppBar
 import com.serratocreations.phovo.core.designsystem.icon.PhovoIcons
 import com.serratocreations.phovo.core.designsystem.theme.PhovoTheme
+import com.serratocreations.phovo.navigation.TopLevelDestination
 import phovo.composeapp.generated.resources.Res
 import phovo.composeapp.generated.resources.feature_settings_top_app_bar_action_icon_description
 import phovo.composeapp.generated.resources.feature_settings_top_app_bar_navigation_icon_description
@@ -110,6 +111,7 @@ internal fun PhovoApp(
                 )
             }
         },
+        shouldShowNavBarOnCompactScreens = currentDestination.isTopLevel(),
         windowAdaptiveInfo = windowAdaptiveInfo,
     ) {
         Scaffold(
@@ -137,8 +139,6 @@ internal fun PhovoApp(
                 if (destination != null) {
                     shouldShowTopAppBar = true
                     PhovoTopAppBar(
-                        // Currently navigation between screens results in a null destination for some ms
-                        // resulting in UI jank. Follow issue https://youtrack.jetbrains.com/issue/CMP-7087/currentBackStackEntryAsState-briefly-null-when-navigating-between-destinations
                         titleRes = destination.titleTextId,
                         navigationIcon = if (appLevelUiState.canBackButtonBeShown) PhovoIcons.ArrowBack else PhovoIcons.Search,
                         navigationIconContentDescription = stringResource(
@@ -182,3 +182,9 @@ private fun NavDestination?.isRouteInHierarchy(route: KClass<*>) =
     this?.hierarchy?.any {
         it.hasRoute(route)
     } ?: false
+
+private fun NavDestination?.isTopLevel() =
+    TopLevelDestination.entries.any { destination ->
+        // default to true when destination is unknown
+        this?.hasRoute(destination.route) ?: true
+    }
