@@ -6,7 +6,7 @@ import com.serratocreations.phovo.data.photos.repository.PhovoItemRepository
 import com.serratocreations.phovo.data.server.data.repository.ServerConfigRepository
 import com.serratocreations.phovo.feature.photos.ui.model.DateHeaderPhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.PhotoUiItem
-import com.serratocreations.phovo.feature.photos.ui.model.toImagePhotoUiItem
+import com.serratocreations.phovo.feature.photos.ui.model.toPhotoUiItem
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -41,7 +41,7 @@ class PhotosViewModel(
                                     year = entry.key.second.takeIf { it != currentYear }
                                 )
                             )
-                            uiItemList.addAll(entry.value.map { it.toImagePhotoUiItem() })
+                            uiItemList.addAll(entry.value.map { it.toPhotoUiItem() })
                         }
                         _phovoUiState.update {
                             uiItemList
