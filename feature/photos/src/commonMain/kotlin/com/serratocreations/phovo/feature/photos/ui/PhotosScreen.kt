@@ -6,6 +6,7 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -31,8 +32,10 @@ import coil3.compose.setSingletonImageLoaderFactory
 import coil3.request.crossfade
 import com.serratocreations.phovo.core.designsystem.component.CallToActionComponent
 import com.serratocreations.phovo.feature.photos.ui.model.DateHeaderPhotoUiItem
-import com.serratocreations.phovo.feature.photos.ui.model.ImagePhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.PhotoUiItem
+import com.serratocreations.phovo.feature.photos.ui.model.UriPhotoUiItem
+import com.serratocreations.phovo.feature.photos.ui.model.VideoPhotoUiItem
+import com.serratocreations.phovo.feature.photos.util.getPlatformDecoderFactory
 import com.serratocreations.phovo.feature.photos.util.getPlatformFetcherFactory
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -50,6 +53,7 @@ internal fun PhotosRoute(
         ImageLoader.Builder(context)
             .crossfade(true)
             .components {
+                add(getPlatformDecoderFactory())
                 add(getPlatformFetcherFactory())
             }
             .build()
@@ -104,7 +108,7 @@ internal fun PhotosScreen(
                         is DateHeaderPhotoUiItem -> {
                             GridItemSpan(maxLineSpan)
                         }
-                        is ImagePhotoUiItem -> {
+                        is UriPhotoUiItem -> {
                             GridItemSpan(1)
                         }
                     }
@@ -120,20 +124,30 @@ internal fun PhotosScreen(
                             modifier = modifier.padding(16.dp)
                         )
                     }
-                    is ImagePhotoUiItem -> with(sharedElementTransition) {
+                    is UriPhotoUiItem -> with(sharedElementTransition) {
                         val id = item.uri.toString()
-                        AsyncImage(
-                            model = item.uri,
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = modifier
-                                .aspectRatio(1f)
-                                .sharedElement(
-                                    sharedContentState = sharedElementTransition
-                                        .rememberSharedContentState(key = "image-$id"),
-                                    animatedVisibilityScope = animatedContentScope
-                                ).clickable { onPhotoClick(id) }
-                        )
+                        Box {
+                            AsyncImage(
+                                model = item.uri,
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = modifier
+                                    .aspectRatio(1f)
+                                    .sharedElement(
+                                        sharedContentState = sharedElementTransition
+                                            .rememberSharedContentState(key = "image-$id"),
+                                        animatedVisibilityScope = animatedContentScope
+                                    ).clickable { onPhotoClick(id) }
+                            )
+                            if (item is VideoPhotoUiItem) {
+                                Text(
+                                    text = item.duration,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    modifier = modifier.align(Alignment.TopEnd)
+                                        .padding(top = 8.dp, end = 8.dp)
+                                )
+                            }
+                        }
                     }
                 }
             }
