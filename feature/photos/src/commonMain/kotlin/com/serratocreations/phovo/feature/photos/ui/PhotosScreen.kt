@@ -37,16 +37,15 @@ import com.serratocreations.phovo.feature.photos.ui.model.UriPhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.VideoPhotoUiItem
 import com.serratocreations.phovo.feature.photos.util.getPlatformDecoderFactory
 import com.serratocreations.phovo.feature.photos.util.getPlatformFetcherFactory
-import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 internal fun PhotosRoute(
-    onPhotoClick: (String) -> Unit,
+    onPhotoClick: (UriPhotoUiItem) -> Unit,
     sharedElementTransition: SharedTransitionScope,
     animatedContentScope: AnimatedContentScope,
+    photosViewModel: PhotosViewModel,
     modifier: Modifier = Modifier,
-    photosViewModel: PhotosViewModel = koinViewModel()
 ) {
     // TODO move to root composable https://coil-kt.github.io/coil/image_loaders/
     setSingletonImageLoaderFactory { context ->
@@ -58,9 +57,9 @@ internal fun PhotosRoute(
             }
             .build()
     }
-    val photosState by photosViewModel.phovoUiState.collectAsStateWithLifecycle()
+    val photosState by photosViewModel.photosUiState.collectAsStateWithLifecycle()
     PhotosScreen(
-        photosState = photosState,
+        photosItems = photosState.photosFeed,
         onPhotoClick = onPhotoClick,
         sharedElementTransition =sharedElementTransition,
         animatedContentScope = animatedContentScope,
@@ -72,8 +71,8 @@ internal fun PhotosRoute(
 @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
 @Composable
 internal fun PhotosScreen(
-    photosState: List<PhotoUiItem>,
-    onPhotoClick: (String) -> Unit,
+    photosItems: List<PhotoUiItem>,
+    onPhotoClick: (UriPhotoUiItem) -> Unit,
     sharedElementTransition: SharedTransitionScope,
     animatedContentScope: AnimatedContentScope,
     modifier: Modifier = Modifier,
@@ -102,7 +101,7 @@ internal fun PhotosScreen(
                 )
             }
             itemsIndexed(
-                items = photosState,
+                items = photosItems,
                 span = { index, item ->
                     when (item) {
                         is DateHeaderPhotoUiItem -> {
@@ -137,7 +136,7 @@ internal fun PhotosScreen(
                                         sharedContentState = sharedElementTransition
                                             .rememberSharedContentState(key = "image-$id"),
                                         animatedVisibilityScope = animatedContentScope
-                                    ).clickable { onPhotoClick(id) }
+                                    ).clickable { onPhotoClick(item) }
                             )
                             if (item is VideoPhotoUiItem) {
                                 Text(

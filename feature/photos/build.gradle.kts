@@ -10,6 +10,8 @@ kotlin {
         val androidMain by getting {
             dependencies {
                 implementation(libs.coil.video)
+                implementation(libs.exoplayer)
+                implementation(libs.media.ui)
             }
         }
 
