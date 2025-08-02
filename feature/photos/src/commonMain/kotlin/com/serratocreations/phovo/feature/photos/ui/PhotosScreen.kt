@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
@@ -141,6 +142,7 @@ internal fun PhotosScreen(
                             if (item is VideoPhotoUiItem) {
                                 Text(
                                     text = item.duration,
+                                    color = Color.White,
                                     style = MaterialTheme.typography.labelMedium,
                                     modifier = modifier.align(Alignment.TopEnd)
                                         .padding(top = 8.dp, end = 8.dp)
