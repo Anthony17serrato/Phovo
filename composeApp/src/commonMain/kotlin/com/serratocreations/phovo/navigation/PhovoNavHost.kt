@@ -6,11 +6,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.navigation
-import com.serratocreations.phovo.feature.photos.navigation.PhotosRoute
-import com.serratocreations.phovo.feature.photos.navigation.navigateToPhotoDetail
-import com.serratocreations.phovo.feature.photos.navigation.photoDetailScreen
-import com.serratocreations.phovo.feature.photos.navigation.photosScreen
 import com.serratocreations.phovo.feature.connections.ui.connectionsDetailsScreen
+import com.serratocreations.phovo.feature.photos.navigation.PhotosNavGraphRoute
+import com.serratocreations.phovo.feature.photos.navigation.photosNavGraph
 import com.serratocreations.phovo.ui.PhovoAppState
 import kotlinx.serialization.Serializable
 
@@ -36,19 +34,8 @@ fun PhovoNavHost(
             startDestination = PhovoBaseRoute,
             modifier = modifier,
         ) {
-            navigation<PhovoBaseRoute>(startDestination = PhotosRoute) {
-                photosScreen(
-                    sharedElementTransition = this@SharedTransitionLayout,
-                    onNavigateToPhotoDetail = { uri ->
-                        navController.navigateToPhotoDetail(uri)
-                    }
-                )
-                photoDetailScreen(
-                    sharedElementTransition = this@SharedTransitionLayout,
-                    onBackClick = {
-                        navController.popBackStack()
-                    }
-                )
+            navigation<PhovoBaseRoute>(startDestination = PhotosNavGraphRoute) {
+                photosNavGraph(this@SharedTransitionLayout,navController)
                 bookmarksScreen()
                 connectionsDetailsScreen(appState.appLevelVmStoreOwner)
             }

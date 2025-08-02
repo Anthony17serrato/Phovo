@@ -7,6 +7,14 @@ plugins {
 
 kotlin {
     sourceSets {
+        val androidMain by getting {
+            dependencies {
+                implementation(libs.coil.video)
+                implementation(libs.exoplayer)
+                implementation(libs.media.ui)
+            }
+        }
+
         val commonMain by getting {
             dependencies {
                 implementation(projects.core.designsystem)

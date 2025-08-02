@@ -8,6 +8,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation(projects.core.logger)
+                implementation(libs.coil.compose)
             }
         }
         val commonTest by getting {

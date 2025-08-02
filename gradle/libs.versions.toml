@@ -10,6 +10,7 @@ androidx-activityCompose = "1.10.1"
 androidx-datastore = "1.1.7"
 androidx-compose = "1.8.2"
 coil = "3.1.0"
+exoplayer = "1.7.1"
 foundation = "1.8.1"
 file-picker = "0.8.8"
 jetbrains-compose = "1.8.1"
@@ -36,6 +37,7 @@ kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
 coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
+coil-video = { group = "io.coil-kt.coil3", name = "coil-video", version.ref = "coil" }
 compose-adaptive = { group = "org.jetbrains.compose.material3.adaptive", name = "adaptive", version.ref = "material3-adaptive" }
 compose-adaptive-layout = { group = "org.jetbrains.compose.material3.adaptive", name = "adaptive-layout", version.ref = "material3-adaptive" }
 compose-adaptive-navigation = { group = "org.jetbrains.compose.material3.adaptive", name = "adaptive-navigation", version.ref = "material3-adaptive" }
@@ -46,6 +48,8 @@ compose-navigation = { group = "org.jetbrains.androidx.navigation", name = "navi
 compose-navigation-common = { group = "org.jetbrains.androidx.navigation", name = "navigation-common", version.ref = "navigation-compose"}
 compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling", version.ref = "androidx-compose" }
 compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview", version.ref = "androidx-compose" }
+exoplayer = { group = "androidx.media3", name = "media3-exoplayer", version.ref = "exoplayer" }
+media-ui = { group = "androidx.media3", name = "media3-ui", version.ref = "exoplayer" }
 filekit-core = { group = "io.github.vinceglb", name = "filekit-core", version.ref = "file-picker" }
 filekit-compose = { group = "io.github.vinceglb", name = "filekit-compose", version.ref = "file-picker" }
 serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization-json" }

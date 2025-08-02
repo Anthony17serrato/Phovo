@@ -6,6 +6,7 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
@@ -31,32 +33,34 @@ import coil3.compose.setSingletonImageLoaderFactory
 import coil3.request.crossfade
 import com.serratocreations.phovo.core.designsystem.component.CallToActionComponent
 import com.serratocreations.phovo.feature.photos.ui.model.DateHeaderPhotoUiItem
-import com.serratocreations.phovo.feature.photos.ui.model.ImagePhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.PhotoUiItem
+import com.serratocreations.phovo.feature.photos.ui.model.UriPhotoUiItem
+import com.serratocreations.phovo.feature.photos.ui.model.VideoPhotoUiItem
+import com.serratocreations.phovo.feature.photos.util.getPlatformDecoderFactory
 import com.serratocreations.phovo.feature.photos.util.getPlatformFetcherFactory
-import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 internal fun PhotosRoute(
-    onPhotoClick: (String) -> Unit,
+    onPhotoClick: (UriPhotoUiItem) -> Unit,
     sharedElementTransition: SharedTransitionScope,
     animatedContentScope: AnimatedContentScope,
+    photosViewModel: PhotosViewModel,
     modifier: Modifier = Modifier,
-    photosViewModel: PhotosViewModel = koinViewModel()
 ) {
     // TODO move to root composable https://coil-kt.github.io/coil/image_loaders/
     setSingletonImageLoaderFactory { context ->
         ImageLoader.Builder(context)
             .crossfade(true)
             .components {
+                add(getPlatformDecoderFactory())
                 add(getPlatformFetcherFactory())
             }
             .build()
     }
-    val photosState by photosViewModel.phovoUiState.collectAsStateWithLifecycle()
+    val photosState by photosViewModel.photosUiState.collectAsStateWithLifecycle()
     PhotosScreen(
-        photosState = photosState,
+        photosItems = photosState.photosFeed,
         onPhotoClick = onPhotoClick,
         sharedElementTransition =sharedElementTransition,
         animatedContentScope = animatedContentScope,
@@ -68,8 +72,8 @@ internal fun PhotosRoute(
 @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
 @Composable
 internal fun PhotosScreen(
-    photosState: List<PhotoUiItem>,
-    onPhotoClick: (String) -> Unit,
+    photosItems: List<PhotoUiItem>,
+    onPhotoClick: (UriPhotoUiItem) -> Unit,
     sharedElementTransition: SharedTransitionScope,
     animatedContentScope: AnimatedContentScope,
     modifier: Modifier = Modifier,
@@ -98,13 +102,13 @@ internal fun PhotosScreen(
                 )
             }
             itemsIndexed(
-                items = photosState,
+                items = photosItems,
                 span = { index, item ->
                     when (item) {
                         is DateHeaderPhotoUiItem -> {
                             GridItemSpan(maxLineSpan)
                         }
-                        is ImagePhotoUiItem -> {
+                        is UriPhotoUiItem -> {
                             GridItemSpan(1)
                         }
                     }
@@ -120,20 +124,31 @@ internal fun PhotosScreen(
                             modifier = modifier.padding(16.dp)
                         )
                     }
-                    is ImagePhotoUiItem -> with(sharedElementTransition) {
+                    is UriPhotoUiItem -> with(sharedElementTransition) {
                         val id = item.uri.toString()
-                        AsyncImage(
-                            model = item.uri,
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = modifier
-                                .aspectRatio(1f)
-                                .sharedElement(
-                                    sharedContentState = sharedElementTransition
-                                        .rememberSharedContentState(key = "image-$id"),
-                                    animatedVisibilityScope = animatedContentScope
-                                ).clickable { onPhotoClick(id) }
-                        )
+                        Box {
+                            AsyncImage(
+                                model = item.uri,
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = modifier
+                                    .aspectRatio(1f)
+                                    .sharedElement(
+                                        sharedContentState = sharedElementTransition
+                                            .rememberSharedContentState(key = "image-$id"),
+                                        animatedVisibilityScope = animatedContentScope
+                                    ).clickable { onPhotoClick(item) }
+                            )
+                            if (item is VideoPhotoUiItem) {
+                                Text(
+                                    text = item.duration,
+                                    color = Color.White,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    modifier = modifier.align(Alignment.TopEnd)
+                                        .padding(top = 8.dp, end = 8.dp)
+                                )
+                            }
+                        }
                     }
                 }
             }
