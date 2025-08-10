@@ -7,6 +7,7 @@ import com.ashampoo.kim.jvm.readMetadata
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.data.photos.db.entity.PhovoImageItem
 import com.serratocreations.phovo.data.photos.db.entity.PhovoItem
+import com.serratocreations.phovo.data.photos.db.entity.PhovoVideoItem
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -15,18 +16,45 @@ import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toKotlinLocalDateTime
+import kotlinx.datetime.toLocalDateTime
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.LocalDateTime as JavaLocalDateTime
 import java.time.format.DateTimeFormatter
+import org.apache.tika.metadata.Metadata
+import org.apache.tika.metadata.TikaCoreProperties
+import org.apache.tika.metadata.XMPDM
+import org.apache.tika.parser.AutoDetectParser
+import org.apache.tika.sax.BodyContentHandler
+import java.io.FileInputStream
+import kotlin.time.Duration.Companion.seconds
 
 class DesktopPhovoItemDao(
     logger: PhovoLogger,
     private val ioDispatcher: CoroutineDispatcher
 ) : PhovoItemDao {
     private val log = logger.withTag("DesktopPhovoItemDao")
+
+    enum class FileType {
+        Directory, Photo, Video, Other
+    }
+    private fun File.getFileType(): FileType {
+        if (isDirectory) return FileType.Directory
+
+        val extension = extension.lowercase()
+
+        return when (extension) {
+            in listOf("jpg", "jpeg", "png", "heic", "webp", "gif", "bmp", "tiff") -> FileType.Photo
+            in listOf("mp4", "mov", "mkv", "avi", "webm", "flv") -> FileType.Video
+            else -> FileType.Other
+        }
+    }
 
     // TODO temporary implementation, this API should observe the table of synced images from database
     override fun allItemsFlow(localDirectory: String?): Flow<List<PhovoItem>> {
@@ -35,7 +63,7 @@ class DesktopPhovoItemDao(
             if (dirPath != null && !Files.exists(dirPath)) {
                 Files.createDirectories(dirPath)
             }
-            val processedImages = mutableListOf<PhovoItem>()
+            val processedPhovoItems = mutableListOf<PhovoItem>()
             val filesChannel = Channel<List<File>>(Channel.UNLIMITED)
             launch {
                 while (true) {
@@ -50,25 +78,65 @@ class DesktopPhovoItemDao(
                 }
             }
             filesChannel.consumeAsFlow().collect {
-                val newlyProcessedImages = it.filter { unprocessedImage ->
-                    unprocessedImage.name !in processedImages.map { image -> image.name }
-                }.mapNotNull { image ->
-                    val metadata = Kim.readMetadata(image)
-                    val takenDate = metadata?.findStringValue(ExifTag.EXIF_TAG_DATE_TIME_ORIGINAL) ?: return@mapNotNull null
-                    // Define the custom format pattern
-                    val formatter = DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss")
-                    PhovoImageItem(
-                        uri = Uri(scheme = "file", path = image.toURI().path),
-                        name = image.name,
-                        dateInFeed = takenDate.let {
-                            date -> JavaLocalDateTime.parse(date, formatter).toKotlinLocalDateTime()
-                        },
-                        size = 0
-                    )
+                val newlyProcessedPhovoItems = it.filter { unprocessedItems ->
+                    unprocessedItems.name !in processedPhovoItems.map { item -> item.name }
+                }.mapNotNull { file ->
+                    val fileType = file.getFileType()
+                    return@mapNotNull when(fileType) {
+                        FileType.Directory -> {
+                            // TODO: Some recursion implementation
+                            null
+                        }
+                        FileType.Photo -> {
+                            processImage(file)
+                        }
+                        FileType.Video -> {
+                            processVideo(file)
+                        }
+                        FileType.Other -> null
+                    }
                 }
-                processedImages.addAll(newlyProcessedImages)
-                send(processedImages)
+                processedPhovoItems.addAll(newlyProcessedPhovoItems)
+                send(processedPhovoItems)
             }
         }.flowOn(ioDispatcher)
+    }
+
+    private suspend fun processVideo(file: File): PhovoVideoItem? = withContext(ioDispatcher) {
+        val metadata = Metadata()
+        FileInputStream(file).use { stream ->
+            val parser = AutoDetectParser()
+            val handler = BodyContentHandler()
+            parser.parse(stream, handler, metadata)
+        }
+
+        val durationSeconds = metadata.get(XMPDM.DURATION)?.toDoubleOrNull()?.toLong() ?: 0L
+        val creationDate: LocalDateTime = metadata.get(TikaCoreProperties.CREATED)?.let { creationDate ->
+            runCatching {
+                Instant.parse(creationDate)
+            }.getOrNull()?.toLocalDateTime(TimeZone.UTC)
+        } ?: return@withContext null // TODO find other methods to get a date
+
+        return@withContext PhovoVideoItem(
+            uri = Uri(scheme = "file", path = file.toURI().path),
+            name = file.name,
+            dateInFeed = creationDate,
+            size = file.length().toInt(),
+            duration = durationSeconds.seconds
+        )
+    }
+
+    private suspend fun processImage(file: File): PhovoImageItem? = withContext(ioDispatcher) {
+        val metadata = Kim.readMetadata(file)
+        val takenDate = metadata?.findStringValue(ExifTag.EXIF_TAG_DATE_TIME_ORIGINAL) ?: return@withContext null
+        // Define the custom format pattern
+        val formatter = DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss")
+        return@withContext PhovoImageItem(
+            uri = Uri(scheme = "file", path = file.toURI().path),
+            name = file.name,
+            dateInFeed = takenDate.let { date -> JavaLocalDateTime.parse(date, formatter).toKotlinLocalDateTime()
+            },
+            size = 0
+        )
     }
 }
