@@ -91,6 +91,6 @@ abstract class CopyPlatformFFmpeg : DefaultTask() {
         val targetDir = outputDir.get().asFile.resolve("files")
         targetDir.mkdirs()
         Files.copy(ffmpegSource.toPath(), targetDir.resolve(ffmpegSource.name).toPath(), StandardCopyOption.REPLACE_EXISTING)
-        println("✅ Copied FFmpeg for $osName ($arch) to $targetDir")
+        println("Copied FFmpeg for $osName ($arch) to $targetDir")
     }
 }

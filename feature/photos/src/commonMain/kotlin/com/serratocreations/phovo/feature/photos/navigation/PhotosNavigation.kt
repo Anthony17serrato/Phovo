@@ -8,9 +8,13 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavOptions
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
+import com.serratocreations.phovo.core.common.Platform
+import com.serratocreations.phovo.core.common.getPlatform
 import com.serratocreations.phovo.feature.photos.ui.PhotoDetailRoute
 import com.serratocreations.phovo.feature.photos.ui.PhotosRoute
 import com.serratocreations.phovo.feature.photos.ui.PhotosViewModel
+import com.serratocreations.phovo.feature.photos.ui.model.ImagePhotoUiItem
+import com.serratocreations.phovo.feature.photos.util.handleVideoDesktop
 import kotlinx.serialization.Serializable
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -65,7 +69,11 @@ fun NavGraphBuilder.photosScreen(
         PhotosRoute(
             onPhotoClick = { uriPhotoUiItem ->
                 photosViewModel.onPhotoClick(uriPhotoUiItem)
-                onNavigateToPhotoDetail()
+                if (uriPhotoUiItem is ImagePhotoUiItem || getPlatform() != Platform.Desktop) {
+                    onNavigateToPhotoDetail()
+                } else {
+                    handleVideoDesktop(uriPhotoUiItem.uri)
+                }
             },
             sharedElementTransition = sharedElementTransition,
             animatedContentScope = this@composable,
