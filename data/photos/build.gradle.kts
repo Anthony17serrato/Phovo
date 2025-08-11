@@ -33,6 +33,8 @@ kotlin {
         val desktopMain by getting {
             dependencies {
                 implementation(libs.ktor.client.okhttp)
+                implementation("org.apache.tika:tika-core:3.2.2")
+                implementation("org.apache.tika:tika-parsers-standard-package:3.2.2")
             }
         }
         iosMain {

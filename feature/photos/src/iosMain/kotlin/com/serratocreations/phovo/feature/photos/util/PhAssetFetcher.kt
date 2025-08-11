@@ -6,6 +6,7 @@ import coil3.decode.ImageSource
 import coil3.fetch.FetchResult
 import coil3.fetch.SourceFetchResult
 import coil3.request.Options
+import com.serratocreations.phovo.core.common.util.localIdFromPhAssetUri
 import com.serratocreations.phovo.core.common.util.toByteArray
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import kotlinx.cinterop.BetaInteropApi
@@ -39,7 +40,7 @@ class PhAssetFetcher(data: Any, options: Options) : PlatformFetcher(data, option
     override suspend fun fetch(): FetchResult? {
         log.i { "PhAssetFetcher fetch" }
         val uri = data as Uri
-        val localIdentifier = uri.toString().removePrefix("phasset://")
+        val localIdentifier = localIdFromPhAssetUri(uri)
         val asset = fetchAssetByIdentifier(localIdentifier) ?: throw IllegalArgumentException("PHAsset not found.")
         log.i { "PhAssetFetcher asset found ${asset.localIdentifier}" }
         val imageData = fetchImageData(asset) ?: return null
