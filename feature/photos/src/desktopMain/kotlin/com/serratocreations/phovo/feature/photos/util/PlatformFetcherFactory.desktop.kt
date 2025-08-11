@@ -10,10 +10,13 @@ import coil3.fetch.SourceFetchResult
 import coil3.request.Options
 import okio.buffer
 import okio.source
+import phovo.feature.photos.generated.resources.Res
 import java.io.File
 
 actual fun getPlatformFetcherFactory(): Fetcher.Factory<Any> = DesktopVideoFrameFetcher.Factory()
 
+// TODO: This fetcher is temporary, eventually all incoming image files will be processed by a worker
+//  service and at that point thumbnails wil be generated.
 class DesktopVideoFrameFetcher(
     private val file: File,
     private val options: Options,
@@ -22,11 +25,23 @@ class DesktopVideoFrameFetcher(
     override suspend fun fetch(): FetchResult? {
         // Create a temp file for extracted frame
         val tempFrameFile = File.createTempFile("frame_", ".png")
+        // TODO: Extract OS detection to utility function
+        val osName = System.getProperty("os.name").lowercase()
+        val execName = if (osName.contains("win")) "ffmpeg.exe" else "ffmpeg"
+        val bytes = Res.readBytes("files/$execName")
+
+        val ffmpegFile = File.createTempFile("ffmpeg_", if (execName.endsWith(".exe")) ".exe" else "")
+        ffmpegFile.writeBytes(bytes)
+        ffmpegFile.setExecutable(true)
+
+        if (!ffmpegFile.exists()) {
+            error("FFmpeg binary not found at ${ffmpegFile.absolutePath}")
+        }
 
         try {
             // Build FFmpeg command
             val command = listOf(
-                "ffmpeg",
+                ffmpegFile.absolutePath,
                 "-y",  // <-- add this flag here to auto-overwrite
                 "-i", file.absolutePath,
                 "-ss", "00:00:00.000", // start time, adjust as needed

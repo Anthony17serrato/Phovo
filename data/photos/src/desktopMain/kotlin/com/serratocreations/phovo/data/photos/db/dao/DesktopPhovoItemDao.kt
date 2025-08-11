@@ -35,6 +35,7 @@ import org.apache.tika.sax.BodyContentHandler
 import java.io.FileInputStream
 import kotlin.time.Duration.Companion.seconds
 
+// TODO Investigate if both metadata parsers here can be replaced by FFMPEG
 class DesktopPhovoItemDao(
     logger: PhovoLogger,
     private val ioDispatcher: CoroutineDispatcher
