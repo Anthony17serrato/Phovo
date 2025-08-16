@@ -10,7 +10,7 @@ import coil3.fetch.SourceFetchResult
 import coil3.request.Options
 import okio.buffer
 import okio.source
-import phovo.feature.photos.generated.resources.Res
+import phovo.data.ffmpeg.generated.resources.Res
 import java.io.File
 
 actual fun getPlatformFetcherFactory(): Fetcher.Factory<Any> = DesktopVideoFrameFetcher.Factory()
