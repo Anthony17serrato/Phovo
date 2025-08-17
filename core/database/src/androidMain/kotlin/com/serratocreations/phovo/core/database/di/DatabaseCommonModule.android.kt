@@ -12,7 +12,7 @@ actual class DatabasePlatformModule actual constructor() {
     @Factory
     fun getDatabaseBuilder(ctx: Context): RoomDatabase.Builder<PhovoDatabase> {
         val appContext = ctx.applicationContext
-        val dbFile = appContext.getDatabasePath("my_room.db")
+        val dbFile = appContext.getDatabasePath("phovo.db")
         return Room.databaseBuilder<PhovoDatabase>(
             context = appContext,
             name = dbFile.absolutePath

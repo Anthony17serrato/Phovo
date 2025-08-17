@@ -26,6 +26,9 @@ class DatabaseCommonModule {
 
     @Singleton
     fun serverConfigDao(db: PhovoDatabase) = db.getServerConfigDao()
+
+    @Singleton
+    fun phovoItemDao(db: PhovoDatabase) = db.getPhovoItemDao()
 }
 
 @Module

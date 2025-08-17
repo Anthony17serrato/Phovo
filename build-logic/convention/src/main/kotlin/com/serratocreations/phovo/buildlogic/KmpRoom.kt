@@ -14,21 +14,6 @@ internal fun Project.configureKmpRoom(
     commonExtension: CommonExtension<*, *, *, *, *, *>,
 ) {
     extensions.configure<KotlinMultiplatformExtension> {
-//      No longer needed but a good example for how to create custom source sets
-//        // Apply the default hierarchy again. It'll create, for example, the iosMain source set:
-//        // https://kotlinlang.org/docs/multiplatform-hierarchy.html
-//        applyDefaultHierarchyTemplate()
-//
-//        sourceSets.create("commonDesktopIosAndroid") {
-//            dependsOn(sourceSets.commonMain.get())
-//            sourceSets.iosMain.get().dependsOn(this)
-//            sourceSets.androidMain.get().dependsOn(this)
-//            sourceSets.named("desktopMain").get().dependsOn(this)
-//
-//            dependencies {
-//
-//            }
-//        }
 
         sourceSets.androidMain.dependencies {
         }

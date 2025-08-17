@@ -19,14 +19,15 @@ class PhovoItemRepository(
     private val remotePhotosDataSource: PhotosNetworkDataSource,
     @param:ApplicationScope private val appScope: CoroutineScope
 ) {
-    fun phovoItemsFlow(localDirectory: String? = null) : Flow<List<PhovoItem>> =
-        localPhotosDataSource.allItemsFlow(localDirectory).map { items ->
+    fun phovoItemsFlow(localDirectory: String? = null) : Flow<List<PhovoItem>> {
+        return localPhotosDataSource.allItemsFlow(localDirectory).map { items ->
             if (getPlatform() != Platform.Desktop) syncImage(items.filterIsInstance<PhovoImageItem>())
             items.sortedByDescending {
                 it.dateInFeed
             }
         }
-    // TODO: This logic will be moved to a sync worker
+    }
+
     fun syncImage(imageItem: List<PhovoImageItem>) {
         appScope.launch {
             imageItem.forEach {
