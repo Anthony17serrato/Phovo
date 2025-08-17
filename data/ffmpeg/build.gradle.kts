@@ -5,23 +5,19 @@ import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 
 plugins {
-    id(libs.plugins.phovo.kmp.android.ios.desktop.library.get().pluginId)
+    id(libs.plugins.phovo.kmp.desktop.library.get().pluginId)
     id(libs.plugins.phovo.kmp.library.compose.get().pluginId)
 }
 
 kotlin {
     sourceSets {
-        val commonMain by getting {
+        val desktopMain by getting {
             dependencies {
                 implementation(compose.runtime)
                 implementation(compose.components.resources)
             }
         }
     }
-}
-
-android {
-    namespace = "com.serratocreations.phovo.data.ffmpeg"
 }
 
 compose.resources {

@@ -9,6 +9,7 @@ class KmpAndroidIosDesktopWebLibraryConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
         with(target) {
             with(pluginManager) {
+                // Re-use other build plugin
                 apply("phovo.kmp.android.ios.desktop.library")
             }
 

@@ -17,4 +17,5 @@ plugins {
     id(libs.plugins.phovo.kmp.library.compose.get().pluginId) apply false
     id(libs.plugins.phovo.kmp.application.compose.get().pluginId) apply false
     id(libs.plugins.phovo.kmp.library.room.get().pluginId) apply false
+    id(libs.plugins.phovo.kmp.desktop.library.get().pluginId) apply false
 }
