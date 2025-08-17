@@ -1,5 +1,4 @@
 import com.android.build.gradle.LibraryExtension
-import com.serratocreations.phovo.buildlogic.CustomSourceSets
 import com.serratocreations.phovo.buildlogic.Targets
 import com.serratocreations.phovo.buildlogic.configureKotlinAndroid
 import com.serratocreations.phovo.buildlogic.configureKotlinMultiplatform
@@ -21,7 +20,6 @@ class KmpAndroidIosDesktopLibraryConventionPlugin : Plugin<Project> {
                 configureKotlinAndroid(this)
                 configureKotlinMultiplatform(
                     isApplication = false,
-                    customSourceSets = setOf(CustomSourceSets.DesktopIosAndroid),
                     targetList = setOf(Targets.ANDROID, Targets.IOS)
                 )
                 defaultConfig.targetSdk = 34
