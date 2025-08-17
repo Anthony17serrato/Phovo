@@ -2,8 +2,8 @@ package com.serratocreations.phovo.data.photos.di
 
 import com.serratocreations.phovo.core.common.di.IoDispatcher
 import com.serratocreations.phovo.core.logger.PhovoLogger
-import com.serratocreations.phovo.data.photos.db.dao.DesktopPhovoItemDao
-import com.serratocreations.phovo.data.photos.db.dao.PhovoItemDao
+import com.serratocreations.phovo.data.photos.local.DesktopLocalPhotoProvider
+import com.serratocreations.phovo.data.photos.local.LocalPhotoProvider
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import kotlinx.coroutines.CoroutineDispatcher
@@ -23,5 +23,5 @@ internal actual class PhotosDataPlatformModule {
     fun phovoItemDao(
         logger: PhovoLogger,
         @IoDispatcher ioDispatcher: CoroutineDispatcher
-    ): PhovoItemDao = DesktopPhovoItemDao(logger, ioDispatcher)
+    ): LocalPhotoProvider = DesktopLocalPhotoProvider(logger, ioDispatcher)
 }

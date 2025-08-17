@@ -1,13 +1,13 @@
-package com.serratocreations.phovo.data.photos.db.dao
+package com.serratocreations.phovo.data.photos.local
 
 import coil3.Uri
 import com.ashampoo.kim.Kim
 import com.ashampoo.kim.format.tiff.constant.ExifTag
 import com.ashampoo.kim.jvm.readMetadata
 import com.serratocreations.phovo.core.logger.PhovoLogger
-import com.serratocreations.phovo.data.photos.db.entity.PhovoImageItem
-import com.serratocreations.phovo.data.photos.db.entity.PhovoItem
-import com.serratocreations.phovo.data.photos.db.entity.PhovoVideoItem
+import com.serratocreations.phovo.data.photos.local.model.PhovoImageItem
+import com.serratocreations.phovo.data.photos.local.model.PhovoItem
+import com.serratocreations.phovo.data.photos.local.model.PhovoVideoItem
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -22,24 +22,23 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toKotlinLocalDateTime
 import kotlinx.datetime.toLocalDateTime
-import java.io.File
-import java.nio.file.Files
-import java.nio.file.Paths
-import java.time.LocalDateTime as JavaLocalDateTime
-import java.time.format.DateTimeFormatter
 import org.apache.tika.metadata.Metadata
 import org.apache.tika.metadata.TikaCoreProperties
 import org.apache.tika.metadata.XMPDM
 import org.apache.tika.parser.AutoDetectParser
 import org.apache.tika.sax.BodyContentHandler
+import java.io.File
 import java.io.FileInputStream
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.time.format.DateTimeFormatter
 import kotlin.time.Duration.Companion.seconds
 
 // TODO Investigate if both metadata parsers here can be replaced by FFMPEG
-class DesktopPhovoItemDao(
+class DesktopLocalPhotoProvider(
     logger: PhovoLogger,
     private val ioDispatcher: CoroutineDispatcher
-) : PhovoItemDao {
+) : LocalPhotoProvider {
     private val log = logger.withTag("DesktopPhovoItemDao")
 
     enum class FileType {
@@ -65,7 +64,7 @@ class DesktopPhovoItemDao(
                 Files.createDirectories(dirPath)
             }
             val processedPhovoItems = mutableListOf<PhovoItem>()
-            val filesChannel = Channel<List<File>>(Channel.UNLIMITED)
+            val filesChannel = Channel<List<File>>(Channel.Factory.UNLIMITED)
             launch {
                 while (true) {
                     val directory = localDirectory?.let { File(it) }
@@ -83,17 +82,20 @@ class DesktopPhovoItemDao(
                     unprocessedItems.name !in processedPhovoItems.map { item -> item.name }
                 }.mapNotNull { file ->
                     val fileType = file.getFileType()
-                    return@mapNotNull when(fileType) {
+                    return@mapNotNull when (fileType) {
                         FileType.Directory -> {
                             // TODO: Some recursion implementation
                             null
                         }
+
                         FileType.Photo -> {
                             processImage(file)
                         }
+
                         FileType.Video -> {
                             processVideo(file)
                         }
+
                         FileType.Other -> null
                     }
                 }
@@ -112,11 +114,12 @@ class DesktopPhovoItemDao(
         }
 
         val durationSeconds = metadata.get(XMPDM.DURATION)?.toDoubleOrNull()?.toLong() ?: 0L
-        val creationDate: LocalDateTime = metadata.get(TikaCoreProperties.CREATED)?.let { creationDate ->
-            runCatching {
-                Instant.parse(creationDate)
-            }.getOrNull()?.toLocalDateTime(TimeZone.UTC)
-        } ?: return@withContext null // TODO find other methods to get a date
+        val creationDate: LocalDateTime =
+            metadata.get(TikaCoreProperties.CREATED)?.let { creationDate ->
+                runCatching {
+                    Instant.Companion.parse(creationDate)
+                }.getOrNull()?.toLocalDateTime(TimeZone.Companion.UTC)
+            } ?: return@withContext null // TODO find other methods to get a date
 
         return@withContext PhovoVideoItem(
             uri = Uri(scheme = "file", path = file.toURI().path),
@@ -129,13 +132,15 @@ class DesktopPhovoItemDao(
 
     private suspend fun processImage(file: File): PhovoImageItem? = withContext(ioDispatcher) {
         val metadata = Kim.readMetadata(file)
-        val takenDate = metadata?.findStringValue(ExifTag.EXIF_TAG_DATE_TIME_ORIGINAL) ?: return@withContext null
+        val takenDate = metadata?.findStringValue(ExifTag.EXIF_TAG_DATE_TIME_ORIGINAL)
+            ?: return@withContext null
         // Define the custom format pattern
         val formatter = DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss")
         return@withContext PhovoImageItem(
             uri = Uri(scheme = "file", path = file.toURI().path),
             name = file.name,
-            dateInFeed = takenDate.let { date -> JavaLocalDateTime.parse(date, formatter).toKotlinLocalDateTime()
+            dateInFeed = takenDate.let { date ->
+                java.time.LocalDateTime.parse(date, formatter).toKotlinLocalDateTime()
             },
             size = 0
         )

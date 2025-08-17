@@ -1,9 +1,9 @@
 package com.serratocreations.phovo.feature.photos.ui.model
 
 import coil3.Uri
-import com.serratocreations.phovo.data.photos.db.entity.PhovoImageItem
-import com.serratocreations.phovo.data.photos.db.entity.PhovoItem
-import com.serratocreations.phovo.data.photos.db.entity.PhovoVideoItem
+import com.serratocreations.phovo.data.photos.local.model.PhovoImageItem
+import com.serratocreations.phovo.data.photos.local.model.PhovoItem
+import com.serratocreations.phovo.data.photos.local.model.PhovoVideoItem
 import com.serratocreations.phovo.feature.photos.util.toFormattedDurationString
 
 data class ImagePhotoUiItem(

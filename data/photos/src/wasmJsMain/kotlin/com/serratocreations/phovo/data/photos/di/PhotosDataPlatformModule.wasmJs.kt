@@ -1,7 +1,7 @@
 package com.serratocreations.phovo.data.photos.di
 
-import com.serratocreations.phovo.data.photos.db.dao.PhovoItemDao
-import com.serratocreations.phovo.data.photos.db.dao.WasmPhovoItemDao
+import com.serratocreations.phovo.data.photos.local.LocalPhotoProvider
+import com.serratocreations.phovo.data.photos.local.WasmLocalPhotoProvider
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.js.Js
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -19,5 +19,5 @@ internal actual class PhotosDataPlatformModule {
     }
 
     @Singleton
-    fun phovoItemDao(): PhovoItemDao = WasmPhovoItemDao()
+    fun phovoItemDao(): LocalPhotoProvider = WasmLocalPhotoProvider()
 }

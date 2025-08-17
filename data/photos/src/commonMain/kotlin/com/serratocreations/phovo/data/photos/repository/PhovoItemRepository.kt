@@ -3,9 +3,9 @@ package com.serratocreations.phovo.data.photos.repository
 import com.serratocreations.phovo.core.common.Platform
 import com.serratocreations.phovo.core.common.di.ApplicationScope
 import com.serratocreations.phovo.core.common.getPlatform
-import com.serratocreations.phovo.data.photos.db.dao.PhovoItemDao
-import com.serratocreations.phovo.data.photos.db.entity.PhovoImageItem
-import com.serratocreations.phovo.data.photos.db.entity.PhovoItem
+import com.serratocreations.phovo.data.photos.local.LocalPhotoProvider
+import com.serratocreations.phovo.data.photos.local.model.PhovoImageItem
+import com.serratocreations.phovo.data.photos.local.model.PhovoItem
 import com.serratocreations.phovo.data.photos.network.PhotosNetworkDataSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -15,9 +15,9 @@ import org.koin.core.annotation.Singleton
 
 @Singleton
 class PhovoItemRepository(
-    private val localPhotosDataSource: PhovoItemDao,
+    private val localPhotosDataSource: LocalPhotoProvider,
     private val remotePhotosDataSource: PhotosNetworkDataSource,
-    @ApplicationScope private val appScope: CoroutineScope
+    @param:ApplicationScope private val appScope: CoroutineScope
 ) {
     fun phovoItemsFlow(localDirectory: String? = null) : Flow<List<PhovoItem>> =
         localPhotosDataSource.allItemsFlow(localDirectory).map { items ->
@@ -26,7 +26,7 @@ class PhovoItemRepository(
                 it.dateInFeed
             }
         }
-
+    // TODO: This logic will be moved to a sync worker
     fun syncImage(imageItem: List<PhovoImageItem>) {
         appScope.launch {
             imageItem.forEach {

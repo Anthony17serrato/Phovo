@@ -1,33 +1,31 @@
-package com.serratocreations.phovo.data.photos.db.dao
+package com.serratocreations.phovo.data.photos.local
 
 import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.Context
-// TODO follow suggestion
 import android.media.ExifInterface
 import android.net.Uri
-import android.provider.MediaStore
 import android.os.Build
+import android.provider.MediaStore
 import androidx.core.database.getLongOrNull
 import coil3.toCoilUri
-import com.serratocreations.phovo.data.photos.db.entity.PhovoItem
-import com.serratocreations.phovo.data.photos.db.entity.PhovoImageItem
-import com.serratocreations.phovo.data.photos.db.entity.PhovoVideoItem
+import com.serratocreations.phovo.data.photos.local.model.PhovoImageItem
+import com.serratocreations.phovo.data.photos.local.model.PhovoItem
+import com.serratocreations.phovo.data.photos.local.model.PhovoVideoItem
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toKotlinLocalDateTime
 import kotlinx.datetime.toLocalDateTime
 import java.time.format.DateTimeFormatter
-import kotlinx.datetime.LocalDateTime as KotlinLocalDateTime
-import java.time.LocalDateTime as JavaLocalDateTime
-import kotlinx.datetime.toKotlinLocalDateTime
 import kotlin.time.Duration.Companion.milliseconds
 
-class AndroidPhovoItemDao(
+class AndroidLocalPhotoProvider(
     context: Context
-) : PhovoItemDao {
+) : LocalPhotoProvider {
     private val resolver = context.contentResolver
 
     @SuppressLint("NewApi")
@@ -77,12 +75,12 @@ class AndroidPhovoItemDao(
                     ?: resolver.parseDateTakenFromExif(androidUri)
                     ?: (cursor.getLong(dateAddedColumn) * 1000).utcMsToLocalDateTime()
 
-                result += PhovoImageItem(
+                result.add(PhovoImageItem(
                     uri = contentUri,
                     name = name,
                     dateInFeed = dateInFeed,
                     size = size
-                )
+                ))
             }
         }
         return result
@@ -127,29 +125,29 @@ class AndroidPhovoItemDao(
                 val dateInFeed = cursor.getLongOrNull(dateTakenColumn)?.utcMsToLocalDateTime()
                     ?: (cursor.getLong(dateAddedColumn) * 1000).utcMsToLocalDateTime()
 
-                result += PhovoVideoItem(
+                result.add(PhovoVideoItem(
                     uri = contentUri,
                     name = name,
                     dateInFeed = dateInFeed,
                     size = size,
                     duration = duration
-                )
+                ))
             }
         }
         return result
     }
 
-    private fun Long.utcMsToLocalDateTime(): KotlinLocalDateTime {
+    private fun Long.utcMsToLocalDateTime(): LocalDateTime {
         // Convert seconds to milliseconds
-        val instant = Instant.fromEpochMilliseconds(this)
+        val instant = Instant.Companion.fromEpochMilliseconds(this)
 
         // Convert to LocalDateTime in the system's default time zone
-        return instant.toLocalDateTime(TimeZone.currentSystemDefault())
+        return instant.toLocalDateTime(TimeZone.Companion.currentSystemDefault())
     }
 
     // TODO Address lint
     @SuppressLint("NewApi")
-    private fun ContentResolver.parseDateTakenFromExif(uri: Uri) : KotlinLocalDateTime? =
+    private fun ContentResolver.parseDateTakenFromExif(uri: Uri) : LocalDateTime? =
         openInputStream(uri)?.use { stream ->
             val exif = ExifInterface(stream)
             val exifDateFormatter = DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss")
@@ -158,7 +156,7 @@ class AndroidPhovoItemDao(
                 exifDateString = exif.getAttribute(ExifInterface.TAG_DATETIME)
             }
             if (exifDateString != null) {
-                return@use JavaLocalDateTime.parse(exifDateString, exifDateFormatter).toKotlinLocalDateTime()
+                return@use java.time.LocalDateTime.parse(exifDateString, exifDateFormatter).toKotlinLocalDateTime()
             } else return@use null
         }
 }
