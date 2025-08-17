@@ -1,4 +1,4 @@
-package com.serratocreations.phovo.data.photos.db.entity
+package com.serratocreations.phovo.data.photos.local.model
 
 import coil3.Uri
 import com.serratocreations.phovo.data.photos.util.UriSerializer

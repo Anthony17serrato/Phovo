@@ -1,7 +1,7 @@
 package com.serratocreations.phovo.data.photos.network
 
 import com.serratocreations.phovo.core.logger.PhovoLogger
-import com.serratocreations.phovo.data.photos.db.entity.PhovoImageItem
+import com.serratocreations.phovo.data.photos.local.model.PhovoImageItem
 import com.serratocreations.phovo.data.photos.network.model.getNetworkFile
 import io.ktor.client.HttpClient
 import io.ktor.client.request.forms.formData
