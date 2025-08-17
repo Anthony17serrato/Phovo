@@ -11,17 +11,12 @@ import org.jetbrains.kotlin.compose.compiler.gradle.ComposeCompilerGradlePluginE
  * Configure Compose-specific options
  */
 internal fun Project.configureKmpCompose(
-    commonExtension: CommonExtension<*, *, *, *, *, *>,
+    commonExtension: CommonExtension<*, *, *, *, *, *>?,
 ) {
-    commonExtension.apply {
+    commonExtension?.apply {
         buildFeatures {
             compose = true
         }
-//      Todo: investigate appropriate tooling dependencies
-//        dependencies {
-//            add("implementation", libs.findLibrary("androidx-compose-ui-tooling-preview").get())
-//            add("debugImplementation", libs.findLibrary("androidx-compose-ui-tooling").get())
-//        }
 
 //        testOptions {
 //            unitTests {
@@ -30,6 +25,8 @@ internal fun Project.configureKmpCompose(
 //            }
 //        }
     }
+
+    // TODO: Move common compose imports from core:designsystem to here
 
     // Configure Compose resources
     extensions.configure<ComposeExtension> {

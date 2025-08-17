@@ -86,5 +86,9 @@ gradlePlugin {
             id = "phovo.kmp.library.room"
             implementationClass = "KmpLibraryRoomConventionPlugin"
         }
+        register("kmpDesktopLibrary") {
+            id = "phovo.kmp.desktop.library"
+            implementationClass = "KmpDesktopLibraryConventionPlugin"
+        }
     }
 }

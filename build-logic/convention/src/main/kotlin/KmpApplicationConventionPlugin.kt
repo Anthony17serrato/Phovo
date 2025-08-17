@@ -38,7 +38,6 @@ class KmpApplicationConventionPlugin : Plugin<Project> {
                         signingConfig = signingConfigs.getByName("debug")
                     }
                 }
-                @Suppress("UnstableApiUsage")
                 testOptions.animationsDisabled = true
             }
         }
