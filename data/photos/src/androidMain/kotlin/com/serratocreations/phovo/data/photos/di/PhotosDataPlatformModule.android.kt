@@ -1,7 +1,7 @@
 package com.serratocreations.phovo.data.photos.di
 
-import com.serratocreations.phovo.data.photos.local.AndroidLocalPhotoProvider
-import com.serratocreations.phovo.data.photos.local.LocalPhotoProvider
+import com.serratocreations.phovo.data.photos.local.AndroidLocalUnprocessedMediaProvider
+import com.serratocreations.phovo.data.photos.local.LocalUnprocessedMediaProvider
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -18,7 +18,7 @@ actual fun getPhotosDataPlatformSubModule(): Module = module {
         }
     }
 
-    single<LocalPhotoProvider> {
-        AndroidLocalPhotoProvider(context = get())
+    single<LocalUnprocessedMediaProvider> {
+        AndroidLocalUnprocessedMediaProvider(context = get())
     }
 }

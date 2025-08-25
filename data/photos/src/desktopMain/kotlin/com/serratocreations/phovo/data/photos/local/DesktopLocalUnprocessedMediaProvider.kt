@@ -35,10 +35,10 @@ import java.time.format.DateTimeFormatter
 import kotlin.time.Duration.Companion.seconds
 
 // TODO Investigate if both metadata parsers here can be replaced by FFMPEG
-class DesktopLocalPhotoProvider(
+class DesktopLocalUnprocessedMediaProvider(
     logger: PhovoLogger,
     private val ioDispatcher: CoroutineDispatcher
-) : LocalPhotoProvider {
+) : LocalUnprocessedMediaProvider {
     private val log = logger.withTag("DesktopPhovoItemDao")
 
     enum class FileType {

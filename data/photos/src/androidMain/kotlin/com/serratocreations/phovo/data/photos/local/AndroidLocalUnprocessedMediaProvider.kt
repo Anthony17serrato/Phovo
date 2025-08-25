@@ -23,9 +23,9 @@ import kotlinx.datetime.toLocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.time.Duration.Companion.milliseconds
 
-class AndroidLocalPhotoProvider(
+class AndroidLocalUnprocessedMediaProvider(
     context: Context
-) : LocalPhotoProvider {
+) : LocalUnprocessedMediaProvider {
     private val resolver = context.contentResolver
 
     @SuppressLint("NewApi")

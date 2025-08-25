@@ -1,8 +1,8 @@
 package com.serratocreations.phovo.data.photos.di
 
 import com.serratocreations.phovo.core.common.di.IO_DISPATCHER
-import com.serratocreations.phovo.data.photos.local.DesktopLocalPhotoProvider
-import com.serratocreations.phovo.data.photos.local.LocalPhotoProvider
+import com.serratocreations.phovo.data.photos.local.DesktopLocalUnprocessedMediaProvider
+import com.serratocreations.phovo.data.photos.local.LocalUnprocessedMediaProvider
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import kotlinx.coroutines.CoroutineDispatcher
@@ -14,8 +14,8 @@ actual fun getPhotosDataPlatformSubModule(): Module = module {
         HttpClient(OkHttp)
     }
 
-    single<LocalPhotoProvider> {
+    single<LocalUnprocessedMediaProvider> {
         val ioDispatcher: CoroutineDispatcher = get(IO_DISPATCHER)
-        DesktopLocalPhotoProvider(logger = get(), ioDispatcher = ioDispatcher)
+        DesktopLocalUnprocessedMediaProvider(logger = get(), ioDispatcher = ioDispatcher)
     }
 }

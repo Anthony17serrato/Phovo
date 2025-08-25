@@ -29,10 +29,10 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 import kotlin.time.Duration.Companion.seconds
 
-class IosLocalPhotoProvider(
+class IosLocalUnprocessedMediaProvider(
     logger: PhovoLogger,
     private val ioDispatcher: CoroutineDispatcher
-) : LocalPhotoProvider {
+) : LocalUnprocessedMediaProvider {
     private val log = logger.withTag("IosPhovoItemDao")
 
     override fun allItemsFlow(localDirectory: String?): Flow<List<PhovoItem>> {

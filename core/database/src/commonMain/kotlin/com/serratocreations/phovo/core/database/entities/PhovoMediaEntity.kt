@@ -5,7 +5,7 @@ import androidx.room.PrimaryKey
 
 // TODO: Add md5 hash for uniqueness check
 @Entity
-data class PhovoItemEntity(
+data class PhovoMediaEntity(
     /** Insert methods treat 0 as not set for auto-generating keys */
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     // val md5Hash: String,
