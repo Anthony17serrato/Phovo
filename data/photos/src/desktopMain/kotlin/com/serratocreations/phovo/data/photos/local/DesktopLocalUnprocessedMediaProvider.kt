@@ -5,9 +5,9 @@ import com.ashampoo.kim.Kim
 import com.ashampoo.kim.format.tiff.constant.ExifTag
 import com.ashampoo.kim.jvm.readMetadata
 import com.serratocreations.phovo.core.logger.PhovoLogger
-import com.serratocreations.phovo.data.photos.local.model.PhovoImageItem
-import com.serratocreations.phovo.data.photos.local.model.PhovoItem
-import com.serratocreations.phovo.data.photos.local.model.PhovoVideoItem
+import com.serratocreations.phovo.data.photos.repository.model.PhovoImageItem
+import com.serratocreations.phovo.data.photos.repository.model.PhovoItem
+import com.serratocreations.phovo.data.photos.repository.model.PhovoVideoItem
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -35,10 +35,10 @@ import java.time.format.DateTimeFormatter
 import kotlin.time.Duration.Companion.seconds
 
 // TODO Investigate if both metadata parsers here can be replaced by FFMPEG
-class DesktopLocalPhotoProvider(
+class DesktopLocalUnprocessedMediaProvider(
     logger: PhovoLogger,
     private val ioDispatcher: CoroutineDispatcher
-) : LocalPhotoProvider {
+) : LocalUnprocessedMediaProvider {
     private val log = logger.withTag("DesktopPhovoItemDao")
 
     enum class FileType {

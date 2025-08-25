@@ -2,9 +2,9 @@ package com.serratocreations.phovo.data.photos.local
 
 import com.serratocreations.phovo.core.common.util.phAssetUriFromLocalId
 import com.serratocreations.phovo.core.logger.PhovoLogger
-import com.serratocreations.phovo.data.photos.local.model.PhovoImageItem
-import com.serratocreations.phovo.data.photos.local.model.PhovoItem
-import com.serratocreations.phovo.data.photos.local.model.PhovoVideoItem
+import com.serratocreations.phovo.data.photos.repository.model.PhovoImageItem
+import com.serratocreations.phovo.data.photos.repository.model.PhovoItem
+import com.serratocreations.phovo.data.photos.repository.model.PhovoVideoItem
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
@@ -29,10 +29,10 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 import kotlin.time.Duration.Companion.seconds
 
-class IosLocalPhotoProvider(
+class IosLocalUnprocessedMediaProvider(
     logger: PhovoLogger,
     private val ioDispatcher: CoroutineDispatcher
-) : LocalPhotoProvider {
+) : LocalUnprocessedMediaProvider {
     private val log = logger.withTag("IosPhovoItemDao")
 
     override fun allItemsFlow(localDirectory: String?): Flow<List<PhovoItem>> {

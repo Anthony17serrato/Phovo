@@ -18,6 +18,8 @@ class DatabaseCommonModule {
     ): PhovoDatabase {
         return builder
             //.addMigrations(MIGRATIONS)
+            // TODO: Remove before production builds are made available
+            .fallbackToDestructiveMigration(true)
             .fallbackToDestructiveMigrationOnDowngrade(true)
             .setDriver(BundledSQLiteDriver())
             .setQueryCoroutineContext(Dispatchers.IO)
@@ -26,6 +28,9 @@ class DatabaseCommonModule {
 
     @Singleton
     fun serverConfigDao(db: PhovoDatabase) = db.getServerConfigDao()
+
+    @Singleton
+    fun phovoItemDao(db: PhovoDatabase) = db.getPhovoItemDao()
 }
 
 @Module

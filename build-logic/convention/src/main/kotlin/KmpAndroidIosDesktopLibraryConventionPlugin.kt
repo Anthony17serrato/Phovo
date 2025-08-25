@@ -18,7 +18,10 @@ class KmpAndroidIosDesktopLibraryConventionPlugin : Plugin<Project> {
 
             extensions.configure<LibraryExtension> {
                 configureKotlinAndroid(this)
-                configureKotlinMultiplatform(isApplication = false, listOf(Targets.ANDROID, Targets.IOS))
+                configureKotlinMultiplatform(
+                    isApplication = false,
+                    targetList = setOf(Targets.ANDROID, Targets.IOS)
+                )
                 defaultConfig.targetSdk = 34
                 defaultConfig.testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
                 testOptions.animationsDisabled = true

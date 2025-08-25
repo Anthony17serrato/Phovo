@@ -33,6 +33,7 @@ kotlin {
         val desktopMain by getting {
             dependencies {
                 implementation(libs.ktor.client.okhttp)
+                // TODO: Replace with ffmpeg
                 implementation("org.apache.tika:tika-core:3.2.2")
                 implementation("org.apache.tika:tika-parsers-standard-package:3.2.2")
             }
@@ -46,6 +47,11 @@ kotlin {
         val wasmJsMain by getting {
             dependencies {
                 implementation(libs.ktor.client.js)
+            }
+        }
+        val commonDesktopIosAndroid by getting {
+            dependencies {
+                implementation(projects.core.database)
             }
         }
     }

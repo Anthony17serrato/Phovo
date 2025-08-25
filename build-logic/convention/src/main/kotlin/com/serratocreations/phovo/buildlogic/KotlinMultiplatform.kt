@@ -34,11 +34,36 @@ internal fun Project.configureKotlinAndroid(
 
 internal fun Project.configureKotlinMultiplatform(
     isApplication: Boolean,
-    targetList: List<Targets> = Targets.values().asList()
+    customSourceSets: Set<CustomSourceSets> = emptySet(),
+    // All targets are configured by default
+    targetList: Set<Targets> = Targets.values().toSet()
 ) {
     configure<KotlinMultiplatformExtension> {
         compilerOptions {
             freeCompilerArgs.add("-Xexpect-actual-classes")
+        }
+
+        if (customSourceSets.isNotEmpty()) {
+            // Apply the default hierarchy again. It'll create, for example, the iosMain source set:
+            // https://kotlinlang.org/docs/multiplatform-hierarchy.html
+            applyDefaultHierarchyTemplate()
+        }
+
+        customSourceSets.forEach { sourceSet ->
+            when (sourceSet) {
+                CustomSourceSets.DesktopIosAndroid -> {
+                    sourceSets.create("commonDesktopIosAndroid") {
+                        dependsOn(sourceSets.commonMain.get())
+                        sourceSets.iosMain.get().dependsOn(this)
+                        sourceSets.androidMain.get().dependsOn(this)
+                        sourceSets.named("desktopMain").get().dependsOn(this)
+
+                        dependencies {
+
+                        }
+                    }
+                }
+            }
         }
 
         if (targetList.contains(Targets.DESKTOP)) {

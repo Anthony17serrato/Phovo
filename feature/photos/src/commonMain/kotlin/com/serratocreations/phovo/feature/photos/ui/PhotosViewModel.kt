@@ -3,7 +3,8 @@ package com.serratocreations.phovo.feature.photos.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.serratocreations.phovo.core.common.di.IoDispatcher
-import com.serratocreations.phovo.data.photos.repository.PhovoItemRepository
+import com.serratocreations.phovo.data.photos.repository.MediaRepository
+import com.serratocreations.phovo.data.photos.repository.LocalSupportMediaRepository
 import com.serratocreations.phovo.data.server.data.repository.ServerConfigRepository
 import com.serratocreations.phovo.feature.photos.ui.model.DateHeaderPhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.PhotoUiItem
@@ -27,7 +28,7 @@ import org.koin.android.annotation.KoinViewModel
 @OptIn(ExperimentalCoroutinesApi::class)
 @KoinViewModel
 class PhotosViewModel(
-    private val phovoItemRepository: PhovoItemRepository,
+    private val mediaRepository: MediaRepository,
     private val serverConfigRepository: ServerConfigRepository,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ): ViewModel() {
@@ -36,9 +37,13 @@ class PhotosViewModel(
     val photosUiState = _photosUiState.asStateFlow()
 
     init {
+        if(mediaRepository is LocalSupportMediaRepository){
+            mediaRepository.initMediaProcessing()
+        }
+
         serverConfigRepository.observeServerConfig().map { it?.backupDirectory }
             .distinctUntilChanged().mapLatest { localDirectory ->
-                phovoItemRepository.phovoItemsFlow(localDirectory).collect { phovoItems ->
+                mediaRepository.phovoItemsFlow(localDirectory).collect { phovoItems ->
                     val uiItemList = mutableListOf<PhotoUiItem>()
                     phovoItems.groupBy { Pair(it.dateInFeed.month, it.dateInFeed.year) }.forEach { entry ->
                         uiItemList.add(
