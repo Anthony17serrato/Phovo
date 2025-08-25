@@ -1,9 +1,8 @@
 package com.serratocreations.phovo.data.photos.local
 
-import com.serratocreations.phovo.data.photos.local.model.PhovoItem
+import com.serratocreations.phovo.data.photos.repository.model.PhovoItem
 import kotlinx.coroutines.flow.Flow
 
-// TODO: UI will consume DAO APIs instead, make this internal after DAO API is implemented
 /**
  * Provides both photos and videos from the local device.
  * These items must be processed by a metadata extraction job before being displayed.

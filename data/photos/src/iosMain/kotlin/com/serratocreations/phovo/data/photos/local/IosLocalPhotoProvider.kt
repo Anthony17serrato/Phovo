@@ -2,9 +2,9 @@ package com.serratocreations.phovo.data.photos.local
 
 import com.serratocreations.phovo.core.common.util.phAssetUriFromLocalId
 import com.serratocreations.phovo.core.logger.PhovoLogger
-import com.serratocreations.phovo.data.photos.local.model.PhovoImageItem
-import com.serratocreations.phovo.data.photos.local.model.PhovoItem
-import com.serratocreations.phovo.data.photos.local.model.PhovoVideoItem
+import com.serratocreations.phovo.data.photos.repository.model.PhovoImageItem
+import com.serratocreations.phovo.data.photos.repository.model.PhovoItem
+import com.serratocreations.phovo.data.photos.repository.model.PhovoVideoItem
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow

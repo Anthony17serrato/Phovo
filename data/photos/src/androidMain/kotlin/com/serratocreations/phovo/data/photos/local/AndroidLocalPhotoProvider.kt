@@ -10,9 +10,9 @@ import android.os.Build
 import android.provider.MediaStore
 import androidx.core.database.getLongOrNull
 import coil3.toCoilUri
-import com.serratocreations.phovo.data.photos.local.model.PhovoImageItem
-import com.serratocreations.phovo.data.photos.local.model.PhovoItem
-import com.serratocreations.phovo.data.photos.local.model.PhovoVideoItem
+import com.serratocreations.phovo.data.photos.repository.model.PhovoImageItem
+import com.serratocreations.phovo.data.photos.repository.model.PhovoItem
+import com.serratocreations.phovo.data.photos.repository.model.PhovoVideoItem
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.datetime.Instant

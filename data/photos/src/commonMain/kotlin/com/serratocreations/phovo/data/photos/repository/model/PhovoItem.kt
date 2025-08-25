@@ -1,4 +1,4 @@
-package com.serratocreations.phovo.data.photos.local.model
+package com.serratocreations.phovo.data.photos.repository.model
 
 import coil3.Uri
 import kotlinx.datetime.LocalDateTime
