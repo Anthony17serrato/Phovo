@@ -13,5 +13,5 @@ interface PhovoMediaDao {
     suspend fun insert(item: PhovoMediaEntity)
 
     @Query("SELECT * FROM PhovoMediaEntity ORDER BY timeStampUtcMs DESC")
-    fun observeAll(): Flow<List<PhovoMediaEntity>>
+    fun observeAllDescendingTimestamp(): Flow<List<PhovoMediaEntity>>
 }

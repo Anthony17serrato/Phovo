@@ -2,11 +2,14 @@ package com.serratocreations.phovo.data.photos.local
 
 import com.serratocreations.phovo.core.common.util.phAssetUriFromLocalId
 import com.serratocreations.phovo.core.logger.PhovoLogger
-import com.serratocreations.phovo.data.photos.repository.model.PhovoImageItem
-import com.serratocreations.phovo.data.photos.repository.model.PhovoItem
-import com.serratocreations.phovo.data.photos.repository.model.PhovoVideoItem
+import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
+import com.serratocreations.phovo.data.photos.repository.model.MediaItem
+import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
@@ -29,18 +32,26 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 import kotlin.time.Duration.Companion.seconds
 
-class IosLocalUnprocessedMediaProvider(
+class IosLocalMediaProcessor(
     logger: PhovoLogger,
     private val ioDispatcher: CoroutineDispatcher
-) : LocalUnprocessedMediaProvider {
+) : LocalMediaProcessor {
     private val log = logger.withTag("IosPhovoItemDao")
 
-    override fun allItemsFlow(localDirectory: String?): Flow<List<PhovoItem>> {
+    override fun CoroutineScope.processLocalItems(
+        processedItems: List<MediaItem>,
+        localDirectory: String?,
+        processMediaChannel: SendChannel<MediaItem>
+    ): Job {
+        TODO("Not yet implemented")
+    }
+
+    fun processLocalItems(localDirectory: String?): Flow<List<MediaItem>> {
         return flow {
             requestPhotoLibraryPermission()
             val status = PHPhotoLibrary.Companion.authorizationStatus()
             log.i { "Photo Library Authorization Status: $status" }
-            val localImagesAndVideos: List<PhovoItem> = fetchImages() + fetchVideos()
+            val localImagesAndVideos: List<MediaItem> = fetchImages() + fetchVideos()
             emit(localImagesAndVideos)
         }
     }
@@ -73,10 +84,10 @@ class IosLocalUnprocessedMediaProvider(
     }
 
     @OptIn(ExperimentalForeignApi::class)
-    private suspend fun fetchImages(): List<PhovoImageItem> = withContext(ioDispatcher) {
+    private suspend fun fetchImages(): List<MediaImageItem> = withContext(ioDispatcher) {
         val fetchOptions = PHFetchOptions()
         val assets = PHAsset.Companion.fetchAssetsWithMediaType(PHAssetMediaTypeImage, fetchOptions)
-        val imageItems = mutableListOf<PhovoImageItem>()
+        val imageItems = mutableListOf<MediaImageItem>()
 
         // Enumerate the assets using the block-based approach
         assets.enumerateObjectsUsingBlock { obj, _, _ ->
@@ -90,7 +101,7 @@ class IosLocalUnprocessedMediaProvider(
             val name = resource?.originalFilename ?: ""
             val size = resource?.valueForKey("fileSize") as? NSNumber
             val bytes = size?.longValue ?: 0L
-            val phovoImageItem = PhovoImageItem(
+            val phovoImageItem = MediaImageItem(
                 uri = phAssetUriFromLocalId(asset.localIdentifier),
                 name = name,
                 dateInFeed = localDateTime,
@@ -103,9 +114,9 @@ class IosLocalUnprocessedMediaProvider(
     }
 
     @OptIn(ExperimentalForeignApi::class)
-    private suspend fun fetchVideos(): List<PhovoVideoItem> = withContext(ioDispatcher) {
+    private suspend fun fetchVideos(): List<MediaVideoItem> = withContext(ioDispatcher) {
         val fetchOptions = PHFetchOptions()
-        val videoItems = mutableListOf<PhovoVideoItem>()
+        val videoItems = mutableListOf<MediaVideoItem>()
         val videoAssets =
             PHAsset.Companion.fetchAssetsWithMediaType(PHAssetMediaTypeVideo, fetchOptions)
         videoAssets.enumerateObjectsUsingBlock { obj, _, _ ->
@@ -120,7 +131,7 @@ class IosLocalUnprocessedMediaProvider(
             val size = resource?.valueForKey("fileSize") as? NSNumber
             val bytes = size?.longValue ?: 0L
 
-            val videoItem = PhovoVideoItem(
+            val videoItem = MediaVideoItem(
                 uri = phAssetUriFromLocalId(asset.localIdentifier),
                 name = name,
                 dateInFeed = localDateTime,

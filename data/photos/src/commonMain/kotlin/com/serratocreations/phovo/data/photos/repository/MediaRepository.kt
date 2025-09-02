@@ -1,17 +1,18 @@
 package com.serratocreations.phovo.data.photos.repository
 
-import com.serratocreations.phovo.data.photos.repository.model.PhovoItem
-import com.serratocreations.phovo.data.photos.network.PhotosNetworkDataSource
+import com.serratocreations.phovo.data.photos.repository.model.MediaItem
+import com.serratocreations.phovo.data.photos.network.MediaNetworkDataSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.onStart
 
 open class MediaRepository(
     //private val localPhotosDataSource: LocalPhotoProvider,
-    private val remotePhotosDataSource: PhotosNetworkDataSource,
+    private val remotePhotosDataSource: MediaNetworkDataSource,
     private val appScope: CoroutineScope
 ) {
-    open fun phovoItemsFlow(localDirectory: String? = null) : Flow<List<PhovoItem>> {
-        return remotePhotosDataSource.allItemsFlow()
+    open fun phovoMediaFlow() : Flow<List<MediaItem>> {
+        return remotePhotosDataSource.allItemsFlow().onStart { emit(emptyList()) }
 
 //        localPhotosDataSource.allItemsFlow(localDirectory).map { items ->
 //            if (getPlatform() != Platform.Desktop) syncImage(items.filterIsInstance<PhovoImageItem>())

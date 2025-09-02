@@ -10,11 +10,19 @@ import android.os.Build
 import android.provider.MediaStore
 import androidx.core.database.getLongOrNull
 import coil3.toCoilUri
-import com.serratocreations.phovo.data.photos.repository.model.PhovoImageItem
-import com.serratocreations.phovo.data.photos.repository.model.PhovoItem
-import com.serratocreations.phovo.data.photos.repository.model.PhovoVideoItem
+import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
+import com.serratocreations.phovo.data.photos.repository.model.MediaItem
+import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
@@ -23,22 +31,44 @@ import kotlinx.datetime.toLocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.time.Duration.Companion.milliseconds
 
-class AndroidLocalUnprocessedMediaProvider(
+class AndroidLocalMediaProcessor(
+    private val ioDispatcher: CoroutineDispatcher,
     context: Context
-) : LocalUnprocessedMediaProvider {
+) : LocalMediaProcessor {
     private val resolver = context.contentResolver
 
     @SuppressLint("NewApi")
-    override fun allItemsFlow(localDirectory: String?): Flow<List<PhovoItem>> {
+    override fun CoroutineScope.processLocalItems(
+        processedItems: List<MediaItem>,
+        localDirectory: String?,
+        processMediaChannel: SendChannel<MediaItem>
+    ) = launch {
         // TODO add observability of updates
-        val images = queryImages()
-        val videos = queryVideos()
-        val allItems = (images + videos).sortedByDescending { it.dateInFeed }
-
-        return flowOf(allItems)
+        val processChannel = Channel<MediaItem>()
+        val processedImages: MutableList<MediaImageItem> = mutableListOf()
+        val processedVideos: MutableList<MediaVideoItem> = mutableListOf()
+        processedItems.forEach { mediaItem ->
+            when (mediaItem) {
+                is MediaImageItem -> processedImages.add(mediaItem)
+                is MediaVideoItem -> processedVideos.add(mediaItem)
+            }
+        }
+        queryImages(processedImages)
+            .onEach { processedImage ->
+                processMediaChannel.send(processedImage)
+            }.flowOn(ioDispatcher)
+            .launchIn(this)
+        queryVideos(processedVideos)
+            .onEach { processedVideo ->
+                processMediaChannel.send(processedVideo)
+            }.flowOn(ioDispatcher)
+            .launchIn(this)
     }
 
-    private fun queryImages(): List<PhovoItem> {
+    private fun queryImages(
+        alreadyProcessedImages: List<MediaImageItem>
+    ): Flow<MediaItem> = flow {
+        val processedImageIds = alreadyProcessedImages.map { it.name }
         val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
         } else {
@@ -56,7 +86,6 @@ class AndroidLocalUnprocessedMediaProvider(
         val selectionArgs = arrayOf("DCIM/%")
         val sortOrder = "${MediaStore.Images.Media.DATE_TAKEN} DESC"
 
-        val result = mutableListOf<PhovoItem>()
         resolver.query(collection, projection, selection, selectionArgs, sortOrder)?.use { cursor ->
             val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
             val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME)
@@ -67,6 +96,7 @@ class AndroidLocalUnprocessedMediaProvider(
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(idColumn)
                 val name = cursor.getString(nameColumn)
+                if (name in processedImageIds) continue
                 val size = cursor.getInt(sizeColumn)
                 val androidUri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
                 val contentUri = androidUri.toCoilUri()
@@ -75,7 +105,7 @@ class AndroidLocalUnprocessedMediaProvider(
                     ?: resolver.parseDateTakenFromExif(androidUri)
                     ?: (cursor.getLong(dateAddedColumn) * 1000).utcMsToLocalDateTime()
 
-                result.add(PhovoImageItem(
+                emit(MediaImageItem(
                     uri = contentUri,
                     name = name,
                     dateInFeed = dateInFeed,
@@ -83,10 +113,12 @@ class AndroidLocalUnprocessedMediaProvider(
                 ))
             }
         }
-        return result
     }
 
-    private fun queryVideos(): List<PhovoItem> {
+    private fun queryVideos(
+        alreadyProcessedVideos: MutableList<MediaVideoItem>
+    ): Flow<MediaItem> = flow {
+        val processedVideoIds = alreadyProcessedVideos.map { it.name }
         val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
         } else {
@@ -105,7 +137,6 @@ class AndroidLocalUnprocessedMediaProvider(
         val selectionArgs = arrayOf("DCIM/%")
         val sortOrder = "${MediaStore.Video.Media.DATE_TAKEN} DESC"
 
-        val result = mutableListOf<PhovoItem>()
         resolver.query(collection, projection, selection, selectionArgs, sortOrder)?.use { cursor ->
             val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media._ID)
             val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DISPLAY_NAME)
@@ -117,6 +148,7 @@ class AndroidLocalUnprocessedMediaProvider(
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(idColumn)
                 val name = cursor.getString(nameColumn)
+                if (name in processedVideoIds) continue
                 val size = cursor.getInt(sizeColumn)
                 val duration = cursor.getLong(durationColumn).milliseconds
                 val androidUri = ContentUris.withAppendedId(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, id)
@@ -125,7 +157,7 @@ class AndroidLocalUnprocessedMediaProvider(
                 val dateInFeed = cursor.getLongOrNull(dateTakenColumn)?.utcMsToLocalDateTime()
                     ?: (cursor.getLong(dateAddedColumn) * 1000).utcMsToLocalDateTime()
 
-                result.add(PhovoVideoItem(
+                emit(MediaVideoItem(
                     uri = contentUri,
                     name = name,
                     dateInFeed = dateInFeed,
@@ -134,7 +166,6 @@ class AndroidLocalUnprocessedMediaProvider(
                 ))
             }
         }
-        return result
     }
 
     private fun Long.utcMsToLocalDateTime(): LocalDateTime {

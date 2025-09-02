@@ -15,11 +15,13 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -38,28 +40,34 @@ class PhotosViewModel(
 
     init {
         if(mediaRepository is LocalSupportMediaRepository){
-            mediaRepository.initMediaProcessing()
+            // TODO Should probably be moved to a UseCase that schedules processing in a more cancellation
+            //  safe manner.
+            viewModelScope.launch {
+                // Suspends until a config is available(consider withTimeout)
+                val backupDirectory = serverConfigRepository.observeServerConfig()
+                    .mapNotNull { it?.backupDirectory }
+                    .distinctUntilChanged()
+                    .firstOrNull()
+                mediaRepository.initMediaProcessing(backupDirectory)
+            }
         }
 
-        serverConfigRepository.observeServerConfig().map { it?.backupDirectory }
-            .distinctUntilChanged().mapLatest { localDirectory ->
-                mediaRepository.phovoItemsFlow(localDirectory).collect { phovoItems ->
-                    val uiItemList = mutableListOf<PhotoUiItem>()
-                    phovoItems.groupBy { Pair(it.dateInFeed.month, it.dateInFeed.year) }.forEach { entry ->
-                        uiItemList.add(
-                            DateHeaderPhotoUiItem(
-                                month = entry.key.first,
-                                year = entry.key.second.takeIf { it != currentYear }
-                            )
-                        )
-                        uiItemList.addAll(entry.value.map { it.toPhotoUiItem() })
-                    }
-                    _photosUiState.update { currentState ->
-                        currentState.copy(photosFeed = uiItemList)
-                    }
-                }
-            }.flowOn(ioDispatcher)
-            .launchIn(viewModelScope)
+        mediaRepository.phovoMediaFlow().onEach { phovoItems ->
+            val uiItemList = mutableListOf<PhotoUiItem>()
+            phovoItems.groupBy { Pair(it.dateInFeed.month, it.dateInFeed.year) }.forEach { entry ->
+                uiItemList.add(
+                    DateHeaderPhotoUiItem(
+                        month = entry.key.first,
+                        year = entry.key.second.takeIf { it != currentYear }
+                    )
+                )
+                uiItemList.addAll(entry.value.map { it.toPhotoUiItem() })
+            }
+            _photosUiState.update { currentState ->
+                currentState.copy(photosFeed = uiItemList)
+            }
+        }.flowOn(ioDispatcher)
+        .launchIn(viewModelScope)
     }
 
     override fun onCleared() {

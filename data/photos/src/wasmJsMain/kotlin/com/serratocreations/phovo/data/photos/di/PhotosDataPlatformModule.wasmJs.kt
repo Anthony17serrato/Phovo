@@ -8,7 +8,7 @@ import io.ktor.serialization.kotlinx.json.json
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
-actual fun getPhotosDataPlatformModule(): Module = module {
+internal actual fun getAndroidDesktopIosWasmModules(): Module = module {
     single<MediaRepository> {
         MediaRepository(
             remotePhotosDataSource = get(),

@@ -5,11 +5,14 @@ import com.ashampoo.kim.Kim
 import com.ashampoo.kim.format.tiff.constant.ExifTag
 import com.ashampoo.kim.jvm.readMetadata
 import com.serratocreations.phovo.core.logger.PhovoLogger
-import com.serratocreations.phovo.data.photos.repository.model.PhovoImageItem
-import com.serratocreations.phovo.data.photos.repository.model.PhovoItem
-import com.serratocreations.phovo.data.photos.repository.model.PhovoVideoItem
+import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
+import com.serratocreations.phovo.data.photos.repository.model.MediaItem
+import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
@@ -35,10 +38,10 @@ import java.time.format.DateTimeFormatter
 import kotlin.time.Duration.Companion.seconds
 
 // TODO Investigate if both metadata parsers here can be replaced by FFMPEG
-class DesktopLocalUnprocessedMediaProvider(
+class DesktopLocalMediaProcessor(
     logger: PhovoLogger,
     private val ioDispatcher: CoroutineDispatcher
-) : LocalUnprocessedMediaProvider {
+) : LocalMediaProcessor {
     private val log = logger.withTag("DesktopPhovoItemDao")
 
     enum class FileType {
@@ -56,14 +59,22 @@ class DesktopLocalUnprocessedMediaProvider(
         }
     }
 
+    override fun CoroutineScope.processLocalItems(
+        processedItems: List<MediaItem>,
+        localDirectory: String?,
+        processMediaChannel: SendChannel<MediaItem>
+    ): Job {
+        TODO("Not yet implemented")
+    }
+
     // TODO temporary implementation, this API should observe the table of synced images from database
-    override fun allItemsFlow(localDirectory: String?): Flow<List<PhovoItem>> {
-        return channelFlow<List<PhovoItem>> {
+    fun processLocalItems(localDirectory: String?): Flow<List<MediaItem>> {
+        return channelFlow<List<MediaItem>> {
             val dirPath = localDirectory?.let { Paths.get(it) }
             if (dirPath != null && !Files.exists(dirPath)) {
                 Files.createDirectories(dirPath)
             }
-            val processedPhovoItems = mutableListOf<PhovoItem>()
+            val processedMediaItems = mutableListOf<MediaItem>()
             val filesChannel = Channel<List<File>>(Channel.Factory.UNLIMITED)
             launch {
                 while (true) {
@@ -79,7 +90,7 @@ class DesktopLocalUnprocessedMediaProvider(
             }
             filesChannel.consumeAsFlow().collect {
                 val newlyProcessedPhovoItems = it.filter { unprocessedItems ->
-                    unprocessedItems.name !in processedPhovoItems.map { item -> item.name }
+                    unprocessedItems.name !in processedMediaItems.map { item -> item.name }
                 }.mapNotNull { file ->
                     val fileType = file.getFileType()
                     return@mapNotNull when (fileType) {
@@ -99,13 +110,13 @@ class DesktopLocalUnprocessedMediaProvider(
                         FileType.Other -> null
                     }
                 }
-                processedPhovoItems.addAll(newlyProcessedPhovoItems)
-                send(processedPhovoItems)
+                processedMediaItems.addAll(newlyProcessedPhovoItems)
+                send(processedMediaItems)
             }
         }.flowOn(ioDispatcher)
     }
 
-    private suspend fun processVideo(file: File): PhovoVideoItem? = withContext(ioDispatcher) {
+    private suspend fun processVideo(file: File): MediaVideoItem? = withContext(ioDispatcher) {
         val metadata = Metadata()
         FileInputStream(file).use { stream ->
             val parser = AutoDetectParser()
@@ -121,7 +132,7 @@ class DesktopLocalUnprocessedMediaProvider(
                 }.getOrNull()?.toLocalDateTime(TimeZone.Companion.UTC)
             } ?: return@withContext null // TODO find other methods to get a date
 
-        return@withContext PhovoVideoItem(
+        return@withContext MediaVideoItem(
             uri = Uri(scheme = "file", path = file.toURI().path),
             name = file.name,
             dateInFeed = creationDate,
@@ -130,13 +141,13 @@ class DesktopLocalUnprocessedMediaProvider(
         )
     }
 
-    private suspend fun processImage(file: File): PhovoImageItem? = withContext(ioDispatcher) {
+    private suspend fun processImage(file: File): MediaImageItem? = withContext(ioDispatcher) {
         val metadata = Kim.readMetadata(file)
         val takenDate = metadata?.findStringValue(ExifTag.EXIF_TAG_DATE_TIME_ORIGINAL)
             ?: return@withContext null
         // Define the custom format pattern
         val formatter = DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss")
-        return@withContext PhovoImageItem(
+        return@withContext MediaImageItem(
             uri = Uri(scheme = "file", path = file.toURI().path),
             name = file.name,
             dateInFeed = takenDate.let { date ->

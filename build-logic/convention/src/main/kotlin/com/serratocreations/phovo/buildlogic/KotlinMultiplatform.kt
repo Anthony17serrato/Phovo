@@ -49,23 +49,6 @@ internal fun Project.configureKotlinMultiplatform(
             applyDefaultHierarchyTemplate()
         }
 
-        customSourceSets.forEach { sourceSet ->
-            when (sourceSet) {
-                CustomSourceSets.DesktopIosAndroid -> {
-                    sourceSets.create("commonDesktopIosAndroid") {
-                        dependsOn(sourceSets.commonMain.get())
-                        sourceSets.iosMain.get().dependsOn(this)
-                        sourceSets.androidMain.get().dependsOn(this)
-                        sourceSets.named("desktopMain").get().dependsOn(this)
-
-                        dependencies {
-
-                        }
-                    }
-                }
-            }
-        }
-
         if (targetList.contains(Targets.DESKTOP)) {
             jvm("desktop")
         }
@@ -121,6 +104,35 @@ internal fun Project.configureKotlinMultiplatform(
             iosX64()
             iosArm64()
             iosSimulatorArm64()
+        }
+
+        customSourceSets.forEach { sourceSet ->
+            when (sourceSet) {
+                CustomSourceSets.DesktopIosAndroid -> {
+                    val commonDesktopIosAndroid = sourceSets.create("commonDesktopIosAndroid") {
+                        dependsOn(sourceSets.commonMain.get())
+                        dependencies {
+
+                        }
+                    }
+                    sourceSets.iosMain.get().dependsOn(commonDesktopIosAndroid)
+                    sourceSets.androidMain.get().dependsOn(commonDesktopIosAndroid)
+                    sourceSets.named("desktopMain").get().dependsOn(commonDesktopIosAndroid)
+                    // Ensure commonIosAndroid depends on commonDesktopIosAndroid
+                    sourceSets.named("commonIosAndroid").get().dependsOn(commonDesktopIosAndroid)
+                }
+
+                CustomSourceSets.IosAndroid -> {
+                    val commonIosAndroid = sourceSets.create("commonIosAndroid") {
+                        dependsOn(sourceSets.commonMain.get())
+                        dependencies {
+
+                        }
+                    }
+                    sourceSets.iosMain.get().dependsOn(commonIosAndroid)
+                    sourceSets.androidMain.get().dependsOn(commonIosAndroid)
+                }
+            }
         }
     }
 }

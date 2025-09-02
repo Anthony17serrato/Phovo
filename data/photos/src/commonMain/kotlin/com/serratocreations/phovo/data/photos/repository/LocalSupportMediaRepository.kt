@@ -1,6 +1,6 @@
 package com.serratocreations.phovo.data.photos.repository
 
-import com.serratocreations.phovo.data.photos.network.PhotosNetworkDataSource
+import com.serratocreations.phovo.data.photos.network.MediaNetworkDataSource
 import kotlinx.coroutines.CoroutineScope
 
 /**
@@ -8,7 +8,7 @@ import kotlinx.coroutines.CoroutineScope
  * These platforms must process items that are stored locally.(Android, Desktop, & Ios platforms)
  */
 abstract class LocalSupportMediaRepository(
-    remotePhotosDataSource: PhotosNetworkDataSource,
+    remotePhotosDataSource: MediaNetworkDataSource,
     appScope: CoroutineScope
 ): MediaRepository(
     remotePhotosDataSource = remotePhotosDataSource,
@@ -19,5 +19,5 @@ abstract class LocalSupportMediaRepository(
      * Processing includes tasks such as extracting media metadata and generating md5 hashes and
      * deduplication logic
      */
-    abstract fun initMediaProcessing()
+    abstract fun initMediaProcessing(localDirectory: String?)
 }
