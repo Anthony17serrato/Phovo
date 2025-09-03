@@ -90,7 +90,7 @@ class DesktopLocalMediaProcessor(
             }
             filesChannel.consumeAsFlow().collect {
                 val newlyProcessedPhovoItems = it.filter { unprocessedItems ->
-                    unprocessedItems.name !in processedMediaItems.map { item -> item.name }
+                    unprocessedItems.name !in processedMediaItems.map { item -> item.fileName }
                 }.mapNotNull { file ->
                     val fileType = file.getFileType()
                     return@mapNotNull when (fileType) {
@@ -134,7 +134,7 @@ class DesktopLocalMediaProcessor(
 
         return@withContext MediaVideoItem(
             uri = Uri(scheme = "file", path = file.toURI().path),
-            name = file.name,
+            fileName = file.name,
             dateInFeed = creationDate,
             size = file.length().toInt(),
             duration = durationSeconds.seconds
@@ -149,7 +149,7 @@ class DesktopLocalMediaProcessor(
         val formatter = DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss")
         return@withContext MediaImageItem(
             uri = Uri(scheme = "file", path = file.toURI().path),
-            name = file.name,
+            fileName = file.name,
             dateInFeed = takenDate.let { date ->
                 java.time.LocalDateTime.parse(date, formatter).toKotlinLocalDateTime()
             },

@@ -8,7 +8,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class MediaImageItem(
     @Serializable(with = UriSerializer::class) override val uri: Uri,
-    override val name: String,
+    override val fileName: String,
     override val dateInFeed: LocalDateTime,
     override val size: Int
 ) : MediaItem

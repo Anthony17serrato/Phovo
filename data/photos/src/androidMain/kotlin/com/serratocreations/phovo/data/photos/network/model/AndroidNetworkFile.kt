@@ -11,15 +11,12 @@ import org.koin.core.qualifier.named
 import android.net.Uri as AndroidUri
 
 class AndroidNetworkFile(
-    override val uri: Uri,
-    val fileName: String
+    override val uri: Uri
 ) : NetworkFile, KoinComponent {
     private val context: Context by inject()
     private val ioDispatcher: CoroutineDispatcher by inject(named<IoDispatcher>())
 
     private val androidUri = AndroidUri.parse(uri.toString())
-
-    override suspend fun fileName(): String = fileName
 
     override suspend fun exists(): Boolean = withContext(ioDispatcher) {
         // Check if the URI can be opened

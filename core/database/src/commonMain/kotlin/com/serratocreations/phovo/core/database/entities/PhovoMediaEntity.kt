@@ -13,7 +13,7 @@ data class PhovoMediaEntity(
     val localUri: String,
     val remoteUri: String?,
     val remoteThumbnailUri: String?,
-    val name: String,
+    val fileName: String,
     val timeStampUtcMs: Long,
     val timeOffsetMs: Long,
     val size: Int,

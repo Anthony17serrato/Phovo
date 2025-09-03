@@ -23,7 +23,7 @@ fun MediaItem.toPhovoMediaEntity(): PhovoMediaEntity {
         localUri = uri.toString(),
         remoteUri = null,
         remoteThumbnailUri = null,
-        name = name,
+        fileName = fileName,
         timeStampUtcMs = timeStampUtcMs,
         timeOffsetMs = timeOffsetMs,
         size = size,

@@ -9,7 +9,7 @@ import kotlin.time.Duration
 @Serializable
 data class MediaVideoItem(
     @Serializable(with = UriSerializer::class) override val uri: Uri,
-    override val name: String,
+    override val fileName: String,
     override val dateInFeed: LocalDateTime,
     override val size: Int,
     val duration: Duration

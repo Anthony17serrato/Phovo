@@ -21,7 +21,7 @@ fun PhovoMediaEntity.toMediaItem(): MediaItem {
         MediaType.Image -> {
             MediaImageItem(
                 uri = localUri.toUri(),
-                name = name,
+                fileName = fileName,
                 dateInFeed = dateInFeed,
                 size = size
             )
@@ -30,7 +30,7 @@ fun PhovoMediaEntity.toMediaItem(): MediaItem {
             val duration = (videoDurationMs ?: 0L).milliseconds
             MediaVideoItem(
                 uri = localUri.toUri(),
-                name = name,
+                fileName = fileName,
                 dateInFeed = dateInFeed,
                 size = size,
                 duration = duration

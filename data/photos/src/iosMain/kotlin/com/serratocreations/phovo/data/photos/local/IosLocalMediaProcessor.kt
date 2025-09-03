@@ -103,7 +103,7 @@ class IosLocalMediaProcessor(
             val bytes = size?.longValue ?: 0L
             val phovoImageItem = MediaImageItem(
                 uri = phAssetUriFromLocalId(asset.localIdentifier),
-                name = name,
+                fileName = name,
                 dateInFeed = localDateTime,
                 size = bytes.toInt()
             )
@@ -133,7 +133,7 @@ class IosLocalMediaProcessor(
 
             val videoItem = MediaVideoItem(
                 uri = phAssetUriFromLocalId(asset.localIdentifier),
-                name = name,
+                fileName = name,
                 dateInFeed = localDateTime,
                 size = bytes.toInt(),
                 duration = asset.duration.toLong().seconds

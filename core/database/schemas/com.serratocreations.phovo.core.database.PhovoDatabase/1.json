@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "5f92b84208c3f1bbe35c359950a472cf",
+    "identityHash": "a9a83aacee1635287fc1316bf36abc1a",
     "entities": [
       {
         "tableName": "ServerConfigEntity",
@@ -30,7 +30,7 @@
       },
       {
         "tableName": "PhovoMediaEntity",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `localUri` TEXT NOT NULL, `remoteUri` TEXT, `remoteThumbnailUri` TEXT, `name` TEXT NOT NULL, `timeStampUtcMs` INTEGER NOT NULL, `timeOffsetMs` INTEGER NOT NULL, `size` INTEGER NOT NULL, `mediaType` TEXT NOT NULL, `videoDurationMs` INTEGER)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `localUri` TEXT NOT NULL, `remoteUri` TEXT, `remoteThumbnailUri` TEXT, `fileName` TEXT NOT NULL, `timeStampUtcMs` INTEGER NOT NULL, `timeOffsetMs` INTEGER NOT NULL, `size` INTEGER NOT NULL, `mediaType` TEXT NOT NULL, `videoDurationMs` INTEGER)",
         "fields": [
           {
             "fieldPath": "id",
@@ -55,8 +55,8 @@
             "affinity": "TEXT"
           },
           {
-            "fieldPath": "name",
-            "columnName": "name",
+            "fieldPath": "fileName",
+            "columnName": "fileName",
             "affinity": "TEXT",
             "notNull": true
           },
@@ -100,7 +100,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '5f92b84208c3f1bbe35c359950a472cf')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'a9a83aacee1635287fc1316bf36abc1a')"
     ]
   }
 }

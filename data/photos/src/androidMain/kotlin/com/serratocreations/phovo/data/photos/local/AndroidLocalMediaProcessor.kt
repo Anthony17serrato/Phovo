@@ -43,8 +43,7 @@ class AndroidLocalMediaProcessor(
         localDirectory: String?,
         processMediaChannel: SendChannel<MediaItem>
     ) = launch {
-        // TODO add observability of updates
-        val processChannel = Channel<MediaItem>()
+        // TODO add observability of updates(Probably by registering Broadcast receiver)
         val processedImages: MutableList<MediaImageItem> = mutableListOf()
         val processedVideos: MutableList<MediaVideoItem> = mutableListOf()
         processedItems.forEach { mediaItem ->
@@ -68,7 +67,7 @@ class AndroidLocalMediaProcessor(
     private fun queryImages(
         alreadyProcessedImages: List<MediaImageItem>
     ): Flow<MediaItem> = flow {
-        val processedImageIds = alreadyProcessedImages.map { it.name }
+        val processedImageIds = alreadyProcessedImages.map { it.fileName }
         val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
         } else {
@@ -95,8 +94,8 @@ class AndroidLocalMediaProcessor(
 
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(idColumn)
-                val name = cursor.getString(nameColumn)
-                if (name in processedImageIds) continue
+                val fileName = cursor.getString(nameColumn)
+                if (fileName in processedImageIds) continue
                 val size = cursor.getInt(sizeColumn)
                 val androidUri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
                 val contentUri = androidUri.toCoilUri()
@@ -107,7 +106,7 @@ class AndroidLocalMediaProcessor(
 
                 emit(MediaImageItem(
                     uri = contentUri,
-                    name = name,
+                    fileName = fileName,
                     dateInFeed = dateInFeed,
                     size = size
                 ))
@@ -118,7 +117,7 @@ class AndroidLocalMediaProcessor(
     private fun queryVideos(
         alreadyProcessedVideos: MutableList<MediaVideoItem>
     ): Flow<MediaItem> = flow {
-        val processedVideoIds = alreadyProcessedVideos.map { it.name }
+        val processedVideoIds = alreadyProcessedVideos.map { it.fileName }
         val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
         } else {
@@ -159,7 +158,7 @@ class AndroidLocalMediaProcessor(
 
                 emit(MediaVideoItem(
                     uri = contentUri,
-                    name = name,
+                    fileName = name,
                     dateInFeed = dateInFeed,
                     size = size,
                     duration = duration

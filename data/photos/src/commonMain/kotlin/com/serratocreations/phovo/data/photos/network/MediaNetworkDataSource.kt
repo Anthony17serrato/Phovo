@@ -25,29 +25,28 @@ class MediaNetworkDataSource(
     // TODO: Implement network API for getting all items
     fun allItemsFlow(): Flow<List<MediaItem>> = flowOf()
 
-    suspend fun syncMedia(imageItem: MediaItem) {
+    suspend fun syncMedia(mediaItem: MediaItem) {
 //        val response: HttpResponse = client.post("http://10.0.0.71:8080/upload") {
 //            contentType(ContentType.Application.Json)
 //            setBody(imageItem)
 //        }
-        log.i { "syncImage $imageItem" }
-        val file = getNetworkFile(imageItem.uri, imageItem.name)
+        log.i { "syncImage $mediaItem" }
+        val file = getNetworkFile(mediaItem.uri)
 
         if (!file.exists()) {
-            log.e { "File not found at ${imageItem.uri}" }
+            log.e { "File not found at ${mediaItem.uri}" }
             return
         }
 
         try {
-            // TODO: Store File Name in DB instead of reading it here since videos cause OOM
-            if (imageItem is MediaVideoItem) return
+            // TODO: Getting OOM when trying to sync large video files
+            if (mediaItem is MediaVideoItem) return
             val bytes = file.readBytes() ?: throw UnsupportedOperationException("Could not read bytes for $file")
-            val fileName = file.fileName()
             val response: HttpResponse = client.submitFormWithBinaryData(
                 url = "http://10.0.0.253:8080/upload",//http://10.0.0.204:8080/upload"
                 formData = formData {
                     append("file", bytes, Headers.build {
-                        append(HttpHeaders.ContentDisposition, "filename=${fileName}")
+                        append(HttpHeaders.ContentDisposition, "filename=${mediaItem.fileName}")
                     })
                 }
             )

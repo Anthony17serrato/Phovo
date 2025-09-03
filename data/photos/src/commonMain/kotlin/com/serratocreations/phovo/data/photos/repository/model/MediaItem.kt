@@ -5,7 +5,7 @@ import kotlinx.datetime.LocalDateTime
 
 sealed interface MediaItem {
     val uri: Uri
-    val name: String
+    val fileName: String
     // TODO MediaItem should use ZonedDateTime
     val dateInFeed: LocalDateTime
     val size: Int
