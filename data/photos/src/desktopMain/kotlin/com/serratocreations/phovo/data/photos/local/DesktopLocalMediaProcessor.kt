@@ -10,14 +10,7 @@ import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.channelFlow
-import kotlinx.coroutines.flow.consumeAsFlow
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Instant
@@ -63,59 +56,48 @@ class DesktopLocalMediaProcessor(
         processedItems: List<MediaItem>,
         localDirectory: String?,
         processMediaChannel: SendChannel<MediaItem>
-    ): Job {
-        TODO("Not yet implemented")
+    ) = launch(ioDispatcher) {
+        val dirPath = localDirectory?.let { Paths.get(it) }
+        if (dirPath != null && !Files.exists(dirPath)) {
+            Files.createDirectories(dirPath)
+        }
+
+        val directory = localDirectory?.let { File(it) }
+        val directoryFiles = if (directory == null || !directory.exists() || !directory.isDirectory) {
+            log.e { "Invalid directory: $localDirectory" }
+            emptyList()
+        } else {
+            directory.listFiles()?.toList()?.filterNotNull() ?: emptyList()
+        }
+
+        val processedItemIds = processedItems.map { it.fileName }
+        // TODO This work can be optimized with parallel decomposition
+        directoryFiles.filter { availableFiles ->
+            availableFiles.name !in processedItemIds
+        }.forEach { file ->
+            val fileType = file.getFileType()
+            when (fileType) {
+                FileType.Directory -> {
+                    // TODO: Some recursion implementation
+                    null
+                }
+
+                FileType.Photo -> {
+                    processImage(file)
+                }
+
+                FileType.Video -> {
+                    processVideo(file)
+                }
+
+                FileType.Other -> null
+            }?.let { mediaItem ->
+                processMediaChannel.send(mediaItem)
+            }
+        }
     }
 
-    // TODO temporary implementation, this API should observe the table of synced images from database
-    fun processLocalItems(localDirectory: String?): Flow<List<MediaItem>> {
-        return channelFlow<List<MediaItem>> {
-            val dirPath = localDirectory?.let { Paths.get(it) }
-            if (dirPath != null && !Files.exists(dirPath)) {
-                Files.createDirectories(dirPath)
-            }
-            val processedMediaItems = mutableListOf<MediaItem>()
-            val filesChannel = Channel<List<File>>(Channel.Factory.UNLIMITED)
-            launch {
-                while (true) {
-                    val directory = localDirectory?.let { File(it) }
-                    if (directory == null || !directory.exists() || !directory.isDirectory) {
-                        log.e { "Invalid directory: $localDirectory" }
-                        filesChannel.send(emptyList())
-                    } else {
-                        filesChannel.send(directory.listFiles()?.toList() ?: emptyList())
-                    }
-                    delay(1_000L)
-                }
-            }
-            filesChannel.consumeAsFlow().collect {
-                val newlyProcessedPhovoItems = it.filter { unprocessedItems ->
-                    unprocessedItems.name !in processedMediaItems.map { item -> item.fileName }
-                }.mapNotNull { file ->
-                    val fileType = file.getFileType()
-                    return@mapNotNull when (fileType) {
-                        FileType.Directory -> {
-                            // TODO: Some recursion implementation
-                            null
-                        }
-
-                        FileType.Photo -> {
-                            processImage(file)
-                        }
-
-                        FileType.Video -> {
-                            processVideo(file)
-                        }
-
-                        FileType.Other -> null
-                    }
-                }
-                processedMediaItems.addAll(newlyProcessedPhovoItems)
-                send(processedMediaItems)
-            }
-        }.flowOn(ioDispatcher)
-    }
-
+    // TODO Migrate to Ffmpeg for metadata extraction
     private suspend fun processVideo(file: File): MediaVideoItem? = withContext(ioDispatcher) {
         val metadata = Metadata()
         FileInputStream(file).use { stream ->

@@ -13,9 +13,9 @@ import coil3.toCoilUri
 import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
+import com.serratocreations.phovo.data.photos.repository.util.segregate
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -37,21 +37,13 @@ class AndroidLocalMediaProcessor(
 ) : LocalMediaProcessor {
     private val resolver = context.contentResolver
 
-    @SuppressLint("NewApi")
     override fun CoroutineScope.processLocalItems(
         processedItems: List<MediaItem>,
         localDirectory: String?,
         processMediaChannel: SendChannel<MediaItem>
     ) = launch {
         // TODO add observability of updates(Probably by registering Broadcast receiver)
-        val processedImages: MutableList<MediaImageItem> = mutableListOf()
-        val processedVideos: MutableList<MediaVideoItem> = mutableListOf()
-        processedItems.forEach { mediaItem ->
-            when (mediaItem) {
-                is MediaImageItem -> processedImages.add(mediaItem)
-                is MediaVideoItem -> processedVideos.add(mediaItem)
-            }
-        }
+        val (processedVideos, processedImages) = processedItems.segregate()
         queryImages(processedImages)
             .onEach { processedImage ->
                 processMediaChannel.send(processedImage)
@@ -115,7 +107,7 @@ class AndroidLocalMediaProcessor(
     }
 
     private fun queryVideos(
-        alreadyProcessedVideos: MutableList<MediaVideoItem>
+        alreadyProcessedVideos: List<MediaVideoItem>
     ): Flow<MediaItem> = flow {
         val processedVideoIds = alreadyProcessedVideos.map { it.fileName }
         val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
