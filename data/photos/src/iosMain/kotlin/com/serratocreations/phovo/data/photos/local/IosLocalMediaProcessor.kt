@@ -5,14 +5,17 @@ import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
+import com.serratocreations.phovo.data.photos.repository.util.segregate
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toKotlinInstant
 import kotlinx.datetime.toLocalDateTime
@@ -42,18 +45,17 @@ class IosLocalMediaProcessor(
         processedItems: List<MediaItem>,
         localDirectory: String?,
         processMediaChannel: SendChannel<MediaItem>
-    ): Job {
-        TODO("Not yet implemented")
-    }
-
-    fun processLocalItems(localDirectory: String?): Flow<List<MediaItem>> {
-        return flow {
-            requestPhotoLibraryPermission()
-            val status = PHPhotoLibrary.Companion.authorizationStatus()
-            log.i { "Photo Library Authorization Status: $status" }
-            val localImagesAndVideos: List<MediaItem> = fetchImages() + fetchVideos()
-            emit(localImagesAndVideos)
-        }
+    ) = launch {
+        requestPhotoLibraryPermission()
+        val status = PHPhotoLibrary.Companion.authorizationStatus()
+        log.i { "Photo Library Authorization Status: $status" }
+        val (processedVideos, processedImages) = processedItems.segregate()
+        fetchImages(processedImages).onEach { processedImage ->
+            processMediaChannel.send(processedImage)
+        }.launchIn(this)
+        fetchVideos(processedVideos).onEach { processedVideo ->
+            processMediaChannel.send(processedVideo)
+        }.launchIn(this)
     }
 
     private suspend fun requestPhotoLibraryPermission() = suspendCoroutine { continuation ->
@@ -84,63 +86,67 @@ class IosLocalMediaProcessor(
     }
 
     @OptIn(ExperimentalForeignApi::class)
-    private suspend fun fetchImages(): List<MediaImageItem> = withContext(ioDispatcher) {
+    private fun fetchImages(processedImages: List<MediaImageItem>): Flow<MediaImageItem> = flow {
         val fetchOptions = PHFetchOptions()
         val assets = PHAsset.Companion.fetchAssetsWithMediaType(PHAssetMediaTypeImage, fetchOptions)
-        val imageItems = mutableListOf<MediaImageItem>()
-
+        val imageItems = mutableListOf<PHAsset>()
+        val processedImageIds = processedImages.map { it.fileName }
         // Enumerate the assets using the block-based approach
         assets.enumerateObjectsUsingBlock { obj, _, _ ->
-            val asset = obj as PHAsset
+            imageItems.add(obj as PHAsset)
+        }
+        log.i { "IosPhovoItemDao images $imageItems" }
+        imageItems.forEach { asset ->
+            val resource = PHAssetResource.Companion.assetResourcesForAsset(asset)
+                .firstOrNull() as? PHAssetResource ?: return@forEach
+            val name = resource.originalFilename
+            if (name in processedImageIds) return@forEach
             val instant = asset.creationDate?.toKotlinInstant()
             // TODO: Instead of excluding images where date could not be determined parse the date from exif data
             val localDateTime = instant?.toLocalDateTime(TimeZone.Companion.currentSystemDefault())
-                ?: return@enumerateObjectsUsingBlock
-            val resource = PHAssetResource.Companion.assetResourcesForAsset(asset)
-                .firstOrNull() as? PHAssetResource
-            val name = resource?.originalFilename ?: ""
-            val size = resource?.valueForKey("fileSize") as? NSNumber
+                ?: return@forEach
+
+            val size = resource.valueForKey("fileSize") as? NSNumber
             val bytes = size?.longValue ?: 0L
-            val phovoImageItem = MediaImageItem(
+            emit(MediaImageItem(
                 uri = phAssetUriFromLocalId(asset.localIdentifier),
                 fileName = name,
                 dateInFeed = localDateTime,
                 size = bytes.toInt()
-            )
-            imageItems.add(phovoImageItem)
+            ))
         }
-        log.i { "IosPhovoItemDao images $imageItems" }
-        return@withContext imageItems.toList()
-    }
+    }.flowOn(ioDispatcher)
 
     @OptIn(ExperimentalForeignApi::class)
-    private suspend fun fetchVideos(): List<MediaVideoItem> = withContext(ioDispatcher) {
+    private fun fetchVideos(processedVideos: List<MediaVideoItem>): Flow<MediaVideoItem> = flow {
         val fetchOptions = PHFetchOptions()
-        val videoItems = mutableListOf<MediaVideoItem>()
+        val videoItems = mutableListOf<PHAsset>()
+        val processedVideoIds = processedVideos.map { it.fileName }
         val videoAssets =
             PHAsset.Companion.fetchAssetsWithMediaType(PHAssetMediaTypeVideo, fetchOptions)
         videoAssets.enumerateObjectsUsingBlock { obj, _, _ ->
-            val asset = obj as PHAsset
-            val instant = asset.creationDate?.toKotlinInstant()
-            val localDateTime = instant?.toLocalDateTime(TimeZone.Companion.currentSystemDefault())
-                ?: return@enumerateObjectsUsingBlock
-
-            val resource = PHAssetResource.Companion.assetResourcesForAsset(asset)
-                .firstOrNull() as? PHAssetResource
-            val name = resource?.originalFilename ?: ""
-            val size = resource?.valueForKey("fileSize") as? NSNumber
-            val bytes = size?.longValue ?: 0L
-
-            val videoItem = MediaVideoItem(
-                uri = phAssetUriFromLocalId(asset.localIdentifier),
-                fileName = name,
-                dateInFeed = localDateTime,
-                size = bytes.toInt(),
-                duration = asset.duration.toLong().seconds
-            )
-            videoItems.add(videoItem)
+            videoItems.add(obj as PHAsset)
         }
         log.i { "IosPhovoItemDao fetchVideos $videoItems" }
-        return@withContext videoItems.toList()
-    }
+        videoItems.forEach { asset ->
+            val resource = PHAssetResource.Companion.assetResourcesForAsset(asset)
+                .firstOrNull() as? PHAssetResource ?: return@forEach
+            val name = resource.originalFilename
+            if (name in processedVideoIds) return@forEach
+            val instant = asset.creationDate?.toKotlinInstant()
+            val localDateTime = instant?.toLocalDateTime(TimeZone.Companion.currentSystemDefault())
+                ?: return@forEach
+            val size = resource.valueForKey("fileSize") as? NSNumber
+            val bytes = size?.longValue ?: 0L
+            emit(
+                MediaVideoItem(
+                    uri = phAssetUriFromLocalId(asset.localIdentifier),
+                    fileName = name,
+                    dateInFeed = localDateTime,
+                    size = bytes.toInt(),
+                    duration = asset.duration.toLong().seconds
+                )
+            )
+        }
+    }.flowOn(ioDispatcher)
 }

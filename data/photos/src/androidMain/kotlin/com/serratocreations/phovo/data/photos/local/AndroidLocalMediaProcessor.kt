@@ -47,13 +47,11 @@ class AndroidLocalMediaProcessor(
         queryImages(processedImages)
             .onEach { processedImage ->
                 processMediaChannel.send(processedImage)
-            }.flowOn(ioDispatcher)
-            .launchIn(this)
+            }.launchIn(this)
         queryVideos(processedVideos)
             .onEach { processedVideo ->
                 processMediaChannel.send(processedVideo)
-            }.flowOn(ioDispatcher)
-            .launchIn(this)
+            }.launchIn(this)
     }
 
     private fun queryImages(
@@ -104,7 +102,7 @@ class AndroidLocalMediaProcessor(
                 ))
             }
         }
-    }
+    }.flowOn(ioDispatcher)
 
     private fun queryVideos(
         alreadyProcessedVideos: List<MediaVideoItem>
@@ -157,7 +155,7 @@ class AndroidLocalMediaProcessor(
                 ))
             }
         }
-    }
+    }.flowOn(ioDispatcher)
 
     private fun Long.utcMsToLocalDateTime(): LocalDateTime {
         // Convert seconds to milliseconds
