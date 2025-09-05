@@ -1,4 +1,4 @@
-package com.serratocreations.phovo.data.photos.local.model
+package com.serratocreations.phovo.data.photos.repository.model
 
 import coil3.Uri
 import com.serratocreations.phovo.data.photos.util.UriSerializer
@@ -7,10 +7,10 @@ import kotlinx.serialization.Serializable
 import kotlin.time.Duration
 
 @Serializable
-data class PhovoVideoItem(
+data class MediaVideoItem(
     @Serializable(with = UriSerializer::class) override val uri: Uri,
-    override val name: String,
+    override val fileName: String,
     override val dateInFeed: LocalDateTime,
     override val size: Int,
     val duration: Duration
-) : PhovoItem
+) : MediaItem

@@ -1,4 +1,5 @@
 import com.android.build.gradle.LibraryExtension
+import com.serratocreations.phovo.buildlogic.CustomSourceSets
 import com.serratocreations.phovo.buildlogic.Targets
 import com.serratocreations.phovo.buildlogic.configureKotlinAndroid
 import com.serratocreations.phovo.buildlogic.configureKotlinMultiplatform
@@ -18,7 +19,11 @@ class KmpAndroidIosDesktopLibraryConventionPlugin : Plugin<Project> {
 
             extensions.configure<LibraryExtension> {
                 configureKotlinAndroid(this)
-                configureKotlinMultiplatform(isApplication = false, listOf(Targets.ANDROID, Targets.IOS))
+                configureKotlinMultiplatform(
+                    isApplication = false,
+                    customSourceSets = setOf(CustomSourceSets.IosAndroid),
+                    targetList = setOf(Targets.ANDROID, Targets.IOS)
+                )
                 defaultConfig.targetSdk = 34
                 defaultConfig.testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
                 testOptions.animationsDisabled = true

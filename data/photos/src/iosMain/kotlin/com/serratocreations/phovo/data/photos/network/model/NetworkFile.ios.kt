@@ -1,14 +1,13 @@
 package com.serratocreations.phovo.data.photos.network.model
 
 import coil3.Uri
-import com.serratocreations.phovo.core.common.di.IoDispatcher
+import com.serratocreations.phovo.core.common.di.IO_DISPATCHER
 import com.serratocreations.phovo.core.common.util.toByteArray
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import org.koin.core.qualifier.named
 import platform.Foundation.*
 import platform.Photos.*
 import kotlin.coroutines.resume
@@ -17,14 +16,15 @@ import kotlin.coroutines.suspendCoroutine
 class IosNetworkFile(
     override val uri: Uri
 ) : NetworkFile, KoinComponent {
-    private val ioDispatcher: CoroutineDispatcher by inject(named<IoDispatcher>())
+    private val ioDispatcher: CoroutineDispatcher by inject(IO_DISPATCHER)
     private val log = PhovoLogger.withTag("IosNetworkFile")
 
     override suspend fun exists(): Boolean {
         return resolveFileURL() != null
     }
 
-    override suspend fun fileName(): String = getFileName()
+    // TODO Verify IOS sets filename with extension to MediaItem
+    suspend fun fileName(): String = getFileName()
 
     override suspend fun readBytes(): ByteArray? {
         val fileURL = resolveFileURL() ?: run {
@@ -64,4 +64,4 @@ class IosNetworkFile(
     }
 }
 
-actual fun getNetworkFile(uri: Uri, name: String): NetworkFile = IosNetworkFile(uri)
+actual fun getNetworkFile(uri: Uri): NetworkFile = IosNetworkFile(uri)

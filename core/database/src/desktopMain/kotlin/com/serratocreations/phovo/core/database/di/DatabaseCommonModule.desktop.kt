@@ -4,16 +4,14 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.serratocreations.phovo.core.common.util.AppDataDirectoryUtil
 import com.serratocreations.phovo.core.database.PhovoDatabase
-import org.koin.core.annotation.Factory
-import org.koin.core.annotation.Module
+import org.koin.core.module.Module
+import org.koin.dsl.module
 import java.io.File
 
-@Module
-actual class DatabasePlatformModule actual constructor() {
-    @Factory
-    fun getDatabaseBuilder(): RoomDatabase.Builder<PhovoDatabase> {
+internal actual fun getAndroidDesktopIosModule(): Module = module {
+    factory<RoomDatabase.Builder<PhovoDatabase>> {
         val dbFile = File(AppDataDirectoryUtil.getAppDataDirectory("Phovo"), "phovo.db")
-        return Room.databaseBuilder<PhovoDatabase>(
+        Room.databaseBuilder<PhovoDatabase>(
             name = dbFile.absolutePath,
         )
     }

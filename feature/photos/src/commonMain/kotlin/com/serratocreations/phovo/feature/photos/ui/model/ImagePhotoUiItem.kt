@@ -1,9 +1,9 @@
 package com.serratocreations.phovo.feature.photos.ui.model
 
 import coil3.Uri
-import com.serratocreations.phovo.data.photos.local.model.PhovoImageItem
-import com.serratocreations.phovo.data.photos.local.model.PhovoItem
-import com.serratocreations.phovo.data.photos.local.model.PhovoVideoItem
+import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
+import com.serratocreations.phovo.data.photos.repository.model.MediaItem
+import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
 import com.serratocreations.phovo.feature.photos.util.toFormattedDurationString
 
 data class ImagePhotoUiItem(
@@ -19,12 +19,12 @@ sealed interface UriPhotoUiItem : PhotoUiItem {
     val uri: Uri
 }
 
-fun PhovoItem.toPhotoUiItem(): PhotoUiItem {
+fun MediaItem.toPhotoUiItem(): PhotoUiItem {
     return when (this) {
-        is PhovoImageItem -> {
+        is MediaImageItem -> {
             ImagePhotoUiItem(uri = uri)
         }
-        is PhovoVideoItem -> {
+        is MediaVideoItem -> {
             VideoPhotoUiItem(
                 uri = uri,
                 duration = duration.toFormattedDurationString()

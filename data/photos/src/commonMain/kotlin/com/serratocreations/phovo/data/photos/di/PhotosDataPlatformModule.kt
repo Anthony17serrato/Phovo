@@ -1,11 +1,15 @@
 package com.serratocreations.phovo.data.photos.di
 
-import org.koin.core.annotation.ComponentScan
-import org.koin.core.annotation.Module
+import com.serratocreations.phovo.data.photos.network.MediaNetworkDataSource
+import org.koin.core.module.Module
+import org.koin.dsl.module
 
-@Module
-internal expect class PhotosDataPlatformModule()
+internal expect fun getAndroidDesktopIosWasmModules(): Module
 
-@Module(includes = [PhotosDataPlatformModule::class])
-@ComponentScan("com.serratocreations.phovo.data.photos")
-class PhotosDataModule
+fun getPhotosDataModule(): Module = module {
+    includes(getAndroidDesktopIosWasmModules())
+
+    single {
+        MediaNetworkDataSource(client = get(), logger = get())
+    }
+}

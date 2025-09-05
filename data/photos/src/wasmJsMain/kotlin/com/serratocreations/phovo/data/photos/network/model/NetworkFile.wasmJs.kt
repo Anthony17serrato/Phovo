@@ -3,16 +3,14 @@ package com.serratocreations.phovo.data.photos.network.model
 import coil3.Uri
 
 class WasmNetworkFile(
-    override val uri: Uri,
-    private val fileName: String
+    override val uri: Uri
 ) : NetworkFile {
 
-    override suspend fun fileName(): String = fileName
+    override suspend fun exists(): Boolean =
+        TODO("Implement when WASM client should support uploads")
 
-    // TODO: Pending implementation
-    override suspend fun exists(): Boolean = false
-
-    override suspend fun readBytes() = null
+    override suspend fun readBytes() =
+        TODO("Implement when WASM client should support uploads")
 }
 
-actual fun getNetworkFile(uri: Uri, name: String):NetworkFile = WasmNetworkFile(uri, name)
+actual fun getNetworkFile(uri: Uri):NetworkFile = WasmNetworkFile(uri)

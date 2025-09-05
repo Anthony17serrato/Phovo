@@ -4,17 +4,15 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.serratocreations.phovo.core.database.PhovoDatabase
 import kotlinx.cinterop.ExperimentalForeignApi
-import org.koin.core.annotation.Factory
-import org.koin.core.annotation.Module
+import org.koin.core.module.Module
+import org.koin.dsl.module
 import platform.Foundation.NSDocumentDirectory
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSUserDomainMask
 
-@Module
-actual class DatabasePlatformModule actual constructor() {
-    @OptIn(ExperimentalForeignApi::class)
-    @Factory
-    fun getDatabaseBuilder(): RoomDatabase.Builder<PhovoDatabase> {
+@OptIn(ExperimentalForeignApi::class)
+internal actual fun getAndroidDesktopIosModule(): Module = module {
+    factory<RoomDatabase.Builder<PhovoDatabase>> {
         fun documentDirectory(): String {
             val documentDirectory = NSFileManager.defaultManager.URLForDirectory(
                 directory = NSDocumentDirectory,
@@ -27,7 +25,7 @@ actual class DatabasePlatformModule actual constructor() {
         }
 
         val dbFilePath = documentDirectory() + "/phovo.db"
-        return Room.databaseBuilder<PhovoDatabase>(
+        Room.databaseBuilder<PhovoDatabase>(
             name = dbFilePath,
         )
     }

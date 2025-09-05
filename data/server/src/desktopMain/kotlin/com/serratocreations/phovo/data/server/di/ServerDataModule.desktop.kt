@@ -3,7 +3,6 @@ package com.serratocreations.phovo.data.server.di
 import com.serratocreations.phovo.core.common.di.ApplicationScope
 import com.serratocreations.phovo.core.common.di.IoDispatcher
 import com.serratocreations.phovo.core.database.dao.ServerConfigDao
-import com.serratocreations.phovo.core.database.di.DatabaseCommonModule
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.data.server.data.DesktopServerConfigManagerImpl
 import com.serratocreations.phovo.data.server.data.ServerConfigManager
@@ -16,9 +15,8 @@ import org.koin.core.annotation.Factory
 import org.koin.core.annotation.Module
 import org.koin.core.annotation.Singleton
 
-// DatabaseCommonModule is only needed for desktop in this module
-@Suppress("ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT")
-@Module(includes = [DatabaseCommonModule::class])
+// TODO add database module after migration to remove annotations
+@Module
 internal actual class ServerDataPlatformModule {
     @Factory(binds = [DesktopServerConfigRepository::class, ServerConfigRepository::class])
     fun desktopServerConfigRepository(
