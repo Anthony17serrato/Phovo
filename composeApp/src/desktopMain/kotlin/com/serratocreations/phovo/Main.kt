@@ -1,12 +1,20 @@
 package com.serratocreations.phovo
 
 import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.application
+import androidx.compose.ui.window.rememberWindowState
 import com.serratocreations.phovo.di.initKoin
 import com.serratocreations.phovo.ui.PhovoApp
 
 fun main() = application {
-    Window(onCloseRequest = ::exitApplication, title = "Phovo") {
+    val windowState = rememberWindowState(placement = WindowPlacement.Maximized)
+
+    Window(
+        onCloseRequest = ::exitApplication,
+        title = "Phovo",
+        state = windowState
+    ) {
         initKoin()
         PhovoApp()
     }
