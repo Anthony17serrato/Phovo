@@ -2,19 +2,18 @@ package com.serratocreations.phovo.data.photos.network.model
 
 import android.content.Context
 import coil3.Uri
-import com.serratocreations.phovo.core.common.di.IoDispatcher
+import com.serratocreations.phovo.core.common.di.IO_DISPATCHER
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import org.koin.core.qualifier.named
 import android.net.Uri as AndroidUri
 
 class AndroidNetworkFile(
     override val uri: Uri
 ) : NetworkFile, KoinComponent {
     private val context: Context by inject()
-    private val ioDispatcher: CoroutineDispatcher by inject(named<IoDispatcher>())
+    private val ioDispatcher: CoroutineDispatcher by inject(IO_DISPATCHER)
 
     private val androidUri = AndroidUri.parse(uri.toString())
 
