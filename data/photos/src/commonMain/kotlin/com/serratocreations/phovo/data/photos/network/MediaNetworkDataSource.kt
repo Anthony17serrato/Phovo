@@ -13,9 +13,7 @@ import io.ktor.http.HttpHeaders
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.io.IOException
-import org.koin.core.annotation.Singleton
 
-@Singleton
 class MediaNetworkDataSource(
     private val client: HttpClient,
     logger: PhovoLogger

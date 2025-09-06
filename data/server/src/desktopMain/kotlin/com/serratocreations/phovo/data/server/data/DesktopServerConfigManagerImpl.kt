@@ -33,12 +33,10 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.serialization.json.Json
-import org.koin.core.annotation.Singleton
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.LocalDateTime
 
-@Singleton(binds = [ServerConfigManager::class])
 class DesktopServerConfigManagerImpl(
     logger: PhovoLogger,
     private val serverConfigRepository: DesktopServerConfigRepository,

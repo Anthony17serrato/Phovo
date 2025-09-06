@@ -4,8 +4,8 @@ import co.touchlab.kermit.Logger
 import co.touchlab.kermit.Severity
 import co.touchlab.kermit.loggerConfigInit
 import co.touchlab.kermit.platformLogWriter
-import org.koin.core.annotation.Module
-import org.koin.core.annotation.Singleton
+import org.koin.core.module.Module
+import org.koin.dsl.module
 
 object PhovoLogger : Logger(
     config = loggerConfigInit(
@@ -16,8 +16,7 @@ object PhovoLogger : Logger(
     tag = "Phovo"
 )
 
-@Module
-class LoggerCommonModule {
-    @Singleton
-    fun phovoLogger(): PhovoLogger = PhovoLogger
+
+fun getLoggerCommonModule(): Module = module {
+    single<PhovoLogger> { PhovoLogger }
 }

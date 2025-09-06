@@ -10,7 +10,6 @@ import com.serratocreations.phovo.data.photos.repository.MediaRepository
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
 import org.koin.core.module.Module
 import org.koin.dsl.binds
 import org.koin.dsl.module
@@ -26,13 +25,12 @@ internal actual fun getAndroidDesktopIosModules(): Module = module {
     }
 
     single {
-        val appScope: CoroutineScope = get(APPLICATION_SCOPE)
         CommonLocalSupportMediaRepository(
             localMediaProcessor = get(),
             localMediaDataSource = get(),
             remoteMediaDataSource = get(),
             logger = get(),
-            appScope = appScope,
+            appScope = get(APPLICATION_SCOPE),
             ioDispatcher = get(IO_DISPATCHER)
         )
     } binds arrayOf(

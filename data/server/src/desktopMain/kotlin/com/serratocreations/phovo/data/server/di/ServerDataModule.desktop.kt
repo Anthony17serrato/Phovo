@@ -1,40 +1,32 @@
 package com.serratocreations.phovo.data.server.di
 
-import com.serratocreations.phovo.core.common.di.ApplicationScope
-import com.serratocreations.phovo.core.common.di.IoDispatcher
-import com.serratocreations.phovo.core.database.dao.ServerConfigDao
-import com.serratocreations.phovo.core.logger.PhovoLogger
+import com.serratocreations.phovo.core.common.di.APPLICATION_SCOPE
+import com.serratocreations.phovo.core.common.di.IO_DISPATCHER
+import com.serratocreations.phovo.core.database.di.getDatabaseModule
 import com.serratocreations.phovo.data.server.data.DesktopServerConfigManagerImpl
 import com.serratocreations.phovo.data.server.data.ServerConfigManager
 import com.serratocreations.phovo.data.server.data.repository.ServerConfigRepository
 import com.serratocreations.phovo.data.server.data.repository.DesktopServerConfigRepository
 import com.serratocreations.phovo.data.server.data.repository.ServerEventsRepository
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
-import org.koin.core.annotation.Factory
-import org.koin.core.annotation.Module
-import org.koin.core.annotation.Singleton
+import org.koin.dsl.binds
+import org.koin.dsl.module
 
-// TODO add database module after migration to remove annotations
-@Module
-internal actual class ServerDataPlatformModule {
-    @Factory(binds = [DesktopServerConfigRepository::class, ServerConfigRepository::class])
-    fun desktopServerConfigRepository(
-        localDataSource: ServerConfigDao
-    ) = DesktopServerConfigRepository(localDataSource)
+internal actual fun getAndroidDesktopIosWasmModules(): org.koin.core.module.Module = module {
+    includes(getDatabaseModule())
 
-    @Singleton(binds = [ServerConfigManager::class])
-    fun desktopServerConfigManagerImpl(
-        logger: PhovoLogger,
-        serverConfigRepository: DesktopServerConfigRepository,
-        serverEventsRepository: ServerEventsRepository,
-        @ApplicationScope appScope: CoroutineScope,
-        @IoDispatcher ioDispatcher: CoroutineDispatcher
-    ) = DesktopServerConfigManagerImpl(
-        logger,
-        serverConfigRepository,
-        serverEventsRepository,
-        appScope,
-        ioDispatcher
-    )
+    factory {
+        DesktopServerConfigRepository(get())
+    } binds arrayOf(DesktopServerConfigRepository::class, ServerConfigRepository::class)
+
+    single { ServerEventsRepository() }
+
+    single<ServerConfigManager> {
+        DesktopServerConfigManagerImpl(
+            get(),
+            get(),
+            get(),
+            get(APPLICATION_SCOPE),
+            get(IO_DISPATCHER)
+        )
+    }
 }
