@@ -1,13 +1,11 @@
 package com.serratocreations.phovo.buildlogic
 
 import com.android.build.api.dsl.CommonExtension
-import com.google.devtools.ksp.gradle.KspAATask
 import com.google.devtools.ksp.gradle.KspExtension
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.dependencies
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 
 /**
  * Configure Koin-specific options
@@ -46,60 +44,54 @@ internal fun Project.configureKmpKoin(
         sourceSets.commonMain.dependencies {
             // Koin
             implementation(libs.findBundle("koin.common.kmp").get())
-            // Koin Annotations
-            api(libs.findLibrary("koin.annotations").get())
-        }
-
-        // KSP Common sourceSet https://insert-koin.io/docs/setup/annotations/
-        sourceSets.named("commonMain").configure {
-            kotlin.srcDir("build/generated/ksp/metadata/commonMain/kotlin")
+            // TODO Koin Annotations is not stable for KMP(Leaving configuration for reference purposes)
+            // api(libs.findLibrary("koin.annotations").get())
         }
     }
 
     commonExtension.apply {
         dependencies {
-            // Common KSP compiler is always needed
-            add("kspCommonMainMetadata", libs.findLibrary("koin.ksp.compiler").get())
-
-            // Add target-specific KSP compilers only for configured targets
-            if (configuredTargets.contains(Targets.ANDROID)) {
-                add("kspAndroid", libs.findLibrary("koin.ksp.compiler").get())
-            }
-
-            if (configuredTargets.contains(Targets.WASM)) {
-                add("kspWasmJs", libs.findLibrary("koin.ksp.compiler").get())
-            }
-
-            if (configuredTargets.contains(Targets.DESKTOP)) {
-                add("kspDesktop", libs.findLibrary("koin.ksp.compiler").get())
-            }
-
-            if (configuredTargets.contains(Targets.IOS)) {
-                add("kspIosX64", libs.findLibrary("koin.ksp.compiler").get())
-                add("kspIosArm64", libs.findLibrary("koin.ksp.compiler").get())
-                add("kspIosSimulatorArm64", libs.findLibrary("koin.ksp.compiler").get())
-            }
+//            // Common KSP compiler is always needed
+//            add("kspCommonMainMetadata", libs.findLibrary("koin.ksp.compiler").get())
+//
+//            // Add target-specific KSP compilers only for configured targets
+//            if (configuredTargets.contains(Targets.ANDROID)) {
+//                add("kspAndroid", libs.findLibrary("koin.ksp.compiler").get())
+//            }
+//
+//            if (configuredTargets.contains(Targets.WASM)) {
+//                add("kspWasmJs", libs.findLibrary("koin.ksp.compiler").get())
+//            }
+//
+//            if (configuredTargets.contains(Targets.DESKTOP)) {
+//                add("kspDesktop", libs.findLibrary("koin.ksp.compiler").get())
+//            }
+//
+//            if (configuredTargets.contains(Targets.IOS)) {
+//                add("kspIosX64", libs.findLibrary("koin.ksp.compiler").get())
+//                add("kspIosArm64", libs.findLibrary("koin.ksp.compiler").get())
+//                add("kspIosSimulatorArm64", libs.findLibrary("koin.ksp.compiler").get())
+//            }
         }
     }
 
-    // Trigger Common Metadata Generation from Native tasks
-    project.tasks.withType(KotlinCompilationTask::class.java).configureEach {
-        if (name != "kspCommonMainKotlinMetadata") {
-            dependsOn("kspCommonMainKotlinMetadata")
-        }
-    }
-
-    project.tasks.withType(KspAATask::class.java).configureEach {
-        if (name != "kspCommonMainKotlinMetadata") {
-            dependsOn("kspCommonMainKotlinMetadata")
-        }
-    }
+//    // Trigger Common Metadata Generation from Native tasks
+//    project.tasks.withType(KotlinCompilationTask::class.java).configureEach {
+//        if (name != "kspCommonMainKotlinMetadata") {
+//            dependsOn("kspCommonMainKotlinMetadata")
+//        }
+//    }
+//
+//    project.tasks.withType(KspAATask::class.java).configureEach {
+//        if (name != "kspCommonMainKotlinMetadata") {
+//            dependsOn("kspCommonMainKotlinMetadata")
+//        }
+//    }
 
     extensions.configure<KspExtension> {
         // Enable Koin Viewmodel Annotation
         arg("KOIN_USE_COMPOSE_VIEWMODEL", "true")
-        // Does not work properly with KMP ComponentScan
-        //arg("KOIN_CONFIG_CHECK", "true")
+        arg("KOIN_CONFIG_CHECK", "true")
         arg("KOIN_LOG_TIMES", "true")
     }
 }

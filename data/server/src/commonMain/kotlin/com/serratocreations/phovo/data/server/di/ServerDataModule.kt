@@ -1,11 +1,11 @@
 package com.serratocreations.phovo.data.server.di
 
-import org.koin.core.annotation.ComponentScan
-import org.koin.core.annotation.Module
+import org.koin.core.module.Module
+import org.koin.dsl.module
 
-@Module(includes = [ServerDataPlatformModule::class])
-@ComponentScan("com.serratocreations.phovo.data.server")
-class ServerDataModule
+internal expect fun getAndroidDesktopIosWasmModules(): Module
 
-@Module
-internal expect class ServerDataPlatformModule()
+fun getServerDataModule(): Module = module {
+    includes(getAndroidDesktopIosWasmModules())
+
+}

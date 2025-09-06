@@ -19,7 +19,6 @@ junit = "4.13.2"
 kermit = "2.0.4"
 kmp-swing = "1.10.2"
 koin = "4.1.0"
-koin-annotations = "2.1.0"
 kotlinx-datetime = "0.6.1"
 ktor = "3.0.2"
 material3-adaptive = "1.1.1"
@@ -61,8 +60,6 @@ koin-core =     { group = "io.insert-koin", name = "koin-core", version.ref = "k
 koin-test =     { group = "io.insert-koin", name = "koin-test", version.ref = "koin" }
 koin-compose =  { group = "io.insert-koin", name = "koin-compose", version.ref = "koin" }
 koin-compose-vm =  { group = "io.insert-koin", name = "koin-compose-viewmodel", version.ref = "koin" }
-koin-annotations = { group = "io.insert-koin", name = "koin-annotations", version.ref = "koin-annotations" }
-koin-ksp-compiler = { group = "io.insert-koin", name = "koin-ksp-compiler", version.ref = "koin-annotations" }
 kotlin-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinx-datetime"}
 ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
 ktor-client-okhttp = { group = "io.ktor", name = "ktor-client-okhttp", version.ref = "ktor" }

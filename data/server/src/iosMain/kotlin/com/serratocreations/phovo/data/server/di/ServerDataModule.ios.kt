@@ -4,15 +4,10 @@ import com.serratocreations.phovo.data.server.data.NoOpServerConfigManager
 import com.serratocreations.phovo.data.server.data.ServerConfigManager
 import com.serratocreations.phovo.data.server.data.repository.IosAndroidWasmServerConfigRepository
 import com.serratocreations.phovo.data.server.data.repository.ServerConfigRepository
-import org.koin.core.annotation.Factory
-import org.koin.core.annotation.Module
-import org.koin.core.annotation.Singleton
+import org.koin.core.module.Module
+import org.koin.dsl.module
 
-@Module
-internal actual class ServerDataPlatformModule {
-    @Singleton(binds = [ServerConfigManager::class])
-    fun serverConfigManager() = NoOpServerConfigManager()
-
-    @Factory(binds = [ServerConfigRepository::class])
-    fun serverConfigRepository() = IosAndroidWasmServerConfigRepository()
+internal actual fun getAndroidDesktopIosWasmModules(): Module = module {
+    single<ServerConfigManager> { NoOpServerConfigManager() }
+    factory<ServerConfigRepository> { IosAndroidWasmServerConfigRepository()  }
 }

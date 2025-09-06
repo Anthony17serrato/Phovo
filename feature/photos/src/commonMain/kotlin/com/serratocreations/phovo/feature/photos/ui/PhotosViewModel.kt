@@ -2,7 +2,6 @@ package com.serratocreations.phovo.feature.photos.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.serratocreations.phovo.core.common.di.IoDispatcher
 import com.serratocreations.phovo.data.photos.repository.MediaRepository
 import com.serratocreations.phovo.data.photos.repository.LocalSupportMediaRepository
 import com.serratocreations.phovo.data.server.data.repository.ServerConfigRepository
@@ -25,14 +24,12 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import org.koin.android.annotation.KoinViewModel
 
 @OptIn(ExperimentalCoroutinesApi::class)
-@KoinViewModel
 class PhotosViewModel(
     private val mediaRepository: MediaRepository,
     private val serverConfigRepository: ServerConfigRepository,
-    @IoDispatcher private val ioDispatcher: CoroutineDispatcher
+    private val ioDispatcher: CoroutineDispatcher
 ): ViewModel() {
     private val currentYear = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).year
     private val _photosUiState = MutableStateFlow(PhotosUiState())
