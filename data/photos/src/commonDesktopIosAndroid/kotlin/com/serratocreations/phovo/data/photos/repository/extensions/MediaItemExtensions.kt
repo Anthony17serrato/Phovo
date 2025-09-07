@@ -7,7 +7,9 @@ import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
+import kotlin.time.ExperimentalTime
 
+@OptIn(ExperimentalTime::class)
 fun MediaItem.toPhovoMediaEntity(): PhovoMediaEntity {
     // TODO MediaItem should use ZonedDateTime
     val instant = dateInFeed.toInstant(TimeZone.UTC)

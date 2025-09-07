@@ -23,13 +23,14 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toKotlinLocalDateTime
 import kotlinx.datetime.toLocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 class AndroidLocalMediaProcessor(
     private val ioDispatcher: CoroutineDispatcher,
@@ -157,6 +158,7 @@ class AndroidLocalMediaProcessor(
         }
     }.flowOn(ioDispatcher)
 
+    @OptIn(ExperimentalTime::class)
     private fun Long.utcMsToLocalDateTime(): LocalDateTime {
         // Convert seconds to milliseconds
         val instant = Instant.Companion.fromEpochMilliseconds(this)

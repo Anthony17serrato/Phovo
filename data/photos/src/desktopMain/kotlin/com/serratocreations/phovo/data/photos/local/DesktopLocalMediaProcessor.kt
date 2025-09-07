@@ -13,7 +13,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toKotlinLocalDateTime
@@ -29,6 +28,8 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.format.DateTimeFormatter
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 // TODO Investigate if both metadata parsers here can be replaced by FFMPEG
 class DesktopLocalMediaProcessor(
@@ -98,6 +99,7 @@ class DesktopLocalMediaProcessor(
     }
 
     // TODO Migrate to Ffmpeg for metadata extraction
+    @OptIn(ExperimentalTime::class)
     private suspend fun processVideo(file: File): MediaVideoItem? = withContext(ioDispatcher) {
         val metadata = Metadata()
         FileInputStream(file).use { stream ->
