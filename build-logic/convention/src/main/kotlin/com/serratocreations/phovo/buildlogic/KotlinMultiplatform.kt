@@ -7,7 +7,6 @@ import org.gradle.kotlin.dsl.configure
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
-import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
 
 /**
  * Configure base Kotlin Multiplatform with Android options
@@ -68,23 +67,10 @@ internal fun Project.configureKotlinMultiplatform(
         if (targetList.contains(Targets.WASM)) {
             @OptIn(ExperimentalWasmDsl::class)
             wasmJs {
+                browser()
                 if (isApplication) {
                     outputModuleName.set("composeApp")
-                    browser {
-                        commonWebpackConfig {
-                            outputFileName = "composeApp.js"
-                            devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
-                                static = (static ?: mutableListOf()).apply {
-                                    // Serve sources to debug inside browser
-                                    add(project.rootDir.path)
-                                    add(project.projectDir.path)
-                                }
-                            }
-                        }
-                    }
                     binaries.executable()
-                } else {
-                    browser()
                 }
             }
         }
