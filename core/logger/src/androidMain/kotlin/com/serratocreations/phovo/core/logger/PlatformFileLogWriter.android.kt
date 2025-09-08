@@ -8,12 +8,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import java.io.File
 import java.io.FileOutputStream
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 internal actual fun platformFileLogWriter(): PlatformFileLogWriter = AndroidFileLogWriter()
 
@@ -22,6 +23,7 @@ internal class AndroidFileLogWriter(
 ) : PlatformFileLogWriter(CoroutineScope(SupervisorJob() + ioDispatcher)), KoinComponent {
     private val context: Context by inject()
 
+    @OptIn(ExperimentalTime::class)
     private val logFile: File
         get() {
             val today: LocalDate = Clock.System.todayIn(TimeZone.currentSystemDefault())

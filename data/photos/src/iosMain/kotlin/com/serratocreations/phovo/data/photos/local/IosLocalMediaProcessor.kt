@@ -34,6 +34,7 @@ import platform.Photos.PHPhotoLibrary
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.ExperimentalTime
 
 class IosLocalMediaProcessor(
     logger: PhovoLogger,
@@ -85,7 +86,7 @@ class IosLocalMediaProcessor(
         }
     }
 
-    @OptIn(ExperimentalForeignApi::class)
+    @OptIn(ExperimentalForeignApi::class, ExperimentalTime::class)
     private fun fetchImages(processedImages: List<MediaImageItem>): Flow<MediaImageItem> = flow {
         val fetchOptions = PHFetchOptions()
         val assets = PHAsset.Companion.fetchAssetsWithMediaType(PHAssetMediaTypeImage, fetchOptions)
@@ -117,7 +118,7 @@ class IosLocalMediaProcessor(
         }
     }.flowOn(ioDispatcher)
 
-    @OptIn(ExperimentalForeignApi::class)
+    @OptIn(ExperimentalForeignApi::class, ExperimentalTime::class)
     private fun fetchVideos(processedVideos: List<MediaVideoItem>): Flow<MediaVideoItem> = flow {
         val fetchOptions = PHFetchOptions()
         val videoItems = mutableListOf<PHAsset>()

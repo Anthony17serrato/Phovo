@@ -21,9 +21,10 @@ import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class PhotosViewModel(
@@ -31,6 +32,7 @@ class PhotosViewModel(
     private val serverConfigRepository: ServerConfigRepository,
     private val ioDispatcher: CoroutineDispatcher
 ): ViewModel() {
+    @OptIn(ExperimentalTime::class)
     private val currentYear = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).year
     private val _photosUiState = MutableStateFlow(PhotosUiState())
     val photosUiState = _photosUiState.asStateFlow()

@@ -8,10 +8,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import kotlin.time.ExperimentalTime
+import kotlin.time.Clock
 
 internal expect fun platformFileLogWriter(): PlatformFileLogWriter
 
@@ -28,6 +29,7 @@ internal abstract class PlatformFileLogWriter(
         }
     }
 
+    @OptIn(ExperimentalTime::class)
     override fun log(severity: Severity, message: String, tag: String, throwable: Throwable?) {
         val currentInstant = Clock.System.now()
         val datetime: LocalDateTime = currentInstant.toLocalDateTime(TimeZone.currentSystemDefault())
