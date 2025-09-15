@@ -2,9 +2,9 @@ package com.serratocreations.phovo.data.photos.network.model
 
 import coil3.Uri
 import com.serratocreations.phovo.core.common.di.IO_DISPATCHER
-import com.serratocreations.phovo.core.common.util.toByteArray
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -23,21 +23,22 @@ class IosNetworkFile(
         return resolveFileURL() != null
     }
 
+    override suspend fun readInChunks(chunkSize: Int): Flow<ByteArray> {
+        TODO("Not yet implemented")
+//        val fileURL = resolveFileURL() ?: run {
+//            log.e { "Cannot read file at $uri" }
+//            return null
+//        }
+//        val data = NSData.dataWithContentsOfURL(fileURL) ?: run {
+//            log.e { "Cannot read file at $uri" }
+//            return null
+//        }
+//
+//        return data.toByteArray()
+    }
+
     // TODO Verify IOS sets filename with extension to MediaItem
     suspend fun fileName(): String = getFileName()
-
-    override suspend fun readBytes(): ByteArray? {
-        val fileURL = resolveFileURL() ?: run {
-            log.e { "Cannot read file at $uri" }
-            return null
-        }
-        val data = NSData.dataWithContentsOfURL(fileURL) ?: run {
-            log.e { "Cannot read file at $uri" }
-            return null
-        }
-
-        return data.toByteArray()
-    }
 
     private suspend fun resolveFileURL(): NSURL? = withContext(ioDispatcher) {
         val assetId = uri.toString().removePrefix("phasset://")

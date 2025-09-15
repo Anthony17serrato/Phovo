@@ -33,9 +33,12 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.serialization.json.Json
+import java.io.FileOutputStream
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.LocalDateTime
+import java.net.NetworkInterface
+import java.net.Inet4Address
 
 class DesktopServerConfigManagerImpl(
     logger: PhovoLogger,
@@ -47,6 +50,22 @@ class DesktopServerConfigManagerImpl(
     // Caches the current config state for new subscribers
     private val serverConfigState = MutableStateFlow(ServerConfigState())
     private val log = logger.withTag("DesktopServerConfigManagerImpl")
+
+    private fun getHostIPv4(): String {
+        return try {
+            val interfaces = java.util.Collections.list(NetworkInterface.getNetworkInterfaces())
+            val candidates = interfaces
+                .filter { it.isUp && !it.isLoopback && !it.isVirtual }
+                .flatMap { ni -> java.util.Collections.list(ni.inetAddresses) }
+                .filterIsInstance<Inet4Address>()
+                .map { it.hostAddress }
+            candidates.firstOrNull { address ->
+                address.startsWith("192.") || address.startsWith("10.") || address.startsWith("172.")
+            } ?: candidates.firstOrNull() ?: "127.0.0.1"
+        } catch (e: Exception) {
+            "127.0.0.1"
+        }
+    }
 
     private val routingConfig: Application.() -> Unit = {
         install(StatusPages) {
@@ -67,17 +86,8 @@ class DesktopServerConfigManagerImpl(
             }
 
             post("/upload") {
-//                // Receive the photo data as a JSON object
-//                val photo = call.receive<PhovoImageItem>()
-//
-//                // Log received data
-//                phovoItemRepository.addServerEventLog("upload photo $photo")
-//
-//                // Respond with a success message
-//                call.respond(HttpStatusCode.Created, "Photo uploaded successfully")
+                this@DesktopServerConfigManagerImpl.log.i { "Reached upload API" }
 
-                this@DesktopServerConfigManagerImpl.log.i { "reached upload api" }
-                // Receive the uploaded file
                 val multipart = call.receiveMultipart()
                 var exception: Exception? = null
 
@@ -86,21 +96,29 @@ class DesktopServerConfigManagerImpl(
                         try {
                             val directory = serverConfigRepository.observeServerConfig().first()
                                 ?.backupDirectory?.plus("/") ?: run {
-                                    this@DesktopServerConfigManagerImpl.log.i { "server config is null" }
-                                    return@forEachPart
-                                }
+                                this@DesktopServerConfigManagerImpl.log.i { "Server config is null" }
+                                return@forEachPart
+                            }
+
                             val dirPath = Paths.get(directory)
-                            if (!Files.exists(dirPath)) {
-                                Files.createDirectories(dirPath)
+                            if (!Files.exists(dirPath)) Files.createDirectories(dirPath)
+
+                            val originalFileName = part.originalFileName ?: "unknown"
+                            val chunkIndex = part.headers["X-Chunk-Index"]?.toIntOrNull() ?: 0
+
+                            val filePath = dirPath.resolve(originalFileName)
+
+                            // Append to file instead of overwriting
+                            FileOutputStream(filePath.toFile(), true).use { fos ->
+                                part.streamProvider().use { input ->
+                                    fos.write(input.readAllBytes())
+                                }
                             }
-                            val fileName = "${System.currentTimeMillis()}_${part.originalFileName}"
-                            val file = dirPath.resolve(fileName).let { path ->
-                                Files.createFile(path).toFile()
+
+                            this@DesktopServerConfigManagerImpl.log.i {
+                                "Appended chunk $chunkIndex to $originalFileName (${Files.size(filePath)} bytes so far)"
                             }
-                            this@DesktopServerConfigManagerImpl.log.i { "upload filename $fileName" }
-                            val fileBytes = part.streamProvider().readBytes()
-                            file.writeBytes(fileBytes)
-                            serverEventsRepository.addServerEventLog("File uploaded ${file.absolutePath}")
+
                         } catch (e: Exception) {
                             if (e is CancellationException) throw e else exception = e
                         }
@@ -108,13 +126,13 @@ class DesktopServerConfigManagerImpl(
                     part.dispose()
                 }
 
-                // Respond with success
                 if (exception == null) {
-                    call.respond(HttpStatusCode.Created, "File uploaded successfully")
+                    call.respond(HttpStatusCode.Created, "File chunk uploaded successfully")
                 } else {
-                    call.respond(HttpStatusCode.BadRequest, "No file uploaded $exception")
+                    call.respond(HttpStatusCode.BadRequest, "Failed to upload chunk: $exception")
                 }
             }
+
         }
     }
 
@@ -142,7 +160,10 @@ class DesktopServerConfigManagerImpl(
                 embeddedServer(factory = Netty, port = 8080, host = "0.0.0.0", module = routingConfig)
                     .start(wait = false)
                 serverConfigState.update {
-                    it.copy(configStatus = ConfigStatus.Configured(ServerState.Online))
+                    it.copy(configStatus = ConfigStatus.Configured(
+                        serverState = ServerState.Online,
+                        serverUrl = "http://${getHostIPv4()}:8080"
+                    ))
                 }
             }
             // TODO Save server config to room db
