@@ -19,7 +19,7 @@ class ConnectionsViewModel(
     private val serverConfigManager: ServerConfigManager
 ): ViewModel() {
     private val initialState = ConnectionsUiState(
-        doesCurrentDeviceSupportServer = serverConfigManager is DesktopServerConfigManager
+        doesCurrentDeviceSupportServer = serverConfigManager is DesktopServerConfigManager,
     )
     private val _connectionsUiState = MutableStateFlow(initialState)
     val connectionsUiState = _connectionsUiState.asStateFlow()
@@ -41,10 +41,15 @@ class ConnectionsViewModel(
         if (serverConfigManager is DesktopServerConfigManager) {
             serverConfigManager.observeDeviceServerConfigurationState(viewModelScope)
                 .onEach { serverConfigState ->
+                    val configStatus = serverConfigState.configStatus
+                    val hostUrl = if (configStatus is ConfigStatus.Configured) {
+                        configStatus.serverUrl
+                    } else null
                     _connectionsUiState.update {
                         it.copy(
                             isCurrentDeviceServerConfigured = serverConfigState.configStatus !is ConfigStatus.NotConfigured,
-                            serverEventLogs = serverConfigState.serverEventLogs
+                            serverEventLogs = serverConfigState.serverEventLogs,
+                            hostUrl = hostUrl
                         )
                     }
                 }
@@ -70,7 +75,7 @@ class ConnectionsViewModel(
                     PaneId.ConfigStorageSelection -> ConnectionsPane.ConfigStorageSelection(previousPane)
                 }
             }
-            currentPane.copy(currentConnectionsPane = newPane)
+            currentPane.copy(currentConnectionsPane = newPane,)
         }
     }
 
@@ -83,7 +88,7 @@ class ConnectionsViewModel(
             currentUiState.currentConnectionsPane.previousPane?.let { previousPane ->
                 canNavigateBack = previousPane.previousPane != null
                 currentUiState.copy(
-                    currentConnectionsPane = previousPane
+                    currentConnectionsPane = previousPane,
                 )
             } ?: currentUiState
         }
@@ -92,7 +97,7 @@ class ConnectionsViewModel(
 
     fun setSelectedDirectory(selectedDirectory: String) {
         _connectionsUiState.update { currentUiState ->
-            currentUiState.copy(selectedDirectory = "$selectedDirectory/DO_NOT_DELETE_PHOVO")
+            currentUiState.copy(selectedDirectory = "$selectedDirectory/DO_NOT_DELETE_PHOVO",)
         }
     }
 }
@@ -107,7 +112,8 @@ data class ConnectionsUiState(
     val doesCurrentDeviceSupportServer: Boolean = false,
     val serverEventLogs: List<String> = emptyList(),
     val currentConnectionsPane: ConnectionsPane = ConnectionsPane.Home,
-    val selectedDirectory: String? = null
+    val selectedDirectory: String? = null,
+    val hostUrl: String? = null
 )
 
 sealed class ConnectionsPane(

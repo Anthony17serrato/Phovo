@@ -44,6 +44,11 @@ internal fun ConnectionsHomePane(
                     )
                 }
             }
+            if (uiState.hostUrl != null) {
+                item {
+                    Text(text = "Server URL: ${uiState.hostUrl}")
+                }
+            }
         }
         items(uiState.serverEventLogs) { eventLog ->
             Text(text = eventLog)

@@ -2,6 +2,7 @@ package com.serratocreations.phovo.data.photos.network.model
 
 import java.net.URI as DesktopUri
 import coil3.Uri
+import kotlinx.coroutines.flow.Flow
 import java.io.File
 
 // TODO Until multi server support is added this implementation is not used
@@ -12,5 +13,8 @@ class DesktopNetworkFile(
 
     override suspend fun exists(): Boolean = file.exists()
 
-    override suspend fun readBytes() = file.readBytes()
+    override suspend fun readInChunks(chunkSize: Int): Flow<ByteArray> {
+        TODO("Not yet implemented")
+        file.readBytes()
+    }
 }

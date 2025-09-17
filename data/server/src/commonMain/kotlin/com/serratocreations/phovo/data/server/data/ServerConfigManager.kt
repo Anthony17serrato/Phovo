@@ -19,7 +19,10 @@ class NoOpServerConfigManager: ServerConfigManager
 
 sealed interface ConfigStatus {
     data object NotConfigured: ConfigStatus
-    data class Configured(val serverState: ServerState): ConfigStatus
+    data class Configured(
+        val serverState: ServerState,
+        val serverUrl: String,
+    ): ConfigStatus
 }
 
 enum class ServerState {
