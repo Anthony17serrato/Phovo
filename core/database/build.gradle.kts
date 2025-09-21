@@ -10,6 +10,7 @@ kotlin {
             dependencies {
                 implementation(projects.core.logger)
                 implementation(projects.core.common)
+                implementation(projects.core.model)
             }
         }
 //        val commonDesktopIosAndroid by getting {
