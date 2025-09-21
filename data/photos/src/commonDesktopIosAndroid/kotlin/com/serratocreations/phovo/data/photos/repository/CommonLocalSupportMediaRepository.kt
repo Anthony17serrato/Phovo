@@ -51,8 +51,15 @@ open class CommonLocalSupportMediaRepository(
         log.i { "initMediaProcessing" }
         // TODO Move to a periodic work manager
         appScope.launch {
-            processJob(localDirectory)
-            syncJob()
+            val localItems = localMediaDataSource
+                .observeAllDescendingTimestamp()
+                .toMediaItems()
+                .first()
+            processJob(
+                localDirectory,
+                localItems
+            )
+            syncJob(localItems)
         }
     }
 
@@ -60,15 +67,14 @@ open class CommonLocalSupportMediaRepository(
         localMediaDataSource.insert(mediaItem.toPhovoMediaEntity())
     }
 
-    private fun CoroutineScope.syncJob() = launch {
-        // TODO
+    protected open fun CoroutineScope.syncJob(localItems: List<MediaItem>) {
+        // TODO Server may eventually support syncing to other servers, for now it is not supported
     }
 
-    private fun CoroutineScope.processJob(localDirectory: String?) = launch {
-        val localItems = localMediaDataSource
-            .observeAllDescendingTimestamp()
-            .toMediaItems()
-            .first()
+    private fun CoroutineScope.processJob(
+        localDirectory: String?,
+        localItems: List<MediaItem>
+    ) = launch {
         val processMediaChannel = Channel<MediaItem>()
         with(localMediaProcessor) {
             processLocalItems(

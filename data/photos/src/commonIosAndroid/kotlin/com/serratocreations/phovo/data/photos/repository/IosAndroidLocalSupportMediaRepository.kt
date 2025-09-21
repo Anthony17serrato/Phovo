@@ -7,6 +7,7 @@ import com.serratocreations.phovo.data.photos.network.MediaNetworkDataSource
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 class IosAndroidLocalSupportMediaRepository(
     localMediaDataSource: PhovoMediaDao,
@@ -26,5 +27,14 @@ class IosAndroidLocalSupportMediaRepository(
     override suspend fun handleProcessedMediaItem(mediaItem: MediaItem) {
         super.handleProcessedMediaItem(mediaItem)
         remoteMediaDataSource.syncMedia(mediaItem)
+    }
+
+    override fun CoroutineScope.syncJob(localItems: List<MediaItem>) {
+        launch {
+            // TODO Filter out only items which have not been server synced
+            localItems.forEach { mediaItem ->
+                remoteMediaDataSource.syncMedia(mediaItem)
+            }
+        }
     }
 }

@@ -1,5 +1,5 @@
 package com.serratocreations.phovo.data.photos.network.model
 
-import coil3.Uri
+import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 
-actual fun getNetworkFile(uri: Uri): NetworkFile = AndroidNetworkFile(uri = uri)
+actual fun getNetworkFile(mediaItem: MediaItem): NetworkFile = AndroidNetworkFile(mediaItem = mediaItem)

@@ -30,14 +30,14 @@ class MediaNetworkDataSource(
     private val client: HttpClient,
     logger: PhovoLogger
 ) {
-    private val log = logger.withTag("PhotosNetworkDataSource")
+    private val log = logger.withTag("MediaNetworkDataSource")
 
     // TODO: Implement network API for getting all items
     fun allItemsFlow(): Flow<List<MediaItem>> = flowOf()
 
     suspend fun syncMedia(mediaItem: MediaItem) = coroutineScope {
         log.i { "syncMedia $mediaItem" }
-        val file = getNetworkFile(mediaItem.uri)
+        val file = getNetworkFile(mediaItem)
         if (!file.exists()) {
             log.e { "File not found at ${mediaItem.uri}" }
             return@coroutineScope

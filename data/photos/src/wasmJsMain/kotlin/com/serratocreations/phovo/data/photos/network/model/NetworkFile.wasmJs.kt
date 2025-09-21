@@ -1,10 +1,10 @@
 package com.serratocreations.phovo.data.photos.network.model
 
-import coil3.Uri
+import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import kotlinx.coroutines.flow.Flow
 
 class WasmNetworkFile(
-    override val uri: Uri
+    override val mediaItem: MediaItem
 ) : NetworkFile {
 
     override suspend fun exists(): Boolean =
@@ -15,4 +15,4 @@ class WasmNetworkFile(
     }
 }
 
-actual fun getNetworkFile(uri: Uri):NetworkFile = WasmNetworkFile(uri)
+actual fun getNetworkFile(mediaItem: MediaItem):NetworkFile = WasmNetworkFile(mediaItem)
