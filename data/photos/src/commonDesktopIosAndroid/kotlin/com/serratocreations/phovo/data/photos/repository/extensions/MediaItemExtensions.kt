@@ -1,7 +1,7 @@
 package com.serratocreations.phovo.data.photos.repository.extensions
 
-import com.serratocreations.phovo.core.database.entities.MediaType
 import com.serratocreations.phovo.core.database.entities.PhovoMediaEntity
+import com.serratocreations.phovo.core.model.MediaType
 import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem

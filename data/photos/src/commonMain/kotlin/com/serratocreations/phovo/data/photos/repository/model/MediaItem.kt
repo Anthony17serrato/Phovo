@@ -8,5 +8,6 @@ sealed interface MediaItem {
     val fileName: String
     // TODO MediaItem should use ZonedDateTime
     val dateInFeed: LocalDateTime
+    // TODO Does size need to be long?
     val size: Int
 }

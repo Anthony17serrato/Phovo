@@ -1,21 +1,24 @@
 package com.serratocreations.phovo.data.photos.network.model
 
 import android.content.Context
-import coil3.Uri
 import com.serratocreations.phovo.core.common.di.IO_DISPATCHER
+import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import android.net.Uri as AndroidUri
 
 class AndroidNetworkFile(
-    override val uri: Uri
+    override val mediaItem: MediaItem
 ) : NetworkFile, KoinComponent {
     private val context: Context by inject()
     private val ioDispatcher: CoroutineDispatcher by inject(IO_DISPATCHER)
 
-    private val androidUri = AndroidUri.parse(uri.toString())
+    private val androidUri = AndroidUri.parse(mediaItem.uri.toString())
 
     override suspend fun exists(): Boolean = withContext(ioDispatcher) {
         // Check if the URI can be opened
@@ -27,8 +30,14 @@ class AndroidNetworkFile(
         }
     }
 
-    override suspend fun readBytes(): ByteArray? = withContext(ioDispatcher) {
-        // Read bytes directly from the content URI
-        return@withContext context.contentResolver.openInputStream(androidUri)?.use { it.readBytes() }
-    }
+    override suspend fun readInChunks(chunkSize: Int): Flow<ByteArray> = flow {
+        context.contentResolver.openInputStream(androidUri)?.use { input ->
+            val buffer = ByteArray(chunkSize)
+            while (true) {
+                val read = input.read(buffer)
+                if (read == -1) break
+                emit(buffer.copyOf(read)) // copy to avoid reusing buffer
+            }
+        }
+    }.flowOn(ioDispatcher)
 }

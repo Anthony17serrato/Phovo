@@ -2,6 +2,7 @@ package com.serratocreations.phovo.core.database.entities
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.serratocreations.phovo.core.model.MediaType
 
 // TODO: Add md5 hash for uniqueness check
 @Entity
@@ -21,5 +22,3 @@ data class PhovoMediaEntity(
     val mediaType: MediaType,
     val videoDurationMs: Long?,
 )
-
-enum class MediaType { Image, Video }
