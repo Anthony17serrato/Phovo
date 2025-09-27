@@ -9,7 +9,7 @@ import com.serratocreations.phovo.feature.photos.di.getPhotosFeatureModule
 import org.koin.core.context.startKoin
 import org.koin.dsl.KoinAppDeclaration
 
-fun initKoin(config: KoinAppDeclaration? = null) = startKoin {
+fun initApplication(config: KoinAppDeclaration? = null) = startKoin {
     config?.invoke(this)
     logger(KermitKoinLogger(PhovoLogger.withTag("koin")))
     modules(
@@ -18,7 +18,11 @@ fun initKoin(config: KoinAppDeclaration? = null) = startKoin {
         getLoggerCommonModule(),
         getConnectionsFeatureModule()
     )
+
+    androidDesktopIosWasmPlatformInitialization()
 }
 
 // called by IOS in iOSApp.swift
-fun initKoin() = initKoin {}
+fun initApplication() = initApplication {}
+
+expect fun androidDesktopIosWasmPlatformInitialization()

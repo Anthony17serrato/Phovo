@@ -92,7 +92,7 @@ internal fun Project.configureKotlinMultiplatform(
             iosSimulatorArm64()
         }
 
-        customSourceSets.forEach { sourceSet ->
+        customSourceSets.sortedBy { it.declarationOrder }.forEach { sourceSet ->
             when (sourceSet) {
                 CustomSourceSets.DesktopIosAndroid -> {
                     val commonDesktopIosAndroid = sourceSets.create("commonDesktopIosAndroid") {
