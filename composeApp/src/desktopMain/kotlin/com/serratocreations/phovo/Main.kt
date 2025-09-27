@@ -4,7 +4,7 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
-import com.serratocreations.phovo.di.initKoin
+import com.serratocreations.phovo.di.initApplication
 import com.serratocreations.phovo.ui.PhovoApp
 
 fun main() = application {
@@ -15,7 +15,7 @@ fun main() = application {
         title = "Phovo",
         state = windowState
     ) {
-        initKoin()
+        initApplication()
         PhovoApp()
     }
 }

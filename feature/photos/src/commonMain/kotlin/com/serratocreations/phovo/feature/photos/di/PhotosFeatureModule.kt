@@ -16,7 +16,6 @@ fun getPhotosFeatureModule(): Module = module {
     viewModel {
         PhotosViewModel(
             get(),
-            get(),
             get(IO_DISPATCHER)
         )
     }

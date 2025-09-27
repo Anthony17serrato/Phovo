@@ -1,4 +1,5 @@
 import com.android.build.api.dsl.ApplicationExtension
+import com.serratocreations.phovo.buildlogic.CustomSourceSets
 import com.serratocreations.phovo.buildlogic.configureKotlinAndroid
 import com.serratocreations.phovo.buildlogic.configureKotlinMultiplatform
 import org.gradle.api.Plugin
@@ -16,7 +17,10 @@ class KmpApplicationConventionPlugin : Plugin<Project> {
 
             extensions.configure<ApplicationExtension> {
                 configureKotlinAndroid(this)
-                configureKotlinMultiplatform(isApplication = true)
+                configureKotlinMultiplatform(
+                    customSourceSets = setOf(CustomSourceSets.DesktopIosAndroid, CustomSourceSets.IosAndroid),
+                    isApplication = true
+                )
                 sourceSets["main"].manifest.srcFile("src/androidMain/AndroidManifest.xml")
                 sourceSets["main"].res.srcDirs("src/androidMain/res")
                 sourceSets["main"].resources.srcDirs("src/commonMain/resources")
