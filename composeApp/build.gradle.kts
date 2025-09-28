@@ -20,6 +20,8 @@ kotlin {
             implementation(projects.feature.connections)
             implementation(projects.core.common)
             implementation(projects.core.logger)
+            implementation(projects.data.server)
+            implementation(projects.data.photos)
 
             implementation(compose.components.resources)
             implementation(libs.serialization.json)
