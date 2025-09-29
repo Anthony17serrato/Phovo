@@ -1,6 +1,6 @@
 package com.serratocreations.phovo.data.photos.di
 
-import com.serratocreations.phovo.core.common.di.APPLICATION_SCOPE
+import com.serratocreations.phovo.data.photos.network.MediaNetworkDataSource
 import com.serratocreations.phovo.data.photos.repository.MediaRepository
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.js.Js
@@ -12,8 +12,7 @@ import org.koin.dsl.module
 internal actual fun getAndroidDesktopIosWasmModules(): Module = module {
     single<MediaRepository> {
         MediaRepository(
-            remotePhotosDataSource = get(),
-            appScope = get(APPLICATION_SCOPE)
+            remotePhotosDataSource = get()
         )
     }
 
@@ -23,5 +22,9 @@ internal actual fun getAndroidDesktopIosWasmModules(): Module = module {
                 json()
             }
         }
+    }
+
+    single {
+        MediaNetworkDataSource(client = get(), logger = get())
     }
 }
