@@ -1,17 +1,17 @@
 package com.serratocreations.phovo
 
-import com.serratocreations.phovo.data.photos.repository.LocalSupportMediaRepository
+import com.serratocreations.phovo.data.photos.LocalMediaManager
 import kotlinx.coroutines.CoroutineScope
 import com.serratocreations.phovo.data.server.data.repository.ServerConfigRepository
 
 class AndroidAppInitializer(
     applicationScope: CoroutineScope,
     serverConfigRepository: ServerConfigRepository,
-    localSupportMediaRepository: LocalSupportMediaRepository
+    localMediaManager: LocalMediaManager
 ): AndroidDesktopIosAppInitializer(
     applicationScope,
     serverConfigRepository,
-    localSupportMediaRepository
+    localMediaManager
 ) {
 
     override fun initialize() {

@@ -2,9 +2,10 @@ package com.serratocreations.phovo.data.photos.di
 
 import com.serratocreations.phovo.core.common.di.APPLICATION_SCOPE
 import com.serratocreations.phovo.core.common.di.IO_DISPATCHER
+import com.serratocreations.phovo.data.photos.LocalMediaManager
 import com.serratocreations.phovo.data.photos.local.DesktopLocalMediaProcessor
 import com.serratocreations.phovo.data.photos.local.LocalMediaProcessor
-import com.serratocreations.phovo.data.photos.repository.CommonLocalSupportMediaRepository
+import com.serratocreations.phovo.data.photos.network.MediaNetworkDataSource
 import com.serratocreations.phovo.data.photos.repository.LocalSupportMediaRepository
 import com.serratocreations.phovo.data.photos.repository.MediaRepository
 import io.ktor.client.HttpClient
@@ -19,22 +20,32 @@ internal actual fun getAndroidDesktopIosModules(): Module = module {
         HttpClient(OkHttp)
     }
 
+    single<MediaNetworkDataSource> {
+        MediaNetworkDataSource(client = get(), logger = get())
+    }
+
+    single<LocalMediaManager> {
+        LocalMediaManager(
+            get(),
+            get(),
+            get(APPLICATION_SCOPE),
+            get()
+        )
+    }
+
     single<LocalMediaProcessor> {
         val ioDispatcher: CoroutineDispatcher = get(IO_DISPATCHER)
         DesktopLocalMediaProcessor(logger = get(), ioDispatcher = ioDispatcher)
     }
 
     single {
-        CommonLocalSupportMediaRepository(
-            localMediaProcessor = get(),
+        LocalSupportMediaRepository(
             localMediaDataSource = get(),
             remoteMediaDataSource = get(),
             logger = get(),
-            appScope = get(APPLICATION_SCOPE),
             ioDispatcher = get(IO_DISPATCHER)
         )
     } binds arrayOf(
-        CommonLocalSupportMediaRepository::class,
         LocalSupportMediaRepository::class,
         MediaRepository::class
     )
