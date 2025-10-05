@@ -2,9 +2,8 @@ package com.serratocreations.phovo.data.photos.network.model
 
 import com.serratocreations.phovo.core.common.di.IO_DISPATCHER
 import com.serratocreations.phovo.core.logger.PhovoLogger
-import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
-import com.serratocreations.phovo.data.photos.repository.model.MediaItem
-import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
+import com.serratocreations.phovo.core.model.MediaType
+import com.serratocreations.phovo.core.model.network.MediaItemDto
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.usePinned
@@ -22,7 +21,7 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
 class IosNetworkFile(
-    override val mediaItem: MediaItem
+    override val mediaItemDto: MediaItemDto
 ) : NetworkFile, KoinComponent {
     private val ioDispatcher: CoroutineDispatcher by inject(IO_DISPATCHER)
     private val log = PhovoLogger.withTag("IosNetworkFile")
@@ -34,7 +33,7 @@ class IosNetworkFile(
     @OptIn(ExperimentalForeignApi::class)
     override suspend fun readInChunks(chunkSize: Int): Flow<ByteArray> = flow {
         val fileURL = resolveFileURL() ?: run {
-            log.e { "Cannot read file ${mediaItem.fileName}" }
+            log.e { "Cannot read file ${mediaItemDto.fileName}" }
             return@flow
         }
 
@@ -66,12 +65,12 @@ class IosNetworkFile(
     suspend fun fileName(): String = getFileName()
 
     private suspend fun resolveFileURL(): NSURL? = withContext(ioDispatcher) {
-        val assetId = mediaItem.uri.toString().removePrefix("phasset://")
+        val assetId = mediaItemDto.localUri.removePrefix("phasset://")
         val fetchResult = PHAsset.fetchAssetsWithLocalIdentifiers(listOf(assetId), null)
         val asset = fetchResult.firstObject as? PHAsset ?: return@withContext null
 
-        when (mediaItem) {
-            is MediaImageItem -> {
+        when (mediaItemDto.mediaType) {
+            MediaType.Image -> {
                 val options = PHContentEditingInputRequestOptions().apply {
                     networkAccessAllowed = true
                 }
@@ -82,7 +81,7 @@ class IosNetworkFile(
                     }
                 }
             }
-            is MediaVideoItem -> {
+            MediaType.Video -> {
                 val options = PHVideoRequestOptions().apply {
                     networkAccessAllowed = true
                     version = PHVideoRequestOptionsVersionOriginal
@@ -103,11 +102,11 @@ class IosNetworkFile(
 
     private suspend fun getFileName(): String {
         val fileURL = resolveFileURL() ?: run {
-            log.e { "Invalid URI or file does not exist: ${mediaItem.uri}" }
+            log.e { "Invalid URI or file does not exist: ${mediaItemDto.localUri}" }
             null
         }
         return fileURL?.lastPathComponent ?: "Unknown"
     }
 }
 
-actual fun getNetworkFile(mediaItem: MediaItem): NetworkFile = IosNetworkFile(mediaItem)
+actual fun getNetworkFile(mediaItemDto: MediaItemDto): NetworkFile = IosNetworkFile(mediaItemDto)

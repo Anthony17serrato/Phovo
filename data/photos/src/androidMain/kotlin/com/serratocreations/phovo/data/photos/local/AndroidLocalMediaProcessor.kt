@@ -31,6 +31,8 @@ import java.time.format.DateTimeFormatter
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 class AndroidLocalMediaProcessor(
     private val ioDispatcher: CoroutineDispatcher,
@@ -55,10 +57,11 @@ class AndroidLocalMediaProcessor(
             }.launchIn(this)
     }
 
+    @OptIn(ExperimentalUuidApi::class)
     private fun queryImages(
         alreadyProcessedImages: List<MediaImageItem>
     ): Flow<MediaItem> = flow {
-        val processedImageIds = alreadyProcessedImages.map { it.fileName }
+        val processedImageIds = alreadyProcessedImages.map { it.localUuid }
         val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
         } else {
@@ -95,20 +98,26 @@ class AndroidLocalMediaProcessor(
                     ?: resolver.parseDateTakenFromExif(androidUri)
                     ?: (cursor.getLong(dateAddedColumn) * 1000).utcMsToLocalDateTime()
 
-                emit(MediaImageItem(
-                    uri = contentUri,
+                val mediaImageItem = MediaImageItem(
+                    localUri = contentUri,
+                    remoteUri = null,
+                    remoteThumbnailUri = null,
                     fileName = fileName,
                     dateInFeed = dateInFeed,
-                    size = size
-                ))
+                    size = size,
+                    localUuid = Uuid.random().toString(),
+                    remoteUuid = null
+                )
+                emit(mediaImageItem)
             }
         }
     }.flowOn(ioDispatcher)
 
+    @OptIn(ExperimentalUuidApi::class)
     private fun queryVideos(
         alreadyProcessedVideos: List<MediaVideoItem>
     ): Flow<MediaItem> = flow {
-        val processedVideoIds = alreadyProcessedVideos.map { it.fileName }
+        val processedVideoIds = alreadyProcessedVideos.map { it.localUuid }
         val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
         } else {
@@ -147,13 +156,18 @@ class AndroidLocalMediaProcessor(
                 val dateInFeed = cursor.getLongOrNull(dateTakenColumn)?.utcMsToLocalDateTime()
                     ?: (cursor.getLong(dateAddedColumn) * 1000).utcMsToLocalDateTime()
 
-                emit(MediaVideoItem(
-                    uri = contentUri,
+                val mediaVideoItem = MediaVideoItem(
+                    localUri = contentUri,
+                    remoteUri = null,
+                    remoteThumbnailUri = null,
                     fileName = name,
                     dateInFeed = dateInFeed,
                     size = size,
+                    localUuid = Uuid.random().toString(),
+                    remoteUuid = null,
                     duration = duration
-                ))
+                )
+                emit(mediaVideoItem)
             }
         }
     }.flowOn(ioDispatcher)

@@ -25,6 +25,7 @@ internal actual fun getAndroidDesktopIosWasmModules(): org.koin.core.module.Modu
             get(),
             get(),
             get(),
+            get(),
             get(APPLICATION_SCOPE),
             get(IO_DISPATCHER)
         )

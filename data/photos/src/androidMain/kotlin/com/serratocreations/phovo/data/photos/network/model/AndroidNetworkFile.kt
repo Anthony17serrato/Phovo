@@ -2,7 +2,7 @@ package com.serratocreations.phovo.data.photos.network.model
 
 import android.content.Context
 import com.serratocreations.phovo.core.common.di.IO_DISPATCHER
-import com.serratocreations.phovo.data.photos.repository.model.MediaItem
+import com.serratocreations.phovo.core.model.network.MediaItemDto
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -13,12 +13,12 @@ import org.koin.core.component.inject
 import android.net.Uri as AndroidUri
 
 class AndroidNetworkFile(
-    override val mediaItem: MediaItem
+    override val mediaItemDto: MediaItemDto
 ) : NetworkFile, KoinComponent {
     private val context: Context by inject()
     private val ioDispatcher: CoroutineDispatcher by inject(IO_DISPATCHER)
 
-    private val androidUri = AndroidUri.parse(mediaItem.uri.toString())
+    private val androidUri = AndroidUri.parse(mediaItemDto.localUri)
 
     override suspend fun exists(): Boolean = withContext(ioDispatcher) {
         // Check if the URI can be opened

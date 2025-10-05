@@ -2,12 +2,15 @@ package com.serratocreations.phovo.data.photos.repository
 
 import com.serratocreations.phovo.core.database.dao.PhovoMediaDao
 import com.serratocreations.phovo.core.logger.PhovoLogger
+import com.serratocreations.phovo.data.photos.local.mappers.toMediaItemDto
+import com.serratocreations.phovo.data.photos.local.mappers.toMediaItemEntity
 import com.serratocreations.phovo.data.photos.network.IosAndroidMediaNetworkDataSource
-import com.serratocreations.phovo.data.photos.repository.model.MediaItem
+import com.serratocreations.phovo.data.photos.network.SyncSuccessful
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.flow.first
 
 class IosAndroidLocalSupportMediaRepository(
-    localMediaDataSource: PhovoMediaDao,
+    private val localMediaDataSource: PhovoMediaDao,
     private val remoteMediaDataSource: IosAndroidMediaNetworkDataSource,
     logger: PhovoLogger,
     ioDispatcher: CoroutineDispatcher
@@ -17,9 +20,15 @@ class IosAndroidLocalSupportMediaRepository(
     logger = logger,
     ioDispatcher = ioDispatcher
 ) {
-    suspend fun syncMedia(mediaItem: MediaItem) {
-        // TODO: Perhaps it is better to query for unsynced media instead of
-        //  receiving the media directly
-        remoteMediaDataSource.syncMedia(mediaItem)
+    suspend fun syncMedia() {
+        // TODO: create a queue of in flight sync jobs so that new requests only trigger sync for media
+        //  which is not already queued
+        val unsyncedData = localMediaDataSource.observeAllUnsyncedMediaItems().first()
+        unsyncedData.forEach { mediaItemEntity ->
+            val result = remoteMediaDataSource.syncMedia(mediaItemEntity.toMediaItemDto())
+            if (result is SyncSuccessful) {
+                localMediaDataSource.insert(result.updatedMediaItemDto.toMediaItemEntity())
+            }
+        }
     }
 }

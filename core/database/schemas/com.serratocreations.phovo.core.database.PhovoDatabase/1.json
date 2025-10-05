@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "a9a83aacee1635287fc1316bf36abc1a",
+    "identityHash": "2a64c4228038c12f69cef7e0825337f2",
     "entities": [
       {
         "tableName": "ServerConfigEntity",
@@ -29,14 +29,19 @@
         }
       },
       {
-        "tableName": "PhovoMediaEntity",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `localUri` TEXT NOT NULL, `remoteUri` TEXT, `remoteThumbnailUri` TEXT, `fileName` TEXT NOT NULL, `timeStampUtcMs` INTEGER NOT NULL, `timeOffsetMs` INTEGER NOT NULL, `size` INTEGER NOT NULL, `mediaType` TEXT NOT NULL, `videoDurationMs` INTEGER)",
+        "tableName": "MediaItemEntity",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`localUuid` TEXT NOT NULL, `remoteUuid` TEXT, `localUri` TEXT NOT NULL, `remoteUri` TEXT, `remoteThumbnailUri` TEXT, `fileName` TEXT NOT NULL, `timeStampUtcMs` INTEGER NOT NULL, `timeOffsetMs` INTEGER NOT NULL, `size` INTEGER NOT NULL, `mediaType` TEXT NOT NULL, `videoDurationMs` INTEGER, PRIMARY KEY(`localUuid`))",
         "fields": [
           {
-            "fieldPath": "id",
-            "columnName": "id",
-            "affinity": "INTEGER",
+            "fieldPath": "localUuid",
+            "columnName": "localUuid",
+            "affinity": "TEXT",
             "notNull": true
+          },
+          {
+            "fieldPath": "remoteUuid",
+            "columnName": "remoteUuid",
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "localUri",
@@ -91,16 +96,16 @@
           }
         ],
         "primaryKey": {
-          "autoGenerate": true,
+          "autoGenerate": false,
           "columnNames": [
-            "id"
+            "localUuid"
           ]
         }
       }
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'a9a83aacee1635287fc1316bf36abc1a')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '2a64c4228038c12f69cef7e0825337f2')"
     ]
   }
 }

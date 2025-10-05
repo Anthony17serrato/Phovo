@@ -1,6 +1,6 @@
 package com.serratocreations.phovo.data.photos.repository.extensions
 
-import com.serratocreations.phovo.core.database.entities.PhovoMediaEntity
+import com.serratocreations.phovo.core.database.entities.MediaItemEntity
 import com.serratocreations.phovo.core.model.MediaType
 import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
@@ -10,7 +10,7 @@ import kotlinx.datetime.toInstant
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)
-fun MediaItem.toPhovoMediaEntity(): PhovoMediaEntity {
+fun MediaItem.toMediaItemEntity(): MediaItemEntity {
     // TODO MediaItem should use ZonedDateTime
     val instant = dateInFeed.toInstant(TimeZone.UTC)
     val timeStampUtcMs = instant.toEpochMilliseconds()
@@ -21,10 +21,12 @@ fun MediaItem.toPhovoMediaEntity(): PhovoMediaEntity {
         is MediaVideoItem -> MediaType.Video to this.duration.inWholeMilliseconds
     }
 
-    return PhovoMediaEntity(
-        localUri = uri.toString(),
-        remoteUri = null,
-        remoteThumbnailUri = null,
+    return MediaItemEntity(
+        localUuid = localUuid,
+        remoteUuid = remoteUuid,
+        localUri = localUri.toString(),
+        remoteUri = remoteUri?.toString(),
+        remoteThumbnailUri = remoteThumbnailUri?.toString(),
         fileName = fileName,
         timeStampUtcMs = timeStampUtcMs,
         timeOffsetMs = timeOffsetMs,
