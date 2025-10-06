@@ -35,6 +35,8 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 class IosLocalMediaProcessor(
     logger: PhovoLogger,
@@ -86,7 +88,7 @@ class IosLocalMediaProcessor(
         }
     }
 
-    @OptIn(ExperimentalForeignApi::class, ExperimentalTime::class)
+    @OptIn(ExperimentalForeignApi::class, ExperimentalTime::class, ExperimentalUuidApi::class)
     private fun fetchImages(processedImages: List<MediaImageItem>): Flow<MediaImageItem> = flow {
         val fetchOptions = PHFetchOptions()
         val assets = PHAsset.Companion.fetchAssetsWithMediaType(PHAssetMediaTypeImage, fetchOptions)
@@ -110,15 +112,19 @@ class IosLocalMediaProcessor(
             val size = resource.valueForKey("fileSize") as? NSNumber
             val bytes = size?.longValue ?: 0L
             emit(MediaImageItem(
-                uri = phAssetUriFromLocalId(asset.localIdentifier),
+                localUri = phAssetUriFromLocalId(asset.localIdentifier),
                 fileName = name,
                 dateInFeed = localDateTime,
-                size = bytes.toInt()
+                size = bytes.toInt(),
+                remoteUri = null,
+                remoteThumbnailUri = null,
+                localUuid = Uuid.random().toString(),
+                remoteUuid = null
             ))
         }
     }.flowOn(ioDispatcher)
 
-    @OptIn(ExperimentalForeignApi::class, ExperimentalTime::class)
+    @OptIn(ExperimentalForeignApi::class, ExperimentalTime::class, ExperimentalUuidApi::class)
     private fun fetchVideos(processedVideos: List<MediaVideoItem>): Flow<MediaVideoItem> = flow {
         val fetchOptions = PHFetchOptions()
         val videoItems = mutableListOf<PHAsset>()
@@ -141,11 +147,15 @@ class IosLocalMediaProcessor(
             val bytes = size?.longValue ?: 0L
             emit(
                 MediaVideoItem(
-                    uri = phAssetUriFromLocalId(asset.localIdentifier),
+                    localUri = phAssetUriFromLocalId(asset.localIdentifier),
                     fileName = name,
                     dateInFeed = localDateTime,
                     size = bytes.toInt(),
-                    duration = asset.duration.toLong().seconds
+                    duration = asset.duration.toLong().seconds,
+                    remoteUri = null,
+                    remoteThumbnailUri = null,
+                    localUuid = Uuid.random().toString(),
+                    remoteUuid = null
                 )
             )
         }

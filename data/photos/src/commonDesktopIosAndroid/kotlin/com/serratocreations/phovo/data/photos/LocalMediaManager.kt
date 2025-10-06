@@ -39,7 +39,7 @@ open class LocalMediaManager(
     }
 
     protected open suspend fun handleProcessedMediaItem(mediaItem: MediaItem) {
-        mediaRepository.addMediaItem(mediaItem)
+        mediaRepository.addOrUpdateMediaItem(mediaItem)
     }
 
     // Syncs any local media which is still pending sync

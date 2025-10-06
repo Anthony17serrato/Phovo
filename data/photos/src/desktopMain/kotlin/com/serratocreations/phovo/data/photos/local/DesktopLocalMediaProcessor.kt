@@ -30,6 +30,8 @@ import java.time.format.DateTimeFormatter
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 // TODO Investigate if both metadata parsers here can be replaced by FFMPEG
 class DesktopLocalMediaProcessor(
@@ -99,7 +101,7 @@ class DesktopLocalMediaProcessor(
     }
 
     // TODO Migrate to Ffmpeg for metadata extraction
-    @OptIn(ExperimentalTime::class)
+    @OptIn(ExperimentalTime::class, ExperimentalUuidApi::class)
     private suspend fun processVideo(file: File): MediaVideoItem? = withContext(ioDispatcher) {
         val metadata = Metadata()
         FileInputStream(file).use { stream ->
@@ -116,28 +118,40 @@ class DesktopLocalMediaProcessor(
                 }.getOrNull()?.toLocalDateTime(TimeZone.Companion.UTC)
             } ?: return@withContext null // TODO find other methods to get a date
 
+        val uuid = Uuid.random().toString()
         return@withContext MediaVideoItem(
-            uri = Uri(scheme = "file", path = file.toURI().path),
+            localUri = Uri(scheme = "file", path = file.toURI().path),
             fileName = file.name,
             dateInFeed = creationDate,
             size = file.length().toInt(),
-            duration = durationSeconds.seconds
+            duration = durationSeconds.seconds,
+            remoteUri = Uri(scheme = "file", path = file.toURI().path),
+            remoteThumbnailUri = null,
+            localUuid = uuid,
+            remoteUuid = uuid
         )
     }
 
+    @OptIn(ExperimentalUuidApi::class)
     private suspend fun processImage(file: File): MediaImageItem? = withContext(ioDispatcher) {
         val metadata = Kim.readMetadata(file)
         val takenDate = metadata?.findStringValue(ExifTag.EXIF_TAG_DATE_TIME_ORIGINAL)
             ?: return@withContext null
         // Define the custom format pattern
         val formatter = DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss")
+        val uuid = Uuid.random().toString()
         return@withContext MediaImageItem(
-            uri = Uri(scheme = "file", path = file.toURI().path),
+            localUri = Uri(scheme = "file", path = file.toURI().path),
             fileName = file.name,
             dateInFeed = takenDate.let { date ->
                 java.time.LocalDateTime.parse(date, formatter).toKotlinLocalDateTime()
             },
-            size = 0
+            // TODO
+            size = 0,
+            remoteUri = Uri(scheme = "file", path = file.toURI().path),
+            remoteThumbnailUri = null,
+            localUuid = uuid,
+            remoteUuid = uuid
         )
     }
 }

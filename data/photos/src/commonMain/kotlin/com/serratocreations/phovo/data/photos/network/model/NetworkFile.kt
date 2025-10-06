@@ -1,10 +1,10 @@
 package com.serratocreations.phovo.data.photos.network.model
 
-import com.serratocreations.phovo.data.photos.repository.model.MediaItem
+import com.serratocreations.phovo.core.model.network.MediaItemDto
 import kotlinx.coroutines.flow.Flow
 
 interface NetworkFile {
-    val mediaItem: MediaItem
+    val mediaItemDto: MediaItemDto
 
     suspend fun exists(): Boolean
 
@@ -15,4 +15,4 @@ interface NetworkFile {
     }
 }
 
-expect fun getNetworkFile(mediaItem: MediaItem): NetworkFile
+expect fun getNetworkFile(mediaItemDto: MediaItemDto): NetworkFile

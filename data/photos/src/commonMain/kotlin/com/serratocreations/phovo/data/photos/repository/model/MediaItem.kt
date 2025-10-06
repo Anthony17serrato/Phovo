@@ -4,7 +4,12 @@ import coil3.Uri
 import kotlinx.datetime.LocalDateTime
 
 sealed interface MediaItem {
-    val uri: Uri
+    val localUuid: String
+    val remoteUuid: String?
+    // TODO Need better URI wrappers since this one requires dependency on UI library
+    val localUri: Uri
+    val remoteUri: Uri?
+    val remoteThumbnailUri: Uri?
     val fileName: String
     // TODO MediaItem should use ZonedDateTime
     val dateInFeed: LocalDateTime

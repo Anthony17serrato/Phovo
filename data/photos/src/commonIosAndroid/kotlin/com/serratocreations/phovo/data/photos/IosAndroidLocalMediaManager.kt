@@ -20,15 +20,12 @@ class IosAndroidLocalMediaManager(
 ) {
     override suspend fun handleProcessedMediaItem(mediaItem: MediaItem) {
         super.handleProcessedMediaItem(mediaItem)
-        mediaRepository.syncMedia(mediaItem)
+        mediaRepository.syncMedia()
     }
 
     override fun CoroutineScope.syncJob(localItems: List<MediaItem>) {
         launch {
-            // TODO Filter out only items which have not been server synced
-            localItems.forEach { mediaItem ->
-                mediaRepository.syncMedia(mediaItem)
-            }
+            mediaRepository.syncMedia()
         }
     }
 }
