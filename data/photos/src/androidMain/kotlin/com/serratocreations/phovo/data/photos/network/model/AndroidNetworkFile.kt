@@ -10,15 +10,16 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import android.net.Uri as AndroidUri
+import androidx.core.net.toUri
 
 class AndroidNetworkFile(
-    override val mediaItemDto: MediaItemDto
+    override val mediaItemDto: MediaItemDto,
+    override val uri: String
 ) : NetworkFile, KoinComponent {
     private val context: Context by inject()
     private val ioDispatcher: CoroutineDispatcher by inject(IO_DISPATCHER)
 
-    private val androidUri = AndroidUri.parse(mediaItemDto.localUri)
+    private val androidUri = uri.toUri()
 
     override suspend fun exists(): Boolean = withContext(ioDispatcher) {
         // Check if the URI can be opened

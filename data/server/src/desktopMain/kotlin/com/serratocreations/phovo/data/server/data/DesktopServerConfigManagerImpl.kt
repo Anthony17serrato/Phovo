@@ -1,9 +1,12 @@
 package com.serratocreations.phovo.data.server.data
 
+import com.serratocreations.phovo.core.database.entities.MediaItemUriEntity
+import com.serratocreations.phovo.core.database.entities.MediaItemWithUriEntity
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.core.model.network.MediaItemDto
-import com.serratocreations.phovo.data.photos.local.mappers.toMediaItem
-import com.serratocreations.phovo.data.photos.local.mappers.toMediaItemDto
+import com.serratocreations.phovo.data.photos.mappers.toMediaItem
+import com.serratocreations.phovo.data.photos.mappers.toMediaItemDto
+import com.serratocreations.phovo.data.photos.mappers.toMediaItemEntity
 import com.serratocreations.phovo.data.photos.repository.LocalSupportMediaRepository
 import com.serratocreations.phovo.data.server.data.model.ServerConfig
 import com.serratocreations.phovo.data.server.data.repository.DesktopServerConfigRepository
@@ -97,7 +100,7 @@ class DesktopServerConfigManagerImpl(
 
             // Upload initialization – send JSON metadata once
             post("/upload/init") {
-                var mediaItemDto = call.receive<MediaItemDto>() // your data class with name, size, etc.
+                val mediaItemDto = call.receive<MediaItemDto>() // your data class with name, size, etc.
                 val directory = serverConfigRepository.observeServerConfig().first()
                     ?.backupDirectory?.plus("/") ?: error("No server config")
 
@@ -107,14 +110,21 @@ class DesktopServerConfigManagerImpl(
 
                 // Create or truncate file to start fresh
                 Files.newOutputStream(filePath, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING).use { }
-                mediaItemDto = mediaItemDto.copy(remoteUri = filePath.toUri().toString())
+
+                val mediaItemWithUriEntity = MediaItemWithUriEntity(
+                    mediaItemEntity = mediaItemDto.toMediaItemEntity(),
+                    mediaItemUri = MediaItemUriEntity(
+                        mediaUuid = mediaItemDto.localUuid,
+                        uri = filePath.toUri().toString()
+                    )
+                )
 
                 this@DesktopServerConfigManagerImpl.log.i { "Initialized upload for ${mediaItemDto.fileName}" }
-                localSupportMediaRepository.addOrUpdateMediaItem(mediaItemDto.toMediaItem())
+                localSupportMediaRepository.addOrUpdateMediaItem(mediaItemWithUriEntity)
                 call.respond(HttpStatusCode.Created, "Upload initialized")
             }
 
-            // Chunk appending – raw bytes, no multipart
+            // Chunk appending – raw bytes
             post("/upload/chunk") {
                 val fileName = call.request.headers["X-File-Name"] ?: return@post call.respond(HttpStatusCode.BadRequest)
                 val chunkIndex = call.request.headers["X-Chunk-Index"]?.toIntOrNull() ?: 0
@@ -137,32 +147,25 @@ class DesktopServerConfigManagerImpl(
             // Finalize upload – rename .part → real file
             post("/upload/complete") {
                 val localUuid = call.receiveText() // client just sends file uuid
-                var mediaItemEntity = localSupportMediaRepository.getMediaItemByLocalUuid(localUuid)
+                var mediaItemWithUriEntity = localSupportMediaRepository.getMediaItemByLocalUuid(localUuid)
                     ?: run {
                         call.respond(HttpStatusCode.NotFound, "Server is missing" +
                                 "a record for the provided uuid.")
                         return@post
                     }
-                val uri = mediaItemEntity.remoteUri?.let { uriString ->
-                    URI.create(uriString)
-                } ?: run {
-                    call.respond(HttpStatusCode.NotFound, "Server is missing a uri" +
-                            "reference to the media item")
-                    return@post
-                }
-
+                val uri = URI.create(mediaItemWithUriEntity.mediaItemUri.uri)
                 val filePath = Paths.get(uri)
-                val finalPath = filePath.parent.resolve(mediaItemEntity.fileName)
+                val finalPath = filePath.parent.resolve(mediaItemWithUriEntity.mediaItemEntity.fileName)
 
                 Files.move(filePath, finalPath, StandardCopyOption.REPLACE_EXISTING)
 
                 this@DesktopServerConfigManagerImpl.log.i { "Upload complete for $localUuid" }
-                mediaItemEntity = mediaItemEntity.copy(
-                    remoteUri = finalPath.toUri().toString(),
-                    remoteUuid = Uuid.random().toString()
+                mediaItemWithUriEntity = mediaItemWithUriEntity.copy(
+                    mediaItemEntity = mediaItemWithUriEntity.mediaItemEntity.copy(remoteUuid = Uuid.random().toString()),
+                    mediaItemUri = mediaItemWithUriEntity.mediaItemUri.copy(uri = finalPath.toUri().toString()),
                 )
-                localSupportMediaRepository.addOrUpdateMediaItem(mediaItemEntity.toMediaItem())
-                val response = mediaItemEntity.toMediaItemDto()
+                localSupportMediaRepository.addOrUpdateMediaItem(mediaItemWithUriEntity.toMediaItem())
+                val response = mediaItemWithUriEntity.toMediaItemDto()
                 call.respond(HttpStatusCode.OK, response)
             }
         }

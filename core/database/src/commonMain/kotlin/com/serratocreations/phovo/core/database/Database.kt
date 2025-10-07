@@ -8,8 +8,9 @@ import com.serratocreations.phovo.core.database.dao.ServerConfigDao
 import com.serratocreations.phovo.core.database.dao.PhovoMediaDao
 import com.serratocreations.phovo.core.database.entities.ServerConfigEntity
 import com.serratocreations.phovo.core.database.entities.MediaItemEntity
+import com.serratocreations.phovo.core.database.entities.MediaItemUriEntity
 
-@Database(entities = [ServerConfigEntity::class, MediaItemEntity::class], version = 1)
+@Database(entities = [ServerConfigEntity::class, MediaItemEntity::class, MediaItemUriEntity::class], version = 1)
 @ConstructedBy(AppDatabaseConstructor::class)
 abstract class PhovoDatabase : RoomDatabase() {
     abstract fun getServerConfigDao(): ServerConfigDao

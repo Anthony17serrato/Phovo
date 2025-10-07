@@ -99,8 +99,7 @@ class AndroidLocalMediaProcessor(
                     ?: (cursor.getLong(dateAddedColumn) * 1000).utcMsToLocalDateTime()
 
                 val mediaImageItem = MediaImageItem(
-                    localUri = contentUri,
-                    remoteUri = null,
+                    uri = contentUri,
                     remoteThumbnailUri = null,
                     fileName = fileName,
                     dateInFeed = dateInFeed,
@@ -157,8 +156,7 @@ class AndroidLocalMediaProcessor(
                     ?: (cursor.getLong(dateAddedColumn) * 1000).utcMsToLocalDateTime()
 
                 val mediaVideoItem = MediaVideoItem(
-                    localUri = contentUri,
-                    remoteUri = null,
+                    uri = contentUri,
                     remoteThumbnailUri = null,
                     fileName = name,
                     dateInFeed = dateInFeed,

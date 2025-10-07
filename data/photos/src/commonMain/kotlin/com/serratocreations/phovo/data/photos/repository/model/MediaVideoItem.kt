@@ -9,8 +9,7 @@ import kotlin.time.Duration
 @Serializable
 data class MediaVideoItem(
     // TODO don't recall why serializable is used, investigate if can be removed
-    @Serializable(with = UriSerializer::class)override val localUri: Uri,
-    @Serializable(with = UriSerializer::class)override val remoteUri: Uri?,
+    @Serializable(with = UriSerializer::class)override val uri: Uri,
     @Serializable(with = UriSerializer::class)override val remoteThumbnailUri: Uri?,
     override val fileName: String,
     override val dateInFeed: LocalDateTime,

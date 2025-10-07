@@ -4,20 +4,29 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import com.serratocreations.phovo.core.database.entities.MediaItemEntity
+import com.serratocreations.phovo.core.database.entities.MediaItemUriEntity
+import com.serratocreations.phovo.core.database.entities.MediaItemWithUriEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface PhovoMediaDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(item: MediaItemEntity, uri: MediaItemUriEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(item: MediaItemEntity)
 
+    @Transaction
     @Query("SELECT * FROM MediaItemEntity ORDER BY timeStampUtcMs DESC")
-    fun observeAllDescendingTimestamp(): Flow<List<MediaItemEntity>>
+    fun observeAllDescendingTimestamp(): Flow<List<MediaItemWithUriEntity>>
 
-    @Query("SELECT * FROM MediaItemEntity WHERE remoteUri IS NULL")
-    fun observeAllUnsyncedMediaItems(): Flow<List<MediaItemEntity>>
+    @Transaction
+    @Query("SELECT * FROM MediaItemEntity WHERE remoteUuid IS NULL")
+    fun observeAllUnsyncedMediaItems(): Flow<List<MediaItemWithUriEntity>>
 
+    @Transaction
     @Query("SELECT * FROM MediaItemEntity WHERE localUuid IS :uuid LIMIT 1")
-    suspend fun getMediaItemByLocalUuid(uuid: String): MediaItemEntity?
+    suspend fun getMediaItemByLocalUuid(uuid: String): MediaItemWithUriEntity?
 }

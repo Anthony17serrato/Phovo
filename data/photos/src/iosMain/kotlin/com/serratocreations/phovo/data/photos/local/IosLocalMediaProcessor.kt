@@ -112,11 +112,10 @@ class IosLocalMediaProcessor(
             val size = resource.valueForKey("fileSize") as? NSNumber
             val bytes = size?.longValue ?: 0L
             emit(MediaImageItem(
-                localUri = phAssetUriFromLocalId(asset.localIdentifier),
+                uri = phAssetUriFromLocalId(asset.localIdentifier),
                 fileName = name,
                 dateInFeed = localDateTime,
                 size = bytes.toInt(),
-                remoteUri = null,
                 remoteThumbnailUri = null,
                 localUuid = Uuid.random().toString(),
                 remoteUuid = null
@@ -147,12 +146,11 @@ class IosLocalMediaProcessor(
             val bytes = size?.longValue ?: 0L
             emit(
                 MediaVideoItem(
-                    localUri = phAssetUriFromLocalId(asset.localIdentifier),
+                    uri = phAssetUriFromLocalId(asset.localIdentifier),
                     fileName = name,
                     dateInFeed = localDateTime,
                     size = bytes.toInt(),
                     duration = asset.duration.toLong().seconds,
-                    remoteUri = null,
                     remoteThumbnailUri = null,
                     localUuid = Uuid.random().toString(),
                     remoteUuid = null

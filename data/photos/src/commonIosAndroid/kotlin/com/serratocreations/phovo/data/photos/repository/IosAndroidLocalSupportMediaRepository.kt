@@ -2,8 +2,8 @@ package com.serratocreations.phovo.data.photos.repository
 
 import com.serratocreations.phovo.core.database.dao.PhovoMediaDao
 import com.serratocreations.phovo.core.logger.PhovoLogger
-import com.serratocreations.phovo.data.photos.local.mappers.toMediaItemDto
-import com.serratocreations.phovo.data.photos.local.mappers.toMediaItemEntity
+import com.serratocreations.phovo.data.photos.mappers.toMediaItemDto
+import com.serratocreations.phovo.data.photos.mappers.toMediaItemEntity
 import com.serratocreations.phovo.data.photos.network.IosAndroidMediaNetworkDataSource
 import com.serratocreations.phovo.data.photos.network.SyncSuccessful
 import kotlinx.coroutines.CoroutineDispatcher
@@ -25,7 +25,10 @@ class IosAndroidLocalSupportMediaRepository(
         //  which is not already queued
         val unsyncedData = localMediaDataSource.observeAllUnsyncedMediaItems().first()
         unsyncedData.forEach { mediaItemEntity ->
-            val result = remoteMediaDataSource.syncMedia(mediaItemEntity.toMediaItemDto())
+            val result = remoteMediaDataSource.syncMedia(
+                mediaItemDto = mediaItemEntity.toMediaItemDto(),
+                mediaUri = mediaItemEntity.mediaItemUri.uri
+            )
             if (result is SyncSuccessful) {
                 localMediaDataSource.insert(result.updatedMediaItemDto.toMediaItemEntity())
             }

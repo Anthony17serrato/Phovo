@@ -7,9 +7,10 @@ import java.io.File
 
 // TODO Move networkfile to android/ios source sets and delete
 class DesktopNetworkFile(
-    override val mediaItemDto: MediaItemDto
+    override val mediaItemDto: MediaItemDto,
+    override val uri: String
 ) : NetworkFile {
-    private val file = File(DesktopUri.create(mediaItemDto.localUri))
+    private val file = File(DesktopUri.create(uri))
 
     override suspend fun exists(): Boolean = file.exists()
 
