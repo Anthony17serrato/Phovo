@@ -1,8 +1,6 @@
 package com.serratocreations.phovo.feature.photos.ui.model
 
 import coil3.Uri
-import com.serratocreations.phovo.core.common.Platform
-import com.serratocreations.phovo.core.common.getPlatform
 import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
@@ -22,13 +20,6 @@ sealed interface UriPhotoUiItem : PhotoUiItem {
 }
 
 fun MediaItem.toPhotoUiItem(): PhotoUiItem {
-    // TODO actually repository model should handle correct uri mapping
-    val uri = if (getPlatform() == Platform.Desktop) {
-        // TODO fix code smell
-        remoteUri!!
-    } else {
-        localUri
-    }
     return when (this) {
         is MediaImageItem -> {
             ImagePhotoUiItem(uri = uri)

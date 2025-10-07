@@ -21,7 +21,8 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
 class IosNetworkFile(
-    override val mediaItemDto: MediaItemDto
+    override val mediaItemDto: MediaItemDto,
+    override val uri: String
 ) : NetworkFile, KoinComponent {
     private val ioDispatcher: CoroutineDispatcher by inject(IO_DISPATCHER)
     private val log = PhovoLogger.withTag("IosNetworkFile")
@@ -61,11 +62,8 @@ class IosNetworkFile(
         }
     }.flowOn(ioDispatcher)
 
-    // TODO Verify IOS sets filename with extension to MediaItem
-    suspend fun fileName(): String = getFileName()
-
     private suspend fun resolveFileURL(): NSURL? = withContext(ioDispatcher) {
-        val assetId = mediaItemDto.localUri.removePrefix("phasset://")
+        val assetId = uri.removePrefix("phasset://")
         val fetchResult = PHAsset.fetchAssetsWithLocalIdentifiers(listOf(assetId), null)
         val asset = fetchResult.firstObject as? PHAsset ?: return@withContext null
 
@@ -99,14 +97,6 @@ class IosNetworkFile(
             }
         }
     }
-
-    private suspend fun getFileName(): String {
-        val fileURL = resolveFileURL() ?: run {
-            log.e { "Invalid URI or file does not exist: ${mediaItemDto.localUri}" }
-            null
-        }
-        return fileURL?.lastPathComponent ?: "Unknown"
-    }
 }
 
-actual fun getNetworkFile(mediaItemDto: MediaItemDto): NetworkFile = IosNetworkFile(mediaItemDto)
+actual fun getNetworkFile(mediaItemDto: MediaItemDto, uri: String): NetworkFile = IosNetworkFile(mediaItemDto, uri)

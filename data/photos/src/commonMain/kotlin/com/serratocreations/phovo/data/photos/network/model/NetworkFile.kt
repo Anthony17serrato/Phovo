@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface NetworkFile {
     val mediaItemDto: MediaItemDto
+    val uri: String
 
     suspend fun exists(): Boolean
 
@@ -15,4 +16,4 @@ interface NetworkFile {
     }
 }
 
-expect fun getNetworkFile(mediaItemDto: MediaItemDto): NetworkFile
+expect fun getNetworkFile(mediaItemDto: MediaItemDto, uri: String): NetworkFile

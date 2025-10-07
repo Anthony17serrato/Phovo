@@ -2,5 +2,5 @@ package com.serratocreations.phovo.data.photos.network.model
 
 import com.serratocreations.phovo.core.model.network.MediaItemDto
 
-actual fun getNetworkFile(mediaItemDto: MediaItemDto): NetworkFile =
-    AndroidNetworkFile(mediaItemDto = mediaItemDto)
+actual fun getNetworkFile(mediaItemDto: MediaItemDto, uri: String): NetworkFile =
+    AndroidNetworkFile(mediaItemDto = mediaItemDto, uri = uri)

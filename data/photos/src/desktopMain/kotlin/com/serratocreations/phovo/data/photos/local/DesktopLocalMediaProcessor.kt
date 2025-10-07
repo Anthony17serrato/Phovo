@@ -120,12 +120,11 @@ class DesktopLocalMediaProcessor(
 
         val uuid = Uuid.random().toString()
         return@withContext MediaVideoItem(
-            localUri = Uri(scheme = "file", path = file.toURI().path),
+            uri = Uri(scheme = "file", path = file.toURI().path),
             fileName = file.name,
             dateInFeed = creationDate,
             size = file.length().toInt(),
             duration = durationSeconds.seconds,
-            remoteUri = Uri(scheme = "file", path = file.toURI().path),
             remoteThumbnailUri = null,
             localUuid = uuid,
             remoteUuid = uuid
@@ -141,14 +140,13 @@ class DesktopLocalMediaProcessor(
         val formatter = DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss")
         val uuid = Uuid.random().toString()
         return@withContext MediaImageItem(
-            localUri = Uri(scheme = "file", path = file.toURI().path),
+            uri = Uri(scheme = "file", path = file.toURI().path),
             fileName = file.name,
             dateInFeed = takenDate.let { date ->
                 java.time.LocalDateTime.parse(date, formatter).toKotlinLocalDateTime()
             },
             // TODO
-            size = 0,
-            remoteUri = Uri(scheme = "file", path = file.toURI().path),
+            size = file.length().toInt(),
             remoteThumbnailUri = null,
             localUuid = uuid,
             remoteUuid = uuid

@@ -31,11 +31,14 @@ class IosAndroidMediaNetworkDataSource(
 ) {
     private val log = logger.withTag("IosAndroidMediaNetworkDataSource")
 
-    suspend fun syncMedia(mediaItemDto: MediaItemDto): SyncResult = coroutineScope {
+    suspend fun syncMedia(
+        mediaItemDto: MediaItemDto,
+        mediaUri: String
+    ): SyncResult = coroutineScope {
         log.i { "syncMedia $mediaItemDto" }
-        val file = getNetworkFile(mediaItemDto)
+        val file = getNetworkFile(mediaItemDto, mediaUri)
         if (!file.exists()) {
-            log.e { "File not found at ${mediaItemDto.localUri}" }
+            log.e { "File not found at $mediaUri" }
             return@coroutineScope SyncError
         }
 
@@ -95,7 +98,7 @@ class IosAndroidMediaNetworkDataSource(
                 setBody(mediaItemDto.localUuid)
             }.body()
 
-            log.i { "Upload complete for ${updatedItem.fileName} (remoteUri=${updatedItem.remoteUri})" }
+            log.i { "Upload complete for ${updatedItem.fileName}" }
             return SyncSuccessful(updatedItem)
         } catch (e: IOException) {
             log.e { "Upload completion failed: ${e.message}" }

@@ -4,7 +4,8 @@ import com.serratocreations.phovo.core.model.network.MediaItemDto
 import kotlinx.coroutines.flow.Flow
 
 class WasmNetworkFile(
-    override val mediaItemDto: MediaItemDto
+    override val mediaItemDto: MediaItemDto,
+    override val uri: String
 ) : NetworkFile {
 
     override suspend fun exists(): Boolean =
@@ -15,4 +16,4 @@ class WasmNetworkFile(
     }
 }
 
-actual fun getNetworkFile(mediaItemDto: MediaItemDto):NetworkFile = WasmNetworkFile(mediaItemDto)
+actual fun getNetworkFile(mediaItemDto: MediaItemDto, uri: String):NetworkFile = WasmNetworkFile(mediaItemDto, uri)

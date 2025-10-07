@@ -1,11 +1,11 @@
 package com.serratocreations.phovo.data.photos.repository
 
 import com.serratocreations.phovo.core.database.dao.PhovoMediaDao
-import com.serratocreations.phovo.core.database.entities.MediaItemEntity
+import com.serratocreations.phovo.core.database.entities.MediaItemWithUriEntity
 import com.serratocreations.phovo.core.logger.PhovoLogger
-import com.serratocreations.phovo.data.photos.local.mappers.toMediaItem
+import com.serratocreations.phovo.data.photos.mappers.toMediaItem
+import com.serratocreations.phovo.data.photos.mappers.toMediaItemWithUriEntity
 import com.serratocreations.phovo.data.photos.network.MediaNetworkDataSource
-import com.serratocreations.phovo.data.photos.repository.extensions.toMediaItemEntity
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
@@ -40,10 +40,15 @@ open class LocalSupportMediaRepository(
         localMediaDataSource.getMediaItemByLocalUuid(uuid)
 
     suspend fun addOrUpdateMediaItem(mediaItem: MediaItem) {
-        localMediaDataSource.insert(mediaItem.toMediaItemEntity())
+        addOrUpdateMediaItem(mediaItem.toMediaItemWithUriEntity())
     }
 
-    private fun Flow<List<MediaItemEntity>>.toMediaItems(): Flow<List<MediaItem>> =
+    suspend fun addOrUpdateMediaItem(mediaItemWithUriEntity: MediaItemWithUriEntity) {
+        val (mediaItemEntity, mediaItemUriEntity) = mediaItemWithUriEntity
+        localMediaDataSource.insert(mediaItemEntity, mediaItemUriEntity)
+    }
+
+    private fun Flow<List<MediaItemWithUriEntity>>.toMediaItems(): Flow<List<MediaItem>> =
         map { localItems ->
             localItems.map {
                 it.toMediaItem()
