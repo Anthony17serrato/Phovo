@@ -61,7 +61,7 @@ class AndroidLocalMediaProcessor(
     private fun queryImages(
         alreadyProcessedImages: List<MediaImageItem>
     ): Flow<MediaItem> = flow {
-        val processedImageIds = alreadyProcessedImages.map { it.localUuid }
+        val processedImageUris = alreadyProcessedImages.map { it.uri }
         val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
         } else {
@@ -89,11 +89,11 @@ class AndroidLocalMediaProcessor(
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(idColumn)
                 val fileName = cursor.getString(nameColumn)
-                if (fileName in processedImageIds) continue
                 val size = cursor.getInt(sizeColumn)
                 val androidUri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
                 val contentUri = androidUri.toCoilUri()
-
+                // Check if media has already been processed
+                if (contentUri in processedImageUris) continue
                 val dateInFeed = cursor.getLongOrNull(dateTakenColumn)?.utcMsToLocalDateTime()
                     ?: resolver.parseDateTakenFromExif(androidUri)
                     ?: (cursor.getLong(dateAddedColumn) * 1000).utcMsToLocalDateTime()
@@ -116,7 +116,7 @@ class AndroidLocalMediaProcessor(
     private fun queryVideos(
         alreadyProcessedVideos: List<MediaVideoItem>
     ): Flow<MediaItem> = flow {
-        val processedVideoIds = alreadyProcessedVideos.map { it.localUuid }
+        val processedVideoUris = alreadyProcessedVideos.map { it.uri }
         val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
         } else {
@@ -146,11 +146,12 @@ class AndroidLocalMediaProcessor(
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(idColumn)
                 val name = cursor.getString(nameColumn)
-                if (name in processedVideoIds) continue
                 val size = cursor.getInt(sizeColumn)
                 val duration = cursor.getLong(durationColumn).milliseconds
                 val androidUri = ContentUris.withAppendedId(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, id)
                 val contentUri = androidUri.toCoilUri()
+                // Check if media has already been processed
+                if (contentUri in processedVideoUris) continue
 
                 val dateInFeed = cursor.getLongOrNull(dateTakenColumn)?.utcMsToLocalDateTime()
                     ?: (cursor.getLong(dateAddedColumn) * 1000).utcMsToLocalDateTime()
