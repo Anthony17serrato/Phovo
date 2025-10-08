@@ -93,17 +93,18 @@ class IosLocalMediaProcessor(
         val fetchOptions = PHFetchOptions()
         val assets = PHAsset.Companion.fetchAssetsWithMediaType(PHAssetMediaTypeImage, fetchOptions)
         val imageItems = mutableListOf<PHAsset>()
-        val processedImageIds = processedImages.map { it.fileName }
+        val processedImageUris = processedImages.map { it.uri }
         // Enumerate the assets using the block-based approach
         assets.enumerateObjectsUsingBlock { obj, _, _ ->
             imageItems.add(obj as PHAsset)
         }
         log.i { "IosPhovoItemDao images $imageItems" }
         imageItems.forEach { asset ->
+            val assetUri = phAssetUriFromLocalId(asset.localIdentifier)
+            if (assetUri in processedImageUris) return@forEach
             val resource = PHAssetResource.Companion.assetResourcesForAsset(asset)
                 .firstOrNull() as? PHAssetResource ?: return@forEach
             val name = resource.originalFilename
-            if (name in processedImageIds) return@forEach
             val instant = asset.creationDate?.toKotlinInstant()
             // TODO: Instead of excluding images where date could not be determined parse the date from exif data
             val localDateTime = instant?.toLocalDateTime(TimeZone.Companion.currentSystemDefault())
@@ -112,7 +113,7 @@ class IosLocalMediaProcessor(
             val size = resource.valueForKey("fileSize") as? NSNumber
             val bytes = size?.longValue ?: 0L
             emit(MediaImageItem(
-                uri = phAssetUriFromLocalId(asset.localIdentifier),
+                uri = assetUri,
                 fileName = name,
                 dateInFeed = localDateTime,
                 size = bytes.toInt(),
@@ -127,7 +128,7 @@ class IosLocalMediaProcessor(
     private fun fetchVideos(processedVideos: List<MediaVideoItem>): Flow<MediaVideoItem> = flow {
         val fetchOptions = PHFetchOptions()
         val videoItems = mutableListOf<PHAsset>()
-        val processedVideoIds = processedVideos.map { it.fileName }
+        val processedVideoUris = processedVideos.map { it.uri }
         val videoAssets =
             PHAsset.Companion.fetchAssetsWithMediaType(PHAssetMediaTypeVideo, fetchOptions)
         videoAssets.enumerateObjectsUsingBlock { obj, _, _ ->
@@ -135,10 +136,11 @@ class IosLocalMediaProcessor(
         }
         log.i { "IosPhovoItemDao fetchVideos $videoItems" }
         videoItems.forEach { asset ->
+            val assetUri = phAssetUriFromLocalId(asset.localIdentifier)
+            if (assetUri in processedVideoUris) return@forEach
             val resource = PHAssetResource.Companion.assetResourcesForAsset(asset)
                 .firstOrNull() as? PHAssetResource ?: return@forEach
             val name = resource.originalFilename
-            if (name in processedVideoIds) return@forEach
             val instant = asset.creationDate?.toKotlinInstant()
             val localDateTime = instant?.toLocalDateTime(TimeZone.Companion.currentSystemDefault())
                 ?: return@forEach
@@ -146,7 +148,7 @@ class IosLocalMediaProcessor(
             val bytes = size?.longValue ?: 0L
             emit(
                 MediaVideoItem(
-                    uri = phAssetUriFromLocalId(asset.localIdentifier),
+                    uri = assetUri,
                     fileName = name,
                     dateInFeed = localDateTime,
                     size = bytes.toInt(),

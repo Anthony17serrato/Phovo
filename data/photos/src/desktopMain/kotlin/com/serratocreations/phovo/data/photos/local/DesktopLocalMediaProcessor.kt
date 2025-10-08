@@ -73,10 +73,11 @@ class DesktopLocalMediaProcessor(
             directory.listFiles()?.toList()?.filterNotNull() ?: emptyList()
         }
 
-        val processedItemIds = processedItems.map { it.fileName }
+        val processedItemIds = processedItems.map { it.uri }
         // TODO This work can be optimized with parallel decomposition
-        directoryFiles.filter { availableFiles ->
-            availableFiles.name !in processedItemIds
+        directoryFiles.filter { availableFile ->
+            val uri = Uri(scheme = "file", path = availableFile.toURI().path)
+            uri !in processedItemIds
         }.forEach { file ->
             val fileType = file.getFileType()
             when (fileType) {
