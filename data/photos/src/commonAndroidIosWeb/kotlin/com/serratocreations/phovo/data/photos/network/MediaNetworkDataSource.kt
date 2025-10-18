@@ -2,7 +2,11 @@ package com.serratocreations.phovo.data.photos.network
 
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.core.model.network.MediaItemDto
+import com.serratocreations.phovo.data.photos.network.model.SyncError
+import com.serratocreations.phovo.data.photos.network.model.SyncResult
+import com.serratocreations.phovo.data.photos.network.model.SyncSuccessful
 import com.serratocreations.phovo.data.photos.network.model.getNetworkFile
+import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.header
@@ -14,22 +18,24 @@ import io.ktor.http.isSuccess
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.retry
 import kotlinx.io.IOException
 import kotlin.time.Duration.Companion.seconds
 
-class IosAndroidMediaNetworkDataSource(
+class MediaNetworkDataSource(
     private val client: HttpClient,
     logger: PhovoLogger
-): MediaNetworkDataSource(
-    client,
-    logger
 ) {
-    private val log = logger.withTag("IosAndroidMediaNetworkDataSource")
+    private val log = logger.withTag("MediaNetworkDataSource")
+
+    // TODO: Implement network API for getting all items
+    fun allItemsFlow(): Flow<List<MediaItem>> = flowOf()
 
     suspend fun syncMedia(
         mediaItemDto: MediaItemDto,
@@ -83,7 +89,7 @@ class IosAndroidMediaNetworkDataSource(
                 throw e
             }.onCompletion { cause ->
                 if (cause == null) {
-                     result = completeSuccessfulUpload(mediaItemDto = mediaItemDto)
+                    result = completeSuccessfulUpload(mediaItemDto = mediaItemDto)
                 }
             }.collect()
             return@async result
@@ -106,9 +112,3 @@ class IosAndroidMediaNetworkDataSource(
         }
     }
 }
-
-sealed interface SyncResult
-
-data class SyncSuccessful(val updatedMediaItemDto: MediaItemDto): SyncResult
-
-data object SyncError: SyncResult

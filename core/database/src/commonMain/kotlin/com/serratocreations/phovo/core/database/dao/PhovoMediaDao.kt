@@ -1,10 +1,11 @@
 package com.serratocreations.phovo.core.database.dao
 
 import androidx.room.Dao
-import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import androidx.room.Update
+import androidx.room.Upsert
 import com.serratocreations.phovo.core.database.entities.MediaItemEntity
 import com.serratocreations.phovo.core.database.entities.MediaItemUriEntity
 import com.serratocreations.phovo.core.database.entities.MediaItemWithUriEntity
@@ -12,11 +13,11 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface PhovoMediaDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun insert(item: MediaItemEntity, uri: MediaItemUriEntity)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(item: MediaItemEntity)
+    @Update(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun update(item: MediaItemEntity)
 
     @Transaction
     @Query("SELECT * FROM MediaItemEntity ORDER BY timeStampUtcMs DESC")

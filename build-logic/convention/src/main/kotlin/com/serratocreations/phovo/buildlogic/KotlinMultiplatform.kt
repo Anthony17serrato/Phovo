@@ -95,7 +95,7 @@ internal fun Project.configureKotlinMultiplatform(
         customSourceSets.sortedBy { it.declarationOrder }.forEach { sourceSet ->
             when (sourceSet) {
                 CustomSourceSets.DesktopIosAndroid -> {
-                    val commonDesktopIosAndroid = sourceSets.create("commonDesktopIosAndroid") {
+                    val commonDesktopIosAndroid = sourceSets.create(sourceSet.sourceSetName) {
                         dependsOn(sourceSets.commonMain.get())
                         dependencies {
 
@@ -105,11 +105,11 @@ internal fun Project.configureKotlinMultiplatform(
                     sourceSets.androidMain.get().dependsOn(commonDesktopIosAndroid)
                     sourceSets.named("desktopMain").get().dependsOn(commonDesktopIosAndroid)
                     // Ensure commonIosAndroid depends on commonDesktopIosAndroid
-                    sourceSets.named("commonIosAndroid").get().dependsOn(commonDesktopIosAndroid)
+                    sourceSets.named(CustomSourceSets.IosAndroid.sourceSetName).get().dependsOn(commonDesktopIosAndroid)
                 }
 
                 CustomSourceSets.IosAndroid -> {
-                    val commonIosAndroid = sourceSets.create("commonIosAndroid") {
+                    val commonIosAndroid = sourceSets.create(sourceSet.sourceSetName) {
                         dependsOn(sourceSets.commonMain.get())
                         dependencies {
 
@@ -117,6 +117,19 @@ internal fun Project.configureKotlinMultiplatform(
                     }
                     sourceSets.iosMain.get().dependsOn(commonIosAndroid)
                     sourceSets.androidMain.get().dependsOn(commonIosAndroid)
+                }
+                CustomSourceSets.AndroidIosWeb -> {
+                    val commonAndroidIosWeb = sourceSets.create(sourceSet.sourceSetName) {
+                        dependsOn(sourceSets.commonMain.get())
+                        dependencies {
+
+                        }
+                    }
+                    sourceSets.iosMain.get().dependsOn(commonAndroidIosWeb)
+                    sourceSets.androidMain.get().dependsOn(commonAndroidIosWeb)
+                    sourceSets.wasmJsMain.get().dependsOn(commonAndroidIosWeb)
+                    // Ensure commonIosAndroid depends on commonAndroidIosWeb
+                    sourceSets.named(CustomSourceSets.IosAndroid.sourceSetName).get().dependsOn(commonAndroidIosWeb)
                 }
             }
         }

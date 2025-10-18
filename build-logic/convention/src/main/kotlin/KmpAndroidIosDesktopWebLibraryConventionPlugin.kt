@@ -17,7 +17,7 @@ class KmpAndroidIosDesktopWebLibraryConventionPlugin : Plugin<Project> {
             extensions.configure<LibraryExtension> {
                 configureKotlinMultiplatform(
                     isApplication = false,
-                    customSourceSets = setOf(CustomSourceSets.DesktopIosAndroid),
+                    customSourceSets = setOf(CustomSourceSets.DesktopIosAndroid, CustomSourceSets.AndroidIosWeb),
                     targetList = setOf(Targets.WASM)
                 )
                 // The resource prefix is derived from the module name,
