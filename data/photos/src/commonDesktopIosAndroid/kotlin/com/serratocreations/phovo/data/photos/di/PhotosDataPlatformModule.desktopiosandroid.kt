@@ -1,7 +1,11 @@
 package com.serratocreations.phovo.data.photos.di
 
 import com.serratocreations.phovo.core.database.di.getDatabaseModule
+import com.serratocreations.phovo.data.photos.repository.LocalMediaRepository
+import com.serratocreations.phovo.data.photos.repository.LocalMediaRepositoryImpl
+import com.serratocreations.phovo.data.photos.repository.MediaRepository
 import org.koin.core.module.Module
+import org.koin.dsl.binds
 import org.koin.dsl.module
 
 /**
@@ -10,8 +14,16 @@ import org.koin.dsl.module
  */
 internal expect fun getAndroidDesktopIosModules(): Module
 
-internal actual fun getAndroidDesktopIosWasmModules(): Module = module {
+internal actual fun getPlatformModulesBranch1(): Module = module {
     includes(getAndroidDesktopIosModules(), getDatabaseModule())
 
-
+    single {
+        LocalMediaRepositoryImpl(
+            localMediaDataSource = get(),
+            logger = get()
+        )
+    } binds arrayOf(
+        LocalMediaRepository::class,
+        MediaRepository::class
+    )
 }

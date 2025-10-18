@@ -7,7 +7,7 @@ import com.serratocreations.phovo.core.model.network.MediaItemDto
 import com.serratocreations.phovo.data.photos.mappers.toMediaItem
 import com.serratocreations.phovo.data.photos.mappers.toMediaItemDto
 import com.serratocreations.phovo.data.photos.mappers.toMediaItemEntity
-import com.serratocreations.phovo.data.photos.repository.LocalSupportMediaRepository
+import com.serratocreations.phovo.data.photos.repository.LocalMediaRepository
 import com.serratocreations.phovo.data.server.data.model.ServerConfig
 import com.serratocreations.phovo.data.server.data.repository.DesktopServerConfigRepository
 import com.serratocreations.phovo.data.server.data.repository.ServerEventsRepository
@@ -55,7 +55,7 @@ class DesktopServerConfigManagerImpl(
     logger: PhovoLogger,
     private val serverConfigRepository: DesktopServerConfigRepository,
     private val serverEventsRepository: ServerEventsRepository,
-    private val localSupportMediaRepository: LocalSupportMediaRepository,
+    private val localMediaRepository: LocalMediaRepository,
     private val appScope: CoroutineScope,
     private val ioDispatcher: CoroutineDispatcher
 ): DesktopServerConfigManager {
@@ -120,7 +120,7 @@ class DesktopServerConfigManagerImpl(
                 )
 
                 this@DesktopServerConfigManagerImpl.log.i { "Initialized upload for ${mediaItemDto.fileName}" }
-                localSupportMediaRepository.addOrUpdateMediaItem(mediaItemWithUriEntity)
+                localMediaRepository.addOrUpdateMediaItem(mediaItemWithUriEntity)
                 call.respond(HttpStatusCode.Created, "Upload initialized")
             }
 
@@ -147,7 +147,7 @@ class DesktopServerConfigManagerImpl(
             // Finalize upload – rename .part → real file
             post("/upload/complete") {
                 val localUuid = call.receiveText() // client just sends file uuid
-                var mediaItemWithUriEntity = localSupportMediaRepository.getMediaItemByLocalUuid(localUuid)
+                var mediaItemWithUriEntity = localMediaRepository.getMediaItemByLocalUuid(localUuid)
                     ?: run {
                         call.respond(HttpStatusCode.NotFound, "Server is missing" +
                                 "a record for the provided uuid.")
@@ -164,7 +164,7 @@ class DesktopServerConfigManagerImpl(
                     mediaItemEntity = mediaItemWithUriEntity.mediaItemEntity.copy(remoteUuid = Uuid.random().toString()),
                     mediaItemUri = mediaItemWithUriEntity.mediaItemUri.copy(uri = finalPath.toUri().toString()),
                 )
-                localSupportMediaRepository.addOrUpdateMediaItem(mediaItemWithUriEntity.toMediaItem())
+                localMediaRepository.addOrUpdateMediaItem(mediaItemWithUriEntity.toMediaItem())
                 val response = mediaItemWithUriEntity.toMediaItemDto()
                 call.respond(HttpStatusCode.OK, response)
             }

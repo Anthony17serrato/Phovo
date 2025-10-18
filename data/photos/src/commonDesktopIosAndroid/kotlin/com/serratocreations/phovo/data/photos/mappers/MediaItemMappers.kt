@@ -9,6 +9,8 @@ import com.serratocreations.phovo.core.model.network.MediaItemDto
 import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
@@ -62,6 +64,13 @@ fun MediaItemWithUriEntity.toMediaItem(): MediaItem {
 //    mediaType = mediaType,
 //    videoDurationMs = videoDurationMs,
 //)
+
+fun Flow<List<MediaItemWithUriEntity>>.toMediaItems(): Flow<List<MediaItem>> =
+    map { localItems ->
+        localItems.map {
+            it.toMediaItem()
+        }
+    }
 
 fun MediaItemWithUriEntity.toMediaItemDto(): MediaItemDto = MediaItemDto(
     fileName = mediaItemEntity.fileName,

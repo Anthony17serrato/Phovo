@@ -4,10 +4,8 @@ import com.serratocreations.phovo.core.common.di.APPLICATION_SCOPE
 import com.serratocreations.phovo.core.common.di.IO_DISPATCHER
 import com.serratocreations.phovo.data.photos.IosAndroidLocalMediaManager
 import com.serratocreations.phovo.data.photos.LocalMediaManager
-import com.serratocreations.phovo.data.photos.network.IosAndroidMediaNetworkDataSource
-import com.serratocreations.phovo.data.photos.network.MediaNetworkDataSource
-import com.serratocreations.phovo.data.photos.repository.IosAndroidLocalSupportMediaRepository
-import com.serratocreations.phovo.data.photos.repository.LocalSupportMediaRepository
+import com.serratocreations.phovo.data.photos.repository.LocalAndRemoteMediaRepository
+import com.serratocreations.phovo.data.photos.repository.LocalAndRemoteMediaRepositoryImpl
 import com.serratocreations.phovo.data.photos.repository.MediaRepository
 import org.koin.core.module.Module
 import org.koin.dsl.binds
@@ -18,31 +16,23 @@ internal actual fun getAndroidDesktopIosModules(): Module = module {
     includes(getAndroidIosModules())
 
     single {
-        IosAndroidMediaNetworkDataSource(client = get(), logger = get())
-    } binds arrayOf(
-        IosAndroidMediaNetworkDataSource::class,
-        MediaNetworkDataSource::class
-    )
-
-    single {
-        IosAndroidLocalSupportMediaRepository(
-            localMediaDataSource = get(),
-            remoteMediaDataSource = get(),
-            logger = get(),
+        LocalAndRemoteMediaRepositoryImpl(
+            localMediaRepository = get(),
+            remoteMediaRepository = get(),
             ioDispatcher = get(IO_DISPATCHER)
         )
     } binds arrayOf(
-        IosAndroidLocalSupportMediaRepository::class,
-        LocalSupportMediaRepository::class,
+        LocalAndRemoteMediaRepository::class,
         MediaRepository::class
     )
 
     single {
         IosAndroidLocalMediaManager(
-            get(),
-            get(),
-            get(APPLICATION_SCOPE),
-            get()
+            localAndRemoteMediaRepository = get(),
+            localMediaRepository = get(),
+            localMediaProcessor = get(),
+            appScope = get(APPLICATION_SCOPE),
+            logger = get()
         )
     } binds arrayOf(
         LocalMediaManager::class,

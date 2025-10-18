@@ -2,7 +2,7 @@ package com.serratocreations.phovo.data.photos
 
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.data.photos.local.LocalMediaProcessor
-import com.serratocreations.phovo.data.photos.repository.LocalSupportMediaRepository
+import com.serratocreations.phovo.data.photos.repository.LocalMediaRepository
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
 open class LocalMediaManager(
-    private val mediaRepository: LocalSupportMediaRepository,
+    private val localMediaRepository: LocalMediaRepository,
     private val localMediaProcessor: LocalMediaProcessor,
     private val appScope: CoroutineScope,
     logger: PhovoLogger,
@@ -29,7 +29,7 @@ open class LocalMediaManager(
     fun initMediaProcessing(localDirectory: String?) {
         log.i { "initMediaProcessing" }
         appScope.launch {
-            val alreadyProcessedLocalItems = mediaRepository.phovoMediaFlow().first()
+            val alreadyProcessedLocalItems = localMediaRepository.phovoMediaFlow().first()
             processJob(
                 localDirectory,
                 alreadyProcessedLocalItems
@@ -39,7 +39,7 @@ open class LocalMediaManager(
     }
 
     protected open suspend fun handleProcessedMediaItem(mediaItem: MediaItem) {
-        mediaRepository.addOrUpdateMediaItem(mediaItem)
+        localMediaRepository.addOrUpdateMediaItem(mediaItem)
     }
 
     // Syncs any local media which is still pending sync

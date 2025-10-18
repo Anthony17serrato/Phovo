@@ -18,7 +18,7 @@ class KmpApplicationConventionPlugin : Plugin<Project> {
             extensions.configure<ApplicationExtension> {
                 configureKotlinAndroid(this)
                 configureKotlinMultiplatform(
-                    customSourceSets = setOf(CustomSourceSets.DesktopIosAndroid, CustomSourceSets.IosAndroid),
+                    customSourceSets = setOf(CustomSourceSets.DesktopIosAndroid, CustomSourceSets.IosAndroid, CustomSourceSets.AndroidIosWeb),
                     isApplication = true
                 )
                 sourceSets["main"].manifest.srcFile("src/androidMain/AndroidManifest.xml")
