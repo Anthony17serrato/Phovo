@@ -19,6 +19,7 @@ internal actual fun getAndroidDesktopIosModules(): Module = module {
         LocalAndRemoteMediaRepositoryImpl(
             localMediaRepository = get(),
             remoteMediaRepository = get(),
+            applicationScope = get(APPLICATION_SCOPE),
             ioDispatcher = get(IO_DISPATCHER)
         )
     } binds arrayOf(

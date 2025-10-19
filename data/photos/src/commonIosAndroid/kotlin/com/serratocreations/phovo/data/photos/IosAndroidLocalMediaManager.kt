@@ -22,12 +22,13 @@ class IosAndroidLocalMediaManager(
 ) {
     override suspend fun handleProcessedMediaItem(mediaItem: MediaItem) {
         super.handleProcessedMediaItem(mediaItem)
-        localAndRemoteMediaRepository.syncMedia()
+        localAndRemoteMediaRepository.syncMedia(mediaItem.localUuid)
     }
 
     override fun CoroutineScope.syncJob(localItems: List<MediaItem>) {
         launch {
-            localAndRemoteMediaRepository.syncMedia()
+            localAndRemoteMediaRepository.syncMediaBatchWithPriority(
+                localItems.map { it.localUuid })
         }
     }
 }
