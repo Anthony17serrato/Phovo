@@ -22,6 +22,7 @@ kotlin {
                 implementation(libs.ktor.client.core)
                 implementation(libs.ktor.serialization)
                 implementation(libs.ktor.client.content.negotiation)
+                implementation(libs.filekit.core)
                 // Todo Use version catalog instead
                 implementation("com.ashampoo:kim:0.20")
             }
