@@ -12,7 +12,7 @@ interface NetworkFile {
     suspend fun readInChunks(chunkSize: Int = DEFAULT_CHUNK_SIZE): Flow<ByteArray>
 
     companion object {
-        private const val DEFAULT_CHUNK_SIZE = 1024 * 1024 // 1 MB
+        private const val DEFAULT_CHUNK_SIZE = 256 * 1024 // 256 kb
     }
 }
 
