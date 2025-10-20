@@ -13,6 +13,7 @@ import androidx.core.net.toUri
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.exists
 import io.github.vinceglb.filekit.source
+import kotlinx.io.Buffer
 import kotlinx.io.buffered
 import kotlinx.io.readByteArray
 
@@ -30,15 +31,14 @@ class AndroidNetworkFile(
     }
 
     override suspend fun readInChunks(chunkSize: Int): Flow<ByteArray> = flow {
-        // Get a raw source for the file
-        val source = platformFile.source().buffered()
         // Use the source to read in chunks
-        source.use { bufferedSource ->
-            // Read until EOF
-            while (!bufferedSource.exhausted()) {
-                // Read a specific number of bytes
-                val bytesRead = bufferedSource.readByteArray(chunkSize)
-                emit(bytesRead)
+        platformFile.source().buffered().use { source ->
+            val sink = Buffer()
+            while (!source.exhausted()) {
+                // Read up to chunkSize bytes, may be smaller at EOF
+                val bytesRead = source.readAtMostTo(sink, chunkSize.toLong())
+                if (bytesRead <= 0) break  // EOF safety
+                emit(sink.readByteArray(bytesRead.toInt()))
             }
         }
     }.flowOn(ioDispatcher)
