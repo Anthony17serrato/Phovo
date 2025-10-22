@@ -4,6 +4,8 @@ import com.serratocreations.phovo.core.common.di.APPLICATION_SCOPE
 import com.serratocreations.phovo.core.common.di.IO_DISPATCHER
 import com.serratocreations.phovo.data.photos.IosAndroidLocalMediaManager
 import com.serratocreations.phovo.data.photos.LocalMediaManager
+import com.serratocreations.phovo.data.photos.network.IosAndroidMediaNetworkDataSource
+import com.serratocreations.phovo.data.photos.network.MediaNetworkDataSource
 import com.serratocreations.phovo.data.photos.repository.LocalAndRemoteMediaRepository
 import com.serratocreations.phovo.data.photos.repository.LocalAndRemoteMediaRepositoryImpl
 import com.serratocreations.phovo.data.photos.repository.MediaRepository
@@ -39,4 +41,12 @@ internal actual fun getAndroidDesktopIosModules(): Module = module {
         LocalMediaManager::class,
         IosAndroidLocalMediaManager::class
     )
+
+    single<MediaNetworkDataSource> {
+        IosAndroidMediaNetworkDataSource(
+            get(),
+            get(),
+            get(IO_DISPATCHER)
+        )
+    }
 }

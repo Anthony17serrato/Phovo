@@ -6,4 +6,5 @@ sealed interface SyncResult
 
 data class SyncSuccessful(val updatedMediaItemDto: MediaItemDto): SyncResult
 
+// TODO Better error modeling
 data object SyncError: SyncResult
