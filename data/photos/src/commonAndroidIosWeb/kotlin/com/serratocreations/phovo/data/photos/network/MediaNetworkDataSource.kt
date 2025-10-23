@@ -23,7 +23,7 @@ abstract class MediaNetworkDataSource(
     logger: PhovoLogger
 ) {
     companion object {
-        protected const val DEFAULT_CHUNK_SIZE = 256 * 1024 // 256 kb
+        protected const val DEFAULT_CHUNK_SIZE = 512 * 1024 // 512 kb
     }
     private val log = logger.withTag("MediaNetworkDataSource")
 
