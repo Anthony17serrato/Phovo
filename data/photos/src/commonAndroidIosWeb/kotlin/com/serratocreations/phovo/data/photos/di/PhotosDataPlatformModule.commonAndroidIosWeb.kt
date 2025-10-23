@@ -1,6 +1,5 @@
 package com.serratocreations.phovo.data.photos.di
 
-import com.serratocreations.phovo.data.photos.network.MediaNetworkDataSource
 import com.serratocreations.phovo.data.photos.repository.MediaRepository
 import com.serratocreations.phovo.data.photos.repository.RemoteMediaRepository
 import com.serratocreations.phovo.data.photos.repository.RemoteMediaRepositoryImpl
@@ -17,11 +16,4 @@ internal actual fun getPlatformModulesBranch2(): Module = module {
         RemoteMediaRepository::class,
         MediaRepository::class
     )
-
-    single {
-        MediaNetworkDataSource(
-            client = get(),
-            logger = get()
-        )
-    }
 }

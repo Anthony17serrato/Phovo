@@ -17,7 +17,8 @@ kotlin {
                 implementation(libs.serialization.json)
                 implementation(libs.coil.compose)
                 implementation(libs.filekit.core)
-                implementation(libs.filekit.compose)
+                implementation(libs.filekit.dialogs)
+                implementation(libs.filekit.dialogs.compose)
             }
         }
         val commonTest by getting {

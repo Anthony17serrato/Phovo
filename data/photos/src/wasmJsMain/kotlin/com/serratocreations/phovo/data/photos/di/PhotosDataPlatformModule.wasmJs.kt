@@ -1,5 +1,7 @@
 package com.serratocreations.phovo.data.photos.di
 
+import com.serratocreations.phovo.data.photos.network.MediaNetworkDataSource
+import com.serratocreations.phovo.data.photos.network.WebMediaNetworkDataSource
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.js.Js
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -15,5 +17,12 @@ internal actual fun getPlatformModulesBranch1(): Module = module {
                 json()
             }
         }
+    }
+
+    single<MediaNetworkDataSource> {
+        WebMediaNetworkDataSource(
+            get(),
+            get()
+        )
     }
 }

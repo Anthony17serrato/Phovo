@@ -4,7 +4,11 @@ import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.data.photos.local.LocalMediaProcessor
 import com.serratocreations.phovo.data.photos.repository.LocalAndRemoteMediaRepository
 import com.serratocreations.phovo.data.photos.repository.LocalMediaRepository
+import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
+import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
+import com.serratocreations.phovo.data.photos.repository.model.SyncImage
+import com.serratocreations.phovo.data.photos.repository.model.SyncVideo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -22,13 +26,22 @@ class IosAndroidLocalMediaManager(
 ) {
     override suspend fun handleProcessedMediaItem(mediaItem: MediaItem) {
         super.handleProcessedMediaItem(mediaItem)
-        localAndRemoteMediaRepository.syncMedia(mediaItem.localUuid)
+        val syncQueueable = when(mediaItem) {
+            is MediaImageItem -> SyncImage(mediaItem.localUuid)
+            is MediaVideoItem -> SyncVideo(mediaItem.localUuid)
+        }
+        localAndRemoteMediaRepository.syncMedia(syncQueueable)
     }
 
     override fun CoroutineScope.syncJob(localItems: List<MediaItem>) {
         launch {
-            localAndRemoteMediaRepository.syncMediaBatchWithPriority(
-                localItems.map { it.localUuid })
+            val syncQueueables = localItems.map {
+                when(it) {
+                    is MediaImageItem -> SyncImage(it.localUuid)
+                    is MediaVideoItem -> SyncVideo(it.localUuid)
+                }
+            }
+            localAndRemoteMediaRepository.syncMediaBatchWithPriority(syncQueueables)
         }
     }
 }

@@ -2,9 +2,9 @@
 # Check AGP KMP compatability https://kotlinlang.org/docs/multiplatform-compatibility-guide.html
 #noinspection AndroidGradlePluginVersion since AGP depends on KMP support
 androidGradlePlugin = "8.10.0"
-kotlin = "2.2.10"
+kotlin = "2.2.20"
 # KSP must be updated with kotlin updates
-ksp = "2.2.10-2.0.2"
+ksp = "2.2.20-2.0.4"
 
 androidx-activityCompose = "1.10.1"
 androidx-datastore = "1.1.7"
@@ -12,9 +12,8 @@ androidx-compose = "1.9.0"
 coil = "3.3.0"
 exoplayer = "1.8.0"
 foundation = "1.8.2"
-# Library dev removed directory picker in WASM on newer versions, additional effort is required for upgrade
-file-picker = "0.8.8"
-# KMP Compose Start(All of these dependencies should be check to be compatable on upgrade)
+filekit = "0.12.0"
+# KMP Compose Start(All of these dependencies should be checked to be compatable on upgrade)
 jetbrains-compose = "1.9.0-rc01"
 lifecycle-compose = "2.9.1"
 material3-adaptive = "1.2.0-alpha05"
@@ -27,6 +26,7 @@ kermit = "2.0.8"
 kmp-swing = "1.10.2"
 koin = "4.1.1"
 kotlinx-datetime = "0.7.1"
+kotlinx-io = "0.4.0"
 ktor = "3.2.3"
 room-kmp = "2.7.2"
 serialization-json = "1.9.0"
@@ -52,8 +52,10 @@ compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling", version.ref = 
 compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview", version.ref = "androidx-compose" }
 exoplayer = { group = "androidx.media3", name = "media3-exoplayer", version.ref = "exoplayer" }
 media-ui = { group = "androidx.media3", name = "media3-ui", version.ref = "exoplayer" }
-filekit-core = { group = "io.github.vinceglb", name = "filekit-core", version.ref = "file-picker" }
-filekit-compose = { group = "io.github.vinceglb", name = "filekit-compose", version.ref = "file-picker" }
+filekit-core = { group = "io.github.vinceglb", name = "filekit-core", version.ref = "filekit" }
+filekit-dialogs = { group = "io.github.vinceglb", name = "filekit-dialogs", version.ref = "filekit" }
+filekit-dialogs-compose = { group = "io.github.vinceglb", name = "filekit-dialogs-compose", version.ref = "filekit" }
+filekit-coil = { group = "io.github.vinceglb", name = "filekit-coil", version.ref = "filekit" }
 serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization-json" }
 androidx-datastore = { module = "androidx.datastore:datastore", version.ref = "androidx-datastore" }
 jetbrains-swing = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-swing", version.ref = "kmp-swing" }
@@ -64,6 +66,7 @@ koin-test =     { group = "io.insert-koin", name = "koin-test", version.ref = "k
 koin-compose =  { group = "io.insert-koin", name = "koin-compose", version.ref = "koin" }
 koin-compose-vm =  { group = "io.insert-koin", name = "koin-compose-viewmodel", version.ref = "koin" }
 kotlin-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinx-datetime"}
+kotlinx-io = { group = "org.jetbrains.kotlinx", name = "kotlinx-io-core", version.ref = "kotlinx-io" }
 ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
 ktor-client-okhttp = { group = "io.ktor", name = "ktor-client-okhttp", version.ref = "ktor" }
 ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
