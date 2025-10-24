@@ -115,14 +115,14 @@ class LocalAndRemoteMediaRepositoryImpl(
                 syncQueueables.filterIsInstance<SyncVideo>().forEach { syncVideo ->
                     priorityVideoChannel.send(syncVideo.uuid)
                 }
+                priorityVideoChannel.close()
             }
             launch {
                 syncQueueables.filterIsInstance<SyncImage>().forEach { syncImage ->
                     priorityImageChannel.send(syncImage.uuid)
                 }
+                priorityImageChannel.close()
             }
-            priorityImageChannel.close()
-            priorityVideoChannel.close()
             // Suspends until all workers complete
         }
     }

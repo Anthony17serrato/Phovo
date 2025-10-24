@@ -28,6 +28,7 @@ import com.serratocreations.phovo.feature.photos.ui.model.ImagePhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.UriPhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.VideoPhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.reusablecomponents.VideoPlayer
+import com.serratocreations.phovo.feature.photos.util.SetStatusBarAppearance
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -57,7 +58,7 @@ internal fun PhotoDetailScreen(
     modifier: Modifier = Modifier
 ) = with(sharedElementTransition) {
     if (item == null) return@with
-
+    SetStatusBarAppearance(lightIcons = true)
     Box(
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
@@ -119,7 +120,7 @@ internal fun PhotoDetailScreen(
                     .background(
                         Brush.verticalGradient(
                             colors = listOf(
-                                Color.Black.copy(alpha = 0.7f), // Start with semi-transparent black
+                                Color.Black.copy(alpha = 0.6f), // Start with semi-transparent black
                                 Color.Transparent // Fade to transparent
                             )
                         )
