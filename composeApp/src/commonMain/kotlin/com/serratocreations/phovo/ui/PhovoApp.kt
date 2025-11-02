@@ -25,6 +25,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.testTag
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
@@ -38,6 +39,7 @@ import com.serratocreations.phovo.core.designsystem.component.PhovoNavigationSui
 import com.serratocreations.phovo.core.designsystem.component.PhovoTopAppBar
 import com.serratocreations.phovo.core.designsystem.icon.PhovoIcons
 import com.serratocreations.phovo.core.designsystem.theme.PhovoTheme
+import com.serratocreations.phovo.feature.photos.ui.ExpandableBackupBanner
 import com.serratocreations.phovo.navigation.TopLevelDestination
 import phovo.composeapp.generated.resources.Res
 import phovo.composeapp.generated.resources.feature_settings_top_app_bar_action_icon_description
@@ -114,8 +116,29 @@ internal fun PhovoApp(
         shouldShowNavBarOnCompactScreens = currentDestination.isTopLevel(),
         windowAdaptiveInfo = windowAdaptiveInfo,
     ) {
+        val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
         Scaffold(
-            modifier = modifier,
+            modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+            topBar = {
+                PhovoTopAppBar(
+                    navigationIcon = if (appLevelUiState.canBackButtonBeShown) PhovoIcons.ArrowBack else PhovoIcons.Search,
+                    navigationIconContentDescription = stringResource(
+                        Res.string.feature_settings_top_app_bar_navigation_icon_description,
+                    ),
+                    actionIcon = PhovoIcons.Settings,
+                    actionIconContentDescription = stringResource(
+                        Res.string.feature_settings_top_app_bar_action_icon_description,
+                    ),
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent,
+                        scrolledContainerColor = Color.Transparent
+                    ),
+                    /*onActionClick = { onTopAppBarActionClick() },*/
+                    onNavigationClick = phovoViewModel::onNavigationClick,//{ appState.navController.popBackStack() }
+                    scrollBehavior = scrollBehavior,
+                    expandableComponent = { ExpandableBackupBanner() }
+                )
+            },
             containerColor = Color.Transparent,
             contentColor = MaterialTheme.colorScheme.onBackground,
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -132,38 +155,10 @@ internal fun PhovoApp(
                         ),
                     ),
             ) {
-                // Show the top app bar on top level destinations.
-                val destination = appState.currentTopLevelDestination
-                var shouldShowTopAppBar = false
-
-                if (destination != null) {
-                    shouldShowTopAppBar = true
-                    PhovoTopAppBar(
-                        titleRes = destination.titleTextId,
-                        navigationIcon = if (appLevelUiState.canBackButtonBeShown) PhovoIcons.ArrowBack else PhovoIcons.Search,
-                        navigationIconContentDescription = stringResource(
-                            Res.string.feature_settings_top_app_bar_navigation_icon_description,
-                        ),
-                        actionIcon = PhovoIcons.Settings,
-                        actionIconContentDescription = stringResource(
-                            Res.string.feature_settings_top_app_bar_action_icon_description,
-                        ),
-                        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                            containerColor = Color.Transparent,
-                        ),
-                        /*onActionClick = { onTopAppBarActionClick() },*/
-                        onNavigationClick = phovoViewModel::onNavigationClick//{ appState.navController.popBackStack() },
-                    )
-                }
-
                 Box(
                     // Workaround for https://issuetracker.google.com/338478720
                     modifier = Modifier.consumeWindowInsets(
-                        if (shouldShowTopAppBar) {
-                            WindowInsets.safeDrawing.only(WindowInsetsSides.Top)
-                        } else {
-                            WindowInsets(0, 0, 0, 0)
-                        },
+                        WindowInsets.safeDrawing.only(WindowInsetsSides.Top)
                     ),
                 ) {
                     PhovoNavHost(

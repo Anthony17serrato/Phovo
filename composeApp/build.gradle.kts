@@ -10,8 +10,6 @@ kotlin {
         val desktopMain by getting
         
         androidMain.dependencies {
-            implementation(libs.compose.ui.tooling.preview)
-            implementation(libs.androidx.activity.compose)
         }
         commonMain.dependencies {
             // Project dependencies
@@ -35,10 +33,6 @@ kotlin {
 
 android {
     namespace = "com.serratocreations.phovo"
-
-    dependencies {
-        debugImplementation(libs.compose.ui.tooling)
-    }
 }
 
 // File picker desktop config
