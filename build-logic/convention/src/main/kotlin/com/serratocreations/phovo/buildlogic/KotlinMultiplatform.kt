@@ -106,6 +106,7 @@ internal fun Project.configureKotlinMultiplatform(
                     sourceSets.named("desktopMain").get().dependsOn(commonDesktopIosAndroid)
                     // Ensure commonIosAndroid depends on commonDesktopIosAndroid
                     sourceSets.named(CustomSourceSets.IosAndroid.sourceSetName).get().dependsOn(commonDesktopIosAndroid)
+                    sourceSets.named(CustomSourceSets.AndroidDesktop.sourceSetName).get().dependsOn(commonDesktopIosAndroid)
                 }
 
                 CustomSourceSets.IosAndroid -> {
@@ -118,6 +119,7 @@ internal fun Project.configureKotlinMultiplatform(
                     sourceSets.iosMain.get().dependsOn(commonIosAndroid)
                     sourceSets.androidMain.get().dependsOn(commonIosAndroid)
                 }
+
                 CustomSourceSets.AndroidIosWeb -> {
                     val commonAndroidIosWeb = sourceSets.create(sourceSet.sourceSetName) {
                         dependsOn(sourceSets.commonMain.get())
@@ -130,6 +132,17 @@ internal fun Project.configureKotlinMultiplatform(
                     sourceSets.wasmJsMain.get().dependsOn(commonAndroidIosWeb)
                     // Ensure commonIosAndroid depends on commonAndroidIosWeb
                     sourceSets.named(CustomSourceSets.IosAndroid.sourceSetName).get().dependsOn(commonAndroidIosWeb)
+                }
+                
+                CustomSourceSets.AndroidDesktop -> {
+                    val commonAndroidDesktop = sourceSets.create(sourceSet.sourceSetName) {
+                        dependsOn(sourceSets.commonMain.get())
+                        dependencies {
+
+                        }
+                    }
+                    sourceSets.named("desktopMain").get().dependsOn(commonAndroidDesktop)
+                    sourceSets.androidMain.get().dependsOn(commonAndroidDesktop)
                 }
             }
         }

@@ -39,6 +39,7 @@ import com.serratocreations.phovo.core.designsystem.component.PhovoNavigationSui
 import com.serratocreations.phovo.core.designsystem.component.PhovoTopAppBar
 import com.serratocreations.phovo.core.designsystem.icon.PhovoIcons
 import com.serratocreations.phovo.core.designsystem.theme.PhovoTheme
+import com.serratocreations.phovo.feature.photos.ui.BackupStatusViewModel
 import com.serratocreations.phovo.feature.photos.ui.ExpandableBackupBanner
 import com.serratocreations.phovo.navigation.TopLevelDestination
 import phovo.composeapp.generated.resources.Res
@@ -81,12 +82,14 @@ internal fun PhovoApp(
         "No ViewModelStoreOwner was provided via LocalViewModelStoreOwner"
     },
     phovoViewModel: PhovoViewModel = koinViewModel(viewModelStoreOwner = viewModelStoreOwner),
+    backupStatusViewModel: BackupStatusViewModel = koinViewModel(viewModelStoreOwner = viewModelStoreOwner),
     modifier: Modifier = Modifier,
     windowAdaptiveInfo: WindowAdaptiveInfo = currentWindowAdaptiveInfo(),
 ) {
     val currentDestination = appState.currentDestination
     appState.appLevelVmStoreOwner = viewModelStoreOwner
     val appLevelUiState by phovoViewModel.phovoUiState.collectAsState()
+    val backupState by backupStatusViewModel.backupUiState.collectAsState()
 
     PhovoNavigationSuiteScaffold(
         navigationSuiteItems = {
@@ -136,7 +139,7 @@ internal fun PhovoApp(
                     /*onActionClick = { onTopAppBarActionClick() },*/
                     onNavigationClick = phovoViewModel::onNavigationClick,//{ appState.navController.popBackStack() }
                     scrollBehavior = scrollBehavior,
-                    expandableComponent = { ExpandableBackupBanner() }
+                    expandableComponent = { ExpandableBackupBanner(backupState) }
                 )
             },
             containerColor = Color.Transparent,

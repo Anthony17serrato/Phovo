@@ -21,7 +21,10 @@ class KmpAndroidIosDesktopLibraryConventionPlugin : Plugin<Project> {
                 configureKotlinAndroid(this)
                 configureKotlinMultiplatform(
                     isApplication = false,
-                    customSourceSets = setOf(CustomSourceSets.IosAndroid),
+                    customSourceSets = setOf(
+                        CustomSourceSets.IosAndroid,
+                        CustomSourceSets.AndroidDesktop
+                    ),
                     targetList = setOf(Targets.ANDROID, Targets.IOS)
                 )
                 defaultConfig.targetSdk = 34

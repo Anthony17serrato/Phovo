@@ -6,6 +6,7 @@ import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
@@ -13,6 +14,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,7 +23,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -30,13 +31,13 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.outlined.CloudDone
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.HorizontalDivider
@@ -44,6 +45,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.PlainTooltip
+import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.SplitButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleButton
@@ -60,9 +62,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -74,13 +79,17 @@ import coil3.compose.AsyncImage
 import coil3.compose.setSingletonImageLoaderFactory
 import coil3.request.crossfade
 import com.serratocreations.phovo.core.designsystem.component.CallToActionComponent
-import com.serratocreations.phovo.core.designsystem.icon.PhovoIcons
+import com.serratocreations.phovo.feature.photos.ui.model.BackupComplete
+import com.serratocreations.phovo.feature.photos.ui.model.BackupInProgress
+import com.serratocreations.phovo.feature.photos.ui.model.BackupStatus
 import com.serratocreations.phovo.feature.photos.ui.model.DateHeaderPhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.PhotoUiItem
+import com.serratocreations.phovo.feature.photos.ui.model.PreparingBackup
 import com.serratocreations.phovo.feature.photos.ui.model.UriPhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.VideoPhotoUiItem
 import com.serratocreations.phovo.feature.photos.util.getPlatformDecoderFactory
 import com.serratocreations.phovo.feature.photos.util.getPlatformFetcherFactory
+import org.jetbrains.compose.resources.stringResource
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -201,7 +210,7 @@ internal fun PhotosScreen(
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun ExpandableBackupBanner() {
+fun ExpandableBackupBanner(backupState: BackupStatus) {
     var isExpanded by remember { mutableStateOf(false) }
 
     Column {
@@ -213,13 +222,45 @@ fun ExpandableBackupBanner() {
                 modifier = Modifier.heightIn(size),
                 contentPadding = ButtonDefaults.contentPaddingFor(size),
             ) {
-                Icon(
-                    PhovoIcons.Info,
-                    contentDescription = "Backup Status",
-                    modifier = Modifier.size(ButtonDefaults.iconSizeFor(size)),
-                )
+                val thinStrokeWidth = with(LocalDensity.current) { 2.dp.toPx() }
+                val thinStroke =
+                    remember(thinStrokeWidth) {
+                        Stroke(
+                            width = thinStrokeWidth,
+                            cap = StrokeCap.Round
+                        )
+                    }
+                when (backupState) {
+                    is BackupComplete -> {
+                        Icon(
+                            imageVector = Icons.Outlined.CloudDone,
+                            contentDescription = stringResource(backupState.chipText),
+                            modifier = Modifier.size(ButtonDefaults.iconSizeFor(size))
+                        )
+                    }
+                    is BackupInProgress -> {
+                        val animatedProgress by
+                        animateFloatAsState(
+                            targetValue = backupState.progress,
+                            animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec,
+                        )
+                        CircularWavyProgressIndicator(
+                            progress = { animatedProgress },
+                            modifier = Modifier.size(ButtonDefaults.iconSizeFor(size)),
+                            stroke = thinStroke,
+                            trackStroke = thinStroke
+                        )
+                    }
+                    PreparingBackup -> {
+                        CircularWavyProgressIndicator(
+                            modifier = Modifier.size(ButtonDefaults.iconSizeFor(size)),
+                            stroke = thinStroke,
+                            trackStroke = thinStroke
+                        )
+                    }
+                }
                 Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size)))
-                Text("Backup complete")
+                Text(stringResource(backupState.chipText))
             }
         }
         AnimatedVisibility(isExpanded) {
@@ -271,27 +312,24 @@ fun ExpandableBackupBanner() {
         ) { targetExpanded ->
             if (targetExpanded) {
                 BackupSummaryCard(
-                    backedUpCount = 9_534,
-                    failedCount = 5,
-                    onViewFailedClick = {}
+                    status = backupState
                 )
             }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun BackupSummaryCard(
-    backedUpCount: Int,
-    failedCount: Int,
-    onViewFailedClick: () -> Unit
+    status: BackupStatus
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
     ) {
         Text(
-            text = "Backup complete",
+            text = status.header.build(),
             style = MaterialTheme.typography.titleMedium.copy(
                 fontWeight = FontWeight.Medium
             ),
@@ -313,49 +351,70 @@ fun BackupSummaryCard(
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.Default.Cloud,
-                    contentDescription = null,
-                    modifier = Modifier.size(24.dp)
-                )
+                when (status) {
+                    PreparingBackup -> {
+                        CircularWavyProgressIndicator()
+                    }
+                    is BackupInProgress -> {
+                        val animatedProgress by
+                        animateFloatAsState(
+                            targetValue = status.progress,
+                            animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec,
+                        )
+                        CircularWavyProgressIndicator(
+                            progress = { animatedProgress }
+                        )
+                    }
+                    is BackupComplete -> {
+                        Icon(
+                            imageVector = Icons.Outlined.CloudDone,
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
-                    // TODO local number formating is necessary but currently not supported in common
-                    //  https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-regional-format.html
-                    text = "$backedUpCount photos backed up",
+                    text = status.mainStatus.build(),
                     style = MaterialTheme.typography.bodyLarge.copy(
                         fontWeight = FontWeight.Medium
                     )
                 )
             }
 
-            HorizontalDivider(
-                modifier = Modifier,
-                thickness = 1.dp
-            )
-
-            // ✅ Bottom Section: Failed items
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-            ) {
-                Text(
-                    text = "$failedCount item can’t be backed up",
-                    style = MaterialTheme.typography.bodyMedium
+            AnimatedVisibility(visible = status.statusDescription != null) {
+                HorizontalDivider(
+                    modifier = Modifier,
+                    thickness = 1.dp,
+                    color = MaterialTheme.colorScheme.outline
                 )
-                Spacer(modifier = Modifier.height(12.dp))
-
-                OutlinedButton(
-                    onClick = onViewFailedClick,
-                    //border = BorderStroke(1.dp, Color.White.copy(alpha = 0.4f)),
-                    shape = RoundedCornerShape(50),
-                    modifier = Modifier.fillMaxWidth()
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .animateContentSize()
+                        .padding(16.dp)
                 ) {
-                    Text(
-                        text = "View failed items",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+                    status.statusDescription?.let {
+                        Text(
+                            text = it.build(),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+
+                    status.actionButton?.let {
+                        OutlinedButton(
+                            onClick = it.onActionButtonClick,
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                            modifier = Modifier
+                                .padding(top = 12.dp)
+                                .fillMaxWidth()
+                        ) {
+                            Text(
+                                text = stringResource(it.actionText),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
                 }
             }
         }
