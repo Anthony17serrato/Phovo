@@ -14,7 +14,6 @@ All applications are developed within a single codebase using [Kotlin Multiplatf
 <img src="https://github.com/Anthony17serrato/Phovo/blob/main/docs/images/desktop_screenshot.png" style="max-width: 100%; height: auto;" />
 
 ## How to build and run
-![android_optimized](https://github.com/user-attachments/assets/48a38135-7c10-48be-bac6-afd085440c0a) 
 
 Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…
 
