@@ -8,12 +8,13 @@ All applications are developed within a single codebase using [Kotlin Multiplatf
 ### Screenshots
 | Android | iOS |
 | --- | --- |
-| ![android_optimized](https://github.com/user-attachments/assets/48a38135-7c10-48be-bac6-afd085440c0a) | <img src="https://github.com/Anthony17serrato/Phovo/blob/main/docs/images/Simulator%20Screenshot%20-%20iPhone%2016%20-%202024-12-02%20at%2013.43.23.png?raw=true" width="840" /> |
+| ![android_optimized](https://github.com/Anthony17serrato/Phovo/blob/main/docs/images/android_optimized.gif?raw=true) | <img src="https://github.com/Anthony17serrato/Phovo/blob/main/docs/images/Simulator%20Screenshot%20-%20iPhone%2016%20-%202024-12-02%20at%2013.43.23.png?raw=true" width="840" /> |
 
 #### Desktop
 <img src="https://github.com/Anthony17serrato/Phovo/blob/main/docs/images/desktop_screenshot.png" style="max-width: 100%; height: auto;" />
 
 ## How to build and run
+![android_optimized](https://github.com/user-attachments/assets/48a38135-7c10-48be-bac6-afd085440c0a) 
 
 Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…
 
