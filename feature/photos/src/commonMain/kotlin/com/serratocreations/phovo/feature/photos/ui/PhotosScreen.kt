@@ -326,6 +326,7 @@ fun BackupSummaryCard(
 ) {
     Column(
         modifier = Modifier
+            .animateContentSize()
             .fillMaxWidth()
     ) {
         Text(
@@ -391,7 +392,6 @@ fun BackupSummaryCard(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .animateContentSize()
                         .padding(16.dp)
                 ) {
                     status.statusDescription?.let {
