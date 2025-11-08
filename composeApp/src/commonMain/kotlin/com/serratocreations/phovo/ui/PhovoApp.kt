@@ -40,7 +40,7 @@ import com.serratocreations.phovo.core.designsystem.component.PhovoTopAppBar
 import com.serratocreations.phovo.core.designsystem.icon.PhovoIcons
 import com.serratocreations.phovo.core.designsystem.theme.PhovoTheme
 import com.serratocreations.phovo.feature.photos.ui.BackupStatusViewModel
-import com.serratocreations.phovo.feature.photos.ui.ExpandableBackupBanner
+import com.serratocreations.phovo.feature.photos.ui.reusablecomponents.ExpandableBackupBanner
 import com.serratocreations.phovo.navigation.TopLevelDestination
 import phovo.composeapp.generated.resources.Res
 import phovo.composeapp.generated.resources.feature_settings_top_app_bar_action_icon_description

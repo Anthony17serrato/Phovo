@@ -1,11 +1,10 @@
 package com.serratocreations.phovo.feature.photos.ui.model
 
-import androidx.compose.runtime.Composable
 import com.serratocreations.phovo.core.common.util.localize
-import org.jetbrains.compose.resources.PluralStringResource
+import com.serratocreations.phovo.core.designsystem.PhovoPlural
+import com.serratocreations.phovo.core.designsystem.PhovoString
+import com.serratocreations.phovo.core.designsystem.UiStringBuilder
 import org.jetbrains.compose.resources.StringResource
-import org.jetbrains.compose.resources.pluralStringResource
-import org.jetbrains.compose.resources.stringResource
 import phovo.feature.photos.generated.resources.Res
 import phovo.feature.photos.generated.resources.chip_backup_complete
 import phovo.feature.photos.generated.resources.chip_preparing_backup
@@ -21,55 +20,18 @@ sealed interface BackupStatus {
     /** The text which appears on the backup status chip, it is the main entry point for
      * viewing additional status details */
     val chipText: StringResource
+
     /** Leading text that appears above status card */
     val header: UiStringBuilder
+
     /** Backup status that makes up the main backup card text */
     val mainStatus: UiStringBuilder
+
     /** Description text that appears in the card below [mainStatus] */
     val statusDescription: UiStringBuilder?
+
     /** Optional action to execute, button not rendered if null */
     val actionButton: BackupActionButton?
-}
-
-data class BackupActionButton(
-    /** The text to be displayed on the button for the action */
-    val actionText: StringResource,
-    /** The action to execute on click of the action button */
-    val onActionButtonClick: () -> Unit
-)
-
-sealed interface StringBuilderResource
-data class PhovoString(val stringResource: StringResource): StringBuilderResource
-data class PhovoPlural(
-    val pluralResource: PluralStringResource,
-    val pluralCount: Int
-): StringBuilderResource
-
-/**
- * Given the provided constructor arguments this model is able to build strings correctly at the
- * time in which the UI needs them.
- * @param resource is the defined resource type
- * @param templateArgs any arguments that are necessary to build the string
- */
-class UiStringBuilder(
-    private val resource: StringBuilderResource,
-    private vararg val templateArgs: String
-) {
-    /**
-     * Build the string defined by this builder
-     */
-    @Composable
-    fun build(): String {
-        return when(resource) {
-            is PhovoPlural -> {
-                pluralStringResource(resource.pluralResource, resource.pluralCount,
-                    *(templateArgs))
-            }
-            is PhovoString -> {
-                stringResource(resource.stringResource, *(templateArgs))
-            }
-        }
-    }
 }
 
 data object PreparingBackup: BackupStatus {
