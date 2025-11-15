@@ -39,9 +39,8 @@ import com.serratocreations.phovo.core.designsystem.component.PhovoNavigationSui
 import com.serratocreations.phovo.core.designsystem.component.PhovoTopAppBar
 import com.serratocreations.phovo.core.designsystem.icon.PhovoIcons
 import com.serratocreations.phovo.core.designsystem.theme.PhovoTheme
-import com.serratocreations.phovo.feature.photos.ui.BackupStatusViewModel
-import com.serratocreations.phovo.feature.photos.ui.reusablecomponents.ExpandableBackupBanner
 import com.serratocreations.phovo.navigation.TopLevelDestination
+import com.serratocreations.phovo.ui.components.HomeTitleContent
 import phovo.composeapp.generated.resources.Res
 import phovo.composeapp.generated.resources.feature_settings_top_app_bar_action_icon_description
 import phovo.composeapp.generated.resources.feature_settings_top_app_bar_navigation_icon_description
@@ -82,14 +81,12 @@ internal fun PhovoApp(
         "No ViewModelStoreOwner was provided via LocalViewModelStoreOwner"
     },
     phovoViewModel: PhovoViewModel = koinViewModel(viewModelStoreOwner = viewModelStoreOwner),
-    backupStatusViewModel: BackupStatusViewModel = koinViewModel(viewModelStoreOwner = viewModelStoreOwner),
     modifier: Modifier = Modifier,
     windowAdaptiveInfo: WindowAdaptiveInfo = currentWindowAdaptiveInfo(),
 ) {
     val currentDestination = appState.currentDestination
     appState.appLevelVmStoreOwner = viewModelStoreOwner
     val appLevelUiState by phovoViewModel.phovoUiState.collectAsState()
-    val backupState by backupStatusViewModel.backupUiState.collectAsState()
 
     PhovoNavigationSuiteScaffold(
         navigationSuiteItems = {
@@ -139,7 +136,7 @@ internal fun PhovoApp(
                     /*onActionClick = { onTopAppBarActionClick() },*/
                     onNavigationClick = phovoViewModel::onNavigationClick,//{ appState.navController.popBackStack() }
                     scrollBehavior = scrollBehavior,
-                    expandableComponent = { ExpandableBackupBanner(backupState) }
+                    titleContent = { HomeTitleContent() }
                 )
             },
             containerColor = Color.Transparent,

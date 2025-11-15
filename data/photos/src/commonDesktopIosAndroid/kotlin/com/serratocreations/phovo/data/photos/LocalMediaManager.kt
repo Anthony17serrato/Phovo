@@ -5,6 +5,7 @@ import com.serratocreations.phovo.data.photos.local.LocalMediaProcessor
 import com.serratocreations.phovo.data.photos.repository.LocalMediaRepository
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.flow.consumeAsFlow
@@ -29,21 +30,22 @@ open class LocalMediaManager(
     fun initMediaProcessing(localDirectory: String?) {
         log.i { "initMediaProcessing" }
         appScope.launch {
+            // todo in the future paging and db queries should be used to prevent OOM on larger media libraries
             val alreadyProcessedLocalItems = localMediaRepository.phovoMediaFlow().first()
-            processJob(
-                localDirectory,
-                alreadyProcessedLocalItems
+            val processJob = processJob(
+                localDirectory = localDirectory,
+                localItems = alreadyProcessedLocalItems,
             )
-            syncJob(alreadyProcessedLocalItems)
+            syncJob(processJob)
         }
     }
 
-    protected open suspend fun handleProcessedMediaItem(mediaItem: MediaItem) {
+    private suspend fun handleProcessedMediaItem(mediaItem: MediaItem) {
         localMediaRepository.addOrUpdateMediaItem(mediaItem)
     }
 
     // Syncs any local media which is still pending sync
-    protected open fun CoroutineScope.syncJob(localItems: List<MediaItem>) {
+    protected open fun CoroutineScope.syncJob(processJob: Job) {
         // TODO Server may eventually support syncing to other servers, for now it is not supported
     }
 
@@ -52,13 +54,14 @@ open class LocalMediaManager(
         localItems: List<MediaItem>
     ) = launch {
         val processMediaChannel = Channel<MediaItem>()
+        appScope.consumeProcessedMedia(processMediaChannel)
         with(localMediaProcessor) {
             processLocalItems(
                 processedItems = localItems,
                 localDirectory = localDirectory,
                 processMediaChannel = processMediaChannel
-            )
-            consumeProcessedMedia(processMediaChannel)
+            ).join()
+            processMediaChannel.close()
         }
     }
 

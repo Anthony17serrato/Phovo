@@ -26,10 +26,10 @@ fun PhovoTopAppBar(
     onNavigationClick: () -> Unit = {},
     onActionClick: () -> Unit = {},
     scrollBehavior: TopAppBarScrollBehavior,
-    expandableComponent: @Composable () -> Unit
+    titleContent: @Composable () -> Unit
 ) {
     TopAppBar(
-        title = expandableComponent,
+        title = titleContent,
 //        navigationIcon = {
 //            AnimatedVisibility(navigationIcon != null) {
 //                navigationIcon?.let { iconNotNull ->

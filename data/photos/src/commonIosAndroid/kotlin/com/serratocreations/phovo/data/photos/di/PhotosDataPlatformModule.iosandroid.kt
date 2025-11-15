@@ -1,6 +1,7 @@
 package com.serratocreations.phovo.data.photos.di
 
 import com.serratocreations.phovo.core.common.di.APPLICATION_SCOPE
+import com.serratocreations.phovo.core.common.di.DEFAULT_DISPATCHER
 import com.serratocreations.phovo.core.common.di.IO_DISPATCHER
 import com.serratocreations.phovo.data.photos.IosAndroidLocalMediaManager
 import com.serratocreations.phovo.data.photos.LocalMediaManager
@@ -22,7 +23,8 @@ internal actual fun getAndroidDesktopIosModules(): Module = module {
             localMediaRepository = get(),
             remoteMediaRepository = get(),
             applicationScope = get(APPLICATION_SCOPE),
-            ioDispatcher = get(IO_DISPATCHER)
+            ioDispatcher = get(IO_DISPATCHER),
+            defaultDispatcher = get(DEFAULT_DISPATCHER)
         )
     } binds arrayOf(
         LocalAndRemoteMediaRepository::class,

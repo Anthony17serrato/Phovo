@@ -42,6 +42,7 @@ import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -57,15 +58,20 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.serratocreations.phovo.feature.photos.ui.BackupStatusViewModel
 import com.serratocreations.phovo.feature.photos.ui.model.BackupComplete
 import com.serratocreations.phovo.feature.photos.ui.model.BackupInProgress
 import com.serratocreations.phovo.feature.photos.ui.model.BackupStatus
 import com.serratocreations.phovo.feature.photos.ui.model.PreparingBackup
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun ExpandableBackupBanner(backupState: BackupStatus) {
+fun ExpandableBackupBanner(
+    backupStatusViewModel: BackupStatusViewModel = koinViewModel()
+) {
+    val backupState by backupStatusViewModel.backupUiState.collectAsState()
     var isExpanded by remember { mutableStateOf(false) }
 
     Column {
@@ -85,7 +91,7 @@ fun ExpandableBackupBanner(backupState: BackupStatus) {
                             cap = StrokeCap.Round
                         )
                     }
-                when (backupState) {
+                when (val backupState = backupState) {
                     is BackupComplete -> {
                         Icon(
                             imageVector = Icons.Outlined.CloudDone,
