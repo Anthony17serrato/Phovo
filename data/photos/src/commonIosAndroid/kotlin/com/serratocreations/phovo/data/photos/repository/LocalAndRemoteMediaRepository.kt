@@ -113,8 +113,10 @@ class LocalAndRemoteMediaRepositoryImpl(
             if (nextUnsyncedItem == null) return@launch
             val result = sync(nextUnsyncedItem)
             syncSafeSet.remove(nextUnsyncedItem.mediaItemEntity.localUuid)
-            if (result is SyncSuccessful) _syncProgressState.update { currentState ->
-                currentState.copy(syncedCount = (currentState.syncedCount + 1))
+            if (result is SyncSuccessful) {
+                _syncProgressState.update { currentState ->
+                    currentState.copy(syncedCount = (currentState.syncedCount + 1))
+                }
             }
         }
     }

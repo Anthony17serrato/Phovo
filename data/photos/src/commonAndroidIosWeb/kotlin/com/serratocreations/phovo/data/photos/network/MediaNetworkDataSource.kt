@@ -23,6 +23,7 @@ abstract class MediaNetworkDataSource(
     logger: PhovoLogger
 ) {
     companion object {
+        private const val IP = "10.0.0.253:8080"
         protected const val DEFAULT_CHUNK_SIZE = 512 * 1024 // 512 kb
     }
     private val log = logger.withTag("MediaNetworkDataSource")
@@ -38,7 +39,7 @@ abstract class MediaNetworkDataSource(
 
         // Step 1: Init
         try {
-            client.post("http://10.0.0.183:8080/upload/init") {
+            client.post("http://$IP/upload/init") {
                 contentType(ContentType.Application.Json)
                 setBody(mediaItemDto)
             }
@@ -61,7 +62,7 @@ abstract class MediaNetworkDataSource(
         fileName: String,
         partIndex: String
     ): HttpResponse {
-        return client.post("http://10.0.0.183:8080/upload/chunk") {
+        return client.post("http://$IP/upload/chunk") {
             header("X-File-Name", fileName)
             header("X-Chunk-Index", partIndex)
             setBody(chunk)
@@ -70,7 +71,7 @@ abstract class MediaNetworkDataSource(
 
     protected suspend fun completeSuccessfulUpload(mediaItemDto: MediaItemDto): SyncResult {
         try {
-            val updatedItem: MediaItemDto = client.post("http://10.0.0.183:8080/upload/complete") {
+            val updatedItem: MediaItemDto = client.post("http://$IP/upload/complete") {
                 contentType(ContentType.Text.Plain)
                 setBody(mediaItemDto.localUuid)
             }.body()
