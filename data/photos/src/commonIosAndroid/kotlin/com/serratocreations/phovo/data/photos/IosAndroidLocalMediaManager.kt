@@ -4,12 +4,13 @@ import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.data.photos.local.LocalMediaProcessor
 import com.serratocreations.phovo.data.photos.repository.LocalAndRemoteMediaRepository
 import com.serratocreations.phovo.data.photos.repository.LocalMediaRepository
-import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
-import com.serratocreations.phovo.data.photos.repository.model.MediaItem
-import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
-import com.serratocreations.phovo.data.photos.repository.model.SyncImage
-import com.serratocreations.phovo.data.photos.repository.model.SyncVideo
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class IosAndroidLocalMediaManager(
@@ -24,24 +25,26 @@ class IosAndroidLocalMediaManager(
     appScope,
     logger
 ) {
-    override suspend fun handleProcessedMediaItem(mediaItem: MediaItem) {
-        super.handleProcessedMediaItem(mediaItem)
-        val syncQueueable = when(mediaItem) {
-            is MediaImageItem -> SyncImage(mediaItem.localUuid)
-            is MediaVideoItem -> SyncVideo(mediaItem.localUuid)
-        }
-        localAndRemoteMediaRepository.syncMedia(syncQueueable)
-    }
+    private val _localMediaState = MutableStateFlow<MediaBackupStatus>(Scanning)
+    val localMediaState = _localMediaState.asStateFlow()
 
-    override fun CoroutineScope.syncJob(localItems: List<MediaItem>) {
+    override fun CoroutineScope.syncJob(processJob: Job) {
         launch {
-            val syncQueueables = localItems.map {
-                when(it) {
-                    is MediaImageItem -> SyncImage(it.localUuid)
-                    is MediaVideoItem -> SyncVideo(it.localUuid)
+            localAndRemoteMediaRepository.initiateSyncJob()
+            processJob.join()
+            localAndRemoteMediaRepository.syncProgressState.onEach { syncStatusUpdate ->
+                _localMediaState.update { currentState ->
+                    if (syncStatusUpdate.isSyncComplete) {
+                        BackupComplete(
+                            backedUpQuantity = syncStatusUpdate.syncedCount,
+                            // TODO: Implement handling of failed items
+                            failureQuantity = 0
+                        )
+                    } else {
+                        syncStatusUpdate
+                    }
                 }
-            }
-            localAndRemoteMediaRepository.syncMediaBatchWithPriority(syncQueueables)
+            }.launchIn(this)
         }
     }
 }

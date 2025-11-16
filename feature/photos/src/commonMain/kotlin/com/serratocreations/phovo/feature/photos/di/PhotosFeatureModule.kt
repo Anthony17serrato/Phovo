@@ -11,7 +11,7 @@ import org.koin.dsl.module
 
 
 fun getPhotosFeatureModule(): Module = module {
-    includes(getPhotosDataModule(), getServerDataModule())
+    includes(getPhotosFeaturePlatformModules(), getPhotosDataModule(), getServerDataModule())
 
     viewModel {
         PhotosViewModel(
@@ -20,3 +20,5 @@ fun getPhotosFeatureModule(): Module = module {
         )
     }
 }
+
+internal expect fun getPhotosFeaturePlatformModules(): Module

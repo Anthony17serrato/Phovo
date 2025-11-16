@@ -9,6 +9,7 @@ import androidx.room.Upsert
 import com.serratocreations.phovo.core.database.entities.MediaItemEntity
 import com.serratocreations.phovo.core.database.entities.MediaItemUriEntity
 import com.serratocreations.phovo.core.database.entities.MediaItemWithUriEntity
+import com.serratocreations.phovo.core.model.MediaType
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -27,7 +28,27 @@ interface PhovoMediaDao {
     @Query("SELECT * FROM MediaItemEntity WHERE remoteUuid IS NULL")
     fun observeAllUnsyncedMediaItems(): Flow<List<MediaItemWithUriEntity>>
 
+    @Query("SELECT COUNT(*) FROM MediaItemEntity WHERE remoteUuid IS NULL")
+    fun observeUnsyncedMediaItemCount(): Flow<Int>
+
     @Transaction
     @Query("SELECT * FROM MediaItemEntity WHERE localUuid IS :uuid LIMIT 1")
     suspend fun getMediaItemByLocalUuid(uuid: String): MediaItemWithUriEntity?
+
+    @Transaction
+    @Query(
+        """
+    SELECT * FROM MediaItemEntity
+    WHERE remoteUuid IS NULL
+      AND mediaType = :mediaType
+      AND (:excludeNotEmpty OR localUuid NOT IN (:excludingUuids))
+    ORDER BY timeStampUtcMs DESC
+    LIMIT 1
+    """
+    )
+    suspend fun getNextUnsyncedItemExcludingUuidSet(
+        excludingUuids: Set<String>,
+        mediaType: MediaType,
+        excludeNotEmpty: Boolean
+    ): MediaItemWithUriEntity?
 }

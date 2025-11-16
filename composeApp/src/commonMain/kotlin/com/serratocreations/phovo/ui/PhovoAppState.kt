@@ -18,7 +18,7 @@ import com.serratocreations.phovo.feature.photos.navigation.navigateToForYou
 import com.serratocreations.phovo.navigation.TopLevelDestination
 import com.serratocreations.phovo.navigation.TopLevelDestination.PHOTOS
 import com.serratocreations.phovo.navigation.TopLevelDestination.Connections
-import com.serratocreations.phovo.navigation.TopLevelDestination.BOOKMARKS
+import com.serratocreations.phovo.navigation.TopLevelDestination.SEARCH
 import com.serratocreations.phovo.navigation.navigateToBookmarks
 import kotlinx.coroutines.CoroutineScope
 
@@ -100,7 +100,7 @@ class PhovoAppState(
 
         when (topLevelDestination) {
             PHOTOS -> navController.navigateToForYou(topLevelNavOptions)
-            BOOKMARKS -> navController.navigateToBookmarks(topLevelNavOptions)
+            SEARCH -> navController.navigateToBookmarks(topLevelNavOptions)
             Connections -> navController.navigateToConnections(topLevelNavOptions)
         }
     }

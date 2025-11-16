@@ -8,18 +8,18 @@ ksp = "2.2.20-2.0.4"
 
 androidx-activityCompose = "1.10.1"
 androidx-datastore = "1.1.7"
-androidx-compose = "1.9.0"
 coil = "3.3.0"
 exoplayer = "1.8.0"
-foundation = "1.8.2"
+foundation = "1.9.1"
 filekit = "0.12.0"
 # KMP Compose Start(All of these dependencies should be checked to be compatable on upgrade)
-jetbrains-compose = "1.9.0-rc01"
-lifecycle-compose = "2.9.1"
-material3-adaptive = "1.2.0-alpha05"
-material-navigation = "1.9.0-rc01"
-navigation-compose = "2.9.0-rc01"
-compose-plugin = "1.9.0-rc01"
+jetbrains-compose = "1.10.0-alpha03"
+lifecycle-compose = "2.10.0-alpha03"
+material3-adaptive = "1.2.0-beta01"
+# TODO replace with nav 3
+material-navigation = "1.9.1"
+navigation-compose = "2.9.1"
+compose-plugin = "1.10.0-alpha03"
 # KMP Compose End
 junit = "4.13.2"
 kermit = "2.0.8"
@@ -48,8 +48,6 @@ lifecycle-runtime-compose = { group = "org.jetbrains.androidx.lifecycle", name =
 compose-material-navigation = { group = "org.jetbrains.compose.material", name = "material-navigation", version.ref = "material-navigation" }
 compose-navigation = { group = "org.jetbrains.androidx.navigation", name = "navigation-compose", version.ref = "navigation-compose"}
 compose-navigation-common = { group = "org.jetbrains.androidx.navigation", name = "navigation-common", version.ref = "navigation-compose"}
-compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling", version.ref = "androidx-compose" }
-compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview", version.ref = "androidx-compose" }
 exoplayer = { group = "androidx.media3", name = "media3-exoplayer", version.ref = "exoplayer" }
 media-ui = { group = "androidx.media3", name = "media3-ui", version.ref = "exoplayer" }
 filekit-core = { group = "io.github.vinceglb", name = "filekit-core", version.ref = "filekit" }
@@ -87,7 +85,7 @@ skiko = { module = "org.jetbrains.skiko:skiko", version.ref = "skiko" }
 # Dependencies of the included build-logic
 android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "androidGradlePlugin" }
 compose-compiler-gradlePlugin = { module = "org.jetbrains.kotlin:compose-compiler-gradle-plugin", version.ref = "kotlin" }
-compose-gradlePlugin = { module = "org.jetbrains.compose:compose-gradle-plugin", version.ref = "compose-plugin" }
+compose-gradlePlugin = { module = "org.jetbrains.compose:compose-gradle-plugin", version.ref = "jetbrains-compose" }
 kotlin-gradlePlugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
 ksp-gradlePlugin = { group = "com.google.devtools.ksp", name = "com.google.devtools.ksp.gradle.plugin", version.ref = "ksp" }
 room-gradlePlugin = { group = "androidx.room", name = "room-gradle-plugin", version.ref = "room-kmp" }

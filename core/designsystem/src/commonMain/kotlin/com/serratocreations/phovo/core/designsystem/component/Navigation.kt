@@ -275,12 +275,12 @@ fun PhovoNavigationBarPreview() {
     val items = listOf("For you", "Saved", "Interests")
     val icons = listOf(
         PhovoIcons.UpcomingBorder,
-        PhovoIcons.BookmarksBorder,
+        PhovoIcons.SearchBorder,
         PhovoIcons.Dns,
     )
     val selectedIcons = listOf(
         PhovoIcons.Upcoming,
-        PhovoIcons.Bookmarks,
+        PhovoIcons.Search,
         PhovoIcons.Dns,
     )
 
@@ -314,12 +314,12 @@ fun PhovoNavigationRailPreview() {
     val items = listOf("For you", "Saved", "Interests")
     val icons = listOf(
         PhovoIcons.UpcomingBorder,
-        PhovoIcons.BookmarksBorder,
+        PhovoIcons.SearchBorder,
         PhovoIcons.Dns,
     )
     val selectedIcons = listOf(
         PhovoIcons.Upcoming,
-        PhovoIcons.Bookmarks,
+        PhovoIcons.Search,
         PhovoIcons.Dns,
     )
 
