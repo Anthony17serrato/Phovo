@@ -13,6 +13,38 @@ All applications are developed within a single codebase using [Kotlin Multiplatf
 #### Desktop
 <img src="https://github.com/Anthony17serrato/Phovo/blob/main/docs/images/desktop_screenshot.png" style="max-width: 100%; height: auto;" />
 
+# 🗓️ Phovo Release Schedule
+
+Phovo is currently undergoing active development. Core logic, architecture, and UI foundations are still being refined. The following is the planned release timeline:
+
+---
+
+## 🚩 March 31, 2026 — Alpha Release
+**Availability:** Internal  
+**Focus:**  
+- Early testing of core features  
+- Rapid iteration  
+- Expect bugs, instability, and breaking changes without backward compatibility  
+- Continued development of initial feature set
+
+---
+
+## 🚩 May 31, 2026 — Beta Release
+**Availability:** Public  
+**Focus:**  
+- Initial feature development complete  
+- No further breaking changes  
+- Begin stabilization efforts  
+- Resolve remaining functional issues
+
+---
+
+## 🏁 July 31, 2026 — Stable Release
+**Availability:** Android, iOS & Desktop  
+**Focus:**  
+- Production-ready release  
+- All critical and high-priority bugs resolved  
+- Full cross-platform support
 ## How to build and run
 
 Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…
