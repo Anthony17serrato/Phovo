@@ -47,8 +47,8 @@ Phovo is currently undergoing active development. Core logic, architecture, and 
 - Full cross-platform support
 
 ## How to build and run
-
-Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…
+The project can be assembled in an environment which has been configured for Kotlin Multiplatform development, please follow the official guide:
+https://kotlinlang.org/docs/multiplatform/quickstart.html#set-up-the-environment
 
 # Modular Design Strategy
 The Phovo project follows the modular design guidelines published by Google for mobile development:
