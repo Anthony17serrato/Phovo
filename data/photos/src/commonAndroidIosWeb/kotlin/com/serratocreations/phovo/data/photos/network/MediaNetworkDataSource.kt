@@ -14,6 +14,7 @@ import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
+import io.ktor.utils.io.ByteReadChannel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.io.IOException
@@ -58,7 +59,7 @@ abstract class MediaNetworkDataSource(
     ): SyncResult
 
     protected suspend fun syncChunk(
-        chunk: ByteArray,
+        chunk: ByteReadChannel,
         fileName: String,
         partIndex: String
     ): HttpResponse {

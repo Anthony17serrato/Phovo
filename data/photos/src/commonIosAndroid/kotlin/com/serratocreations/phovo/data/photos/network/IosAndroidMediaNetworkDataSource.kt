@@ -9,11 +9,9 @@ import io.github.vinceglb.filekit.exists
 import io.github.vinceglb.filekit.source
 import io.ktor.client.HttpClient
 import io.ktor.http.isSuccess
+import io.ktor.utils.io.ByteReadChannel
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.io.Buffer
-import kotlinx.io.IOException
 import kotlinx.io.buffered
-import kotlinx.io.readByteArray
 
 class IosAndroidMediaNetworkDataSource(
     client: HttpClient,
@@ -28,40 +26,20 @@ class IosAndroidMediaNetworkDataSource(
             log.e { "File not found at $mediaUri" }
             return SyncError
         }
-        var partIndex = 0
 
-        suspend fun processChunk(byteArray: ByteArray) {
-            log.i { "Uploading chunk $partIndex size=${byteArray.size}" }
+        val byteReadChannel = ByteReadChannel(file.source().buffered())
+        val response = syncChunk(
+            chunk = byteReadChannel,
+            fileName = mediaItemDto.fileName,
+            partIndex = "1"
+        )
 
-            val response = syncChunk(
-                chunk = byteArray,
-                fileName = mediaItemDto.fileName,
-                partIndex = partIndex.toString()
-            )
-
-            if (response.status.isSuccess()) {
-                log.i { "Uploaded chunk $partIndex" }
-            } else {
-                log.e { "Failed chunk $partIndex: ${response.status}" }
-                throw IOException("Failed to upload chunk $partIndex: ${response.status}")
-            }
-            partIndex++
-        }
-
-        return file.source().buffered().use { source ->
-            val sink = Buffer()
-            while (!source.exhausted()) {
-                // Read up to chunkSize bytes, may be smaller at EOF
-                val bytesRead = source.readAtMostTo(sink, DEFAULT_CHUNK_SIZE.toLong())
-                if (bytesRead <= 0) break  // EOF safety
-                // TODO Add retry mechanism
-                try {
-                    processChunk(sink.readByteArray(bytesRead.toInt()))
-                } catch (e: IOException) {
-                    return@use SyncError
-                }
-            }
-            return@use completeSuccessfulUpload(mediaItemDto = mediaItemDto)
+        return if (response.status.isSuccess()) {
+            log.i { "Uploaded media ${mediaItemDto.localUuid}" }
+            completeSuccessfulUpload(mediaItemDto = mediaItemDto)
+        } else {
+            log.e { "Failed upload ${mediaItemDto.localUuid}: ${response.status}" }
+            SyncError
         }
     }
 }

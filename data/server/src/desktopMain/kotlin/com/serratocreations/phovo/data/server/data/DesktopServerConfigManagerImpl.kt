@@ -29,7 +29,8 @@ import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
-import io.ktor.utils.io.jvm.javaio.copyTo
+import io.ktor.util.cio.writeChannel
+import io.ktor.utils.io.copyAndClose
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -39,7 +40,6 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.serialization.json.Json
-import java.io.FileOutputStream
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.LocalDateTime
@@ -134,10 +134,7 @@ class DesktopServerConfigManagerImpl(
                     ?.backupDirectory?.plus("/") ?: error("No server config")
 
                 val filePath = Paths.get(directory, "$fileName.part")
-
-                FileOutputStream(filePath.toFile(), true).use { fos ->
-                    call.receiveChannel().copyTo(fos)
-                }
+                call.receiveChannel().copyAndClose(filePath.toFile().writeChannel())
 
                 this@DesktopServerConfigManagerImpl.log.i { "Appended chunk $chunkIndex/$totalChunks to $fileName (${Files.size(filePath)} bytes so far)" }
 
