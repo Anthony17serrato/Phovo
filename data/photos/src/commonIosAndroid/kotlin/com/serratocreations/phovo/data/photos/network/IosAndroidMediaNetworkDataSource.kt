@@ -27,6 +27,8 @@ class IosAndroidMediaNetworkDataSource(
             return SyncError
         }
 
+        // TODO chunking has been disabled, for photographs it is mostly not needed, in the future
+        //  chunking should be used to allow videos to resume syncing if disruptions occur
         val byteReadChannel = ByteReadChannel(file.source().buffered())
         val response = syncChunk(
             chunk = byteReadChannel,

@@ -24,8 +24,7 @@ abstract class MediaNetworkDataSource(
     logger: PhovoLogger
 ) {
     companion object {
-        private const val IP = "10.0.0.253:8080"
-        protected const val DEFAULT_CHUNK_SIZE = 512 * 1024 // 512 kb
+        private const val IP = "10.0.0.183:8080"
     }
     private val log = logger.withTag("MediaNetworkDataSource")
 
