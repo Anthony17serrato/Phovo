@@ -14,6 +14,7 @@ import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
+import io.ktor.utils.io.ByteReadChannel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.io.IOException
@@ -23,8 +24,7 @@ abstract class MediaNetworkDataSource(
     logger: PhovoLogger
 ) {
     companion object {
-        private const val IP = "10.0.0.253:8080"
-        protected const val DEFAULT_CHUNK_SIZE = 512 * 1024 // 512 kb
+        private const val IP = "10.0.0.183:8080"
     }
     private val log = logger.withTag("MediaNetworkDataSource")
 
@@ -58,7 +58,7 @@ abstract class MediaNetworkDataSource(
     ): SyncResult
 
     protected suspend fun syncChunk(
-        chunk: ByteArray,
+        chunk: ByteReadChannel,
         fileName: String,
         partIndex: String
     ): HttpResponse {

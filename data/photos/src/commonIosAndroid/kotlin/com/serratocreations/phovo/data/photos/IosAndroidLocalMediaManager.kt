@@ -30,8 +30,8 @@ class IosAndroidLocalMediaManager(
 
     override fun CoroutineScope.syncJob(processJob: Job) {
         launch {
-            localAndRemoteMediaRepository.initiateSyncJob()
             processJob.join()
+            localAndRemoteMediaRepository.initiateSyncJob()
             localAndRemoteMediaRepository.syncProgressState.onEach { syncStatusUpdate ->
                 _localMediaState.update { currentState ->
                     if (syncStatusUpdate.isSyncComplete) {
