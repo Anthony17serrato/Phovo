@@ -1,4 +1,4 @@
-![New Project](https://github.com/user-attachments/assets/cc3a0bb6-4db9-4493-be32-dfb9108d773f)
+![phovo_banner](https://github.com/user-attachments/assets/eb4b5750-7355-459a-b186-40460d80b61a)
 
 ## Self hosted Photo/Video backup
 This is a Kotlin Multiplatform project targeting Android, iOS, Desktop and WASM(WEB) clients. Phovo is intended to be a self hosted cloud storage client that enables seamless access to photos and videos on all compatible target devices. While initially support for 4 clients is planned, if there is strong market demand for this product Wear OS, Android XR, and Android TV may eventually be targeted.
