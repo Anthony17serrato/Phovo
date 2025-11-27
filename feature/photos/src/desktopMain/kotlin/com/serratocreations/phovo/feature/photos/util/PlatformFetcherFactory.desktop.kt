@@ -8,6 +8,8 @@ import coil3.fetch.FetchResult
 import coil3.fetch.Fetcher
 import coil3.fetch.SourceFetchResult
 import coil3.request.Options
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import okio.buffer
 import okio.source
 import phovo.data.ffmpeg.generated.resources.Res
@@ -22,7 +24,7 @@ class DesktopVideoFrameFetcher(
     private val options: Options,
 ) : Fetcher {
 
-    override suspend fun fetch(): FetchResult? {
+    override suspend fun fetch(): FetchResult? = withContext(Dispatchers.IO) {
         // Create a temp file for extracted frame
         val tempFrameFile = File.createTempFile("frame_", ".png")
         // TODO: Extract OS detection to utility function
@@ -68,7 +70,7 @@ class DesktopVideoFrameFetcher(
                 fileSystem = options.fileSystem
             )
 
-            return SourceFetchResult(
+            return@withContext SourceFetchResult(
                 source = source,
                 mimeType = "image/png", // Or dynamically determine
                 dataSource = DataSource.DISK

@@ -8,6 +8,7 @@ ksp = "2.2.20-2.0.4"
 
 androidx-activityCompose = "1.10.1"
 androidx-datastore = "1.1.7"
+androidx-splash = "1.2.0"
 coil = "3.3.0"
 exoplayer = "1.8.0"
 foundation = "1.9.1"
@@ -37,6 +38,7 @@ sqlite = "2.5.2"
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
+androidx-splash = { group = "androidx.core", name = "core-splashscreen", version.ref = "androidx-splash" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
 coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
 coil-video = { group = "io.coil-kt.coil3", name = "coil-video", version.ref = "coil" }

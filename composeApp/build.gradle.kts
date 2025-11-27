@@ -1,3 +1,5 @@
+import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+
 plugins {
     id(libs.plugins.phovo.kmp.application.koin.get().pluginId)
     id(libs.plugins.phovo.kmp.application.compose.get().pluginId)
@@ -10,6 +12,7 @@ kotlin {
         val desktopMain by getting
         
         androidMain.dependencies {
+            implementation(libs.androidx.splash)
         }
         commonMain.dependencies {
             // Project dependencies
@@ -38,10 +41,18 @@ android {
 // File picker desktop config
 compose.desktop {
     application {
+        mainClass = "com.serratocreations.phovo.MainKt"
+
         nativeDistributions {
             linux {
                 modules("jdk.security.auth")
             }
+            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+            packageName = "com.serratocreations.phovo"
+            packageVersion = "1.0.0"
+            appResourcesRootDir =
+                layout.projectDirectory.dir("src/desktopMain/assets")
+            jvmArgs += "-splash:${'$'}APPDIR/resources/phovo_splash.png"
         }
     }
 }
