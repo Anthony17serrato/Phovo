@@ -26,6 +26,7 @@ kotlin {
 
             implementation(compose.components.resources)
             implementation(libs.serialization.json)
+            implementation(libs.platformtools.darkmodedetector)
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)

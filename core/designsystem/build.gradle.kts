@@ -10,6 +10,7 @@ kotlin {
                 //put your multiplatform dependencies here
                 implementation(compose.components.resources)
                 implementation(projects.core.common)
+                implementation(libs.platformtools.darkmodedetector)
                 api(compose.components.uiToolingPreview)
                 api(compose.materialIconsExtended)
                 api(compose.foundation)

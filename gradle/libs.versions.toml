@@ -29,6 +29,7 @@ koin = "4.1.1"
 kotlinx-datetime = "0.7.1"
 kotlinx-io = "0.4.0"
 ktor = "3.2.3"
+platformtools = "0.7.4"
 room-kmp = "2.7.2"
 serialization-json = "1.9.0"
 skiko = "0.9.24"
@@ -77,6 +78,7 @@ ktor-server-core = { group = "io.ktor", name = "ktor-server-core", version.ref =
 ktor-server-netty = { group = "io.ktor", name = "ktor-server-netty", version.ref = "ktor" }
 ktor-serialization = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktor" }
 ktor-server-content-negotiation = { group = "io.ktor", name = "ktor-server-content-negotiation", version.ref = "ktor" }
+platformtools-darkmodedetector = { module = "io.github.kdroidfilter:platformtools.darkmodedetector", version.ref = "platformtools" }
 room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room-kmp"}
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room-kmp"}
 # NOTE: sqlite-bundled bundles a version of sqlite with all targets, this is good for testability
