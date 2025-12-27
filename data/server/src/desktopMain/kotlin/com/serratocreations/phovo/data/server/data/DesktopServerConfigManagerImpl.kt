@@ -174,8 +174,6 @@ class DesktopServerConfigManagerImpl(
     }
 
     private fun CoroutineScope.observeDeviceServerConfigurationState() {
-        // TODO: fetch the initial server state from room
-        serverConfigState.update { it.copy(configStatus = ConfigStatus.NotConfigured) }
         serverEventsRepository.serverEventLogsFlow().onEach { logs ->
             serverConfigState.update { it.copy(serverEventLogs = logs) }
         }.launchIn(this)
@@ -186,19 +184,19 @@ class DesktopServerConfigManagerImpl(
             log.i { "configureDeviceAsServer $serverConfig" }
             serverConfigRepository.updateServerConfig(serverConfig)
             serverConfigState.update {
-                it.copy(configStatus = ConfigStatus.NotConfigured)
+                it.copy(
+                    configStatus = ConfigStatus.Starting
+                )
             }
             launch(ioDispatcher) {
                 embeddedServer(factory = Netty, port = 8080, host = "0.0.0.0", module = routingConfig)
                     .start(wait = false)
                 serverConfigState.update {
                     it.copy(configStatus = ConfigStatus.Configured(
-                        serverState = ServerState.Online,
                         serverUrl = "http://${getHostIPv4()}:8080"
                     ))
                 }
             }
-            // TODO Save server config to room db
         }
     }
 }

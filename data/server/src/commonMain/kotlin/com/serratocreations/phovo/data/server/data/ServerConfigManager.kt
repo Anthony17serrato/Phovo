@@ -18,19 +18,15 @@ interface DesktopServerConfigManager: ServerConfigManager {
 class NoOpServerConfigManager: ServerConfigManager
 
 sealed interface ConfigStatus {
-    data object NotConfigured: ConfigStatus
+    data object Loading: ConfigStatus
+    data object NotConfigured : ConfigStatus
+    data object Starting : ConfigStatus
     data class Configured(
-        val serverState: ServerState,
         val serverUrl: String,
-    ): ConfigStatus
-}
-
-enum class ServerState {
-    Online,
-    Offline
+    ) : ConfigStatus
 }
 
 data class ServerConfigState(
-    val configStatus: ConfigStatus? = null,
+    val configStatus: ConfigStatus = ConfigStatus.Loading,
     val serverEventLogs: List<String> = emptyList()
 )

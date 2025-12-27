@@ -3,6 +3,7 @@ package com.serratocreations.phovo.data.server.di
 import com.serratocreations.phovo.core.common.di.APPLICATION_SCOPE
 import com.serratocreations.phovo.core.common.di.IO_DISPATCHER
 import com.serratocreations.phovo.core.database.di.getDatabaseModule
+import com.serratocreations.phovo.data.server.data.DesktopServerConfigManager
 import com.serratocreations.phovo.data.server.data.DesktopServerConfigManagerImpl
 import com.serratocreations.phovo.data.server.data.ServerConfigManager
 import com.serratocreations.phovo.data.server.data.repository.ServerConfigRepository
@@ -20,7 +21,7 @@ internal actual fun getAndroidDesktopIosWasmModules(): org.koin.core.module.Modu
 
     single { ServerEventsRepository() }
 
-    single<ServerConfigManager> {
+    single {
         DesktopServerConfigManagerImpl(
             get(),
             get(),
@@ -29,5 +30,5 @@ internal actual fun getAndroidDesktopIosWasmModules(): org.koin.core.module.Modu
             get(APPLICATION_SCOPE),
             get(IO_DISPATCHER)
         )
-    }
+    } binds arrayOf(ServerConfigManager::class, DesktopServerConfigManager::class)
 }
