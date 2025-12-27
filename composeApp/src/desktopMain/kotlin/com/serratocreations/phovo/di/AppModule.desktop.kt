@@ -16,6 +16,7 @@ class DesktopApplicationPlatformModuleFetcher: ApplicationPlatformModuleFetcher(
             DesktopAppInitializer(
                 get(APPLICATION_SCOPE),
                 get(),
+                get(),
                 get()
             )
         }
