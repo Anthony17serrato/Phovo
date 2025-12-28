@@ -46,8 +46,10 @@ import com.serratocreations.phovo.core.designsystem.theme.PhovoTheme
 import com.serratocreations.phovo.navigation.TopLevelDestination
 import com.serratocreations.phovo.ui.components.HomeTitleContent
 import com.serratocreations.phovo.ui.viewmodel.ApplicationViewModel
-import com.serratocreations.phovo.ui.viewmodel.Available
-import com.serratocreations.phovo.ui.viewmodel.ServerStatus
+import com.serratocreations.phovo.ui.viewmodel.Green
+import com.serratocreations.phovo.ui.viewmodel.Red
+import com.serratocreations.phovo.ui.viewmodel.ServerStatusColor
+import com.serratocreations.phovo.ui.viewmodel.Unavailable
 import phovo.composeapp.generated.resources.Res
 import phovo.composeapp.generated.resources.feature_settings_top_app_bar_action_icon_description
 import phovo.composeapp.generated.resources.feature_settings_top_app_bar_navigation_icon_description
@@ -102,9 +104,14 @@ internal fun PhovoApp(
             appState.topLevelDestinations.forEach { destination ->
                 val selected = currentDestination
                     .isRouteInHierarchy(destination.route)
-                val showNotificationDot =
-                    applicationUiSate == Available(status = ServerStatus.Online) &&
-                            destination == TopLevelDestination.Connections
+                val customModifier = if (destination == TopLevelDestination.Connections) {
+                    when(applicationUiSate) {
+                        Green -> Modifier.notificationDot(applicationUiSate)
+                        Red -> Modifier.notificationDot(applicationUiSate)
+                        Unavailable -> Modifier
+                    }
+                }
+                else { Modifier }
                 item(
                     selected = selected,
                     onClick = { appState.navigateToTopLevelDestination(destination) },
@@ -122,7 +129,7 @@ internal fun PhovoApp(
                     },
                     label = { Text(stringResource(destination.iconTextId)) },
                     modifier = Modifier.testTag("PhovoNavItem")
-                        .then(if (showNotificationDot) Modifier.notificationDot() else Modifier)
+                        .then(customModifier)
                 )
             }
         },
@@ -197,13 +204,17 @@ private fun NavDestination?.isTopLevel() =
         this?.hasRoute(destination.route) ?: true
     }
 
-private fun Modifier.notificationDot(): Modifier =
+private fun Modifier.notificationDot(statusColor: ServerStatusColor): Modifier =
     composed {
-        val tertiaryColor = MaterialTheme.colorScheme.tertiary
+        val color = when(statusColor) {
+            Green -> MaterialTheme.colorScheme.primary
+            Red -> MaterialTheme.colorScheme.error
+            Unavailable -> MaterialTheme.colorScheme.error
+        }
         drawWithContent {
             drawContent()
             drawCircle(
-                tertiaryColor,
+                color,
                 radius = 5.dp.toPx(),
                 // This is based on the dimensions of the NavigationBar's "indicator pill";
                 // however, its parameters are private, so we must depend on them implicitly

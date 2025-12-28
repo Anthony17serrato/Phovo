@@ -15,7 +15,7 @@ import kotlinx.coroutines.launch
 class ApplicationViewModel(
     private val mediaRepository: MediaRepository
 ): ViewModel() {
-    private val _applicationUiState = MutableStateFlow<ServerConnectionStatus>(Loading)
+    private val _applicationUiState = MutableStateFlow<ServerStatusColor>(Unavailable)
     val applicationUiState = _applicationUiState.asStateFlow()
 
     init {
@@ -28,8 +28,8 @@ class ApplicationViewModel(
                 .onEach { isServerConnectionSuccess ->
                     _applicationUiState.update { uiState ->
                         if (isServerConnectionSuccess) {
-                            Available(status = ServerStatus.Online)
-                        } else { Available(status = ServerStatus.Offline) }
+                            Green
+                        } else { Red }
                     }
                 }
                 .launchIn(this)
@@ -37,13 +37,8 @@ class ApplicationViewModel(
     }
 }
 
-sealed interface ServerConnectionStatus
+sealed interface ServerStatusColor
 
-data object Loading: ServerConnectionStatus
-data class Available(val status: ServerStatus): ServerConnectionStatus
-data object NotConfigured: ServerConnectionStatus
-
-enum class ServerStatus{
-    Online,
-    Offline
-}
+data object Unavailable: ServerStatusColor
+data object Green: ServerStatusColor
+data object Red: ServerStatusColor
