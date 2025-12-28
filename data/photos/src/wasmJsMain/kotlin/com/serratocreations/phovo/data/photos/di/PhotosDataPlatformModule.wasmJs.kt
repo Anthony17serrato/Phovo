@@ -13,6 +13,7 @@ internal actual fun getPlatformModulesBranch1(): Module = module {
 
     single {
         HttpClient(Js) {
+            expectSuccess = false
             install(ContentNegotiation) {
                 json()
             }

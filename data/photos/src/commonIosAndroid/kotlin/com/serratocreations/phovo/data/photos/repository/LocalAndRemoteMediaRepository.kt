@@ -1,13 +1,15 @@
 package com.serratocreations.phovo.data.photos.repository
 
 import com.serratocreations.phovo.core.common.util.SafeSet
+import com.serratocreations.phovo.core.database.entities.MediaItemEntity
 import com.serratocreations.phovo.core.database.entities.MediaItemWithUriEntity
 import com.serratocreations.phovo.core.model.MediaType
+import com.serratocreations.phovo.core.model.network.MediaItemDto
 import com.serratocreations.phovo.data.photos.MediaBackupProgress
 import com.serratocreations.phovo.data.photos.mappers.toMediaItemDto
 import com.serratocreations.phovo.data.photos.mappers.toMediaItemEntity
-import com.serratocreations.phovo.data.photos.network.model.SyncResult
-import com.serratocreations.phovo.data.photos.network.model.SyncSuccessful
+import com.serratocreations.phovo.data.photos.repository.model.SyncResult
+import com.serratocreations.phovo.data.photos.repository.model.SyncSuccessful
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import com.serratocreations.phovo.data.photos.repository.model.SyncImage
 import com.serratocreations.phovo.data.photos.repository.model.SyncQueueable
@@ -34,7 +36,7 @@ import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
 
-interface LocalAndRemoteMediaRepository: MediaRepository {
+interface LocalAndRemoteMediaRepository: LocalMediaRepository, RemoteMediaRepository {
     val syncProgressState: StateFlow<MediaBackupProgress>
     /**
      * Adds the [syncQueueable] to the sync queue. media added using this API gets picked up by
@@ -210,4 +212,32 @@ class LocalAndRemoteMediaRepositoryImpl(
                 syncJob = this
             }
         }
+
+    override suspend fun syncMedia(
+        media: MediaItemDto,
+        mediaUri: String
+    ) = remoteMediaRepository.syncMedia(media, mediaUri)
+
+    override suspend fun observeServerConnection() = remoteMediaRepository.observeServerConnection()
+
+    override suspend fun getMediaItemByLocalUuid(uuid: String) = localMediaRepository.getMediaItemByLocalUuid(uuid)
+
+    override suspend fun addOrUpdateMediaItem(mediaItem: MediaItem) = localMediaRepository.addOrUpdateMediaItem(mediaItem)
+
+    override suspend fun addOrUpdateMediaItem(mediaItemWithUriEntity: MediaItemWithUriEntity) =
+        localMediaRepository.addOrUpdateMediaItem(mediaItemWithUriEntity)
+
+    override fun observeUnsyncedMedia() = localMediaRepository.observeUnsyncedMedia()
+
+    override fun observeUnsyncedMediaCount() = localMediaRepository.observeUnsyncedMediaCount()
+
+    override suspend fun getUnsyncedMediaCount() = localMediaRepository.getUnsyncedMediaCount()
+
+    override suspend fun updateMediaItem(mediaItemEntity: MediaItemEntity) =
+        localMediaRepository.updateMediaItem(mediaItemEntity)
+
+    override suspend fun getNextUnsyncedItemExcludingUuidSet(
+        syncInProgressSet: Set<String>,
+        mediaType: MediaType
+    ) = localMediaRepository.getNextUnsyncedItemExcludingUuidSet(syncInProgressSet, mediaType)
 }

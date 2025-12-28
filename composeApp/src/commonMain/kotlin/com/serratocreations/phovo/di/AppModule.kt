@@ -7,8 +7,10 @@ import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.core.logger.getLoggerCommonModule
 import com.serratocreations.phovo.feature.connections.di.getConnectionsFeatureModule
 import com.serratocreations.phovo.feature.photos.di.getPhotosFeatureModule
+import com.serratocreations.phovo.ui.viewmodel.ApplicationViewModel
 import org.koin.core.context.startKoin
 import org.koin.core.module.Module
+import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.KoinAppDeclaration
 import org.koin.dsl.module
 import org.koin.mp.KoinPlatformTools
@@ -39,5 +41,6 @@ abstract class ApplicationPlatformModuleFetcher {
             getLoggerCommonModule(),
             getConnectionsFeatureModule(),
         )
+        viewModelOf(::ApplicationViewModel)
     }
 }

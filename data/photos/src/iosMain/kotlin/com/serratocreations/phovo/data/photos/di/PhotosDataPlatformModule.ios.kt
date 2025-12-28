@@ -14,6 +14,7 @@ import org.koin.dsl.module
 internal actual fun getAndroidIosModules(): Module = module {
     single {
         HttpClient(Darwin) {
+            expectSuccess = false
             install(ContentNegotiation) {
                 json()
             }

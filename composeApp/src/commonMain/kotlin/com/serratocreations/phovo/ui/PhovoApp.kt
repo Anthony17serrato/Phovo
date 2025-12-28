@@ -24,9 +24,13 @@ import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.navigation.NavDestination
@@ -41,6 +45,11 @@ import com.serratocreations.phovo.core.designsystem.icon.PhovoIcons
 import com.serratocreations.phovo.core.designsystem.theme.PhovoTheme
 import com.serratocreations.phovo.navigation.TopLevelDestination
 import com.serratocreations.phovo.ui.components.HomeTitleContent
+import com.serratocreations.phovo.ui.viewmodel.ApplicationViewModel
+import com.serratocreations.phovo.ui.viewmodel.Green
+import com.serratocreations.phovo.ui.viewmodel.Red
+import com.serratocreations.phovo.ui.viewmodel.ServerStatusColor
+import com.serratocreations.phovo.ui.viewmodel.Unavailable
 import phovo.composeapp.generated.resources.Res
 import phovo.composeapp.generated.resources.feature_settings_top_app_bar_action_icon_description
 import phovo.composeapp.generated.resources.feature_settings_top_app_bar_navigation_icon_description
@@ -81,18 +90,28 @@ internal fun PhovoApp(
         "No ViewModelStoreOwner was provided via LocalViewModelStoreOwner"
     },
     phovoViewModel: PhovoViewModel = koinViewModel(viewModelStoreOwner = viewModelStoreOwner),
+    applicationViewModel: ApplicationViewModel = koinViewModel(viewModelStoreOwner = viewModelStoreOwner),
     modifier: Modifier = Modifier,
     windowAdaptiveInfo: WindowAdaptiveInfo = currentWindowAdaptiveInfo(),
 ) {
     val currentDestination = appState.currentDestination
     appState.appLevelVmStoreOwner = viewModelStoreOwner
     val appLevelUiState by phovoViewModel.phovoUiState.collectAsState()
+    val applicationUiSate by applicationViewModel.applicationUiState.collectAsState()
 
     PhovoNavigationSuiteScaffold(
         navigationSuiteItems = {
             appState.topLevelDestinations.forEach { destination ->
                 val selected = currentDestination
                     .isRouteInHierarchy(destination.route)
+                val customModifier = if (destination == TopLevelDestination.Connections) {
+                    when(applicationUiSate) {
+                        Green -> Modifier.notificationDot(applicationUiSate)
+                        Red -> Modifier.notificationDot(applicationUiSate)
+                        Unavailable -> Modifier
+                    }
+                }
+                else { Modifier }
                 item(
                     selected = selected,
                     onClick = { appState.navigateToTopLevelDestination(destination) },
@@ -110,6 +129,7 @@ internal fun PhovoApp(
                     },
                     label = { Text(stringResource(destination.iconTextId)) },
                     modifier = Modifier.testTag("PhovoNavItem")
+                        .then(customModifier)
                 )
             }
         },
@@ -182,4 +202,27 @@ private fun NavDestination?.isTopLevel() =
     TopLevelDestination.entries.any { destination ->
         // default to true when destination is unknown
         this?.hasRoute(destination.route) ?: true
+    }
+
+private fun Modifier.notificationDot(statusColor: ServerStatusColor): Modifier =
+    composed {
+        val color = when(statusColor) {
+            Green -> MaterialTheme.colorScheme.primary
+            Red -> MaterialTheme.colorScheme.error
+            Unavailable -> MaterialTheme.colorScheme.error
+        }
+        drawWithContent {
+            drawContent()
+            drawCircle(
+                color,
+                radius = 5.dp.toPx(),
+                // This is based on the dimensions of the NavigationBar's "indicator pill";
+                // however, its parameters are private, so we must depend on them implicitly
+                // (NavigationBarTokens.ActiveIndicatorWidth = 64.dp)
+                center = center + Offset(
+                    64.dp.toPx() * .45f,
+                    32.dp.toPx() * -.45f - 6.dp.toPx(),
+                ),
+            )
+        }
     }

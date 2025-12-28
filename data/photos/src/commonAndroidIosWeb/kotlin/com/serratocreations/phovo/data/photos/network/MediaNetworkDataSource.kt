@@ -2,18 +2,20 @@ package com.serratocreations.phovo.data.photos.network
 
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.core.model.network.MediaItemDto
-import com.serratocreations.phovo.data.photos.network.model.SyncError
-import com.serratocreations.phovo.data.photos.network.model.SyncResult
-import com.serratocreations.phovo.data.photos.network.model.SyncSuccessful
+import com.serratocreations.phovo.data.photos.repository.model.SyncError
+import com.serratocreations.phovo.data.photos.repository.model.SyncResult
+import com.serratocreations.phovo.data.photos.repository.model.SyncSuccessful
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
+import io.ktor.http.isSuccess
 import io.ktor.utils.io.ByteReadChannel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -24,12 +26,26 @@ abstract class MediaNetworkDataSource(
     logger: PhovoLogger
 ) {
     companion object {
-        private const val IP = "10.0.0.183:8080"
+        private const val IP = "192.168.1.21:8080"
     }
     private val log = logger.withTag("MediaNetworkDataSource")
 
     // TODO: Implement network API for getting all items
     fun allItemsFlow(): Flow<List<MediaItem>> = flowOf()
+
+    /**
+     * Returns true if a connection to the server is successfully established,
+     * otherwise returns false. Connection can fail for a variety of reasons and this API does not
+     * currently return a failure reason.
+     */
+    suspend fun checkServerConnection(): Boolean {
+        try {
+            val result = client.get("http://$IP/")
+            return result.status.isSuccess()
+        } catch (_: IOException) {
+            return false
+        }
+    }
 
     suspend fun syncMedia(
         mediaItemDto: MediaItemDto,
