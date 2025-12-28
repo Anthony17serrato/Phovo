@@ -24,9 +24,13 @@ import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.navigation.NavDestination
@@ -41,6 +45,9 @@ import com.serratocreations.phovo.core.designsystem.icon.PhovoIcons
 import com.serratocreations.phovo.core.designsystem.theme.PhovoTheme
 import com.serratocreations.phovo.navigation.TopLevelDestination
 import com.serratocreations.phovo.ui.components.HomeTitleContent
+import com.serratocreations.phovo.ui.viewmodel.ApplicationViewModel
+import com.serratocreations.phovo.ui.viewmodel.Available
+import com.serratocreations.phovo.ui.viewmodel.ServerStatus
 import phovo.composeapp.generated.resources.Res
 import phovo.composeapp.generated.resources.feature_settings_top_app_bar_action_icon_description
 import phovo.composeapp.generated.resources.feature_settings_top_app_bar_navigation_icon_description
@@ -81,18 +88,23 @@ internal fun PhovoApp(
         "No ViewModelStoreOwner was provided via LocalViewModelStoreOwner"
     },
     phovoViewModel: PhovoViewModel = koinViewModel(viewModelStoreOwner = viewModelStoreOwner),
+    applicationViewModel: ApplicationViewModel = koinViewModel(viewModelStoreOwner = viewModelStoreOwner),
     modifier: Modifier = Modifier,
     windowAdaptiveInfo: WindowAdaptiveInfo = currentWindowAdaptiveInfo(),
 ) {
     val currentDestination = appState.currentDestination
     appState.appLevelVmStoreOwner = viewModelStoreOwner
     val appLevelUiState by phovoViewModel.phovoUiState.collectAsState()
+    val applicationUiSate by applicationViewModel.applicationUiState.collectAsState()
 
     PhovoNavigationSuiteScaffold(
         navigationSuiteItems = {
             appState.topLevelDestinations.forEach { destination ->
                 val selected = currentDestination
                     .isRouteInHierarchy(destination.route)
+                val showNotificationDot =
+                    applicationUiSate == Available(status = ServerStatus.Online) &&
+                            destination == TopLevelDestination.Connections
                 item(
                     selected = selected,
                     onClick = { appState.navigateToTopLevelDestination(destination) },
@@ -110,6 +122,7 @@ internal fun PhovoApp(
                     },
                     label = { Text(stringResource(destination.iconTextId)) },
                     modifier = Modifier.testTag("PhovoNavItem")
+                        .then(if (showNotificationDot) Modifier.notificationDot() else Modifier)
                 )
             }
         },
@@ -182,4 +195,23 @@ private fun NavDestination?.isTopLevel() =
     TopLevelDestination.entries.any { destination ->
         // default to true when destination is unknown
         this?.hasRoute(destination.route) ?: true
+    }
+
+private fun Modifier.notificationDot(): Modifier =
+    composed {
+        val tertiaryColor = MaterialTheme.colorScheme.tertiary
+        drawWithContent {
+            drawContent()
+            drawCircle(
+                tertiaryColor,
+                radius = 5.dp.toPx(),
+                // This is based on the dimensions of the NavigationBar's "indicator pill";
+                // however, its parameters are private, so we must depend on them implicitly
+                // (NavigationBarTokens.ActiveIndicatorWidth = 64.dp)
+                center = center + Offset(
+                    64.dp.toPx() * .45f,
+                    32.dp.toPx() * -.45f - 6.dp.toPx(),
+                ),
+            )
+        }
     }
