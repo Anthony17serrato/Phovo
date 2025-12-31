@@ -105,11 +105,7 @@ internal fun PhovoApp(
                 val selected = currentDestination
                     .isRouteInHierarchy(destination.route)
                 val customModifier = if (destination == TopLevelDestination.Connections) {
-                    when(applicationUiSate) {
-                        Green -> Modifier.notificationDot(applicationUiSate)
-                        Red -> Modifier.notificationDot(applicationUiSate)
-                        Unavailable -> Modifier
-                    }
+                    Modifier.notificationDot(applicationUiSate)
                 }
                 else { Modifier }
                 item(
@@ -209,7 +205,7 @@ private fun Modifier.notificationDot(statusColor: ServerStatusColor): Modifier =
         val color = when(statusColor) {
             Green -> MaterialTheme.colorScheme.primary
             Red -> MaterialTheme.colorScheme.error
-            Unavailable -> MaterialTheme.colorScheme.error
+            Unavailable -> MaterialTheme.colorScheme.onSurfaceVariant
         }
         drawWithContent {
             drawContent()
