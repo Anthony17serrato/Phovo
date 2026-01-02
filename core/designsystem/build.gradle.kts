@@ -14,7 +14,7 @@ kotlin {
                 api(compose.components.uiToolingPreview)
                 api(compose.materialIconsExtended)
                 api(compose.foundation)
-                api(compose.material3)
+                api(libs.material3)
                 api(compose.material3AdaptiveNavigationSuite)
                 api(compose.runtime)
                 api(compose.ui)

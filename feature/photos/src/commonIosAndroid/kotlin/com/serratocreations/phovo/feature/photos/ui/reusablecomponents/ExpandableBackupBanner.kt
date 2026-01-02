@@ -66,7 +66,7 @@ import com.serratocreations.phovo.feature.photos.ui.model.PreparingBackup
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
+@OptIn( ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ExpandableBackupBanner(
     backupStatusViewModel: BackupStatusViewModel = koinViewModel()

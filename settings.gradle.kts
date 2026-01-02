@@ -21,7 +21,7 @@ dependencyResolutionManagement {
     }
 }
 
-include(":composeApp")
+include(":phovoApp")
 // Core
 include(":core:designsystem")
 include(":core:common")

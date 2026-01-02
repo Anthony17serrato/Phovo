@@ -50,9 +50,9 @@ import com.serratocreations.phovo.ui.viewmodel.Green
 import com.serratocreations.phovo.ui.viewmodel.Red
 import com.serratocreations.phovo.ui.viewmodel.ServerStatusColor
 import com.serratocreations.phovo.ui.viewmodel.Unavailable
-import phovo.composeapp.generated.resources.Res
-import phovo.composeapp.generated.resources.feature_settings_top_app_bar_action_icon_description
-import phovo.composeapp.generated.resources.feature_settings_top_app_bar_navigation_icon_description
+import phovo.phovoapp.generated.resources.Res
+import phovo.phovoapp.generated.resources.feature_settings_top_app_bar_action_icon_description
+import phovo.phovoapp.generated.resources.feature_settings_top_app_bar_navigation_icon_description
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
@@ -141,7 +141,7 @@ internal fun PhovoApp(
                     navigationIconContentDescription = stringResource(
                         Res.string.feature_settings_top_app_bar_navigation_icon_description,
                     ),
-                    actionIcon = PhovoIcons.Settings,
+                    actionIcon = PhovoIcons.More,
                     actionIconContentDescription = stringResource(
                         Res.string.feature_settings_top_app_bar_action_icon_description,
                     ),

@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Desktop [composeApp:run]" type="GradleRunConfiguration" factoryName="Gradle">
+  <configuration default="false" name="Desktop [phovoApp:run]" type="GradleRunConfiguration" factoryName="Gradle">
     <ExternalSystemSettings>
       <option name="env">
         <map>
@@ -15,7 +15,7 @@
       </option>
       <option name="taskNames">
         <list>
-          <option value="composeApp:run" />
+          <option value="phovoApp:run" />
         </list>
       </option>
       <option name="vmOptions" />
