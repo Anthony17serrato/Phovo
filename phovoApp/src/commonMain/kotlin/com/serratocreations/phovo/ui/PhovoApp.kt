@@ -30,6 +30,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
@@ -54,7 +55,6 @@ import phovo.phovoapp.generated.resources.Res
 import phovo.phovoapp.generated.resources.feature_settings_top_app_bar_action_icon_description
 import phovo.phovoapp.generated.resources.feature_settings_top_app_bar_navigation_icon_description
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.reflect.KClass
 

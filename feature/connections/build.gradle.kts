@@ -13,7 +13,7 @@ kotlin {
                 implementation(projects.core.common)
                 implementation(projects.data.server)
 
-                implementation(compose.components.resources)
+                implementation(libs.compose.resources)
                 implementation(libs.serialization.json)
                 implementation(libs.coil.compose)
                 implementation(libs.filekit.core)
