@@ -24,9 +24,14 @@ kotlin {
             implementation(projects.data.server)
             implementation(projects.data.photos)
 
-            implementation(compose.components.resources)
+            implementation(libs.compose.resources)
             implementation(libs.serialization.json)
             implementation(libs.platformtools.darkmodedetector)
+            implementation(libs.navigation3.ui)
+            implementation(libs.navigation3.runtime)
+            implementation(libs.androidx.lifecycle.viewmodel.navigation3)
+            implementation(libs.androidx.material3.adaptive.navigation3)
+            implementation(libs.kotlinx.serialization.core)
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
@@ -53,7 +58,7 @@ compose.desktop {
             packageVersion = "1.0.0"
             appResourcesRootDir =
                 layout.projectDirectory.dir("src/desktopMain/assets")
-            jvmArgs += "-splash:${'$'}APPDIR/resources/phovo_splash.png"
+            jvmArgs += $$"-splash:$APPDIR/resources/phovo_splash.png"
         }
     }
 }

@@ -15,8 +15,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.serratocreations.phovo.Greeting
-import phovo.composeapp.generated.resources.Res
-import phovo.composeapp.generated.resources.compose_multiplatform
+import phovo.phovoapp.generated.resources.Res
+import phovo.phovoapp.generated.resources.compose_multiplatform
 import org.jetbrains.compose.resources.painterResource
 
 @Composable

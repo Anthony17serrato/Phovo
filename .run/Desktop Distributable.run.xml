@@ -10,7 +10,7 @@
       </option>
       <option name="taskNames">
         <list>
-          <option value="composeApp:runDistributable" />
+          <option value="phovoApp:runDistributable" />
         </list>
       </option>
       <option name="vmOptions" />

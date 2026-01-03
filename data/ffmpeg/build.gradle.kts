@@ -14,7 +14,7 @@ kotlin {
         val desktopMain by getting {
             dependencies {
                 implementation(compose.runtime)
-                implementation(compose.components.resources)
+                implementation(libs.compose.resources)
             }
         }
     }

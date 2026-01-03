@@ -4,10 +4,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import com.serratocreations.phovo.core.designsystem.icon.PhovoIcons
 import com.serratocreations.phovo.feature.connections.ui.ConnectionsHomeRoute
 import com.serratocreations.phovo.feature.photos.navigation.PhotosRoute
-import phovo.composeapp.generated.resources.Res
-import phovo.composeapp.generated.resources.feature_search_title
+import phovo.phovoapp.generated.resources.Res
+import phovo.phovoapp.generated.resources.feature_search_title
 import org.jetbrains.compose.resources.StringResource
-import phovo.composeapp.generated.resources.app_name
+import phovo.phovoapp.generated.resources.app_name
 import phovo.feature.photos.generated.resources.feature_photos_title
 import phovo.feature.photos.generated.resources.Res as photosRes
 import phovo.feature.connections.generated.resources.Res as connectionsRes
