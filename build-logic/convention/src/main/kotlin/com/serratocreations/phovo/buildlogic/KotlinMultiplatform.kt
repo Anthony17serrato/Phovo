@@ -35,7 +35,7 @@ internal fun Project.configureKotlinMultiplatform(
     isApplication: Boolean,
     customSourceSets: Set<CustomSourceSets> = emptySet(),
     // All targets are configured by default
-    targetList: Set<Targets> = Targets.values().toSet()
+    targetList: Set<Targets> = Targets.entries.toSet()
 ) {
     configure<KotlinMultiplatformExtension> {
         compilerOptions {

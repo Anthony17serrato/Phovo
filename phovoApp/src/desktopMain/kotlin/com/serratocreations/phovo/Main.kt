@@ -15,8 +15,8 @@ import androidx.compose.ui.window.rememberWindowState
 import com.serratocreations.phovo.di.initApplication
 import com.serratocreations.phovo.ui.PhovoApp
 import org.jetbrains.compose.resources.vectorResource
-import phovo.composeapp.generated.resources.Res
-import phovo.composeapp.generated.resources.phovo_icon
+import phovo.phovoapp.generated.resources.Res
+import phovo.phovoapp.generated.resources.phovo_icon
 import kotlin.system.exitProcess
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.painter.Painter

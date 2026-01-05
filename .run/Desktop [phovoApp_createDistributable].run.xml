@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Desktop [composeApp:createDistributable]" type="GradleRunConfiguration" factoryName="Gradle">
+  <configuration default="false" name="Desktop [phovoApp:createDistributable]" type="GradleRunConfiguration" factoryName="Gradle">
     <ExternalSystemSettings>
       <option name="executionName" />
       <option name="externalProjectPath" value="$PROJECT_DIR$" />
@@ -10,7 +10,7 @@
       </option>
       <option name="taskNames">
         <list>
-          <option value="composeApp:createDistributable" />
+          <option value="phovoApp:createDistributable" />
         </list>
       </option>
       <option name="vmOptions" />
