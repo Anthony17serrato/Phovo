@@ -1,7 +1,6 @@
 package com.serratocreations.phovo.buildlogic
 
 import androidx.room.gradle.RoomExtension
-import com.android.build.api.dsl.CommonExtension
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.dependencies
@@ -10,9 +9,7 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 /**
  * Configure Room-specific options
  */
-internal fun Project.configureKmpRoom(
-    commonExtension: CommonExtension<*, *, *, *, *, *>,
-) {
+internal fun Project.configureKmpRoom() {
     extensions.configure<KotlinMultiplatformExtension> {
 
         sourceSets.androidMain.dependencies {
@@ -24,7 +21,7 @@ internal fun Project.configureKmpRoom(
 
     }
 
-    commonExtension.apply {
+    this.apply {
         dependencies {
             add("kspAndroid", libs.findLibrary("room.compiler").get())
             add("kspDesktop", libs.findLibrary("room.compiler").get())

@@ -1,6 +1,5 @@
 package com.serratocreations.phovo.buildlogic
 
-import com.android.build.api.dsl.CommonExtension
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.configure
 import org.jetbrains.compose.ComposeExtension
@@ -10,21 +9,7 @@ import org.jetbrains.kotlin.compose.compiler.gradle.ComposeCompilerGradlePluginE
 /**
  * Configure Compose-specific options
  */
-internal fun Project.configureKmpCompose(
-    commonExtension: CommonExtension<*, *, *, *, *, *>?,
-) {
-    commonExtension?.apply {
-        buildFeatures {
-            compose = true
-        }
-
-//        testOptions {
-//            unitTests {
-//                // For Robolectric
-//                isIncludeAndroidResources = true
-//            }
-//        }
-    }
+internal fun Project.configureKmpCompose() {
 
     // TODO: Move common compose imports from core:designsystem to here
 

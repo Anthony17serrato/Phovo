@@ -5,17 +5,15 @@ import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 
 plugins {
-    id(libs.plugins.phovo.kmp.desktop.library.get().pluginId)
-    id(libs.plugins.phovo.kmp.library.compose.get().pluginId)
+    alias(libs.plugins.phovo.kmp.desktop.library)
+    alias(libs.plugins.phovo.kmp.library.compose)
 }
 
 kotlin {
     sourceSets {
-        val desktopMain by getting {
-            dependencies {
-                implementation(compose.runtime)
-                implementation(libs.compose.resources)
-            }
+        desktopMain.dependencies {
+            implementation(libs.compose.runtime)
+            implementation(libs.compose.resources)
         }
     }
 }

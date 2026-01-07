@@ -1,26 +1,18 @@
 plugins {
-    id(libs.plugins.phovo.kmp.android.ios.desktop.library.get().pluginId)
-    id(libs.plugins.phovo.kmp.library.koin.get().pluginId)
-    id(libs.plugins.phovo.kmp.library.room.get().pluginId)
+    alias(libs.plugins.phovo.kmp.android.ios.desktop.library)
+    alias(libs.plugins.phovo.kmp.library.koin)
+    alias(libs.plugins.phovo.kmp.library.room)
 }
 
 kotlin {
-    sourceSets {
-        val commonMain by getting {
-            dependencies {
-                implementation(projects.core.logger)
-                implementation(projects.core.common)
-                implementation(projects.core.model)
-            }
-        }
-//        val commonDesktopIosAndroid by getting {
-//            dependencies {
-//
-//            }
-//        }
+    android {
+        namespace = "com.serratocreations.phovo.core.database"
     }
-}
-
-android {
-    namespace = "com.serratocreations.phovo.core.database"
+    sourceSets {
+        commonMain.dependencies {
+            implementation(projects.core.logger)
+            implementation(projects.core.common)
+            implementation(projects.core.model)
+        }
+    }
 }

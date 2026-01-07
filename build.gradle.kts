@@ -9,13 +9,13 @@ plugins {
     alias(libs.plugins.serialization) apply false
     alias(libs.plugins.kotlin.ksp) apply false
     alias(libs.plugins.room) apply false
-    id(libs.plugins.phovo.kmp.android.ios.desktop.web.library.get().pluginId) apply false
-    id(libs.plugins.phovo.kmp.android.ios.desktop.library.get().pluginId) apply false
-    id(libs.plugins.phovo.kmp.application.application.get().pluginId) apply false
-    id(libs.plugins.phovo.kmp.application.koin.get().pluginId) apply false
-    id(libs.plugins.phovo.kmp.library.koin.get().pluginId) apply false
-    id(libs.plugins.phovo.kmp.library.compose.get().pluginId) apply false
-    id(libs.plugins.phovo.kmp.application.compose.get().pluginId) apply false
-    id(libs.plugins.phovo.kmp.library.room.get().pluginId) apply false
-    id(libs.plugins.phovo.kmp.desktop.library.get().pluginId) apply false
+    alias(libs.plugins.phovo.kmp.android.ios.desktop.web.library) apply false
+    alias(libs.plugins.phovo.kmp.android.ios.desktop.library) apply false
+    alias(libs.plugins.phovo.kmp.application.application) apply false
+    alias(libs.plugins.phovo.kmp.application.koin) apply false
+    alias(libs.plugins.phovo.kmp.library.koin) apply false
+    alias(libs.plugins.phovo.kmp.library.compose) apply false
+    alias(libs.plugins.phovo.kmp.application.compose) apply false
+    alias(libs.plugins.phovo.kmp.library.room) apply false
+    alias(libs.plugins.phovo.kmp.desktop.library) apply false
 }

@@ -14,11 +14,9 @@
  *   limitations under the License.
  */
 
-import com.android.build.api.dsl.ApplicationExtension
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.apply
-import org.gradle.kotlin.dsl.getByType
 import com.serratocreations.phovo.buildlogic.configureKmpKoin
 
 class KmpApplicationKoinConventionPlugin : Plugin<Project> {
@@ -27,8 +25,7 @@ class KmpApplicationKoinConventionPlugin : Plugin<Project> {
             apply(plugin = "com.google.devtools.ksp")
             apply(plugin = "phovo.kmp.application")
 
-            val extension = extensions.getByType<ApplicationExtension>()
-            configureKmpKoin(extension)
+            configureKmpKoin()
         }
     }
 }

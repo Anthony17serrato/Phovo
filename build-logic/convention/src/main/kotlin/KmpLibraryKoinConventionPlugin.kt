@@ -14,22 +14,18 @@
  *   limitations under the License.
  */
 
-import com.android.build.api.dsl.LibraryExtension
 import com.serratocreations.phovo.buildlogic.configureKmpKoin
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.apply
-import org.gradle.kotlin.dsl.getByType
 
 class KmpLibraryKoinConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
         with(target) {
-            apply(plugin = "com.android.library")
             apply(plugin = "org.jetbrains.kotlin.multiplatform")
             apply(plugin = "com.google.devtools.ksp")
 
-            val extension = extensions.getByType<LibraryExtension>()
-            configureKmpKoin(extension)
+            configureKmpKoin()
         }
     }
 }

@@ -14,12 +14,10 @@
  *   limitations under the License.
  */
 
-import com.android.build.gradle.LibraryExtension
 import com.serratocreations.phovo.buildlogic.configureKmpCompose
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.apply
-import org.gradle.kotlin.dsl.findByType
 
 class KmpLibraryComposeConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
@@ -28,10 +26,7 @@ class KmpLibraryComposeConventionPlugin : Plugin<Project> {
             apply(plugin = "org.jetbrains.kotlin.plugin.compose")
             apply(plugin = "org.jetbrains.compose")
 
-            // If the Android Library plugin is present (applied by another convention),
-            // configure Android-specific Compose options.
-            val extension = extensions.findByType<LibraryExtension>()
-            configureKmpCompose(extension)
+            configureKmpCompose()
         }
     }
 }
