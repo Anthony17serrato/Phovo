@@ -1,6 +1,5 @@
 package com.serratocreations.phovo.buildlogic
 
-import com.android.build.api.dsl.CommonExtension
 import com.google.devtools.ksp.gradle.KspExtension
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.configure
@@ -10,9 +9,7 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 /**
  * Configure Koin-specific options
  */
-internal fun Project.configureKmpKoin(
-    commonExtension: CommonExtension<*, *, *, *, *, *>,
-) {
+internal fun Project.configureKmpKoin() {
     // Get the list of configured targets by examining the source sets
     val configuredTargets = mutableSetOf<Targets>()
 
@@ -49,7 +46,7 @@ internal fun Project.configureKmpKoin(
         }
     }
 
-    commonExtension.apply {
+   this.apply {
         dependencies {
 //            // Common KSP compiler is always needed
 //            add("kspCommonMainMetadata", libs.findLibrary("koin.ksp.compiler").get())

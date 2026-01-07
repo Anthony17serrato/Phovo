@@ -1,16 +1,14 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 plugins {
-    id(libs.plugins.phovo.kmp.application.koin.get().pluginId)
-    id(libs.plugins.phovo.kmp.application.compose.get().pluginId)
-    id(libs.plugins.phovo.kmp.application.application.get().pluginId)
+    alias(libs.plugins.phovo.kmp.application.koin)
+    alias(libs.plugins.phovo.kmp.application.compose)
+    alias(libs.plugins.phovo.kmp.application.application)
     alias(libs.plugins.serialization)
 }
 
 kotlin {
     sourceSets {
-        val desktopMain by getting
-        
         androidMain.dependencies {
             implementation(libs.androidx.splash)
         }

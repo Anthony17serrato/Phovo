@@ -1,5 +1,6 @@
 package com.serratocreations.phovo.buildlogic
 
+import com.android.build.api.dsl.androidLibrary
 import com.android.build.api.dsl.CommonExtension
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
@@ -11,10 +12,11 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 /**
  * Configure base Kotlin Multiplatform with Android options
  */
-internal fun Project.configureKotlinAndroid(
+internal fun Project.configureAndroidApplication(
     commonExtension: CommonExtension<*, *, *, *, *, *>,
 ) {
     commonExtension.apply {
+        // TODO: Investigate if these can be pulled from TOML file
         compileSdk = 36
 
         defaultConfig {
@@ -53,11 +55,34 @@ internal fun Project.configureKotlinMultiplatform(
         }
 
         if (targetList.contains(Targets.ANDROID)) {
-            androidTarget {
-                compilations.all {
-                    compileTaskProvider.configure {
-                        compilerOptions {
-                            jvmTarget.set(JvmTarget.JVM_11)
+            if (isApplication) {
+                // Android target is still the suggested approach for application modules
+                // https://developer.android.com/kotlin/multiplatform/plugin#:~:text=Note%3A%20There%20isn%27t%20a%20direct%20replacement%20for%20configuring%20a%20Kotlin%20Multiplatform%20module%20using%20com.android.application%20plugin.%20To%20migrate%2C%20extract%20your%20Android%20application%20to%20a%20separate%20Gradle%20module.
+                @Suppress("DEPRECATION")
+                androidTarget {
+                    compilerOptions {
+                        jvmTarget.set(JvmTarget.JVM_11)
+                    }
+                }
+            } else {
+                // Use the new plugin for library modules
+                // https://developer.android.com/kotlin/multiplatform/plugin
+                @Suppress("UnstableApiUsage")
+                androidLibrary {
+                    // TODO: Investigate if these can be pulled from TOML file
+                    compileSdk = 36
+                    minSdk = 23
+                    withHostTestBuilder {}.configure {}
+                    withDeviceTestBuilder {
+                        sourceSetTreeName = "test"
+                    }
+                    compilations.configureEach {
+                        compileTaskProvider.configure {
+                            compilerOptions {
+                                jvmTarget.set(
+                                    JvmTarget.JVM_11
+                                )
+                            }
                         }
                     }
                 }
