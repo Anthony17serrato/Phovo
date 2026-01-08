@@ -145,3 +145,4 @@ phovo-kmp-library-compose = { id = "phovo.kmp.library.compose" }
 phovo-kmp-application-compose = { id = "phovo.kmp.application.compose" }
 phovo-kmp-library-room = { id = "phovo.kmp.library.room" }
 phovo-kmp-desktop-library = { id = "phovo.kmp.desktop.library" }
+phovo-kmp-build-flavors = { id = "phovo.kmp.build.flavors" }

@@ -89,7 +89,7 @@ internal fun Project.configureKotlinMultiplatform(
             }
         }
 
-        if (targetList.contains(Targets.WASM)) {
+        if (targetList.contains(Targets.WEB)) {
             @OptIn(ExperimentalWasmDsl::class)
             wasmJs {
                 browser()

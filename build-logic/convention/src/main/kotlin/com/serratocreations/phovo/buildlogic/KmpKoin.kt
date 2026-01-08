@@ -1,6 +1,7 @@
 package com.serratocreations.phovo.buildlogic
 
 import com.google.devtools.ksp.gradle.KspExtension
+import com.serratocreations.phovo.buildlogic.extension.getTargetPlatforms
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.dependencies
@@ -11,28 +12,12 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
  */
 internal fun Project.configureKmpKoin() {
     // Get the list of configured targets by examining the source sets
-    val configuredTargets = mutableSetOf<Targets>()
+    lateinit var configuredTargets: Set<Targets>
 
     extensions.configure<KotlinMultiplatformExtension> {
-        val sourceSetNames = sourceSets.names
+        configuredTargets = getTargetPlatforms()
 
-        // Check for iOS targets
-        if (sourceSetNames.any { it.startsWith("ios")}) {
-            configuredTargets.add(Targets.IOS)
-        }
-
-        // Check for Desktop target
-        if (sourceSetNames.any { it.contains("desktopMain")}) {
-            configuredTargets.add(Targets.DESKTOP)
-        }
-
-        // Check for WASM target
-        if (sourceSetNames.any { it.contains("wasmJsMain")}) {
-            configuredTargets.add(Targets.WASM)
-        }
-        // Check for Android target
-        if (sourceSetNames.any { it.contains("androidMain")}) {
-            configuredTargets.add(Targets.ANDROID)
+        if (configuredTargets.contains(Targets.ANDROID)) {
             sourceSets.androidMain.dependencies {
                 implementation(libs.findLibrary("koin.android").get())
             }
