@@ -15,7 +15,7 @@ class KmpAndroidIosDesktopWebLibraryConventionPlugin : Plugin<Project> {
             configureKotlinMultiplatform(
                 isApplication = false,
                 customSourceSets = setOf(CustomSourceSets.DesktopIosAndroid, CustomSourceSets.AndroidIosWeb),
-                targetList = setOf(Targets.WASM)
+                targetList = setOf(Targets.WEB)
             )
         }
     }

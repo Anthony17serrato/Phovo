@@ -90,5 +90,9 @@ gradlePlugin {
             id = "phovo.kmp.desktop.library"
             implementationClass = "KmpDesktopLibraryConventionPlugin"
         }
+        register("kmpBuildFlavors") {
+            id = "phovo.kmp.build.flavors"
+            implementationClass = "KmpBuildFlavorsConventionPlugin"
+        }
     }
 }

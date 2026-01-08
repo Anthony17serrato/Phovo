@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.phovo.kmp.application.compose)
     alias(libs.plugins.phovo.kmp.application.application)
     alias(libs.plugins.serialization)
+    alias(libs.plugins.phovo.kmp.build.flavors)
 }
 
 kotlin {
