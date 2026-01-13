@@ -14,8 +14,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
@@ -44,6 +42,7 @@ import com.serratocreations.phovo.core.designsystem.component.PhovoNavigationSui
 import com.serratocreations.phovo.core.designsystem.component.PhovoTopAppBar
 import com.serratocreations.phovo.core.designsystem.icon.PhovoIcons
 import com.serratocreations.phovo.core.designsystem.theme.PhovoTheme
+import com.serratocreations.phovo.core.navigation.Navigator
 import com.serratocreations.phovo.navigation.TopLevelDestination
 import com.serratocreations.phovo.ui.components.HomeTitleContent
 import com.serratocreations.phovo.ui.viewmodel.ApplicationViewModel
@@ -67,10 +66,8 @@ fun PhovoApp(
 ) {
     PhovoTheme {
         PhovoBackground(modifier = modifier) {
-            val snackbarHostState = remember { SnackbarHostState() }
-            PhovoApp(
+            InternalPhovoApp(
                 appState = appState,
-                snackbarHostState = snackbarHostState,
                 windowAdaptiveInfo = windowAdaptiveInfo,
             )
         }
@@ -83,9 +80,8 @@ fun PhovoApp(
     ExperimentalComposeUiApi::class,
     ExperimentalMaterial3AdaptiveApi::class,
 )
-internal fun PhovoApp(
+internal fun InternalPhovoApp(
     appState: PhovoAppState,
-    snackbarHostState: SnackbarHostState,
     viewModelStoreOwner: ViewModelStoreOwner = checkNotNull(LocalViewModelStoreOwner.current) {
         "No ViewModelStoreOwner was provided via LocalViewModelStoreOwner"
     },
@@ -99,6 +95,7 @@ internal fun PhovoApp(
     val appLevelUiState by phovoViewModel.phovoUiState.collectAsState()
     val applicationUiSate by applicationViewModel.applicationUiState.collectAsState()
 
+    val navigator = remember { Navigator(appState.navigationState) }
     PhovoNavigationSuiteScaffold(
         navigationSuiteItems = {
             appState.topLevelDestinations.forEach { destination ->
@@ -158,7 +155,6 @@ internal fun PhovoApp(
             containerColor = Color.Transparent,
             contentColor = MaterialTheme.colorScheme.onBackground,
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
-            snackbarHost = { SnackbarHost(snackbarHostState) },
         ) { padding ->
             Column(
                 Modifier
