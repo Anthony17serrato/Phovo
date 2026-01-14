@@ -7,7 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.navigation
 import com.serratocreations.phovo.feature.connections.ui.connectionsDetailsScreen
-import com.serratocreations.phovo.feature.photos.navigation.PhotosNavGraphRoute
+import com.serratocreations.phovo.feature.photos.navigation.PhotosRouteComponent
 import com.serratocreations.phovo.feature.photos.navigation.photosNavGraph
 import com.serratocreations.phovo.ui.PhovoAppState
 import kotlinx.serialization.Serializable
@@ -34,7 +34,7 @@ fun PhovoNavHost(
             startDestination = PhovoBaseRoute,
             modifier = modifier,
         ) {
-            navigation<PhovoBaseRoute>(startDestination = PhotosNavGraphRoute) {
+            navigation<PhovoBaseRoute>(startDestination = PhotosRouteComponent) {
                 photosNavGraph(this@SharedTransitionLayout,navController)
                 bookmarksScreen()
                 connectionsDetailsScreen(appState.appLevelVmStoreOwner)

@@ -13,6 +13,7 @@ import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavOptions
 import androidx.navigation.compose.composable
+import androidx.navigation3.runtime.NavKey
 import com.serratocreations.phovo.core.common.ui.PhovoPaneMode
 import com.serratocreations.phovo.core.common.ui.PhovoViewModel
 import com.serratocreations.phovo.core.designsystem.component.PhovoNavOptions
@@ -20,16 +21,16 @@ import com.serratocreations.phovo.core.designsystem.util.getPaneMode
 import kotlinx.serialization.Serializable
 import org.koin.compose.viewmodel.koinViewModel
 
-@Serializable object ConnectionsHomeRoute
+@Serializable object ConnectionsRouteComponent: NavKey
 
 fun NavController.navigateToConnections(navOptions: NavOptions? = null) {
-    navigate(route = ConnectionsHomeRoute, navOptions)
+    navigate(route = ConnectionsRouteComponent, navOptions)
 }
 
 fun NavGraphBuilder.connectionsDetailsScreen(
     appLevelVmStoreOwner: ViewModelStoreOwner
 ) {
-    composable<ConnectionsHomeRoute> {
+    composable<ConnectionsRouteComponent> {
         val phovoViewModel: PhovoViewModel = koinViewModel(viewModelStoreOwner = appLevelVmStoreOwner)
         ConnectionsDetailsNavigation(phovoViewModel = phovoViewModel)
     }

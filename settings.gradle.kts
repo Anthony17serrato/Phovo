@@ -29,6 +29,7 @@ include(":core:common")
 include(":core:logger")
 include(":core:database")
 include(":core:model")
+include(":core:navigation")
 
 // Features
 include(":feature:photos")

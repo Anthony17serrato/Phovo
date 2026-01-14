@@ -8,6 +8,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavOptions
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
+import androidx.navigation3.runtime.NavKey
 import com.serratocreations.phovo.core.common.Platform
 import com.serratocreations.phovo.core.common.getPlatform
 import com.serratocreations.phovo.feature.photos.ui.PhotoDetailRoute
@@ -18,25 +19,27 @@ import com.serratocreations.phovo.feature.photos.util.handleVideoDesktop
 import kotlinx.serialization.Serializable
 import org.koin.compose.viewmodel.koinViewModel
 
-@Serializable data object PhotosNavGraphRoute
 @Serializable
-object PhotosRoute
+object PhotosRouteComponent: NavKey
 
 @Serializable
-data object PhotoDetailRoute
+object PhotosHomeNavKey: NavKey
+
+@Serializable
+data object PhotoDetailNavKey: NavKey
 
 fun NavController.navigateToForYou(navOptions: NavOptions) =
-    navigate(route = PhotosRoute, navOptions)
+    navigate(route = PhotosHomeNavKey, navOptions)
 
 fun NavController.navigateToPhotoDetail() =
-    navigate(route = PhotoDetailRoute)
+    navigate(route = PhotoDetailNavKey)
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 fun NavGraphBuilder.photosNavGraph(
     sharedTransitionScope: SharedTransitionScope,
     navController: NavController
 ) {
-    navigation<PhotosNavGraphRoute>(startDestination = PhotosRoute) {
+    navigation<PhotosRouteComponent>(startDestination = PhotosHomeNavKey) {
         photosScreen(
             sharedElementTransition = sharedTransitionScope,
             onNavigateToPhotoDetail = {
@@ -60,9 +63,9 @@ fun NavGraphBuilder.photosScreen(
     onNavigateToPhotoDetail: () -> Unit,
     navController: NavController
 ) {
-    composable<PhotosRoute> { backStackEntry ->
+    composable<PhotosHomeNavKey> { backStackEntry ->
         val parentEntry = remember(backStackEntry) {
-            navController.getBackStackEntry(PhotosNavGraphRoute)
+            navController.getBackStackEntry(PhotosRouteComponent)
         }
         // Get the ViewModel scoped to the `PhotoDetailRoute` Nav graph
         val photosViewModel: PhotosViewModel = koinViewModel(viewModelStoreOwner = parentEntry)
@@ -88,10 +91,10 @@ fun NavGraphBuilder.photoDetailScreen(
     onBackClick: () -> Unit,
     navController: NavController
 ) {
-    composable<PhotoDetailRoute> { backStackEntry ->
+    composable<PhotoDetailNavKey> { backStackEntry ->
         //val route = backStackEntry.toRoute<PhotoDetailRoute>()
         val parentEntry = remember(backStackEntry) {
-            navController.getBackStackEntry(PhotosNavGraphRoute)
+            navController.getBackStackEntry(PhotosRouteComponent)
         }
         // Get the ViewModel scoped to the `PhotoDetailRoute` Nav graph
         val photosViewModel: PhotosViewModel = koinViewModel(viewModelStoreOwner = parentEntry)
