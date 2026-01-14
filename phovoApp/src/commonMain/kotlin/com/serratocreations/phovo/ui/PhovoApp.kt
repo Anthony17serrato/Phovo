@@ -32,9 +32,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
-import androidx.navigation.NavDestination
-import androidx.navigation.NavDestination.Companion.hasRoute
-import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation3.runtime.NavKey
 import com.serratocreations.phovo.core.common.ui.PhovoViewModel
 import com.serratocreations.phovo.navigation.PhovoNavHost
 import com.serratocreations.phovo.core.designsystem.component.PhovoBackground
@@ -43,7 +41,8 @@ import com.serratocreations.phovo.core.designsystem.component.PhovoTopAppBar
 import com.serratocreations.phovo.core.designsystem.icon.PhovoIcons
 import com.serratocreations.phovo.core.designsystem.theme.PhovoTheme
 import com.serratocreations.phovo.core.navigation.Navigator
-import com.serratocreations.phovo.navigation.TopLevelDestination
+import com.serratocreations.phovo.feature.connections.ui.ConnectionsRouteComponent
+import com.serratocreations.phovo.navigation.TOP_LEVEL_NAV_ITEMS
 import com.serratocreations.phovo.ui.components.HomeTitleContent
 import com.serratocreations.phovo.ui.viewmodel.ApplicationViewModel
 import com.serratocreations.phovo.ui.viewmodel.Green
@@ -55,7 +54,6 @@ import phovo.phovoapp.generated.resources.feature_settings_top_app_bar_action_ic
 import phovo.phovoapp.generated.resources.feature_settings_top_app_bar_navigation_icon_description
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
-import kotlin.reflect.KClass
 
 @Composable
 @Preview
@@ -90,7 +88,6 @@ internal fun InternalPhovoApp(
     modifier: Modifier = Modifier,
     windowAdaptiveInfo: WindowAdaptiveInfo = currentWindowAdaptiveInfo(),
 ) {
-    val currentDestination = appState.currentDestination
     appState.appLevelVmStoreOwner = viewModelStoreOwner
     val appLevelUiState by phovoViewModel.phovoUiState.collectAsState()
     val applicationUiSate by applicationViewModel.applicationUiState.collectAsState()
@@ -98,35 +95,33 @@ internal fun InternalPhovoApp(
     val navigator = remember { Navigator(appState.navigationState) }
     PhovoNavigationSuiteScaffold(
         navigationSuiteItems = {
-            appState.topLevelDestinations.forEach { destination ->
-                val selected = currentDestination
-                    .isRouteInHierarchy(destination.route)
-                val customModifier = if (destination == TopLevelDestination.Connections) {
+            TOP_LEVEL_NAV_ITEMS.forEach { (navKey, navItem) ->
+                val selected = navKey == appState.navigationState.currentTopLevelKey
+                val customModifier = if (navKey == ConnectionsRouteComponent) {
                     Modifier.notificationDot(applicationUiSate)
-                }
-                else { Modifier }
+                } else { Modifier }
                 item(
                     selected = selected,
-                    onClick = { appState.navigateToTopLevelDestination(destination) },
+                    onClick = { navigator.navigate(navKey) },
                     icon = {
                         Icon(
-                            imageVector = destination.unselectedIcon,
+                            imageVector = navItem.unselectedIcon,
                             contentDescription = null,
                         )
                     },
                     selectedIcon = {
                         Icon(
-                            imageVector = destination.selectedIcon,
+                            imageVector = navItem.selectedIcon,
                             contentDescription = null,
                         )
                     },
-                    label = { Text(stringResource(destination.iconTextId)) },
+                    label = { Text(stringResource(navItem.iconTextId)) },
                     modifier = Modifier.testTag("PhovoNavItem")
                         .then(customModifier)
                 )
             }
         },
-        shouldShowNavBarOnCompactScreens = currentDestination.isTopLevel(),
+        shouldShowNavBarOnCompactScreens = appState.navigationState.currentKey.isTopLevel(),
         windowAdaptiveInfo = windowAdaptiveInfo,
     ) {
         val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
@@ -185,15 +180,9 @@ internal fun InternalPhovoApp(
     }
 }
 
-private fun NavDestination?.isRouteInHierarchy(route: KClass<*>) =
-    this?.hierarchy?.any {
-        it.hasRoute(route)
-    } ?: false
-
-private fun NavDestination?.isTopLevel() =
-    TopLevelDestination.entries.any { destination ->
-        // default to true when destination is unknown
-        this?.hasRoute(destination.route) ?: true
+private fun NavKey?.isTopLevel() =
+    TOP_LEVEL_NAV_ITEMS.keys.any { key ->
+        key == this@isTopLevel
     }
 
 private fun Modifier.notificationDot(statusColor: ServerStatusColor): Modifier =

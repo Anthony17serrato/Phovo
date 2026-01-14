@@ -19,18 +19,19 @@ import phovo.phovoapp.generated.resources.Res
 import phovo.phovoapp.generated.resources.compose_multiplatform
 import org.jetbrains.compose.resources.painterResource
 
+// TODO Move to a dedicated search feature module
 @Composable
-internal fun BookmarksRoute(
+internal fun SearchRoute(
     modifier: Modifier = Modifier
 ) {
-    BookmarksScreen(
+    SearchScreen(
         modifier = modifier
     )
 }
 
 @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
 @Composable
-internal fun BookmarksScreen(
+internal fun SearchScreen(
     modifier: Modifier = Modifier,
 ) {
     var showContent by remember { mutableStateOf(false) }
