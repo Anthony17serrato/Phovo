@@ -11,7 +11,7 @@ kotlin {
     }
     sourceSets {
         commonMain.dependencies {
-            api(libs.navigation3.runtime)
+            implementation(libs.bundles.navigation3)
             //implementation(libs.androidx.savedstate.compose)
             implementation(libs.androidx.lifecycle.viewmodel.navigation3)
         }

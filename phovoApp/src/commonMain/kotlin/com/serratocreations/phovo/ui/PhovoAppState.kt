@@ -6,8 +6,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.lifecycle.ViewModelStoreOwner
 import com.serratocreations.phovo.core.navigation.NavigationState
+import com.serratocreations.phovo.core.navigation.PhotosHomeNavKey
 import com.serratocreations.phovo.core.navigation.rememberNavigationState
-import com.serratocreations.phovo.feature.photos.navigation.PhotosHomeNavKey
 import com.serratocreations.phovo.navigation.TOP_LEVEL_NAV_ITEMS
 import kotlinx.coroutines.CoroutineScope
 
@@ -15,7 +15,10 @@ import kotlinx.coroutines.CoroutineScope
 fun rememberPhovoAppState(
     coroutineScope: CoroutineScope = rememberCoroutineScope(),
 ): PhovoAppState {
-    val navigationState = rememberNavigationState(PhotosHomeNavKey, TOP_LEVEL_NAV_ITEMS.keys)
+    val navigationState = rememberNavigationState(
+        startRoute = PhotosHomeNavKey,
+        topLevelRoutes = TOP_LEVEL_NAV_ITEMS.keys
+    )
 
     //NavigationTrackingSideEffect(navigationState)
 

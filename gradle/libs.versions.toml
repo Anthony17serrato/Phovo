@@ -119,6 +119,7 @@ ksp-gradlePlugin = { group = "com.google.devtools.ksp", name = "com.google.devto
 room-gradlePlugin = { group = "androidx.room", name = "room-gradle-plugin", version.ref = "room-kmp" }
 
 [bundles]
+navigation3 = ["navigation3-runtime", "navigation3-ui", "androidx-lifecycle-viewmodel-navigation3", "androidx-material3-adaptive-navigation3"]
 koin-common-kmp = ["koin-core", "koin-compose", "koin-compose-vm"]
 # NOTE: room-bundled-sqlite bundles a version of sqlite with all targets, this is good for testability
 # but may result in a bloated application size for IOS & Android targets(if app size becomes an issue

@@ -28,6 +28,7 @@ kotlin {
             implementation(libs.serialization.json)
             implementation(libs.coil.compose)
             implementation(libs.kotlin.datetime)
+            implementation(libs.bundles.navigation3)
         }
 
         commonTest.dependencies {

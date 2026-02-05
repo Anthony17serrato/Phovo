@@ -32,14 +32,14 @@ import com.serratocreations.phovo.feature.photos.util.SetStatusBarAppearance
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-internal fun PhotoDetailRoute(
+internal fun PhotoViewerScreen(
     onBackClick: () -> Unit,
     sharedElementTransition: SharedTransitionScope,
     animatedContentScope: AnimatedContentScope,
     photosViewModel: PhotosViewModel,
     modifier: Modifier = Modifier
 ) {
-    PhotoDetailScreen(
+    PhotoViewerScreen(
         item = photosViewModel.photosUiState.value.selectedPhoto,
         onBackClick = onBackClick,
         sharedElementTransition = sharedElementTransition,
@@ -50,7 +50,7 @@ internal fun PhotoDetailRoute(
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
-internal fun PhotoDetailScreen(
+internal fun PhotoViewerScreen(
     item: UriPhotoUiItem?,
     onBackClick: () -> Unit,
     sharedElementTransition: SharedTransitionScope,

@@ -4,72 +4,27 @@ import androidx.navigation3.runtime.NavKey
 
 /**
  * Handles navigation events (forward and back) by updating the navigation state.
- *
- * @param state - The navigation state that will be updated in response to navigation events.
  */
-class Navigator(val state: NavigationState) {
-
-    /**
-     * Navigate to a navigation key
-     *
-     * @param key - the navigation key to navigate to.
-     */
-    fun navigate(key: NavKey) {
-        when (key) {
-            state.currentTopLevelKey -> clearSubStack()
-            in state.topLevelKeys -> goToTopLevel(key)
-            else -> goToKey(key)
+class Navigator(val state: NavigationState){
+    fun navigate(route: NavKey){
+        if (route in state.backStacks.keys){
+            // This is a top level route, just switch to it
+            state.topLevelRoute = route
+        } else {
+            state.backStacks[state.topLevelRoute]?.add(route)
         }
     }
 
-    /**
-     * Go back to the previous navigation key.
-     */
-    fun goBack() {
-        when (state.currentKey) {
-            state.startKey -> error("You cannot go back from the start route")
-            state.currentTopLevelKey -> {
-                // We're at the base of the current sub stack, go back to the previous top level
-                // stack.
-                state.topLevelStack.removeLastOrNull()
-            }
-            else -> state.currentSubStack.removeLastOrNull()
-        }
-    }
+    fun goBack(){
+        val currentStack = state.backStacks[state.topLevelRoute] ?:
+        error("Stack for ${state.topLevelRoute} not found")
+        val currentRoute = currentStack.last()
 
-    /**
-     * Go to a non top level key.
-     */
-    private fun goToKey(key: NavKey) {
-        state.currentSubStack.apply {
-            // Remove it if it's already in the stack so it's added at the end.
-            remove(key)
-            add(key)
-        }
-    }
-
-    /**
-     * Go to a top level stack.
-     */
-    private fun goToTopLevel(key: NavKey) {
-        state.topLevelStack.apply {
-            if (key == state.startKey) {
-                // This is the start key. Clear the stack so it's added as the only key.
-                clear()
-            } else {
-                // Remove it if it's already in the stack so it's added at the end.
-                remove(key)
-            }
-            add(key)
-        }
-    }
-
-    /**
-     * Clearing all but the root key in the current sub stack.
-     */
-    private fun clearSubStack() {
-        state.currentSubStack.run {
-            if (size > 1) subList(1, size).clear()
+        // If we're at the base of the current route, go back to the start route stack.
+        if (currentRoute == state.topLevelRoute){
+            state.topLevelRoute = state.startRoute
+        } else {
+            currentStack.removeLastOrNull()
         }
     }
 }

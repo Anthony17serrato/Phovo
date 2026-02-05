@@ -72,6 +72,7 @@ internal fun Project.configureKotlinMultiplatform(
                     // TODO: Investigate if these can be pulled from TOML file
                     compileSdk = 36
                     minSdk = 23
+                    androidResources.enable = true
                     withHostTestBuilder {}.configure {}
                     withDeviceTestBuilder {
                         sourceSetTreeName = "test"

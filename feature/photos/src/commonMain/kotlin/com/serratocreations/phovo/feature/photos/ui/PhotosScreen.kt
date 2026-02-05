@@ -41,7 +41,7 @@ import com.serratocreations.phovo.feature.photos.util.getPlatformFetcherFactory
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-internal fun PhotosRoute(
+internal fun PhotosHomeScreen(
     onPhotoClick: (UriPhotoUiItem) -> Unit,
     sharedElementTransition: SharedTransitionScope,
     animatedContentScope: AnimatedContentScope,

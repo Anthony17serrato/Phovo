@@ -1,5 +1,6 @@
 package com.serratocreations.phovo.ui
 
+import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
@@ -33,8 +34,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.ui.NavDisplay
 import com.serratocreations.phovo.core.common.ui.PhovoViewModel
-import com.serratocreations.phovo.navigation.PhovoNavHost
 import com.serratocreations.phovo.core.designsystem.component.PhovoBackground
 import com.serratocreations.phovo.core.designsystem.component.PhovoNavigationSuiteScaffold
 import com.serratocreations.phovo.core.designsystem.component.PhovoTopAppBar
@@ -42,6 +44,7 @@ import com.serratocreations.phovo.core.designsystem.icon.PhovoIcons
 import com.serratocreations.phovo.core.designsystem.theme.PhovoTheme
 import com.serratocreations.phovo.core.navigation.Navigator
 import com.serratocreations.phovo.feature.connections.ui.ConnectionsRouteComponent
+import com.serratocreations.phovo.feature.photos.navigation.photosEntries
 import com.serratocreations.phovo.navigation.TOP_LEVEL_NAV_ITEMS
 import com.serratocreations.phovo.ui.components.HomeTitleContent
 import com.serratocreations.phovo.ui.viewmodel.ApplicationViewModel
@@ -96,7 +99,7 @@ internal fun InternalPhovoApp(
     PhovoNavigationSuiteScaffold(
         navigationSuiteItems = {
             TOP_LEVEL_NAV_ITEMS.forEach { (navKey, navItem) ->
-                val selected = navKey == appState.navigationState.currentTopLevelKey
+                val selected = navKey == appState.navigationState.topLevelRoute
                 val customModifier = if (navKey == ConnectionsRouteComponent) {
                     Modifier.notificationDot(applicationUiSate)
                 } else { Modifier }
@@ -127,26 +130,6 @@ internal fun InternalPhovoApp(
         val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
         Scaffold(
             modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-            topBar = {
-                PhovoTopAppBar(
-                    navigationIcon = if (appLevelUiState.canBackButtonBeShown) PhovoIcons.ArrowBack else PhovoIcons.Search,
-                    navigationIconContentDescription = stringResource(
-                        Res.string.feature_settings_top_app_bar_navigation_icon_description,
-                    ),
-                    actionIcon = PhovoIcons.More,
-                    actionIconContentDescription = stringResource(
-                        Res.string.feature_settings_top_app_bar_action_icon_description,
-                    ),
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color.Transparent,
-                        scrolledContainerColor = Color.Transparent
-                    ),
-                    /*onActionClick = { onTopAppBarActionClick() },*/
-                    onNavigationClick = phovoViewModel::onNavigationClick,//{ appState.navController.popBackStack() }
-                    scrollBehavior = scrollBehavior,
-                    titleContent = { HomeTitleContent() }
-                )
-            },
             containerColor = Color.Transparent,
             contentColor = MaterialTheme.colorScheme.onBackground,
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -162,19 +145,56 @@ internal fun InternalPhovoApp(
                         ),
                     ),
             ) {
-                Box(
-                    // Workaround for https://issuetracker.google.com/338478720
-                    modifier = Modifier.consumeWindowInsets(
-                        WindowInsets.safeDrawing.only(WindowInsetsSides.Top)
-                    ),
-                ) {
-                    PhovoNavHost(
-                        appState = appState,
+                // Only show the top app bar on top level destinations.
+                var shouldShowTopAppBar = false
+                if (appState.navigationState.currentKey.isTopLevel()) {
+                    shouldShowTopAppBar = true
+
+                    PhovoTopAppBar(
+                        navigationIcon = if (appLevelUiState.canBackButtonBeShown) PhovoIcons.ArrowBack else PhovoIcons.Search,
+                        navigationIconContentDescription = stringResource(
+                            Res.string.feature_settings_top_app_bar_navigation_icon_description,
+                        ),
+                        actionIcon = PhovoIcons.More,
+                        actionIconContentDescription = stringResource(
+                            Res.string.feature_settings_top_app_bar_action_icon_description,
+                        ),
+                        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = Color.Transparent,
+                            scrolledContainerColor = Color.Transparent
+                        ),
+                        /*onActionClick = { onTopAppBarActionClick() },*/
+                        onNavigationClick = phovoViewModel::onNavigationClick,//{ appState.navController.popBackStack() }
+                        scrollBehavior = scrollBehavior,
+                        titleContent = { HomeTitleContent() }
                     )
                 }
 
-                // TODO: We may want to add padding or spacer when the snackbar is shown so that
-                //  content doesn't display behind it.
+
+                Box(
+                    // Workaround for https://issuetracker.google.com/338478720
+                    modifier = Modifier.consumeWindowInsets(
+                        if (shouldShowTopAppBar) {
+                            WindowInsets.safeDrawing.only(WindowInsetsSides.Top)
+                        } else {
+                            WindowInsets(0, 0, 0, 0)
+                        },
+                    ),
+                ) {
+                    SharedTransitionLayout {
+                        val entryProvider = entryProvider {
+                            photosEntries(this@SharedTransitionLayout, navigator)
+                        }
+                        NavDisplay(
+                            entries = appState.navigationState.toDecoratedEntries(entryProvider),
+                            //sceneStrategy = listDetailStrategy
+                            onBack = {
+                                navigator.goBack()
+                            }
+                        )
+                    }
+                }
             }
         }
     }
