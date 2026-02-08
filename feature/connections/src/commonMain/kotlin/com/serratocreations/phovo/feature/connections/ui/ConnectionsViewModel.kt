@@ -47,7 +47,7 @@ class ConnectionsViewModel(
                     } else null
                     _connectionsUiState.update {
                         it.copy(
-                            isCurrentDeviceServerConfigured = serverConfigState.configStatus !is ConfigStatus.NotConfigured,
+                            isCurrentDeviceServerConfigured = serverConfigState.configStatus is ConfigStatus.Configured,
                             serverEventLogs = serverConfigState.serverEventLogs,
                             hostUrl = hostUrl
                         )
@@ -104,7 +104,7 @@ class ConnectionsViewModel(
 
 data class ConnectionsUiState(
     /** Determines if the current device has been configured as a Phovo server. */
-    val isCurrentDeviceServerConfigured: Boolean = true,
+    val isCurrentDeviceServerConfigured: Boolean = false,
     /**
      * Determines if the current device supports being configured as a Phovo server.
      * Only desktop clients support being configured as a Phovo server.

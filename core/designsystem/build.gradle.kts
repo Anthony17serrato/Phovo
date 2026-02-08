@@ -24,9 +24,6 @@ kotlin {
             api(libs.compose.adaptive.layout)
             api(libs.compose.adaptive.navigation)
             api(libs.compose.foundation.layout)
-            api(libs.compose.material.navigation)
-            api(libs.compose.navigation)
-            api(libs.compose.navigation.common)
         }
 
         commonTest.dependencies {

@@ -1,6 +1,5 @@
 package com.serratocreations.phovo.ui
 
-import androidx.annotation.VisibleForTesting
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
@@ -20,16 +19,7 @@ import phovo.phovoapp.generated.resources.compose_multiplatform
 import org.jetbrains.compose.resources.painterResource
 
 // TODO Move to a dedicated search feature module
-@Composable
-internal fun SearchRoute(
-    modifier: Modifier = Modifier
-) {
-    SearchScreen(
-        modifier = modifier
-    )
-}
 
-@VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
 @Composable
 internal fun SearchScreen(
     modifier: Modifier = Modifier,

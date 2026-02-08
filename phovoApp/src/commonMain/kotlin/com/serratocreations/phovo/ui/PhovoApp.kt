@@ -44,8 +44,11 @@ import com.serratocreations.phovo.core.designsystem.icon.PhovoIcons
 import com.serratocreations.phovo.core.designsystem.theme.PhovoTheme
 import com.serratocreations.phovo.core.navigation.Navigator
 import com.serratocreations.phovo.feature.connections.ui.ConnectionsRouteComponent
+import com.serratocreations.phovo.feature.connections.ui.connectionsEntries
 import com.serratocreations.phovo.feature.photos.navigation.photosEntries
+import com.serratocreations.phovo.navigation.PhovoNavSavedStateConfiguration
 import com.serratocreations.phovo.navigation.TOP_LEVEL_NAV_ITEMS
+import com.serratocreations.phovo.navigation.searchEntries
 import com.serratocreations.phovo.ui.components.HomeTitleContent
 import com.serratocreations.phovo.ui.viewmodel.ApplicationViewModel
 import com.serratocreations.phovo.ui.viewmodel.Green
@@ -61,7 +64,7 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 @Preview
 fun PhovoApp(
-    appState: PhovoAppState = rememberPhovoAppState(),
+    appState: PhovoAppState = rememberPhovoAppState(savedStateConfig = PhovoNavSavedStateConfiguration),
     modifier: Modifier = Modifier,
     windowAdaptiveInfo: WindowAdaptiveInfo = currentWindowAdaptiveInfo()
 ) {
@@ -185,6 +188,8 @@ internal fun InternalPhovoApp(
                     SharedTransitionLayout {
                         val entryProvider = entryProvider {
                             photosEntries(this@SharedTransitionLayout, navigator)
+                            searchEntries()
+                            connectionsEntries(appState.appLevelVmStoreOwner)
                         }
                         NavDisplay(
                             entries = appState.navigationState.toDecoratedEntries(entryProvider),

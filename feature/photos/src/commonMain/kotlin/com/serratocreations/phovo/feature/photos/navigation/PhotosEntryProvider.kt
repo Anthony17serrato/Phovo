@@ -9,6 +9,8 @@ import com.serratocreations.phovo.core.common.getPlatform
 import com.serratocreations.phovo.core.navigation.Navigator
 import com.serratocreations.phovo.core.navigation.PhotoDetailNavKey
 import com.serratocreations.phovo.core.navigation.PhotosHomeNavKey
+import com.serratocreations.phovo.core.navigation.SharedViewModelStoreNavEntryDecorator
+import com.serratocreations.phovo.core.navigation.toContentKey
 import com.serratocreations.phovo.feature.photos.ui.PhotoViewerScreen
 import com.serratocreations.phovo.feature.photos.ui.PhotosHomeScreen
 import com.serratocreations.phovo.feature.photos.ui.PhotosViewModel
@@ -20,7 +22,9 @@ fun EntryProviderScope<NavKey>.photosEntries(
     sharedElementTransition: SharedTransitionScope,
     navigator: Navigator
 ) {
-    entry<PhotosHomeNavKey> {
+    entry<PhotosHomeNavKey>(
+        clazzContentKey = { key -> key.toContentKey() }
+    ) {
         val photosViewModel: PhotosViewModel = koinViewModel()
         PhotosHomeScreen(
             onPhotoClick = { uriPhotoUiItem ->
@@ -38,7 +42,11 @@ fun EntryProviderScope<NavKey>.photosEntries(
             photosViewModel = photosViewModel
         )
     }
-    entry<PhotoDetailNavKey> {
+    entry<PhotoDetailNavKey>(
+        metadata = SharedViewModelStoreNavEntryDecorator.parent(
+            contentKey = PhotosHomeNavKey.toContentKey()
+        )
+    ) {
         val photosViewModel: PhotosViewModel = koinViewModel()
         PhotoViewerScreen(
             onBackClick = navigator::goBack,

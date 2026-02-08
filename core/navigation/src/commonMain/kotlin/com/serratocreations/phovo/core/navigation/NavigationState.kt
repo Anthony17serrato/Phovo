@@ -26,7 +26,6 @@ import androidx.compose.runtime.saveable.rememberSerializable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.toMutableStateList
-import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
@@ -34,6 +33,7 @@ import androidx.navigation3.runtime.rememberDecoratedNavEntries
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.savedstate.compose.serialization.serializers.MutableStateSerializer
+import androidx.savedstate.serialization.SavedStateConfiguration
 import kotlinx.serialization.PolymorphicSerializer
 import kotlin.collections.component1
 import kotlin.collections.component2
@@ -47,20 +47,21 @@ import kotlin.collections.component2
 @Composable
 fun rememberNavigationState(
     startRoute: NavKey,
-    topLevelRoutes: Set<NavKey>
+    topLevelRoutes: Set<NavKey>,
+    savedStateConfig: SavedStateConfiguration
 ): NavigationState {
 
     val topLevelRoute = rememberSerializable(
         startRoute, topLevelRoutes,
         serializer = MutableStateSerializer(PolymorphicSerializer(NavKey::class)),
-        configuration = PhovoNavSavedStateConfiguration
+        configuration = savedStateConfig
     ) {
         mutableStateOf(startRoute)
     }
 
     // Create a back stack for each top level route.
     val backStacks = topLevelRoutes.associateWith { key ->
-        rememberNavBackStack(PhovoNavSavedStateConfiguration, key)
+        rememberNavBackStack(savedStateConfig, key)
     }
 
     return remember(startRoute) {
@@ -115,7 +116,7 @@ class NavigationState(
         val decoratedEntries = backStacks.mapValues { (_, stack) ->
             val decorators = listOf(
                 rememberSaveableStateHolderNavEntryDecorator<NavKey>(),
-                rememberViewModelStoreNavEntryDecorator(),
+                rememberSharedViewModelStoreNavEntryDecorator(),
             )
             rememberDecoratedNavEntries(
                 backStack = stack,

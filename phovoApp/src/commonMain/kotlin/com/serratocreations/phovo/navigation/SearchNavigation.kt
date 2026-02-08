@@ -1,21 +1,19 @@
 package com.serratocreations.phovo.navigation
 
-import androidx.navigation.NavController
-import androidx.navigation.NavGraphBuilder
-import androidx.navigation.NavOptions
-import androidx.navigation.compose.composable
+import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
-import com.serratocreations.phovo.ui.SearchRoute
+import com.serratocreations.phovo.ui.SearchScreen
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.modules.PolymorphicModuleBuilder
 
-// TODO Move to a dedicated search feature module
-@Serializable object SearchRouteComponent: NavKey
+@Serializable object SearchHomeNavKey: NavKey
 
-fun NavController.navigateToBookmarks(navOptions: NavOptions) =
-    navigate(route = SearchRouteComponent, navOptions)
+fun PolymorphicModuleBuilder<NavKey>.searchRoutes() {
+    subclass(SearchHomeNavKey::class, SearchHomeNavKey.serializer())
+}
 
-fun NavGraphBuilder.bookmarksScreen() {
-    composable<SearchRouteComponent> {
-        SearchRoute()
+fun EntryProviderScope<NavKey>.searchEntries() {
+    entry<SearchHomeNavKey> {
+        SearchScreen()
     }
 }

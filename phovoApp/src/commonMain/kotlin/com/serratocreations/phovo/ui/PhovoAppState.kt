@@ -3,32 +3,30 @@ package com.serratocreations.phovo.ui
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.lifecycle.ViewModelStoreOwner
+import androidx.savedstate.serialization.SavedStateConfiguration
 import com.serratocreations.phovo.core.navigation.NavigationState
 import com.serratocreations.phovo.core.navigation.PhotosHomeNavKey
 import com.serratocreations.phovo.core.navigation.rememberNavigationState
 import com.serratocreations.phovo.navigation.TOP_LEVEL_NAV_ITEMS
-import kotlinx.coroutines.CoroutineScope
 
 @Composable
 fun rememberPhovoAppState(
-    coroutineScope: CoroutineScope = rememberCoroutineScope(),
+    savedStateConfig: SavedStateConfiguration
 ): PhovoAppState {
     val navigationState = rememberNavigationState(
         startRoute = PhotosHomeNavKey,
-        topLevelRoutes = TOP_LEVEL_NAV_ITEMS.keys
+        topLevelRoutes = TOP_LEVEL_NAV_ITEMS.keys,
+        savedStateConfig = savedStateConfig
     )
 
     //NavigationTrackingSideEffect(navigationState)
 
     return remember(
-        navigationState,
-        coroutineScope
+        navigationState
     ) {
         PhovoAppState(
-            navigationState = navigationState,
-            coroutineScope = coroutineScope
+            navigationState = navigationState
         )
     }
 }
@@ -36,7 +34,6 @@ fun rememberPhovoAppState(
 @Stable
 class PhovoAppState(
     val navigationState: NavigationState,
-    coroutineScope: CoroutineScope,
 ) {
     lateinit var appLevelVmStoreOwner: ViewModelStoreOwner
 }
