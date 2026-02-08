@@ -1,6 +1,5 @@
 package com.serratocreations.phovo.ui
 
-import androidx.annotation.VisibleForTesting
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
@@ -19,18 +18,10 @@ import phovo.phovoapp.generated.resources.Res
 import phovo.phovoapp.generated.resources.compose_multiplatform
 import org.jetbrains.compose.resources.painterResource
 
-@Composable
-internal fun BookmarksRoute(
-    modifier: Modifier = Modifier
-) {
-    BookmarksScreen(
-        modifier = modifier
-    )
-}
+// TODO Move to a dedicated search feature module
 
-@VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
 @Composable
-internal fun BookmarksScreen(
+internal fun SearchScreen(
     modifier: Modifier = Modifier,
 ) {
     var showContent by remember { mutableStateOf(false) }

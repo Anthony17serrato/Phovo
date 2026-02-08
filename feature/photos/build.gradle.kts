@@ -22,11 +22,13 @@ kotlin {
             implementation(projects.core.logger)
             implementation(projects.data.photos)
             implementation(projects.data.server)
+            implementation(projects.core.navigation)
 
             implementation(libs.compose.resources)
             implementation(libs.serialization.json)
             implementation(libs.coil.compose)
             implementation(libs.kotlin.datetime)
+            implementation(libs.bundles.navigation3)
         }
 
         commonTest.dependencies {

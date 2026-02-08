@@ -9,27 +9,27 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavController
-import androidx.navigation.NavGraphBuilder
-import androidx.navigation.NavOptions
-import androidx.navigation.compose.composable
+import androidx.navigation3.runtime.EntryProviderScope
+import androidx.navigation3.runtime.NavKey
 import com.serratocreations.phovo.core.common.ui.PhovoPaneMode
 import com.serratocreations.phovo.core.common.ui.PhovoViewModel
 import com.serratocreations.phovo.core.designsystem.component.PhovoNavOptions
 import com.serratocreations.phovo.core.designsystem.util.getPaneMode
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.modules.PolymorphicModuleBuilder
 import org.koin.compose.viewmodel.koinViewModel
 
-@Serializable object ConnectionsHomeRoute
+// TODO Migrate entire feature module to Nav 3
+@Serializable object ConnectionsRouteComponent: NavKey
 
-fun NavController.navigateToConnections(navOptions: NavOptions? = null) {
-    navigate(route = ConnectionsHomeRoute, navOptions)
+fun PolymorphicModuleBuilder<NavKey>.connectionsRoutes() {
+    subclass(ConnectionsRouteComponent::class, ConnectionsRouteComponent.serializer())
 }
 
-fun NavGraphBuilder.connectionsDetailsScreen(
+fun EntryProviderScope<NavKey>.connectionsEntries(
     appLevelVmStoreOwner: ViewModelStoreOwner
 ) {
-    composable<ConnectionsHomeRoute> {
+    entry<ConnectionsRouteComponent> {
         val phovoViewModel: PhovoViewModel = koinViewModel(viewModelStoreOwner = appLevelVmStoreOwner)
         ConnectionsDetailsNavigation(phovoViewModel = phovoViewModel)
     }

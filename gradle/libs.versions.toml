@@ -21,14 +21,12 @@ foundation = "1.10.0-rc02"
 #noinspection GradleDependency,NewerVersionAvailable
 lifecycle = "2.10.0-alpha06"
 #noinspection NewerVersionAvailable
-material = "1.10.0-rc02"
 material3 = "1.10.0-alpha05"
 material-icons = "1.7.3"
 #noinspection NewerVersionAvailable
 material3-adaptive = "1.3.0-alpha02"
 #noinspection GradleDependency
 nav3Core = "1.0.0-alpha06"
-navigation-compose = "2.9.1"
 # KMP Compose End
 junit = "4.13.2"
 kermit = "2.0.8"
@@ -62,9 +60,6 @@ compose-runtime = { group = "org.jetbrains.compose.runtime", name = "runtime", v
 compose-resources = { group = "org.jetbrains.compose.components", name = "components-resources", version.ref = "compose-resources" }
 lifecycle-runtime-compose = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "lifecycle" }
 compose-foundation = { group= "org.jetbrains.compose.foundation", name = "foundation", version.ref = "foundation" }
-compose-material-navigation = { group = "org.jetbrains.compose.material", name = "material-navigation", version.ref = "material" }
-compose-navigation = { group = "org.jetbrains.androidx.navigation", name = "navigation-compose", version.ref = "navigation-compose"}
-compose-navigation-common = { group = "org.jetbrains.androidx.navigation", name = "navigation-common", version.ref = "navigation-compose"}
 exoplayer = { group = "androidx.media3", name = "media3-exoplayer", version.ref = "exoplayer" }
 media-ui = { group = "androidx.media3", name = "media3-ui", version.ref = "exoplayer" }
 material3-adaptive-navigation-suite = { group = "org.jetbrains.compose.material3", name = "material3-adaptive-navigation-suite", version.ref = "material3" }
@@ -119,6 +114,7 @@ ksp-gradlePlugin = { group = "com.google.devtools.ksp", name = "com.google.devto
 room-gradlePlugin = { group = "androidx.room", name = "room-gradle-plugin", version.ref = "room-kmp" }
 
 [bundles]
+navigation3 = ["navigation3-runtime", "navigation3-ui", "androidx-lifecycle-viewmodel-navigation3", "androidx-material3-adaptive-navigation3"]
 koin-common-kmp = ["koin-core", "koin-compose", "koin-compose-vm"]
 # NOTE: room-bundled-sqlite bundles a version of sqlite with all targets, this is good for testability
 # but may result in a bloated application size for IOS & Android targets(if app size becomes an issue

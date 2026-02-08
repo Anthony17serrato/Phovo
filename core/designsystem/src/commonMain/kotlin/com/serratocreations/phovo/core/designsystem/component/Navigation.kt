@@ -27,6 +27,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.window.core.layout.WindowWidthSizeClass
+import com.serratocreations.phovo.core.designsystem.constants.COMPACT_WIDTH
+import com.serratocreations.phovo.core.designsystem.constants.EXPANDED_WIDTH
+import com.serratocreations.phovo.core.designsystem.constants.MEDIUM_WIDTH
 import com.serratocreations.phovo.core.designsystem.icon.PhovoIcons
 import com.serratocreations.phovo.core.designsystem.theme.PhovoTheme
 
@@ -182,13 +185,14 @@ fun PhovoNavigationSuiteScaffold(
     windowAdaptiveInfo: WindowAdaptiveInfo = currentWindowAdaptiveInfo(),
     content: @Composable () -> Unit,
 ) {
-    val layoutType = when (windowAdaptiveInfo.windowSizeClass.windowWidthSizeClass) {
-        WindowWidthSizeClass.COMPACT -> {
+    // https://developer.android.com/develop/ui/compose/layouts/adaptive/use-window-size-classes
+    val layoutType = when {
+        windowAdaptiveInfo.windowSizeClass.isWidthAtLeastBreakpoint(COMPACT_WIDTH) -> {
             if (shouldShowNavBarOnCompactScreens) NavigationSuiteType.NavigationBar
             else NavigationSuiteType.None
         }
-        WindowWidthSizeClass.MEDIUM -> NavigationSuiteType.NavigationRail
-        WindowWidthSizeClass.EXPANDED -> NavigationSuiteType.NavigationDrawer
+        windowAdaptiveInfo.windowSizeClass.isWidthAtLeastBreakpoint(MEDIUM_WIDTH) -> NavigationSuiteType.NavigationRail
+        windowAdaptiveInfo.windowSizeClass.isWidthAtLeastBreakpoint(EXPANDED_WIDTH) -> NavigationSuiteType.NavigationDrawer
         else -> NavigationSuiteType.NavigationBar
     }
 

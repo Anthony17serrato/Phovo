@@ -14,6 +14,7 @@ kotlin {
             implementation(projects.core.designsystem)
             implementation(projects.core.common)
             implementation(projects.data.server)
+            implementation(projects.core.navigation)
 
             implementation(libs.compose.resources)
             implementation(libs.serialization.json)
@@ -21,6 +22,7 @@ kotlin {
             implementation(libs.filekit.core)
             implementation(libs.filekit.dialogs)
             implementation(libs.filekit.dialogs.compose)
+            implementation(libs.bundles.navigation3)
         }
 
         commonTest.dependencies {
