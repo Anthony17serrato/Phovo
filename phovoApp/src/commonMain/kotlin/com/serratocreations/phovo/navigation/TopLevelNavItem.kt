@@ -1,6 +1,7 @@
 package com.serratocreations.phovo.navigation
 
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.navigation3.runtime.NavKey
 import com.serratocreations.phovo.core.designsystem.icon.PhovoIcons
 import com.serratocreations.phovo.core.navigation.PhotosHomeNavKey
 import com.serratocreations.phovo.feature.connections.ui.ConnectionsRouteComponent
@@ -41,7 +42,7 @@ val CONNECTIONS = TopLevelNavItem(
     titleTextId = connectionsRes.string.feature_connections_title
 )
 
-val TOP_LEVEL_NAV_ITEMS = mapOf(
+val TOP_LEVEL_NAV_ITEMS: Map<NavKey, TopLevelNavItem> = mapOf(
     PhotosHomeNavKey to PHOTOS,
     SearchHomeNavKey to SEARCH,
     ConnectionsRouteComponent to CONNECTIONS
