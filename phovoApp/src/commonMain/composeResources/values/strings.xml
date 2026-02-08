@@ -4,4 +4,5 @@
     <string name="feature_search_interests">Interests</string>
     <string name="feature_settings_top_app_bar_action_icon_description">Settings</string>
     <string name="feature_settings_top_app_bar_navigation_icon_description">Search</string>
+    <string name="dev_menu_option">Dev Menu</string>
 </resources>

@@ -13,6 +13,7 @@ val PhovoNavSavedStateConfiguration = SavedStateConfiguration {
             photoRoutes()
             searchRoutes()
             connectionsRoutes()
+            flavorRoutes()
         }
     }
 }
