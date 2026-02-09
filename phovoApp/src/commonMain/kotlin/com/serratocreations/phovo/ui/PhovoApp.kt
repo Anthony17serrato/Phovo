@@ -39,7 +39,7 @@ import androidx.navigation3.ui.NavDisplay
 import com.serratocreations.phovo.core.common.ui.PhovoViewModel
 import com.serratocreations.phovo.core.designsystem.component.PhovoBackground
 import com.serratocreations.phovo.core.designsystem.component.PhovoNavigationSuiteScaffold
-import com.serratocreations.phovo.core.designsystem.component.PhovoTopAppBar
+import com.serratocreations.phovo.ui.components.PhovoTopAppBar
 import com.serratocreations.phovo.core.designsystem.icon.PhovoIcons
 import com.serratocreations.phovo.core.designsystem.theme.PhovoTheme
 import com.serratocreations.phovo.core.navigation.Navigator
@@ -48,13 +48,11 @@ import com.serratocreations.phovo.feature.connections.ui.connectionsEntries
 import com.serratocreations.phovo.feature.photos.navigation.photosEntries
 import com.serratocreations.phovo.navigation.PhovoNavSavedStateConfiguration
 import com.serratocreations.phovo.navigation.TOP_LEVEL_NAV_ITEMS
+import com.serratocreations.phovo.navigation.flavorEntries
 import com.serratocreations.phovo.navigation.searchEntries
 import com.serratocreations.phovo.ui.components.HomeTitleContent
 import com.serratocreations.phovo.ui.viewmodel.ApplicationViewModel
-import com.serratocreations.phovo.ui.viewmodel.Green
-import com.serratocreations.phovo.ui.viewmodel.Red
 import com.serratocreations.phovo.ui.viewmodel.ServerStatusColor
-import com.serratocreations.phovo.ui.viewmodel.Unavailable
 import phovo.phovoapp.generated.resources.Res
 import phovo.phovoapp.generated.resources.feature_settings_top_app_bar_action_icon_description
 import phovo.phovoapp.generated.resources.feature_settings_top_app_bar_navigation_icon_description
@@ -104,7 +102,7 @@ internal fun InternalPhovoApp(
             TOP_LEVEL_NAV_ITEMS.forEach { (navKey, navItem) ->
                 val selected = navKey == appState.navigationState.topLevelRoute
                 val customModifier = if (navKey == ConnectionsRouteComponent) {
-                    Modifier.notificationDot(applicationUiSate)
+                    Modifier.notificationDot(applicationUiSate.serverStatusColor)
                 } else { Modifier }
                 item(
                     selected = selected,
@@ -167,7 +165,8 @@ internal fun InternalPhovoApp(
                             containerColor = Color.Transparent,
                             scrolledContainerColor = Color.Transparent
                         ),
-                        /*onActionClick = { onTopAppBarActionClick() },*/
+                        menuOptions = applicationUiSate.menuOptions,
+                        onMenuActionClick = { navigator.navigate(route = it) },
                         onNavigationClick = phovoViewModel::onNavigationClick,//{ appState.navController.popBackStack() }
                         scrollBehavior = scrollBehavior,
                         titleContent = { HomeTitleContent() }
@@ -190,6 +189,7 @@ internal fun InternalPhovoApp(
                             photosEntries(this@SharedTransitionLayout, navigator)
                             searchEntries()
                             connectionsEntries(appState.appLevelVmStoreOwner)
+                            flavorEntries(navigator)
                         }
                         NavDisplay(
                             entries = appState.navigationState.toDecoratedEntries(entryProvider),
@@ -213,9 +213,9 @@ private fun NavKey?.isTopLevel() =
 private fun Modifier.notificationDot(statusColor: ServerStatusColor): Modifier =
     composed {
         val color = when(statusColor) {
-            Green -> MaterialTheme.colorScheme.primary
-            Red -> MaterialTheme.colorScheme.error
-            Unavailable -> MaterialTheme.colorScheme.onSurfaceVariant
+            ServerStatusColor.Green -> MaterialTheme.colorScheme.primary
+            ServerStatusColor.Red -> MaterialTheme.colorScheme.error
+            ServerStatusColor.Unavailable -> MaterialTheme.colorScheme.onSurfaceVariant
         }
         drawWithContent {
             drawContent()

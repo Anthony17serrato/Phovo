@@ -40,6 +40,7 @@ abstract class ApplicationPlatformModuleFetcher {
             getPhotosFeatureModule(),
             getLoggerCommonModule(),
             getConnectionsFeatureModule(),
+            flavorModule
         )
         viewModelOf(::ApplicationViewModel)
     }
