@@ -5,6 +5,7 @@ import com.serratocreations.phovo.core.common.di.getCoreCommonModule
 import com.serratocreations.phovo.core.logger.KermitKoinLogger
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.core.logger.getLoggerCommonModule
+import com.serratocreations.phovo.core.navigation.di.navigationModule
 import com.serratocreations.phovo.feature.connections.di.getConnectionsFeatureModule
 import com.serratocreations.phovo.feature.photos.di.getPhotosFeatureModule
 import com.serratocreations.phovo.ui.viewmodel.ApplicationViewModel
@@ -40,7 +41,8 @@ abstract class ApplicationPlatformModuleFetcher {
             getPhotosFeatureModule(),
             getLoggerCommonModule(),
             getConnectionsFeatureModule(),
-            flavorModule
+            flavorModule,
+            navigationModule
         )
         viewModelOf(::ApplicationViewModel)
     }

@@ -6,7 +6,7 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import com.serratocreations.phovo.core.common.Platform
 import com.serratocreations.phovo.core.common.getPlatform
-import com.serratocreations.phovo.core.navigation.Navigator
+import com.serratocreations.phovo.core.navigation.NavigationViewModel
 import com.serratocreations.phovo.core.navigation.PhotoDetailNavKey
 import com.serratocreations.phovo.core.navigation.PhotosHomeNavKey
 import com.serratocreations.phovo.core.navigation.SharedViewModelStoreNavEntryDecorator
@@ -20,7 +20,7 @@ import org.koin.compose.viewmodel.koinViewModel
 
 fun EntryProviderScope<NavKey>.photosEntries(
     sharedElementTransition: SharedTransitionScope,
-    navigator: Navigator
+    navigationViewmodel: NavigationViewModel
 ) {
     entry<PhotosHomeNavKey>(
         clazzContentKey = { key -> key.toContentKey() }
@@ -34,7 +34,7 @@ fun EntryProviderScope<NavKey>.photosEntries(
                     // TODO[Low priority] Investigate if video can be displayed directly in app for desktop
                     handleVideoDesktop(uriPhotoUiItem.uri)
                 } else {
-                    navigator.navigate(PhotoDetailNavKey)
+                    navigationViewmodel.navigate(PhotoDetailNavKey)
                 }
             },
             sharedElementTransition = sharedElementTransition,
@@ -49,7 +49,7 @@ fun EntryProviderScope<NavKey>.photosEntries(
     ) {
         val photosViewModel: PhotosViewModel = koinViewModel()
         PhotoViewerScreen(
-            onBackClick = navigator::goBack,
+            onBackClick = navigationViewmodel::goBack,
             sharedElementTransition = sharedElementTransition,
             animatedContentScope = LocalNavAnimatedContentScope.current,
             photosViewModel = photosViewModel

@@ -42,7 +42,10 @@ import com.serratocreations.phovo.core.designsystem.component.PhovoNavigationSui
 import com.serratocreations.phovo.ui.components.PhovoTopAppBar
 import com.serratocreations.phovo.core.designsystem.icon.PhovoIcons
 import com.serratocreations.phovo.core.designsystem.theme.PhovoTheme
-import com.serratocreations.phovo.core.navigation.Navigator
+import com.serratocreations.phovo.core.navigation.NavigationState
+import com.serratocreations.phovo.core.navigation.NavigationViewModel
+import com.serratocreations.phovo.core.navigation.PhotosHomeNavKey
+import com.serratocreations.phovo.core.navigation.rememberNavigationState
 import com.serratocreations.phovo.feature.connections.ui.ConnectionsRouteComponent
 import com.serratocreations.phovo.feature.connections.ui.connectionsEntries
 import com.serratocreations.phovo.feature.photos.navigation.photosEntries
@@ -58,18 +61,17 @@ import phovo.phovoapp.generated.resources.feature_settings_top_app_bar_action_ic
 import phovo.phovoapp.generated.resources.feature_settings_top_app_bar_navigation_icon_description
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 @Composable
 @Preview
 fun PhovoApp(
-    appState: PhovoAppState = rememberPhovoAppState(savedStateConfig = PhovoNavSavedStateConfiguration),
     modifier: Modifier = Modifier,
     windowAdaptiveInfo: WindowAdaptiveInfo = currentWindowAdaptiveInfo()
 ) {
     PhovoTheme {
         PhovoBackground(modifier = modifier) {
             InternalPhovoApp(
-                appState = appState,
                 windowAdaptiveInfo = windowAdaptiveInfo,
             )
         }
@@ -83,30 +85,34 @@ fun PhovoApp(
     ExperimentalMaterial3AdaptiveApi::class,
 )
 internal fun InternalPhovoApp(
-    appState: PhovoAppState,
     viewModelStoreOwner: ViewModelStoreOwner = checkNotNull(LocalViewModelStoreOwner.current) {
         "No ViewModelStoreOwner was provided via LocalViewModelStoreOwner"
     },
+    navigationState: NavigationState = rememberNavigationState(
+        startRoute = PhotosHomeNavKey,
+        topLevelRoutes = TOP_LEVEL_NAV_ITEMS.keys,
+        savedStateConfig = PhovoNavSavedStateConfiguration
+    ),
+    navigationViewModel: NavigationViewModel = koinViewModel(parameters = { parametersOf(navigationState) }),
+    // TODO: Merge PhovoViewModel into NavigationViewmodel
     phovoViewModel: PhovoViewModel = koinViewModel(viewModelStoreOwner = viewModelStoreOwner),
     applicationViewModel: ApplicationViewModel = koinViewModel(viewModelStoreOwner = viewModelStoreOwner),
     modifier: Modifier = Modifier,
     windowAdaptiveInfo: WindowAdaptiveInfo = currentWindowAdaptiveInfo(),
 ) {
-    appState.appLevelVmStoreOwner = viewModelStoreOwner
     val appLevelUiState by phovoViewModel.phovoUiState.collectAsState()
     val applicationUiSate by applicationViewModel.applicationUiState.collectAsState()
 
-    val navigator = remember { Navigator(appState.navigationState) }
     PhovoNavigationSuiteScaffold(
         navigationSuiteItems = {
             TOP_LEVEL_NAV_ITEMS.forEach { (navKey, navItem) ->
-                val selected = navKey == appState.navigationState.topLevelRoute
+                val selected = navKey == navigationState.topLevelRoute
                 val customModifier = if (navKey == ConnectionsRouteComponent) {
                     Modifier.notificationDot(applicationUiSate.serverStatusColor)
                 } else { Modifier }
                 item(
                     selected = selected,
-                    onClick = { navigator.navigate(navKey) },
+                    onClick = { navigationViewModel.navigate(navKey) },
                     icon = {
                         Icon(
                             imageVector = navItem.unselectedIcon,
@@ -125,7 +131,7 @@ internal fun InternalPhovoApp(
                 )
             }
         },
-        shouldShowNavBarOnCompactScreens = appState.navigationState.currentKey.isTopLevel(),
+        shouldShowNavBarOnCompactScreens = navigationState.currentKey.isTopLevel(),
         windowAdaptiveInfo = windowAdaptiveInfo,
     ) {
         val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
@@ -148,7 +154,7 @@ internal fun InternalPhovoApp(
             ) {
                 // Only show the top app bar on top level destinations.
                 var shouldShowTopAppBar = false
-                if (appState.navigationState.currentKey.isTopLevel()) {
+                if (navigationState.currentKey.isTopLevel()) {
                     shouldShowTopAppBar = true
 
                     PhovoTopAppBar(
@@ -166,7 +172,7 @@ internal fun InternalPhovoApp(
                             scrolledContainerColor = Color.Transparent
                         ),
                         menuOptions = applicationUiSate.menuOptions,
-                        onMenuActionClick = { navigator.navigate(route = it) },
+                        onMenuActionClick = { navigationViewModel.navigate(route = it) },
                         onNavigationClick = phovoViewModel::onNavigationClick,//{ appState.navController.popBackStack() }
                         scrollBehavior = scrollBehavior,
                         titleContent = { HomeTitleContent() }
@@ -186,16 +192,16 @@ internal fun InternalPhovoApp(
                 ) {
                     SharedTransitionLayout {
                         val entryProvider = entryProvider {
-                            photosEntries(this@SharedTransitionLayout, navigator)
+                            photosEntries(this@SharedTransitionLayout, navigationViewModel)
                             searchEntries()
-                            connectionsEntries(appState.appLevelVmStoreOwner)
-                            flavorEntries(navigator)
+                            connectionsEntries(phovoViewModel = phovoViewModel)
+                            flavorEntries(navigationViewModel)
                         }
                         NavDisplay(
-                            entries = appState.navigationState.toDecoratedEntries(entryProvider),
+                            entries = navigationState.toDecoratedEntries(entryProvider),
                             //sceneStrategy = listDetailStrategy
                             onBack = {
-                                navigator.goBack()
+                                navigationViewModel.goBack()
                             }
                         )
                     }
