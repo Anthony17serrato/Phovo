@@ -7,7 +7,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
@@ -27,10 +26,9 @@ fun PolymorphicModuleBuilder<NavKey>.connectionsRoutes() {
 }
 
 fun EntryProviderScope<NavKey>.connectionsEntries(
-    appLevelVmStoreOwner: ViewModelStoreOwner
+    phovoViewModel: PhovoViewModel
 ) {
     entry<ConnectionsRouteComponent> {
-        val phovoViewModel: PhovoViewModel = koinViewModel(viewModelStoreOwner = appLevelVmStoreOwner)
         ConnectionsDetailsNavigation(phovoViewModel = phovoViewModel)
     }
 }
