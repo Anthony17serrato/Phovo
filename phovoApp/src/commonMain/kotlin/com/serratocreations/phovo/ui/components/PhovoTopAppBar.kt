@@ -11,7 +11,6 @@ import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.testTag
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material.icons.Icons
@@ -36,22 +35,20 @@ import org.jetbrains.compose.resources.stringResource
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PhovoTopAppBar(
-    navigationIcon: ImageVector?,
-    navigationIconContentDescription: String,
+    navigationIcon: @Composable (() -> Unit) = {},
     actionIcon: ImageVector,
     actionIconContentDescription: String,
     modifier: Modifier = Modifier,
     colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(),
-    onNavigationClick: () -> Unit = {},
     menuOptions: Set<OverflowMenuOption>,
     onMenuActionClick: (NavKey) -> Unit = {},
     scrollBehavior: TopAppBarScrollBehavior,
     titleContent: @Composable () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
-
     TopAppBar(
         title = titleContent,
+        navigationIcon = navigationIcon,
         actions = {
             Box(modifier = Modifier.wrapContentSize(Alignment.TopStart)) {
                 // Icon button should have a tooltip associated with it for a11y.
@@ -73,7 +70,10 @@ fun PhovoTopAppBar(
                     menuOptions.forEach { menuOption ->
                         DropdownMenuItem(
                             text = { Text(stringResource(menuOption.title)) },
-                            onClick = { onMenuActionClick(menuOption.route) },
+                            onClick = {
+                                expanded = false
+                                onMenuActionClick(menuOption.route)
+                            },
                             leadingIcon = { Icon(Icons.Outlined.Edit, contentDescription = null) },
                         )
                     }
@@ -81,7 +81,7 @@ fun PhovoTopAppBar(
             }
         },
         colors = colors,
-        modifier = modifier.testTag("niaTopAppBar"),
-        scrollBehavior = scrollBehavior
+        scrollBehavior = scrollBehavior,
+        modifier = modifier
     )
 }

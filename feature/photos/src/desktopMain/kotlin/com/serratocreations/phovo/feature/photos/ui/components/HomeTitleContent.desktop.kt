@@ -1,9 +1,9 @@
-package com.serratocreations.phovo.ui.components
+package com.serratocreations.phovo.feature.photos.ui.components
 
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 
 @Composable
-actual fun HomeTitleContent() {
+actual fun PhotosHomeTitleContent() {
     Text("Phovo")
 }

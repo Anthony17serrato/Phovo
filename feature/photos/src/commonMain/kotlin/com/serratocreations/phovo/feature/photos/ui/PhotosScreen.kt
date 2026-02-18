@@ -46,7 +46,7 @@ internal fun PhotosHomeScreen(
     sharedElementTransition: SharedTransitionScope,
     animatedContentScope: AnimatedContentScope,
     photosViewModel: PhotosViewModel,
-    modifier: Modifier = Modifier,
+    modifier: Modifier = Modifier
 ) {
     // TODO move to root composable https://coil-kt.github.io/coil/image_loaders/
     setSingletonImageLoaderFactory { context ->

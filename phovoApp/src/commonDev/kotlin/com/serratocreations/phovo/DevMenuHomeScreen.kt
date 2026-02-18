@@ -1,6 +1,5 @@
 package com.serratocreations.phovo
 
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -19,27 +18,22 @@ fun DevMenuHomeScreen(
     onClickMenuItem: (NavKey) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
+    LazyColumn(
         modifier = modifier.fillMaxSize()
     ) {
-        Text("Dev Menu Screen")
-        LazyColumn(
-            modifier = modifier.fillMaxSize()
-        ) {
-            items(
-                items = devMenuItems
-            ) { item ->
-                Card(
-                    modifier = Modifier
-                        .padding(paddingSmall)
-                        .fillMaxWidth(),
-                    onClick = { onClickMenuItem(item) }
-                ) {
-                    Text(
-                        modifier = Modifier.padding(paddingSmall),
-                        text = item.toString()
-                    )
-                }
+        items(
+            items = devMenuItems
+        ) { item ->
+            Card(
+                modifier = Modifier
+                    .padding(paddingSmall)
+                    .fillMaxWidth(),
+                onClick = { onClickMenuItem(item) }
+            ) {
+                Text(
+                    modifier = Modifier.padding(paddingSmall),
+                    text = item.toString()
+                )
             }
         }
     }

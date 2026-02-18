@@ -1,4 +1,4 @@
-package com.serratocreations.phovo.feature.photos.ui.reusablecomponents
+package com.serratocreations.phovo.feature.photos.ui.components
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility

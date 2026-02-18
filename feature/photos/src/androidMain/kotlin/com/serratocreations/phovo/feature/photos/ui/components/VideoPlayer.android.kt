@@ -1,4 +1,4 @@
-package com.serratocreations.phovo.feature.photos.ui.reusablecomponents
+package com.serratocreations.phovo.feature.photos.ui.components
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
