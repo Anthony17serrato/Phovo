@@ -1,4 +1,4 @@
-package com.serratocreations.phovo.core.navigation
+package com.serratocreations.phovo.feature.photos.navigation
 
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable

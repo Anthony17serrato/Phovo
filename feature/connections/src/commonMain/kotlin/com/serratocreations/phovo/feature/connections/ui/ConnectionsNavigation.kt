@@ -2,6 +2,7 @@ package com.serratocreations.phovo.feature.connections.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -14,6 +15,8 @@ import com.serratocreations.phovo.core.common.ui.PhovoPaneMode
 import com.serratocreations.phovo.core.common.ui.PhovoViewModel
 import com.serratocreations.phovo.core.designsystem.component.PhovoNavOptions
 import com.serratocreations.phovo.core.designsystem.util.getPaneMode
+import com.serratocreations.phovo.core.navigation.AppBarConfig
+import com.serratocreations.phovo.core.navigation.NavigationViewModel
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.modules.PolymorphicModuleBuilder
 import org.koin.compose.viewmodel.koinViewModel
@@ -26,9 +29,19 @@ fun PolymorphicModuleBuilder<NavKey>.connectionsRoutes() {
 }
 
 fun EntryProviderScope<NavKey>.connectionsEntries(
-    phovoViewModel: PhovoViewModel
+    phovoViewModel: PhovoViewModel,
+    navigationViewModel: NavigationViewModel
 ) {
     entry<ConnectionsRouteComponent> {
+        LaunchedEffect(navigationViewModel.state.currentKey) {
+            if(navigationViewModel.state.currentKey == ConnectionsRouteComponent) {
+                navigationViewModel.setAppBarConfig(
+                    AppBarConfig(
+                        title = { Text("Connections") }
+                    )
+                )
+            }
+        }
         ConnectionsDetailsNavigation(phovoViewModel = phovoViewModel)
     }
 }

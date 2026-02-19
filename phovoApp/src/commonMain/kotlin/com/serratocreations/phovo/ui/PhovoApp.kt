@@ -44,7 +44,7 @@ import com.serratocreations.phovo.core.designsystem.icon.PhovoIcons
 import com.serratocreations.phovo.core.designsystem.theme.PhovoTheme
 import com.serratocreations.phovo.core.navigation.NavigationState
 import com.serratocreations.phovo.core.navigation.NavigationViewModel
-import com.serratocreations.phovo.core.navigation.PhotosHomeNavKey
+import com.serratocreations.phovo.feature.photos.navigation.PhotosHomeNavKey
 import com.serratocreations.phovo.core.navigation.rememberNavigationState
 import com.serratocreations.phovo.feature.connections.ui.ConnectionsRouteComponent
 import com.serratocreations.phovo.feature.connections.ui.connectionsEntries
@@ -179,8 +179,8 @@ internal fun InternalPhovoApp(
                                 sharedElementTransition = this@SharedTransitionLayout,
                                 navigationViewModel = navigationViewModel
                             )
-                            searchEntries()
-                            connectionsEntries(phovoViewModel = phovoViewModel)
+                            searchEntries(navigationViewModel = navigationViewModel)
+                            connectionsEntries(phovoViewModel = phovoViewModel, navigationViewModel = navigationViewModel)
                             flavorEntries(navigationViewModel)
                         }
                         NavDisplay(
