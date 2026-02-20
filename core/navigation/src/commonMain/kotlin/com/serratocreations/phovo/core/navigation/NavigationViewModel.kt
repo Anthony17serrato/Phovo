@@ -2,6 +2,9 @@ package com.serratocreations.phovo.core.navigation
 
 import androidx.lifecycle.ViewModel
 import androidx.navigation3.runtime.NavKey
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
 /**
  * Handles navigation events (forward and back) by updating the navigation state.
@@ -9,6 +12,8 @@ import androidx.navigation3.runtime.NavKey
 class NavigationViewModel(
     val state: NavigationState
 ): ViewModel() {
+    private val _appBarState = MutableStateFlow(AppBarConfig())
+    val appBarState = _appBarState.asStateFlow()
 
     fun navigate(route: NavKey){
         if (route in state.backStacks.keys){
@@ -29,6 +34,12 @@ class NavigationViewModel(
             state.topLevelRoute = state.startRoute
         } else {
             currentStack.removeLastOrNull()
+        }
+    }
+
+    fun setAppBarConfig(appBarConfig: AppBarConfig) {
+        _appBarState.update {
+            appBarConfig
         }
     }
 }

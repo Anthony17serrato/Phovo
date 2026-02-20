@@ -3,7 +3,7 @@ package com.serratocreations.phovo.navigation
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation3.runtime.NavKey
 import com.serratocreations.phovo.core.designsystem.icon.PhovoIcons
-import com.serratocreations.phovo.core.navigation.PhotosHomeNavKey
+import com.serratocreations.phovo.feature.photos.navigation.PhotosHomeNavKey
 import com.serratocreations.phovo.feature.connections.ui.ConnectionsRouteComponent
 import phovo.phovoapp.generated.resources.Res
 import phovo.phovoapp.generated.resources.feature_search_title

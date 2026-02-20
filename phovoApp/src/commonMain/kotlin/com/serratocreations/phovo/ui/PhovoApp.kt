@@ -44,7 +44,7 @@ import com.serratocreations.phovo.core.designsystem.icon.PhovoIcons
 import com.serratocreations.phovo.core.designsystem.theme.PhovoTheme
 import com.serratocreations.phovo.core.navigation.NavigationState
 import com.serratocreations.phovo.core.navigation.NavigationViewModel
-import com.serratocreations.phovo.core.navigation.PhotosHomeNavKey
+import com.serratocreations.phovo.feature.photos.navigation.PhotosHomeNavKey
 import com.serratocreations.phovo.core.navigation.rememberNavigationState
 import com.serratocreations.phovo.feature.connections.ui.ConnectionsRouteComponent
 import com.serratocreations.phovo.feature.connections.ui.connectionsEntries
@@ -53,12 +53,10 @@ import com.serratocreations.phovo.navigation.PhovoNavSavedStateConfiguration
 import com.serratocreations.phovo.navigation.TOP_LEVEL_NAV_ITEMS
 import com.serratocreations.phovo.navigation.flavorEntries
 import com.serratocreations.phovo.navigation.searchEntries
-import com.serratocreations.phovo.ui.components.HomeTitleContent
 import com.serratocreations.phovo.ui.viewmodel.ApplicationViewModel
 import com.serratocreations.phovo.ui.viewmodel.ServerStatusColor
 import phovo.phovoapp.generated.resources.Res
 import phovo.phovoapp.generated.resources.feature_settings_top_app_bar_action_icon_description
-import phovo.phovoapp.generated.resources.feature_settings_top_app_bar_navigation_icon_description
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -100,8 +98,8 @@ internal fun InternalPhovoApp(
     modifier: Modifier = Modifier,
     windowAdaptiveInfo: WindowAdaptiveInfo = currentWindowAdaptiveInfo(),
 ) {
-    val appLevelUiState by phovoViewModel.phovoUiState.collectAsState()
     val applicationUiSate by applicationViewModel.applicationUiState.collectAsState()
+    val appBarState by navigationViewModel.appBarState.collectAsState()
 
     PhovoNavigationSuiteScaffold(
         navigationSuiteItems = {
@@ -136,6 +134,24 @@ internal fun InternalPhovoApp(
     ) {
         val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
         Scaffold(
+            topBar = {
+                PhovoTopAppBar(
+                    navigationIcon = appBarState.navigationIcon,
+                    actionIcon = PhovoIcons.More,
+                    actionIconContentDescription = stringResource(
+                        Res.string.feature_settings_top_app_bar_action_icon_description,
+                    ),
+                    modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent,
+                        scrolledContainerColor = Color.Transparent
+                    ),
+                    menuOptions = applicationUiSate.menuOptions,
+                    onMenuActionClick = { navigationViewModel.navigate(route = it) },
+                    scrollBehavior = scrollBehavior,
+                    titleContent = appBarState.title
+                )
+            },
             modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
             containerColor = Color.Transparent,
             contentColor = MaterialTheme.colorScheme.onBackground,
@@ -152,49 +168,19 @@ internal fun InternalPhovoApp(
                         ),
                     ),
             ) {
-                // Only show the top app bar on top level destinations.
-                var shouldShowTopAppBar = false
-                if (navigationState.currentKey.isTopLevel()) {
-                    shouldShowTopAppBar = true
-
-                    PhovoTopAppBar(
-                        navigationIcon = if (appLevelUiState.canBackButtonBeShown) PhovoIcons.ArrowBack else PhovoIcons.Search,
-                        navigationIconContentDescription = stringResource(
-                            Res.string.feature_settings_top_app_bar_navigation_icon_description,
-                        ),
-                        actionIcon = PhovoIcons.More,
-                        actionIconContentDescription = stringResource(
-                            Res.string.feature_settings_top_app_bar_action_icon_description,
-                        ),
-                        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-                        colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = Color.Transparent,
-                            scrolledContainerColor = Color.Transparent
-                        ),
-                        menuOptions = applicationUiSate.menuOptions,
-                        onMenuActionClick = { navigationViewModel.navigate(route = it) },
-                        onNavigationClick = phovoViewModel::onNavigationClick,//{ appState.navController.popBackStack() }
-                        scrollBehavior = scrollBehavior,
-                        titleContent = { HomeTitleContent() }
-                    )
-                }
-
-
                 Box(
-                    // Workaround for https://issuetracker.google.com/338478720
                     modifier = Modifier.consumeWindowInsets(
-                        if (shouldShowTopAppBar) {
-                            WindowInsets.safeDrawing.only(WindowInsetsSides.Top)
-                        } else {
-                            WindowInsets(0, 0, 0, 0)
-                        },
+                        WindowInsets.safeDrawing.only(WindowInsetsSides.Top)
                     ),
                 ) {
                     SharedTransitionLayout {
                         val entryProvider = entryProvider {
-                            photosEntries(this@SharedTransitionLayout, navigationViewModel)
-                            searchEntries()
-                            connectionsEntries(phovoViewModel = phovoViewModel)
+                            photosEntries(
+                                sharedElementTransition = this@SharedTransitionLayout,
+                                navigationViewModel = navigationViewModel
+                            )
+                            searchEntries(navigationViewModel = navigationViewModel)
+                            connectionsEntries(phovoViewModel = phovoViewModel, navigationViewModel = navigationViewModel)
                             flavorEntries(navigationViewModel)
                         }
                         NavDisplay(
