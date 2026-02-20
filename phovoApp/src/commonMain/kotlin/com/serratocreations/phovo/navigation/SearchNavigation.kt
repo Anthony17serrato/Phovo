@@ -9,6 +9,9 @@ import com.serratocreations.phovo.core.navigation.NavigationViewModel
 import com.serratocreations.phovo.ui.SearchScreen
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.modules.PolymorphicModuleBuilder
+import org.jetbrains.compose.resources.stringResource
+import phovo.phovoapp.generated.resources.Res
+import phovo.phovoapp.generated.resources.search_top_app_bar_description
 
 @Serializable object SearchHomeNavKey: NavKey
 
@@ -24,7 +27,7 @@ fun EntryProviderScope<NavKey>.searchEntries(
             if(navigationViewModel.state.currentKey == SearchHomeNavKey) {
                 navigationViewModel.setAppBarConfig(
                     AppBarConfig(
-                        title = { Text("Search") }
+                        title = { Text(stringResource(Res.string.search_top_app_bar_description)) }
                     )
                 )
             }

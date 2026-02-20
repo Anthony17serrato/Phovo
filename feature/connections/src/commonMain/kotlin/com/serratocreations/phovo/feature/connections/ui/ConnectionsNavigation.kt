@@ -19,7 +19,10 @@ import com.serratocreations.phovo.core.navigation.AppBarConfig
 import com.serratocreations.phovo.core.navigation.NavigationViewModel
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.modules.PolymorphicModuleBuilder
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
+import phovo.feature.connections.generated.resources.Res
+import phovo.feature.connections.generated.resources.feature_connections_title
 
 // TODO Migrate entire feature module to Nav 3
 @Serializable object ConnectionsRouteComponent: NavKey
@@ -37,7 +40,7 @@ fun EntryProviderScope<NavKey>.connectionsEntries(
             if(navigationViewModel.state.currentKey == ConnectionsRouteComponent) {
                 navigationViewModel.setAppBarConfig(
                     AppBarConfig(
-                        title = { Text("Connections") }
+                        title = { Text(stringResource(Res.string.feature_connections_title)) }
                     )
                 )
             }
