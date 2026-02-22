@@ -11,5 +11,5 @@ interface RemoteMediaRepository: MediaRepository {
      * Observes the status of the connection to the phovo server by periodically
      * pinging the server endpoint
      */
-    suspend fun observeServerConnection(): Flow<Boolean>
+    fun observeServerConnection(): Flow<Boolean>
 }

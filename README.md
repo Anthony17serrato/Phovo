@@ -47,11 +47,17 @@ Phovo is currently undergoing active development. Core logic, architecture, and 
 - All critical and high-priority bugs resolved  
 - Full cross-platform support
 
+# Project Structure
 ## How to build and run
 The project can be assembled in an environment which has been configured for Kotlin Multiplatform development, please follow the official guide:
 https://kotlinlang.org/docs/multiplatform/quickstart.html#set-up-the-environment
 
-# Modular Design Strategy
+## Source Sets
+The Phovo project makes use of custom source sets to maximize code re-usability when certain features
+are supported only by a subset of platforms. To learn more about custom source sets visit:
+https://kotlinlang.org/docs/multiplatform/multiplatform-advanced-project-structure.html#declaring-custom-source-sets
+
+## Modular Design Strategy
 The Phovo project follows the modular design guidelines published by Google for mobile development:
 
 https://developer.android.com/topic/modularization/patterns
@@ -62,7 +68,7 @@ As mentioned in the guidelines modularization can be done by feature or by layer
 
 <img src="https://github.com/Anthony17serrato/Phovo/blob/main/docs/images/PhovoModularization.png" />
 
-# Troubleshooting WASM issues
+## Troubleshooting WASM issues
 When adding new dependencies WASM may require a yarn lock upgrade
 
 `./gradlew kotlinUpgradeYarnLock`

@@ -30,6 +30,7 @@ include(":core:logger")
 include(":core:database")
 include(":core:model")
 include(":core:navigation")
+include(":core:domain")
 
 // Features
 include(":feature:photos")

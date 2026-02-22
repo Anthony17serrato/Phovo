@@ -23,6 +23,7 @@ kotlin {
             implementation(projects.data.photos)
             implementation(projects.data.server)
             implementation(projects.core.navigation)
+            implementation(projects.core.domain)
 
             implementation(libs.compose.resources)
             implementation(libs.serialization.json)
