@@ -29,26 +29,26 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.navigation3.runtime.NavKey
+import com.serratocreations.phovo.core.navigation.AppBarConfig
 import com.serratocreations.phovo.ui.model.OverflowMenuOption
 import org.jetbrains.compose.resources.stringResource
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PhovoTopAppBar(
-    navigationIcon: @Composable (() -> Unit) = {},
+    appBarState: AppBarConfig,
     actionIcon: ImageVector,
     actionIconContentDescription: String,
     modifier: Modifier = Modifier,
     colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(),
     menuOptions: Set<OverflowMenuOption>,
     onMenuActionClick: (NavKey) -> Unit = {},
-    scrollBehavior: TopAppBarScrollBehavior,
-    titleContent: @Composable () -> Unit
+    scrollBehavior: TopAppBarScrollBehavior
 ) {
     var expanded by remember { mutableStateOf(false) }
     TopAppBar(
-        title = titleContent,
-        navigationIcon = navigationIcon,
+        title = appBarState.title,
+        navigationIcon = appBarState.navigationIcon,
         actions = {
             Box(modifier = Modifier.wrapContentSize(Alignment.TopStart)) {
                 // Icon button should have a tooltip associated with it for a11y.

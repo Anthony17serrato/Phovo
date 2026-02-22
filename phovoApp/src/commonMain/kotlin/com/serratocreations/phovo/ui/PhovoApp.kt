@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -39,8 +40,11 @@ import androidx.navigation3.ui.NavDisplay
 import com.serratocreations.phovo.core.common.ui.PhovoViewModel
 import com.serratocreations.phovo.core.designsystem.component.PhovoBackground
 import com.serratocreations.phovo.core.designsystem.component.PhovoNavigationSuiteScaffold
+import com.serratocreations.phovo.core.designsystem.constants.CommonDimensions.defaultIconSize
 import com.serratocreations.phovo.ui.components.PhovoTopAppBar
 import com.serratocreations.phovo.core.designsystem.icon.PhovoIcons
+import com.serratocreations.phovo.core.designsystem.model.ImageVectorIcon
+import com.serratocreations.phovo.core.designsystem.model.PainterVectorIcon
 import com.serratocreations.phovo.core.designsystem.theme.PhovoTheme
 import com.serratocreations.phovo.core.navigation.NavigationState
 import com.serratocreations.phovo.core.navigation.NavigationViewModel
@@ -55,6 +59,7 @@ import com.serratocreations.phovo.navigation.flavorEntries
 import com.serratocreations.phovo.navigation.searchEntries
 import com.serratocreations.phovo.ui.viewmodel.ApplicationViewModel
 import com.serratocreations.phovo.ui.viewmodel.ServerStatusColor
+import org.jetbrains.compose.resources.painterResource
 import phovo.phovoapp.generated.resources.Res
 import phovo.phovoapp.generated.resources.feature_settings_top_app_bar_action_icon_description
 import org.jetbrains.compose.resources.stringResource
@@ -112,16 +117,38 @@ internal fun InternalPhovoApp(
                     selected = selected,
                     onClick = { navigationViewModel.navigate(navKey) },
                     icon = {
-                        Icon(
-                            imageVector = navItem.unselectedIcon,
-                            contentDescription = null,
-                        )
+                        when(navItem.unselectedIcon) {
+                            is ImageVectorIcon -> {
+                                Icon(
+                                    imageVector = navItem.unselectedIcon.icon,
+                                    contentDescription = null,
+                                )
+                            }
+                            is PainterVectorIcon -> {
+                                Icon(
+                                    painter = painterResource( navItem.unselectedIcon.icon),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(defaultIconSize)
+                                )
+                            }
+                        }
                     },
                     selectedIcon = {
-                        Icon(
-                            imageVector = navItem.selectedIcon,
-                            contentDescription = null,
-                        )
+                        when(navItem.selectedIcon) {
+                            is ImageVectorIcon -> {
+                                Icon(
+                                    imageVector = navItem.selectedIcon.icon,
+                                    contentDescription = null,
+                                )
+                            }
+                            is PainterVectorIcon -> {
+                                Icon(
+                                    painter = painterResource( navItem.selectedIcon.icon),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(defaultIconSize)
+                                )
+                            }
+                        }
                     },
                     label = { Text(stringResource(navItem.iconTextId)) },
                     modifier = Modifier.testTag("PhovoNavItem")
@@ -136,7 +163,7 @@ internal fun InternalPhovoApp(
         Scaffold(
             topBar = {
                 PhovoTopAppBar(
-                    navigationIcon = appBarState.navigationIcon,
+                    appBarState = appBarState,
                     actionIcon = PhovoIcons.More,
                     actionIconContentDescription = stringResource(
                         Res.string.feature_settings_top_app_bar_action_icon_description,
@@ -148,8 +175,7 @@ internal fun InternalPhovoApp(
                     ),
                     menuOptions = applicationUiSate.menuOptions,
                     onMenuActionClick = { navigationViewModel.navigate(route = it) },
-                    scrollBehavior = scrollBehavior,
-                    titleContent = appBarState.title
+                    scrollBehavior = scrollBehavior
                 )
             },
             modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
