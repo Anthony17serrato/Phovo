@@ -1,6 +1,7 @@
 package com.serratocreations.phovo.feature.photos.di
 
 import com.serratocreations.phovo.core.common.di.IO_DISPATCHER
+import com.serratocreations.phovo.core.domain.di.domainModule
 import com.serratocreations.phovo.data.photos.di.getPhotosDataModule
 import com.serratocreations.phovo.data.server.di.getServerDataModule
 import com.serratocreations.phovo.feature.photos.ui.PhotosViewModel
@@ -11,7 +12,7 @@ import org.koin.dsl.module
 
 
 fun getPhotosFeatureModule(): Module = module {
-    includes(getPhotosFeaturePlatformModules(), getPhotosDataModule(), getServerDataModule())
+    includes(domainModule, getPhotosFeaturePlatformModules(), getPhotosDataModule(), getServerDataModule())
 
     viewModel {
         PhotosViewModel(

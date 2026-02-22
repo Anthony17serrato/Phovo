@@ -30,7 +30,7 @@ class RemoteMediaRepositoryImpl(
         )
     }
 
-    override suspend fun observeServerConnection(): Flow<Boolean> = flow {
+    override fun observeServerConnection(): Flow<Boolean> = flow {
         while(currentCoroutineContext().isActive) {
             yield()
             emit(remotePhotosDataSource.checkServerConnection())

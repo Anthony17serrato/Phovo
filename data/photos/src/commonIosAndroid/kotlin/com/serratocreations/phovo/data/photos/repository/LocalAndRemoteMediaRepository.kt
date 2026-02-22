@@ -5,7 +5,7 @@ import com.serratocreations.phovo.core.database.entities.MediaItemEntity
 import com.serratocreations.phovo.core.database.entities.MediaItemWithUriEntity
 import com.serratocreations.phovo.core.model.MediaType
 import com.serratocreations.phovo.core.model.network.MediaItemDto
-import com.serratocreations.phovo.data.photos.MediaBackupProgress
+import com.serratocreations.phovo.data.photos.LocalMediaBackupProgress
 import com.serratocreations.phovo.data.photos.mappers.toMediaItemDto
 import com.serratocreations.phovo.data.photos.mappers.toMediaItemEntity
 import com.serratocreations.phovo.data.photos.repository.model.SyncResult
@@ -37,7 +37,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
 
 interface LocalAndRemoteMediaRepository: LocalMediaRepository, RemoteMediaRepository {
-    val syncProgressState: StateFlow<MediaBackupProgress>
+    val syncProgressState: StateFlow<LocalMediaBackupProgress>
     /**
      * Adds the [syncQueueable] to the sync queue. media added using this API gets picked up by
      * sync workers in a first in first out fashion.
@@ -78,7 +78,7 @@ class LocalAndRemoteMediaRepositoryImpl(
     // A set containing the UUID of media currently being synced, set operations are thread safe
     private val syncSafeSet = SafeSet<String>()
 
-    private val _syncProgressState = MutableStateFlow(MediaBackupProgress())
+    private val _syncProgressState = MutableStateFlow(LocalMediaBackupProgress())
     override val syncProgressState = _syncProgressState.asStateFlow()
 
     init {
@@ -167,7 +167,7 @@ class LocalAndRemoteMediaRepositoryImpl(
     private suspend fun initiateSyncJobInternal() = coroutineScope {
         val initialUnsyncedCount = localMediaRepository.getUnsyncedMediaCount()
         _syncProgressState.update { currentProgress ->
-            MediaBackupProgress(currentPendingSyncQuantity = initialUnsyncedCount)
+            LocalMediaBackupProgress(currentPendingSyncQuantity = initialUnsyncedCount)
         }
 
         val pendingSyncCountObservationJob =
@@ -218,7 +218,7 @@ class LocalAndRemoteMediaRepositoryImpl(
         mediaUri: String
     ) = remoteMediaRepository.syncMedia(media, mediaUri)
 
-    override suspend fun observeServerConnection() = remoteMediaRepository.observeServerConnection()
+    override fun observeServerConnection() = remoteMediaRepository.observeServerConnection()
 
     override suspend fun getMediaItemByLocalUuid(uuid: String) = localMediaRepository.getMediaItemByLocalUuid(uuid)
 

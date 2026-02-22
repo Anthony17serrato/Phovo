@@ -1,19 +1,19 @@
 package com.serratocreations.phovo.data.photos
 
 
-sealed interface MediaBackupStatus
+sealed interface LocalMediaState
 
-data object Scanning: MediaBackupStatus
+data object Scanning: LocalMediaState
 
-data class MediaBackupProgress(
+data class LocalMediaBackupProgress(
     val syncedCount: Int = 0,
-    private val currentPendingSyncQuantity: Int = 0,
+    val currentPendingSyncQuantity: Int = 0,
     val isSyncComplete: Boolean = false
-): MediaBackupStatus {
+): LocalMediaState {
     val totalSyncJobQuantity: Int = (currentPendingSyncQuantity + syncedCount)
 }
 
-data class BackupComplete(
+data class BackupCompleteLocal(
     val backedUpQuantity: Int,
     val failureQuantity: Int
-): MediaBackupStatus
+): LocalMediaState

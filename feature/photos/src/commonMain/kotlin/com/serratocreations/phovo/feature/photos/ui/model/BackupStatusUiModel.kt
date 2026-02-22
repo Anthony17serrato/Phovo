@@ -9,14 +9,18 @@ import phovo.feature.photos.generated.resources.Res
 import phovo.feature.photos.generated.resources.chip_backup_complete
 import phovo.feature.photos.generated.resources.chip_preparing_backup
 import phovo.feature.photos.generated.resources.chip_backup_in_progress
+import phovo.feature.photos.generated.resources.chip_server_offline
 import phovo.feature.photos.generated.resources.main_status_complete
 import phovo.feature.photos.generated.resources.main_status_scanning
 import phovo.feature.photos.generated.resources.header_status_in_progress
 import phovo.feature.photos.generated.resources.description_backup_complete
+import phovo.feature.photos.generated.resources.description_server_offline
 import phovo.feature.photos.generated.resources.description_sync_tip
+import phovo.feature.photos.generated.resources.header_server_offline
 import phovo.feature.photos.generated.resources.main_status_in_progress
+import phovo.feature.photos.generated.resources.main_status_server_offline
 
-sealed interface BackupStatus {
+sealed interface BackupStatusUiModel {
     /** The text which appears on the backup status chip, it is the main entry point for
      * viewing additional status details */
     val chipText: StringResource
@@ -34,7 +38,18 @@ sealed interface BackupStatus {
     val actionButton: BackupActionButton?
 }
 
-data object PreparingBackup: BackupStatus {
+data object ServerOfflineUiModel: BackupStatusUiModel {
+    override val chipText: StringResource = Res.string.chip_server_offline
+    override val header: UiStringBuilder = UiStringBuilder(
+        PhovoString(Res.string.header_server_offline))
+    override val mainStatus: UiStringBuilder = UiStringBuilder(
+        PhovoString(Res.string.main_status_server_offline))
+    override val statusDescription: UiStringBuilder = UiStringBuilder(
+        PhovoString(Res.string.description_server_offline))
+    override val actionButton: BackupActionButton? = null
+}
+
+data object PreparingBackupUiModel: BackupStatusUiModel {
     override val chipText: StringResource = Res.string.chip_preparing_backup
     override val header: UiStringBuilder = UiStringBuilder(
         PhovoString(Res.string.chip_preparing_backup))
@@ -44,10 +59,10 @@ data object PreparingBackup: BackupStatus {
     override val actionButton: BackupActionButton? = null
 }
 
-data class BackupInProgress(
+data class BackupInProgressUiModel(
     private val syncedCount: Int,
     private val totalCount: Int
-): BackupStatus {
+): BackupStatusUiModel {
     override val chipText: StringResource = Res.string.chip_backup_in_progress
     override val header: UiStringBuilder = UiStringBuilder(
         PhovoPlural(Res.plurals.header_status_in_progress, totalCount),
@@ -55,24 +70,24 @@ data class BackupInProgress(
     override val mainStatus: UiStringBuilder = UiStringBuilder(
         PhovoString(Res.string.main_status_in_progress),
         syncedCount.localize(), totalCount.localize())
-    override val statusDescription: UiStringBuilder? = UiStringBuilder(
+    override val statusDescription: UiStringBuilder = UiStringBuilder(
         PhovoString(Res.string.description_sync_tip))
     override val actionButton: BackupActionButton? = null
     val progress = syncedCount.toFloat()/totalCount.toFloat()
 }
 
-data class BackupComplete(
+data class BackupCompleteUiModel(
     private val backedUpQuantity: Long,
     private val failureQuantity: Long,
     override val actionButton: BackupActionButton
-): BackupStatus {
+): BackupStatusUiModel {
     override val chipText: StringResource = Res.string.chip_backup_complete
     override val header: UiStringBuilder = UiStringBuilder(
         PhovoString(Res.string.chip_backup_complete))
     override val mainStatus: UiStringBuilder = UiStringBuilder(
         PhovoString(Res.string.main_status_complete),
         backedUpQuantity.localize())
-    override val statusDescription: UiStringBuilder? = UiStringBuilder(
+    override val statusDescription: UiStringBuilder = UiStringBuilder(
         resource = PhovoPlural(Res.plurals.description_backup_complete, failureQuantity.toInt()),
         failureQuantity.localize()
     )

@@ -25,7 +25,7 @@ class IosAndroidLocalMediaManager(
     appScope,
     logger
 ) {
-    private val _localMediaState = MutableStateFlow<MediaBackupStatus>(Scanning)
+    private val _localMediaState = MutableStateFlow<LocalMediaState>(Scanning)
     val localMediaState = _localMediaState.asStateFlow()
 
     override fun CoroutineScope.syncJob(processJob: Job) {
@@ -35,7 +35,7 @@ class IosAndroidLocalMediaManager(
             localAndRemoteMediaRepository.syncProgressState.onEach { syncStatusUpdate ->
                 _localMediaState.update { currentState ->
                     if (syncStatusUpdate.isSyncComplete) {
-                        BackupComplete(
+                        BackupCompleteLocal(
                             backedUpQuantity = syncStatusUpdate.syncedCount,
                             // TODO: Implement handling of failed items
                             failureQuantity = 0

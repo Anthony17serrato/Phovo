@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.CloudDone
+import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -58,11 +59,13 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.serratocreations.phovo.core.designsystem.constants.CommonDimensions.defaultIconSize
 import com.serratocreations.phovo.feature.photos.ui.BackupStatusViewModel
-import com.serratocreations.phovo.feature.photos.ui.model.BackupComplete
-import com.serratocreations.phovo.feature.photos.ui.model.BackupInProgress
-import com.serratocreations.phovo.feature.photos.ui.model.BackupStatus
-import com.serratocreations.phovo.feature.photos.ui.model.PreparingBackup
+import com.serratocreations.phovo.feature.photos.ui.model.BackupCompleteUiModel
+import com.serratocreations.phovo.feature.photos.ui.model.BackupInProgressUiModel
+import com.serratocreations.phovo.feature.photos.ui.model.BackupStatusUiModel
+import com.serratocreations.phovo.feature.photos.ui.model.PreparingBackupUiModel
+import com.serratocreations.phovo.feature.photos.ui.model.ServerOfflineUiModel
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -92,14 +95,14 @@ fun ExpandableBackupBanner(
                         )
                     }
                 when (val backupState = backupState) {
-                    is BackupComplete -> {
+                    is BackupCompleteUiModel -> {
                         Icon(
                             imageVector = Icons.Outlined.CloudDone,
                             contentDescription = stringResource(backupState.chipText),
                             modifier = Modifier.size(ButtonDefaults.iconSizeFor(size))
                         )
                     }
-                    is BackupInProgress -> {
+                    is BackupInProgressUiModel -> {
                         val animatedProgress by
                         animateFloatAsState(
                             targetValue = backupState.progress,
@@ -112,11 +115,18 @@ fun ExpandableBackupBanner(
                             trackStroke = thinStroke
                         )
                     }
-                    PreparingBackup -> {
+                    PreparingBackupUiModel -> {
                         CircularWavyProgressIndicator(
                             modifier = Modifier.size(ButtonDefaults.iconSizeFor(size)),
                             stroke = thinStroke,
                             trackStroke = thinStroke
+                        )
+                    }
+                    ServerOfflineUiModel -> {
+                        Icon(
+                            imageVector = Icons.Outlined.CloudOff,
+                            contentDescription = stringResource(backupState.chipText),
+                            modifier = Modifier.size(ButtonDefaults.iconSizeFor(size))
                         )
                     }
                 }
@@ -183,7 +193,7 @@ fun ExpandableBackupBanner(
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun BackupSummaryCard(
-    status: BackupStatus
+    status: BackupStatusUiModel
 ) {
     Column(
         modifier = Modifier
@@ -214,10 +224,10 @@ fun BackupSummaryCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 when (status) {
-                    PreparingBackup -> {
+                    PreparingBackupUiModel -> {
                         CircularWavyProgressIndicator()
                     }
-                    is BackupInProgress -> {
+                    is BackupInProgressUiModel -> {
                         val animatedProgress by
                         animateFloatAsState(
                             targetValue = status.progress,
@@ -227,11 +237,18 @@ fun BackupSummaryCard(
                             progress = { animatedProgress }
                         )
                     }
-                    is BackupComplete -> {
+                    is BackupCompleteUiModel -> {
                         Icon(
                             imageVector = Icons.Outlined.CloudDone,
                             contentDescription = null,
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(defaultIconSize)
+                        )
+                    }
+                    ServerOfflineUiModel -> {
+                        Icon(
+                            imageVector = Icons.Outlined.CloudOff,
+                            contentDescription = stringResource(status.chipText),
+                            modifier = Modifier.size(defaultIconSize)
                         )
                     }
                 }

@@ -1,12 +1,15 @@
 <resources>
     <string name="feature_photos_title">Photos</string>
+    <string name="chip_server_offline">Server offline</string>
     <string name="chip_preparing_backup">Preparing backup</string>
     <string name="chip_backup_complete">Backup complete</string>
     <string name="chip_backup_in_progress">Backing up photos</string>
+    <string name="header_server_offline">Server is offline</string>
     <plurals name="header_status_in_progress">
         <item quantity="one">Backing up %1$s photo</item>
         <item quantity="other">Backing up %1$s photos</item>
     </plurals>
+    <string name="main_status_server_offline">The server could not be reached</string>
     <string name="main_status_scanning">Scanning your photo library</string>
     <string name="main_status_in_progress">%1$s out of %2$s media have been synced</string>
     <string name="main_status_complete">%1$s photos backed up</string>
@@ -15,5 +18,6 @@
         <item quantity="other">%1$s items can't be backed up</item>
     </plurals>
     <string name="description_sync_tip">Keep the app open for faster backup</string>
+    <string name="description_server_offline">Make sure that the Phovo app is running on your desktop machine</string>
     <string name="button_view_failed_items">View failed items</string>
 </resources>
