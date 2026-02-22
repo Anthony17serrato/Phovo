@@ -40,6 +40,7 @@ import androidx.navigation3.ui.NavDisplay
 import com.serratocreations.phovo.core.common.ui.PhovoViewModel
 import com.serratocreations.phovo.core.designsystem.component.PhovoBackground
 import com.serratocreations.phovo.core.designsystem.component.PhovoNavigationSuiteScaffold
+import com.serratocreations.phovo.core.designsystem.constants.CommonDimensions.defaultIconSize
 import com.serratocreations.phovo.ui.components.PhovoTopAppBar
 import com.serratocreations.phovo.core.designsystem.icon.PhovoIcons
 import com.serratocreations.phovo.core.designsystem.model.ImageVectorIcon
@@ -127,7 +128,7 @@ internal fun InternalPhovoApp(
                                 Icon(
                                     painter = painterResource( navItem.unselectedIcon.icon),
                                     contentDescription = null,
-                                    modifier = Modifier.size(24.dp)
+                                    modifier = Modifier.size(defaultIconSize)
                                 )
                             }
                         }
@@ -144,7 +145,7 @@ internal fun InternalPhovoApp(
                                 Icon(
                                     painter = painterResource( navItem.selectedIcon.icon),
                                     contentDescription = null,
-                                    modifier = Modifier.size(24.dp)
+                                    modifier = Modifier.size(defaultIconSize)
                                 )
                             }
                         }
