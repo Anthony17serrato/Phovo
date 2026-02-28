@@ -29,6 +29,7 @@ kotlin {
             implementation(libs.platformtools.darkmodedetector)
             implementation(libs.kotlinx.serialization.core)
             implementation(libs.bundles.navigation3)
+            implementation(libs.filekit.core)
         }
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
