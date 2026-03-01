@@ -4,13 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation3.runtime.NavKey
 import com.serratocreations.phovo.DevLogicManager
-import com.serratocreations.phovo.data.server.data.repository.ServerConfigRepository
 import com.serratocreations.phovo.navigation.DevMenuResetOptionsNavKey
-import io.github.vinceglb.filekit.PlatformFile
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class DevViewModel(
@@ -21,11 +18,7 @@ class DevViewModel(
 
     fun onClickResetAppState() = viewModelScope.launch {
         devLogicManager.resetAppState()
-        val backupDir = serverConfigRepository.observeServerConfig().first()?.backupDirectory
-        backupDir?.let { backupDirNotNull ->
-            val dir = PlatformFile(backupDir)
-            dir.delete(false)
-        }
+
     }
 }
 

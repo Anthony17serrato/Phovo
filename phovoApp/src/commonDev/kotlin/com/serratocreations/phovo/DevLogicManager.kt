@@ -3,7 +3,11 @@ package com.serratocreations.phovo
 abstract class DevLogicManager(
 
 ) {
-    open fun resetAppState() {
+    open suspend fun resetAppState() {
         // common reset logic
     }
+}
+
+class DefaultDevLogicManager: DevLogicManager() {
+
 }
