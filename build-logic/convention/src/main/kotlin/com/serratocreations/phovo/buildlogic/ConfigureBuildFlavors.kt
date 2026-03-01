@@ -31,8 +31,7 @@ internal fun Project.configureBuildFlavors() {
             }
         }
         if (targets.contains(Targets.WEB)) {
-            // TODO migrate to webMain for better browser compatibility
-            sourceSets.wasmJsMain.get().apply {
+            sourceSets.webMain.get().apply {
                 // Hook the appropriate source set
                 when(flavor) {
                     Flavor.Dev -> kotlin.srcDirs("src/webDev/kotlin")
@@ -41,12 +40,14 @@ internal fun Project.configureBuildFlavors() {
                 // can do something similar for resources too if required
             }
         }
+        // NOTE: for JVM the source dir is nested inside of the jvmMain source set, otherwise the IDE
+        // could not resolve the directory correctly
         if (targets.contains(Targets.DESKTOP)) {
-            sourceSets.named("desktopMain").get().apply {
+            sourceSets.jvmMain.get().apply {
                 // Hook the appropriate source set
                 when(flavor) {
-                    Flavor.Dev -> kotlin.srcDirs("src/desktopDev/kotlin")
-                    Flavor.Prod -> kotlin.srcDirs("src/desktopProd/kotlin")
+                    Flavor.Dev -> kotlin.srcDir("src/jvmMain/dev/kotlin")
+                    Flavor.Prod -> kotlin.srcDir("src/jvmMain/prod/kotlin")
                 }
                 // can do something similar for resources too if required
             }

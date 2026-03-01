@@ -24,7 +24,7 @@ internal fun Project.configureKmpRoom() {
     this.apply {
         dependencies {
             add("kspAndroid", libs.findLibrary("room.compiler").get())
-            add("kspDesktop", libs.findLibrary("room.compiler").get())
+            add("kspJvm", libs.findLibrary("room.compiler").get())
             add("kspIosX64", libs.findLibrary("room.compiler").get())
             add("kspIosArm64", libs.findLibrary("room.compiler").get())
             add("kspIosSimulatorArm64", libs.findLibrary("room.compiler").get())

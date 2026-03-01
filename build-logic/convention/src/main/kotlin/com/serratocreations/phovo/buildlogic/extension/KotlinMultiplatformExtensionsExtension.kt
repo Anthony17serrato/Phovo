@@ -13,14 +13,12 @@ fun KotlinMultiplatformExtension.getTargetPlatforms(): Set<Targets> {
     }
 
     // Check for Desktop target
-    if (sourceSetNames.any { it.contains("desktopMain")}) {
+    if (sourceSetNames.any { it.contains("jvmMain")}) {
         configuredTargets.add(Targets.DESKTOP)
     }
 
     // Check for WASM target
-    if (sourceSetNames.any {
-        it.contains("wasmJsMain") || it.contains("webMain")
-    }) {
+    if (sourceSetNames.any { it.contains("webMain") }) {
         configuredTargets.add(Targets.WEB)
     }
     // Check for Android target

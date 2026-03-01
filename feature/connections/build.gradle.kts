@@ -29,11 +29,11 @@ kotlin {
             implementation(libs.kotlin.test)
         }
 
-        desktopMain.dependencies {
+        jvmMain.dependencies {
 
         }
 
-        wasmJsMain.dependencies {
+        webMain.dependencies {
 
         }
     }

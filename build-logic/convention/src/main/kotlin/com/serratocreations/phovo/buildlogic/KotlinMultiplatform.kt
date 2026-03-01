@@ -51,7 +51,7 @@ internal fun Project.configureKotlinMultiplatform(
         }
 
         if (targetList.contains(Targets.DESKTOP)) {
-            jvm("desktop")
+            jvm()
         }
 
         if (targetList.contains(Targets.ANDROID)) {
@@ -129,7 +129,7 @@ internal fun Project.configureKotlinMultiplatform(
                     }
                     sourceSets.iosMain.get().dependsOn(commonDesktopIosAndroid)
                     sourceSets.androidMain.get().dependsOn(commonDesktopIosAndroid)
-                    sourceSets.named("desktopMain").get().dependsOn(commonDesktopIosAndroid)
+                    sourceSets.jvmMain.get().dependsOn(commonDesktopIosAndroid)
                     // Ensure commonIosAndroid depends on commonDesktopIosAndroid
                     sourceSets.named(CustomSourceSets.IosAndroid.sourceSetName).get().dependsOn(commonDesktopIosAndroid)
                     sourceSets.named(CustomSourceSets.AndroidDesktop.sourceSetName).get().dependsOn(commonDesktopIosAndroid)
@@ -155,7 +155,7 @@ internal fun Project.configureKotlinMultiplatform(
                     }
                     sourceSets.iosMain.get().dependsOn(commonAndroidIosWeb)
                     sourceSets.androidMain.get().dependsOn(commonAndroidIosWeb)
-                    sourceSets.wasmJsMain.get().dependsOn(commonAndroidIosWeb)
+                    sourceSets.webMain.get().dependsOn(commonAndroidIosWeb)
                     // Ensure commonIosAndroid depends on commonAndroidIosWeb
                     sourceSets.named(CustomSourceSets.IosAndroid.sourceSetName).get().dependsOn(commonAndroidIosWeb)
                 }
@@ -167,7 +167,7 @@ internal fun Project.configureKotlinMultiplatform(
 
                         }
                     }
-                    sourceSets.named("desktopMain").get().dependsOn(commonAndroidDesktop)
+                    sourceSets.jvmMain.get().dependsOn(commonAndroidDesktop)
                     sourceSets.androidMain.get().dependsOn(commonAndroidDesktop)
                 }
             }

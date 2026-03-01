@@ -40,7 +40,7 @@ kotlin {
             implementation(libs.skiko)
         }
 
-        desktopMain.dependencies {
+        jvmMain.dependencies {
             implementation(projects.data.ffmpeg)
         }
     }

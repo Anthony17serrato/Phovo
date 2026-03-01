@@ -33,7 +33,7 @@ kotlin {
             implementation(libs.kotlin.test)
         }
 
-        desktopMain.dependencies {
+        jvmMain.dependencies {
             implementation(libs.ktor.client.okhttp)
             // TODO: Replace with ffmpeg
             implementation("org.apache.tika:tika-core:3.2.2")
@@ -45,7 +45,7 @@ kotlin {
             implementation(libs.ktor.client.darwin)
         }
 
-        wasmJsMain.dependencies {
+        webMain.dependencies {
             implementation(libs.ktor.client.js)
         }
 
