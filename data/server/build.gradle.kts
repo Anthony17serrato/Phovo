@@ -22,7 +22,7 @@ kotlin {
             implementation(libs.kotlin.test)
         }
 
-        desktopMain.dependencies {
+        jvmMain.dependencies {
             implementation(projects.core.database)
             implementation(libs.ktor.server.core)
             implementation(libs.ktor.server.status.pages)
@@ -31,7 +31,7 @@ kotlin {
             implementation(libs.ktor.server.content.negotiation)
         }
 
-        wasmJsMain.dependencies {
+        webMain.dependencies {
 
         }
     }

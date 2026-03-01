@@ -1,6 +1,7 @@
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.OutputDirectory
+import org.gradle.kotlin.dsl.sourceSets
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 
@@ -11,7 +12,7 @@ plugins {
 
 kotlin {
     sourceSets {
-        desktopMain.dependencies {
+        jvmMain.dependencies {
             implementation(libs.compose.runtime)
             implementation(libs.compose.resources)
         }
@@ -22,7 +23,7 @@ compose.resources {
     publicResClass = true
     generateResClass = always
     customDirectory(
-        sourceSetName = "desktopMain",
+        sourceSetName = "jvmMain",
         directoryProvider = tasks.register<CopyPlatformFFmpeg>("copyPlatformFFmpeg").map { it.outputDir.get() }
     )
 }

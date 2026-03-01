@@ -30,7 +30,7 @@ kotlin {
             implementation(libs.kotlinx.serialization.core)
             implementation(libs.bundles.navigation3)
         }
-        desktopMain.dependencies {
+        jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.jetbrains.swing)
         }
@@ -54,7 +54,7 @@ compose.desktop {
             packageName = "com.serratocreations.phovo"
             packageVersion = "1.0.0"
             appResourcesRootDir =
-                layout.projectDirectory.dir("src/desktopMain/assets")
+                layout.projectDirectory.dir("src/jvmMain/assets")
             jvmArgs += $$"-splash:$APPDIR/resources/phovo_splash.png"
         }
     }
