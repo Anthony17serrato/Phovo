@@ -21,7 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.serratocreations.phovo.core.designsystem.icon.PhovoIcons
-import io.github.vinceglb.filekit.dialogs.FileKitDialogSettings
 import io.github.vinceglb.filekit.dialogs.compose.rememberDirectoryPickerLauncher
 import io.github.vinceglb.filekit.path
 
@@ -49,7 +48,7 @@ actual fun ConfigStorageSelectionPane(
         )
         // FileKit Compose
         val launcher = rememberDirectoryPickerLauncher(
-            dialogSettings = FileKitDialogSettings(title = "Select a backup directory")
+            title = "Select a backup directory"
         ) { directory ->
             directory?.path?.let {
                 onSelectedDirectory(it)

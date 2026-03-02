@@ -37,7 +37,6 @@ kotlin {
         }
 
         iosMain.dependencies {
-            implementation(libs.skiko)
         }
 
         jvmMain.dependencies {

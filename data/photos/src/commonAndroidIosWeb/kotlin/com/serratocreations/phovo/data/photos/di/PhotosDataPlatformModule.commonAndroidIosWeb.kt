@@ -1,6 +1,5 @@
 package com.serratocreations.phovo.data.photos.di
 
-import com.serratocreations.phovo.data.photos.repository.MediaRepository
 import com.serratocreations.phovo.data.photos.repository.RemoteMediaRepository
 import com.serratocreations.phovo.data.photos.repository.RemoteMediaRepositoryImpl
 import org.koin.core.module.Module
@@ -13,7 +12,6 @@ internal actual fun getPlatformModulesBranch2(): Module = module {
             remotePhotosDataSource = get()
         )
     } binds arrayOf(
-        RemoteMediaRepository::class,
-        MediaRepository::class
+        RemoteMediaRepository::class
     )
 }

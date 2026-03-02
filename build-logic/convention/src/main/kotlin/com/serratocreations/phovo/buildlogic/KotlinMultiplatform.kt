@@ -91,6 +91,14 @@ internal fun Project.configureKotlinMultiplatform(
         }
 
         if (targetList.contains(Targets.WEB)) {
+            js {
+                browser()
+                if (isApplication) {
+                    outputModuleName.set("composeApp")
+                    binaries.executable()
+                }
+            }
+
             @OptIn(ExperimentalWasmDsl::class)
             wasmJs {
                 browser()

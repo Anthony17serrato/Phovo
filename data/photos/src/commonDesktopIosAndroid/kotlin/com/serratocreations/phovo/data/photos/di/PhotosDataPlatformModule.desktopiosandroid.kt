@@ -23,7 +23,6 @@ internal actual fun getPlatformModulesBranch1(): Module = module {
             logger = get()
         )
     } binds arrayOf(
-        LocalMediaRepository::class,
-        MediaRepository::class
+        LocalMediaRepository::class
     )
 }
