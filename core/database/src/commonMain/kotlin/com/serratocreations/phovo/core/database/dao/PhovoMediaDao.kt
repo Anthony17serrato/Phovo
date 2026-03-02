@@ -51,4 +51,19 @@ interface PhovoMediaDao {
         mediaType: MediaType,
         excludeNotEmpty: Boolean
     ): MediaItemWithUriEntity?
+
+    @Query("DELETE FROM MediaItemEntity")
+    suspend fun clearAllMediaItems()
+
+    @Query("DELETE FROM MediaItemUriEntity")
+    suspend fun clearAllMediaItemUris()
+
+    // Deletes all records from both tables in a single transaction
+    @Transaction
+    suspend fun clearAllMediaData() {
+        // It's usually good practice to delete the child/dependent table first
+        // in case you ever add foreign key constraints later!
+        clearAllMediaItemUris()
+        clearAllMediaItems()
+    }
 }

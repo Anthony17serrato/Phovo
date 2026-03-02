@@ -41,7 +41,6 @@ kotlin {
         }
 
         iosMain.dependencies {
-            implementation(libs.skiko)
             implementation(libs.ktor.client.darwin)
         }
 

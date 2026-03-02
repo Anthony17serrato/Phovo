@@ -5,6 +5,8 @@ import com.serratocreations.phovo.core.common.di.IO_DISPATCHER
 import com.serratocreations.phovo.data.photos.LocalMediaManager
 import com.serratocreations.phovo.data.photos.local.DesktopLocalMediaProcessor
 import com.serratocreations.phovo.data.photos.local.LocalMediaProcessor
+import com.serratocreations.phovo.data.photos.repository.LocalMediaRepository
+import com.serratocreations.phovo.data.photos.repository.MediaRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import org.koin.core.module.Module
 import org.koin.dsl.module
@@ -22,6 +24,10 @@ internal actual fun getAndroidDesktopIosModules(): Module = module {
             get(APPLICATION_SCOPE),
             get()
         )
+    }
+
+    single<MediaRepository> {
+        get<LocalMediaRepository>()
     }
 
     single<LocalMediaProcessor> {

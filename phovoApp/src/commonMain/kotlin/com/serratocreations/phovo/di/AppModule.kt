@@ -18,6 +18,7 @@ import org.koin.mp.KoinPlatformTools
 
 fun initApplication(config: KoinAppDeclaration? = null) = startKoin {
     config?.invoke(this)
+
     logger(KermitKoinLogger(PhovoLogger.withTag("koin")))
     modules(
         getApplicationPlatformModulesFetcher().getModule()

@@ -39,7 +39,6 @@ ktor = "3.3.3"
 platformtools = "0.7.4"
 room-kmp = "2.8.4"
 serialization-json = "1.9.0"
-skiko = "0.9.37.3"
 sqlite = "2.6.2"
 
 [libraries]
@@ -104,7 +103,6 @@ room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "
 # but may result in a bloated application size for IOS & Android targets(if app size becomes an issue
 # consider sqlite-framework for IOS/Android targets and bundled for desktop)
 room-bundled-sqlite = { group = "androidx.sqlite", name = "sqlite-bundled", version.ref = "sqlite" }
-skiko = { module = "org.jetbrains.skiko:skiko", version.ref = "skiko" }
 # Dependencies of the included build-logic
 android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "androidGradlePlugin" }
 compose-compiler-gradlePlugin = { module = "org.jetbrains.kotlin:compose-compiler-gradle-plugin", version.ref = "kotlin" }
