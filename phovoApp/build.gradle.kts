@@ -1,3 +1,4 @@
+import com.serratocreations.phovo.buildlogic.getBuildFlavor
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 plugins {
@@ -9,9 +10,15 @@ plugins {
 }
 
 kotlin {
+    val buildFlavor = getBuildFlavor()
     sourceSets {
         androidMain.dependencies {
             implementation(libs.androidx.splash)
+        }
+        commonDesktopIosAndroid.dependencies {
+            if(buildFlavor == com.serratocreations.phovo.buildlogic.Flavor.Dev) {
+                implementation(projects.core.database)
+            }
         }
         commonMain.dependencies {
             // Project dependencies

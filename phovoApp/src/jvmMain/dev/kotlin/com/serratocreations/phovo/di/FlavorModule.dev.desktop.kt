@@ -8,7 +8,7 @@ import org.koin.dsl.module
 
 actual fun getDevFlavorPlatformModule(): Module = module {
     single<DevLogicManager> {
-        DesktopDevLogicManager(get())
+        DesktopDevLogicManager(get(), get())
     }//.override()
 
 }
