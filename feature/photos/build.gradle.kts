@@ -41,6 +41,7 @@ kotlin {
 
         jvmMain.dependencies {
             implementation(projects.data.ffmpeg)
+            implementation(libs.filekit.core)
         }
     }
 }
