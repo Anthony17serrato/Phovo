@@ -15,6 +15,7 @@ kotlin {
         jvmMain.dependencies {
             implementation(libs.compose.runtime)
             implementation(libs.compose.resources)
+            implementation(libs.filekit.core)
         }
     }
 }
