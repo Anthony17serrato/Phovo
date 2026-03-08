@@ -1,4 +1,4 @@
-package com.serratocreations.phovo.data.ffmpeg
+package com.serratocreations.phovo.data.thumbnails
 
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.absolutePath
@@ -12,7 +12,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
-import phovo.data.ffmpeg.generated.resources.Res
+import phovo.data.thumbnails.generated.resources.Res
 import java.io.File
 import java.io.IOException
 import java.net.URI
@@ -50,7 +50,7 @@ class FfmpegThumbnailGenerator(
         outputDirectory.createDirectories(mustCreate = false)
 
         // Create a temp file for extracted frame
-        val tempFrameFile = PlatformFile(outputDirectory, "${videoFile.nameWithoutExtension}.png")
+        val tempFrameFile = PlatformFile(outputDirectory, "${videoFile.nameWithoutExtension}.webp")
 
         try {
             if (!ffmpegFile.exists()) {
@@ -59,11 +59,14 @@ class FfmpegThumbnailGenerator(
             // Build FFmpeg command
             val command = listOf(
                 ffmpegFile.absolutePath(),
-                "-y",  // <-- add this flag here to auto-overwrite
+                "-y",
+                "-ss", "00:00:01.000",
                 "-i", videoFile.absolutePath(),
-                "-ss", "00:00:00.000", // start time, adjust as needed
                 "-frames:v", "1",
-                "-f", "image2",
+                "-vf", "scale=320:320:force_original_aspect_ratio=decrease",
+                "-c:v", "libwebp",
+                "-q:v", "60",
+                "-compression_level", "6",
                 tempFrameFile.absolutePath()
             )
 

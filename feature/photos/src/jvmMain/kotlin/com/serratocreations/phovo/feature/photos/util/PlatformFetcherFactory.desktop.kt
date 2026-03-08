@@ -8,8 +8,8 @@ import coil3.fetch.FetchResult
 import coil3.fetch.Fetcher
 import coil3.fetch.SourceFetchResult
 import coil3.request.Options
-import com.serratocreations.phovo.data.ffmpeg.FfmpegThumbnailGenerator
-import com.serratocreations.phovo.data.ffmpeg.FfmpegThumbnailResult
+import com.serratocreations.phovo.data.thumbnails.FfmpegThumbnailGenerator
+import com.serratocreations.phovo.data.thumbnails.FfmpegThumbnailResult
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.cacheDir

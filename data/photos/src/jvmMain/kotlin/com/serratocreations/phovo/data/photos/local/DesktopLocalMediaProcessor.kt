@@ -8,6 +8,8 @@ import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
+import com.serratocreations.phovo.data.thumbnails.ThumbnailRepository
+import io.github.vinceglb.filekit.PlatformFile
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.SendChannel
@@ -35,10 +37,11 @@ import kotlin.uuid.Uuid
 
 // TODO Investigate if both metadata parsers here can be replaced by FFMPEG
 class DesktopLocalMediaProcessor(
+    private val thumbnailRepository: ThumbnailRepository,
     logger: PhovoLogger,
     private val ioDispatcher: CoroutineDispatcher
 ) : LocalMediaProcessor {
-    private val log = logger.withTag("DesktopPhovoItemDao")
+    private val log = logger.withTag("DesktopLocalMediaProcessor")
 
     enum class FileType {
         Directory, Photo, Video, Other
@@ -60,13 +63,13 @@ class DesktopLocalMediaProcessor(
         localDirectory: String?,
         processMediaChannel: SendChannel<MediaItem>
     ) = launch(ioDispatcher) {
-        val dirPath = localDirectory?.let { Paths.get(it) }
-        if (dirPath != null && !Files.exists(dirPath)) {
+        val dirPath = localDirectory?.let { Paths.get(it) } ?: return@launch
+        if (!Files.exists(dirPath)) {
             Files.createDirectories(dirPath)
         }
 
-        val directory = localDirectory?.let { File(it) }
-        val directoryFiles = if (directory == null || !directory.exists() || !directory.isDirectory) {
+        val directory = File(localDirectory)
+        val directoryFiles = if (!directory.exists() || !directory.isDirectory) {
             log.e { "Invalid directory: $localDirectory" }
             emptyList()
         } else {
@@ -91,7 +94,7 @@ class DesktopLocalMediaProcessor(
                 }
 
                 FileType.Video -> {
-                    processVideo(file)
+                    processVideo(file, localDirectory)
                 }
 
                 FileType.Other -> null
@@ -103,7 +106,10 @@ class DesktopLocalMediaProcessor(
 
     // TODO Migrate to Ffmpeg for metadata extraction
     @OptIn(ExperimentalTime::class, ExperimentalUuidApi::class)
-    private suspend fun processVideo(file: File): MediaVideoItem? = withContext(ioDispatcher) {
+    private suspend fun processVideo(
+        file: File,
+        outputDirectory: String
+    ): MediaVideoItem? = withContext(ioDispatcher) {
         val metadata = Metadata()
         FileInputStream(file).use { stream ->
             val parser = AutoDetectParser()
@@ -115,10 +121,14 @@ class DesktopLocalMediaProcessor(
         val creationDate: LocalDateTime =
             metadata.get(TikaCoreProperties.CREATED)?.let { creationDate ->
                 runCatching {
-                    Instant.Companion.parse(creationDate)
-                }.getOrNull()?.toLocalDateTime(TimeZone.Companion.UTC)
+                    Instant.parse(creationDate)
+                }.getOrNull()?.toLocalDateTime(TimeZone.UTC)
             } ?: return@withContext null // TODO find other methods to get a date
 
+        thumbnailRepository.generateVideoThumbnail(
+            rootOutputDirectory = PlatformFile(outputDirectory),
+            videoFile = PlatformFile(file)
+        )
         val uuid = Uuid.random().toString()
         return@withContext MediaVideoItem(
             uri = Uri(scheme = "file", path = file.toURI().path),
