@@ -7,27 +7,31 @@ import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
 import com.serratocreations.phovo.feature.photos.util.toFormattedDurationString
 
 data class ImagePhotoUiItem(
-    override val uri: Uri
-) : UriPhotoUiItem
+    override val uri: Uri,
+    override val thumbnail: Uri
+) : ThumbnailPhotoUiItem
 
 data class VideoPhotoUiItem(
     override val uri: Uri,
-    val duration: String
-) : UriPhotoUiItem
+    val duration: String,
+    override val thumbnail: Uri
+) : ThumbnailPhotoUiItem
 
-sealed interface UriPhotoUiItem : PhotoUiItem {
+sealed interface ThumbnailPhotoUiItem : PhotoUiItem {
     val uri: Uri
+    val thumbnail: Uri
 }
 
 fun MediaItem.toPhotoUiItem(): PhotoUiItem {
     return when (this) {
         is MediaImageItem -> {
-            ImagePhotoUiItem(uri = uri)
+            ImagePhotoUiItem(uri = uri, thumbnail = thumbnailUri)
         }
         is MediaVideoItem -> {
             VideoPhotoUiItem(
                 uri = uri,
-                duration = duration.toFormattedDurationString()
+                duration = duration.toFormattedDurationString(),
+                thumbnail = thumbnailUri
             )
         }
     }

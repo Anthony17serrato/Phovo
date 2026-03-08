@@ -117,7 +117,7 @@ class IosLocalMediaProcessor(
                 fileName = name,
                 dateInFeed = localDateTime,
                 size = bytes.toInt(),
-                remoteThumbnailUri = null,
+                lowResThumbnail = null,
                 localUuid = Uuid.random().toString(),
                 remoteUuid = null
             ))
@@ -153,7 +153,7 @@ class IosLocalMediaProcessor(
                     dateInFeed = localDateTime,
                     size = bytes.toInt(),
                     duration = asset.duration.toLong().seconds,
-                    remoteThumbnailUri = null,
+                    lowResThumbnail = null,
                     localUuid = Uuid.random().toString(),
                     remoteUuid = null
                 )

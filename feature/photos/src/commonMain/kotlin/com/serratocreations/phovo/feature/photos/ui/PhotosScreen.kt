@@ -34,7 +34,7 @@ import coil3.request.crossfade
 import com.serratocreations.phovo.core.designsystem.component.CallToActionComponent
 import com.serratocreations.phovo.feature.photos.ui.model.DateHeaderPhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.PhotoUiItem
-import com.serratocreations.phovo.feature.photos.ui.model.UriPhotoUiItem
+import com.serratocreations.phovo.feature.photos.ui.model.ThumbnailPhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.VideoPhotoUiItem
 import com.serratocreations.phovo.feature.photos.util.getPlatformDecoderFactory
 import com.serratocreations.phovo.feature.photos.util.getPlatformFetcherFactory
@@ -42,7 +42,7 @@ import com.serratocreations.phovo.feature.photos.util.getPlatformFetcherFactory
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 internal fun PhotosHomeScreen(
-    onPhotoClick: (UriPhotoUiItem) -> Unit,
+    onPhotoClick: (ThumbnailPhotoUiItem) -> Unit,
     sharedElementTransition: SharedTransitionScope,
     animatedContentScope: AnimatedContentScope,
     photosViewModel: PhotosViewModel,
@@ -73,7 +73,7 @@ internal fun PhotosHomeScreen(
 @Composable
 internal fun PhotosScreen(
     photosItems: List<PhotoUiItem>,
-    onPhotoClick: (UriPhotoUiItem) -> Unit,
+    onPhotoClick: (ThumbnailPhotoUiItem) -> Unit,
     sharedElementTransition: SharedTransitionScope,
     animatedContentScope: AnimatedContentScope,
     modifier: Modifier = Modifier,
@@ -108,7 +108,7 @@ internal fun PhotosScreen(
                         is DateHeaderPhotoUiItem -> {
                             GridItemSpan(maxLineSpan)
                         }
-                        is UriPhotoUiItem -> {
+                        is ThumbnailPhotoUiItem -> {
                             GridItemSpan(1)
                         }
                     }
@@ -124,11 +124,11 @@ internal fun PhotosScreen(
                             modifier = modifier.padding(16.dp)
                         )
                     }
-                    is UriPhotoUiItem -> with(sharedElementTransition) {
+                    is ThumbnailPhotoUiItem -> with(sharedElementTransition) {
                         val id = item.uri.toString()
                         Box {
                             AsyncImage(
-                                model = item.uri,
+                                model = item.thumbnail,
                                 contentDescription = null,
                                 contentScale = ContentScale.Crop,
                                 modifier = modifier

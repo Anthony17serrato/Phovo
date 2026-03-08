@@ -1,6 +1,5 @@
 package com.serratocreations.phovo.data.photos.local
 
-import coil3.Uri
 import coil3.toUri
 import com.ashampoo.kim.Kim
 import com.ashampoo.kim.format.tiff.constant.ExifTag
@@ -10,7 +9,9 @@ import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
 import com.serratocreations.phovo.data.thumbnails.ThumbnailRepository
+import com.serratocreations.phovo.data.thumbnails.ThumbnailResult
 import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.path
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.SendChannel
@@ -80,7 +81,8 @@ class DesktopLocalMediaProcessor(
         val processedItemIds = processedItems.map { it.uri }
         // TODO This work can be optimized with parallel decomposition
         directoryFiles.filter { availableFile ->
-            val uri = Uri(scheme = "file", path = availableFile.toURI().path)
+            // TODO In the future this should use md5 hash
+            val uri = availableFile.path.toUri()
             uri !in processedItemIds
         }.forEach { file ->
             val fileType = file.getFileType()
@@ -127,18 +129,25 @@ class DesktopLocalMediaProcessor(
             } ?: return@withContext null // TODO find other methods to get a date
 
         val uuid = Uuid.random().toString()
-        thumbnailRepository.generateVideoThumbnail(
+        val thumbnailFile = thumbnailRepository.generateVideoThumbnail(
             rootOutputDirectory = PlatformFile(outputDirectory),
             videoFile = PlatformFile(file),
             thumbnailName = uuid
-        )
+        ).let {
+            when (it) {
+                ThumbnailResult.Failure -> null
+                is ThumbnailResult.Success -> it.platformFile
+            }
+        }
+        val itemUri = file.path.toUri()
         return@withContext MediaVideoItem(
-            uri = file.path.toUri(),
+            uri = itemUri,
+            thumbnailUri = thumbnailFile?.path?.toUri() ?: itemUri,
             fileName = file.name,
             dateInFeed = creationDate,
             size = file.length().toInt(),
             duration = durationSeconds.seconds,
-            remoteThumbnailUri = null,
+            lowResThumbnail = thumbnailFile,
             localUuid = uuid,
             remoteUuid = uuid
         )
@@ -153,14 +162,14 @@ class DesktopLocalMediaProcessor(
         val formatter = DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss")
         val uuid = Uuid.random().toString()
         return@withContext MediaImageItem(
-            uri = Uri(scheme = "file", path = file.toURI().path),
+            uri = file.path.toUri(),
             fileName = file.name,
             dateInFeed = takenDate.let { date ->
                 java.time.LocalDateTime.parse(date, formatter).toKotlinLocalDateTime()
             },
             // TODO
             size = file.length().toInt(),
-            remoteThumbnailUri = null,
+            lowResThumbnail = null,
             localUuid = uuid,
             remoteUuid = uuid
         )

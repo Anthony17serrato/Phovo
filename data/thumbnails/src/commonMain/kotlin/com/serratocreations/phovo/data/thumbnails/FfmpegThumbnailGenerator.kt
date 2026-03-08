@@ -44,7 +44,7 @@ class FfmpegThumbnailGenerator(
         videoFile: PlatformFile,
         outputDirectory: PlatformFile,
         thumbnailNameWithoutExtension: String
-    ): FfmpegThumbnailResult = withContext(ioDispatcher) {
+    ): ThumbnailResult = withContext(ioDispatcher) {
         val ffmpegFile = deferredFfmpegFile.await()
         // Creates the directory if it does not already exist
         outputDirectory.createDirectories(mustCreate = false)
@@ -80,11 +80,11 @@ class FfmpegThumbnailGenerator(
                 error("FFmpeg failed to extract frame")
             }
 
-            return@withContext FfmpegThumbnailResult.Success(outputThumbnail)
+            return@withContext ThumbnailResult.Success(outputThumbnail)
         } catch (e: Exception) {
             when(e) {
                 is IllegalStateException, is IOException -> {
-                    return@withContext FfmpegThumbnailResult.Failure
+                    return@withContext ThumbnailResult.Failure
                 }
                 else -> {
                     // Re-throw unexpected exception
@@ -95,7 +95,7 @@ class FfmpegThumbnailGenerator(
     }
 }
 
-sealed interface FfmpegThumbnailResult {
-    data class Success(val platformFile: PlatformFile): FfmpegThumbnailResult
-    data object Failure: FfmpegThumbnailResult
+sealed interface ThumbnailResult {
+    data class Success(val platformFile: PlatformFile): ThumbnailResult
+    data object Failure: ThumbnailResult
 }

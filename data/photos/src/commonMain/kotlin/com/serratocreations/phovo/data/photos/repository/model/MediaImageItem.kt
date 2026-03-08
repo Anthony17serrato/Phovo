@@ -2,6 +2,7 @@ package com.serratocreations.phovo.data.photos.repository.model
 
 import coil3.Uri
 import com.serratocreations.phovo.data.photos.util.UriSerializer
+import io.github.vinceglb.filekit.PlatformFile
 import kotlinx.datetime.LocalDateTime
 import kotlinx.serialization.Serializable
 
@@ -9,7 +10,8 @@ import kotlinx.serialization.Serializable
 data class MediaImageItem(
     // TODO don't recall why serializable is used, investigate if can be removed
     @Serializable(with = UriSerializer::class)override val uri: Uri,
-    @Serializable(with = UriSerializer::class)override val remoteThumbnailUri: Uri?,
+    override val lowResThumbnail: PlatformFile?,
+    @Serializable(with = UriSerializer::class)override val thumbnailUri: Uri = uri,
     override val fileName: String,
     override val dateInFeed: LocalDateTime,
     override val size: Int,

@@ -9,6 +9,8 @@ import com.serratocreations.phovo.core.model.network.MediaItemDto
 import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
+import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.path
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.TimeZone
@@ -31,7 +33,7 @@ fun MediaItemWithUriEntity.toMediaItem(): MediaItem {
                 localUuid = mediaItemEntity.localUuid,
                 remoteUuid = mediaItemEntity.remoteUuid,
                 uri = mediaItemUri.uri.toUri(),
-                remoteThumbnailUri = mediaItemEntity.remoteThumbnailUri?.toUri(),
+                lowResThumbnail = mediaItemEntity.remoteThumbnailUri?.let { PlatformFile(it) },
                 fileName = mediaItemEntity.fileName,
                 dateInFeed = dateInFeed,
                 size = mediaItemEntity.size
@@ -39,11 +41,14 @@ fun MediaItemWithUriEntity.toMediaItem(): MediaItem {
         }
         MediaType.Video -> {
             val duration = (mediaItemEntity.videoDurationMs ?: 0L).milliseconds
+            val thumbFile = mediaItemEntity.remoteThumbnailUri?.let { PlatformFile(it) }
+            val uri = mediaItemUri.uri.toUri()
             MediaVideoItem(
                 localUuid = mediaItemEntity.localUuid,
                 remoteUuid = mediaItemEntity.remoteUuid,
-                uri = mediaItemUri.uri.toUri(),
-                remoteThumbnailUri = mediaItemEntity.remoteThumbnailUri?.toUri(),
+                uri = uri,
+                thumbnailUri = thumbFile?.path?.toUri() ?: uri,
+                lowResThumbnail = mediaItemEntity.remoteThumbnailUri?.let { PlatformFile(it) },
                 fileName = mediaItemEntity.fileName,
                 dateInFeed = dateInFeed,
                 size = mediaItemEntity.size,
@@ -114,7 +119,7 @@ fun MediaItem.toMediaItemWithUriEntity(): MediaItemWithUriEntity {
         mediaItemEntity = MediaItemEntity(
             localUuid = localUuid,
             remoteUuid = remoteUuid,
-            remoteThumbnailUri = remoteThumbnailUri?.toString(),
+            remoteThumbnailUri = lowResThumbnail?.toString(),
             fileName = fileName,
             timeStampUtcMs = timeStampUtcMs,
             timeOffsetMs = timeOffsetMs,

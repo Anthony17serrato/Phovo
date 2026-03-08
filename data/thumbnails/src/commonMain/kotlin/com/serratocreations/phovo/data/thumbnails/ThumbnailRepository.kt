@@ -17,8 +17,8 @@ class ThumbnailRepository(
         rootOutputDirectory: PlatformFile,
         videoFile: PlatformFile,
         thumbnailName: String
-    ) {
-        thumbnailGenerator.generateVideoThumbnail(
+    ): ThumbnailResult {
+        return thumbnailGenerator.generateVideoThumbnail(
             videoFile = videoFile,
             outputDirectory = getThumbnailDirectoryFromRootOutputDirectory(rootOutputDirectory),
             thumbnailNameWithoutExtension = thumbnailName

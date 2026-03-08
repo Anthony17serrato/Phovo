@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.serratocreations.phovo.data.photos.repository.MediaRepository
 import com.serratocreations.phovo.feature.photos.ui.model.DateHeaderPhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.PhotoUiItem
-import com.serratocreations.phovo.feature.photos.ui.model.UriPhotoUiItem
+import com.serratocreations.phovo.feature.photos.ui.model.ThumbnailPhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.toPhotoUiItem
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -54,14 +54,14 @@ class PhotosViewModel(
         super.onCleared()
     }
 
-    fun onPhotoClick(uriPhotoUiItem: UriPhotoUiItem) {
+    fun onPhotoClick(thumbnailPhotoUiItem: ThumbnailPhotoUiItem) {
         _photosUiState.update { currentState ->
-            currentState.copy(selectedPhoto = uriPhotoUiItem)
+            currentState.copy(selectedPhoto = thumbnailPhotoUiItem)
         }
     }
 }
 
 data class PhotosUiState(
     val photosFeed: List<PhotoUiItem> = emptyList(),
-    val selectedPhoto: UriPhotoUiItem? = null
+    val selectedPhoto: ThumbnailPhotoUiItem? = null
 )
