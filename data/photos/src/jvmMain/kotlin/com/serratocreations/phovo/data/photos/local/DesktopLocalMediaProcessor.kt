@@ -1,6 +1,7 @@
 package com.serratocreations.phovo.data.photos.local
 
 import coil3.Uri
+import coil3.toUri
 import com.ashampoo.kim.Kim
 import com.ashampoo.kim.format.tiff.constant.ExifTag
 import com.ashampoo.kim.jvm.readMetadata
@@ -125,13 +126,14 @@ class DesktopLocalMediaProcessor(
                 }.getOrNull()?.toLocalDateTime(TimeZone.UTC)
             } ?: return@withContext null // TODO find other methods to get a date
 
+        val uuid = Uuid.random().toString()
         thumbnailRepository.generateVideoThumbnail(
             rootOutputDirectory = PlatformFile(outputDirectory),
-            videoFile = PlatformFile(file)
+            videoFile = PlatformFile(file),
+            thumbnailName = uuid
         )
-        val uuid = Uuid.random().toString()
         return@withContext MediaVideoItem(
-            uri = Uri(scheme = "file", path = file.toURI().path),
+            uri = file.path.toUri(),
             fileName = file.name,
             dateInFeed = creationDate,
             size = file.length().toInt(),

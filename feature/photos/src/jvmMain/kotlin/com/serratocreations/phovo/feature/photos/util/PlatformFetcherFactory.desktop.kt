@@ -14,6 +14,7 @@ import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.cacheDir
 import io.github.vinceglb.filekit.extension
+import io.github.vinceglb.filekit.nameWithoutExtension
 import io.github.vinceglb.filekit.path
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -34,7 +35,8 @@ class DesktopVideoFrameFetcher(
         val result = FfmpegThumbnailGenerator(Dispatchers.IO, CoroutineScope(SupervisorJob()))
             .generateVideoThumbnail(
                 videoFile = file,
-                outputDirectory = FileKit.cacheDir
+                outputDirectory = FileKit.cacheDir,
+                thumbnailNameWithoutExtension = file.nameWithoutExtension
             )
         return@withContext if (result is FfmpegThumbnailResult.Success) {
             val bufferedSource = File(result.platformFile.path).toPath().source().buffer()

@@ -15,11 +15,13 @@ class ThumbnailRepository(
 
     suspend fun generateVideoThumbnail(
         rootOutputDirectory: PlatformFile,
-        videoFile: PlatformFile
+        videoFile: PlatformFile,
+        thumbnailName: String
     ) {
         thumbnailGenerator.generateVideoThumbnail(
             videoFile = videoFile,
-            outputDirectory = getThumbnailDirectoryFromRootOutputDirectory(rootOutputDirectory)
+            outputDirectory = getThumbnailDirectoryFromRootOutputDirectory(rootOutputDirectory),
+            thumbnailNameWithoutExtension = thumbnailName
         )
     }
 }

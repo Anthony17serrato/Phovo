@@ -4,7 +4,6 @@ import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.absolutePath
 import io.github.vinceglb.filekit.createDirectories
 import io.github.vinceglb.filekit.exists
-import io.github.vinceglb.filekit.nameWithoutExtension
 import io.github.vinceglb.filekit.utils.Platform
 import io.github.vinceglb.filekit.utils.PlatformUtil
 import kotlinx.coroutines.CoroutineDispatcher
@@ -43,14 +42,15 @@ class FfmpegThumbnailGenerator(
      */
     suspend fun generateVideoThumbnail(
         videoFile: PlatformFile,
-        outputDirectory: PlatformFile
+        outputDirectory: PlatformFile,
+        thumbnailNameWithoutExtension: String
     ): FfmpegThumbnailResult = withContext(ioDispatcher) {
         val ffmpegFile = deferredFfmpegFile.await()
         // Creates the directory if it does not already exist
         outputDirectory.createDirectories(mustCreate = false)
 
         // Create a temp file for extracted frame
-        val tempFrameFile = PlatformFile(outputDirectory, "${videoFile.nameWithoutExtension}.webp")
+        val outputThumbnail = PlatformFile(outputDirectory, "$thumbnailNameWithoutExtension.webp")
 
         try {
             if (!ffmpegFile.exists()) {
@@ -60,14 +60,13 @@ class FfmpegThumbnailGenerator(
             val command = listOf(
                 ffmpegFile.absolutePath(),
                 "-y",
-                "-ss", "00:00:01.000",
                 "-i", videoFile.absolutePath(),
                 "-frames:v", "1",
-                "-vf", "scale=320:320:force_original_aspect_ratio=decrease",
+                "-vf", "thumbnail,scale=320:320:force_original_aspect_ratio=decrease",
                 "-c:v", "libwebp",
                 "-q:v", "60",
                 "-compression_level", "6",
-                tempFrameFile.absolutePath()
+                outputThumbnail.absolutePath()
             )
 
             // Run FFmpeg process
@@ -77,13 +76,12 @@ class FfmpegThumbnailGenerator(
                 .start()
 
             val exitCode = process.waitFor()
-            if (exitCode != 0 || !tempFrameFile.exists()) {
+            if (exitCode != 0 || !outputThumbnail.exists()) {
                 error("FFmpeg failed to extract frame")
             }
 
-            return@withContext FfmpegThumbnailResult.Success(tempFrameFile)
+            return@withContext FfmpegThumbnailResult.Success(outputThumbnail)
         } catch (e: Exception) {
-            println("Exception $e")
             when(e) {
                 is IllegalStateException, is IOException -> {
                     return@withContext FfmpegThumbnailResult.Failure
