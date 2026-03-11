@@ -129,7 +129,7 @@ class DesktopLocalMediaProcessor(
             } ?: return@withContext null // TODO find other methods to get a date
 
         val uuid = Uuid.random().toString()
-        val thumbnailFile = thumbnailRepository.generateVideoThumbnail(
+        val thumbnailFile = thumbnailRepository.generateVideoThumbnails(
             rootOutputDirectory = PlatformFile(outputDirectory),
             videoFile = PlatformFile(file),
             thumbnailName = uuid

@@ -2,7 +2,6 @@ package com.serratocreations.phovo.data.thumbnails
 
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.absolutePath
-import io.github.vinceglb.filekit.createDirectories
 import io.github.vinceglb.filekit.exists
 import io.github.vinceglb.filekit.utils.Platform
 import io.github.vinceglb.filekit.utils.PlatformUtil
@@ -42,31 +41,54 @@ class FfmpegThumbnailGenerator(
      */
     suspend fun generateVideoThumbnail(
         videoFile: PlatformFile,
-        outputDirectory: PlatformFile,
+        outputDirectories: ThumbnailDirectories,
         thumbnailNameWithoutExtension: String
     ): ThumbnailResult = withContext(ioDispatcher) {
         val ffmpegFile = deferredFfmpegFile.await()
-        // Creates the directory if it does not already exist
-        outputDirectory.createDirectories(mustCreate = false)
 
-        // Create a temp file for extracted frame
-        val outputThumbnail = PlatformFile(outputDirectory, "$thumbnailNameWithoutExtension.webp")
+        val lowResThumbnail = PlatformFile(
+            outputDirectories.lowResThumbnailDirectory,
+            "$thumbnailNameWithoutExtension.webp"
+        )
+
+        val highResThumbnail = PlatformFile(
+            outputDirectories.highResThumbnailDirectory,
+            "$thumbnailNameWithoutExtension.webp"
+        )
 
         try {
             if (!ffmpegFile.exists()) {
                 error("FFmpeg binary not found at ${ffmpegFile.absolutePath()}")
             }
             // Build FFmpeg command
+            val filter =
+                "thumbnail,split=2[v1][v2];" +
+                        "[v1]scale=320:320:force_original_aspect_ratio=decrease[v1out];" +
+                        "[v2]scale=1080:1080:force_original_aspect_ratio=decrease[v2out]"
+
             val command = listOf(
                 ffmpegFile.absolutePath(),
                 "-y",
                 "-i", videoFile.absolutePath(),
+                "-filter_complex", filter,
+
+                // LOW RES (static)
+                "-map", "[v1out]",
                 "-frames:v", "1",
-                "-vf", "thumbnail,scale=320:320:force_original_aspect_ratio=decrease",
                 "-c:v", "libwebp",
+                "-preset", "picture",
                 "-q:v", "60",
                 "-compression_level", "6",
-                outputThumbnail.absolutePath()
+                lowResThumbnail.absolutePath(),
+
+                // HIGH RES (animated storyboard)
+                "-map", "[v2out]",
+                "-c:v", "libwebp",
+                "-loop", "0",
+                "-preset", "picture",
+                "-q:v", "75",
+                "-compression_level", "6",
+                highResThumbnail.absolutePath()
             )
 
             // Run FFmpeg process
@@ -76,11 +98,15 @@ class FfmpegThumbnailGenerator(
                 .start()
 
             val exitCode = process.waitFor()
-            if (exitCode != 0 || !outputThumbnail.exists()) {
-                error("FFmpeg failed to extract frame")
+            if (
+                exitCode != 0 ||
+                !lowResThumbnail.exists() ||
+                !highResThumbnail.exists()
+            ) {
+                error("FFmpeg failed to generate thumbnails")
             }
 
-            return@withContext ThumbnailResult.Success(outputThumbnail)
+            return@withContext ThumbnailResult.Success(highResThumbnail)
         } catch (e: Exception) {
             when(e) {
                 is IllegalStateException, is IOException -> {

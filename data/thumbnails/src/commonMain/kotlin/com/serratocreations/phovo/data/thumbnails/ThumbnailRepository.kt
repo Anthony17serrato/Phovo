@@ -7,21 +7,31 @@ import io.github.vinceglb.filekit.div
 class ThumbnailRepository(
     val thumbnailGenerator: FfmpegThumbnailGenerator
 ) {
-    private fun getThumbnailDirectoryFromRootOutputDirectory(rootOutputDirectory: PlatformFile): PlatformFile {
-        val thumbDir = rootOutputDirectory / "thumbnails"
-        thumbDir.createDirectories(mustCreate = false)
-        return thumbDir
+    private fun getThumbnailDirectoriesFromRootOutputDirectory(rootOutputDirectory: PlatformFile): ThumbnailDirectories {
+        val lowResThumbDir = rootOutputDirectory / "low_res_thumbnails"
+        lowResThumbDir.createDirectories(mustCreate = false)
+        val highResThumbDir = rootOutputDirectory / "high_res_thumbnails"
+        highResThumbDir.createDirectories(mustCreate = false)
+        return ThumbnailDirectories(
+            lowResThumbnailDirectory = lowResThumbDir,
+            highResThumbnailDirectory = highResThumbDir
+        )
     }
 
-    suspend fun generateVideoThumbnail(
+    suspend fun generateVideoThumbnails(
         rootOutputDirectory: PlatformFile,
         videoFile: PlatformFile,
         thumbnailName: String
     ): ThumbnailResult {
         return thumbnailGenerator.generateVideoThumbnail(
             videoFile = videoFile,
-            outputDirectory = getThumbnailDirectoryFromRootOutputDirectory(rootOutputDirectory),
+            outputDirectories = getThumbnailDirectoriesFromRootOutputDirectory(rootOutputDirectory),
             thumbnailNameWithoutExtension = thumbnailName
         )
     }
 }
+
+data class ThumbnailDirectories(
+    val lowResThumbnailDirectory: PlatformFile,
+    val highResThumbnailDirectory: PlatformFile
+)
