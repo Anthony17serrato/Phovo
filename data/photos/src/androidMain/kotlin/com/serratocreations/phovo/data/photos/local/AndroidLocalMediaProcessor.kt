@@ -100,7 +100,7 @@ class AndroidLocalMediaProcessor(
 
                 val mediaImageItem = MediaImageItem(
                     uri = contentUri,
-                    remoteThumbnailUri = null,
+                    lowResThumbnail = null,
                     fileName = fileName,
                     dateInFeed = dateInFeed,
                     size = size,
@@ -158,7 +158,7 @@ class AndroidLocalMediaProcessor(
 
                 val mediaVideoItem = MediaVideoItem(
                     uri = contentUri,
-                    remoteThumbnailUri = null,
+                    lowResThumbnail = null,
                     fileName = name,
                     dateInFeed = dateInFeed,
                     size = size,

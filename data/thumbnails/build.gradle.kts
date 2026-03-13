@@ -8,6 +8,7 @@ import java.nio.file.StandardCopyOption
 plugins {
     alias(libs.plugins.phovo.kmp.desktop.library)
     alias(libs.plugins.phovo.kmp.library.compose)
+    alias(libs.plugins.phovo.kmp.library.koin)
 }
 
 kotlin {
@@ -15,6 +16,8 @@ kotlin {
         jvmMain.dependencies {
             implementation(libs.compose.runtime)
             implementation(libs.compose.resources)
+            implementation(libs.filekit.core)
+            implementation(projects.core.common)
         }
     }
 }

@@ -14,5 +14,8 @@ kotlin {
         }
         commonTest.dependencies {
         }
+        jvmMain.dependencies {
+            implementation(projects.data.thumbnails)
+        }
     }
 }

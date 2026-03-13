@@ -1,6 +1,7 @@
 package com.serratocreations.phovo.data.photos.repository.model
 
 import coil3.Uri
+import io.github.vinceglb.filekit.PlatformFile
 import kotlinx.datetime.LocalDateTime
 
 sealed interface MediaItem {
@@ -8,7 +9,17 @@ sealed interface MediaItem {
     val remoteUuid: String?
     /** The location where the media can be accessed */
     val uri: Uri
-    val remoteThumbnailUri: Uri?
+
+    /**
+     * Uri for thumbnail, in the case of photos this Uri is the same as [uri]
+     * For videos there may be a dedicated thumbnail for display.
+     */
+    val thumbnailUri: Uri
+
+    /**
+     * If a thumbnail is available this property is populated
+     */
+    val lowResThumbnail: PlatformFile?
     val fileName: String
     // TODO MediaItem should use ZonedDateTime
     val dateInFeed: LocalDateTime

@@ -11,7 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import coil3.compose.AsyncImage
 import com.serratocreations.phovo.feature.photos.ui.model.ImagePhotoUiItem
-import com.serratocreations.phovo.feature.photos.ui.model.UriPhotoUiItem
+import com.serratocreations.phovo.feature.photos.ui.model.ThumbnailPhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.VideoPhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.components.VideoPlayer
 
@@ -35,7 +35,7 @@ internal fun PhotoViewerScreen(
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 internal fun PhotoViewerScreen(
-    item: UriPhotoUiItem?,
+    item: ThumbnailPhotoUiItem?,
     sharedElementTransition: SharedTransitionScope,
     animatedContentScope: AnimatedContentScope,
     modifier: Modifier = Modifier
@@ -48,7 +48,7 @@ internal fun PhotoViewerScreen(
                 is ImagePhotoUiItem -> {
                     // Image is placed first so it's drawn behind the top bar
                     AsyncImage(
-                        model = uri,
+                        model = item.thumbnail,
                         contentDescription = null,
                         contentScale = ContentScale.Fit,
                         modifier = Modifier.sharedElement(

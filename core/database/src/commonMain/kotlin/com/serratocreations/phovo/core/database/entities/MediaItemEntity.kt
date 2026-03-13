@@ -30,6 +30,7 @@ data class MediaItemEntity(
 data class MediaItemUriEntity(
     @PrimaryKey
     val mediaUuid: String,
+    /** Note: On desktop this is simply the backup directory */
     val uri: String
 )
 
