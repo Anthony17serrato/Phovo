@@ -119,6 +119,86 @@ class FfmpegThumbnailGenerator(
             }
         }
     }
+
+    suspend fun generateImageThumbnail(
+        imageFile: PlatformFile,
+        outputDirectories: ThumbnailDirectories,
+        thumbnailNameWithoutExtension: String
+    ): ThumbnailResult = withContext(ioDispatcher) {
+
+        val ffmpegFile = deferredFfmpegFile.await()
+
+        val lowResThumbnail = PlatformFile(
+            outputDirectories.lowResThumbnailDirectory,
+            "$thumbnailNameWithoutExtension.webp"
+        )
+
+        val highResThumbnail = PlatformFile(
+            outputDirectories.highResThumbnailDirectory,
+            "$thumbnailNameWithoutExtension.webp"
+        )
+
+        try {
+            if (!ffmpegFile.exists()) {
+                error("FFmpeg binary not found at ${ffmpegFile.absolutePath()}")
+            }
+
+            val filter =
+                "split=2[v1][v2];" +
+                        "[v1]scale=320:320:force_original_aspect_ratio=decrease[v1out];" +
+                        "[v2]scale=1080:1080:force_original_aspect_ratio=decrease[v2out]"
+
+            val command = listOf(
+                ffmpegFile.absolutePath(),
+                "-y",
+                "-i", imageFile.absolutePath(),
+                "-filter_complex", filter,
+
+                // LOW RES
+                "-map", "[v1out]",
+                "-frames:v", "1",
+                "-c:v", "libwebp",
+                "-preset", "picture",
+                "-q:v", "60",
+                "-compression_level", "6",
+                lowResThumbnail.absolutePath(),
+
+                // HIGH RES
+                "-map", "[v2out]",
+                "-frames:v", "1",
+                "-c:v", "libwebp",
+                "-preset", "picture",
+                "-q:v", "75",
+                "-compression_level", "6",
+                highResThumbnail.absolutePath()
+            )
+
+            val process = ProcessBuilder(command)
+                .redirectError(ProcessBuilder.Redirect.INHERIT)
+                .redirectOutput(ProcessBuilder.Redirect.INHERIT)
+                .start()
+
+            val exitCode = process.waitFor()
+
+            if (
+                exitCode != 0 ||
+                !lowResThumbnail.exists() ||
+                !highResThumbnail.exists()
+            ) {
+                error("FFmpeg failed to generate thumbnails")
+            }
+
+            return@withContext ThumbnailResult.Success(highResThumbnail)
+
+        } catch (e: Exception) {
+            when (e) {
+                is IllegalStateException, is IOException -> {
+                    return@withContext ThumbnailResult.Failure
+                }
+                else -> throw e
+            }
+        }
+    }
 }
 
 sealed interface ThumbnailResult {

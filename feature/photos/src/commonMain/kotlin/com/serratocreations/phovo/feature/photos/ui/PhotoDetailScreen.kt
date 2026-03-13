@@ -48,7 +48,7 @@ internal fun PhotoViewerScreen(
                 is ImagePhotoUiItem -> {
                     // Image is placed first so it's drawn behind the top bar
                     AsyncImage(
-                        model = uri,
+                        model = item.thumbnail,
                         contentDescription = null,
                         contentScale = ContentScale.Fit,
                         modifier = Modifier.sharedElement(

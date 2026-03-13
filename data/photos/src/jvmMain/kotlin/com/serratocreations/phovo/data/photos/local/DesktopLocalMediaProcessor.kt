@@ -93,7 +93,7 @@ class DesktopLocalMediaProcessor(
                 }
 
                 FileType.Photo -> {
-                    processImage(file)
+                    processImage(file, localDirectory)
                 }
 
                 FileType.Video -> {
@@ -154,22 +154,37 @@ class DesktopLocalMediaProcessor(
     }
 
     @OptIn(ExperimentalUuidApi::class)
-    private suspend fun processImage(file: File): MediaImageItem? = withContext(ioDispatcher) {
+    private suspend fun processImage(
+        file: File,
+        outputDirectory: String
+    ): MediaImageItem? = withContext(ioDispatcher) {
         val metadata = Kim.readMetadata(file)
         val takenDate = metadata?.findStringValue(ExifTag.EXIF_TAG_DATE_TIME_ORIGINAL)
             ?: return@withContext null
         // Define the custom format pattern
         val formatter = DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss")
         val uuid = Uuid.random().toString()
+        val thumbnailFile = thumbnailRepository.generateImageThumbnails(
+            rootOutputDirectory = PlatformFile(outputDirectory),
+            imageFile = PlatformFile(file),
+            thumbnailName = uuid
+        ).let {
+            when (it) {
+                ThumbnailResult.Failure -> null
+                is ThumbnailResult.Success -> it.platformFile
+            }
+        }
+        val itemUri = file.path.toUri()
         return@withContext MediaImageItem(
-            uri = file.path.toUri(),
+            uri = itemUri,
+            thumbnailUri = thumbnailFile?.path?.toUri() ?: itemUri,
             fileName = file.name,
             dateInFeed = takenDate.let { date ->
                 java.time.LocalDateTime.parse(date, formatter).toKotlinLocalDateTime()
             },
             // TODO
             size = file.length().toInt(),
-            lowResThumbnail = null,
+            lowResThumbnail = thumbnailFile,
             localUuid = uuid,
             remoteUuid = uuid
         )

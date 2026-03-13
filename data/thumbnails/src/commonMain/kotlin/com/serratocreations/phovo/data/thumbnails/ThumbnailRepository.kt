@@ -29,6 +29,18 @@ class ThumbnailRepository(
             thumbnailNameWithoutExtension = thumbnailName
         )
     }
+
+    suspend fun generateImageThumbnails(
+        rootOutputDirectory: PlatformFile,
+        imageFile: PlatformFile,
+        thumbnailName: String
+    ): ThumbnailResult {
+        return thumbnailGenerator.generateImageThumbnail(
+            imageFile = imageFile,
+            outputDirectories = getThumbnailDirectoriesFromRootOutputDirectory(rootOutputDirectory),
+            thumbnailNameWithoutExtension = thumbnailName
+        )
+    }
 }
 
 data class ThumbnailDirectories(
