@@ -20,8 +20,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
@@ -103,6 +107,9 @@ internal fun PhotosScreen(
             }
             itemsIndexed(
                 items = photosItems,
+                key = { _, item ->
+                    item.key
+                },
                 span = { index, item ->
                     when (item) {
                         is DateHeaderPhotoUiItem -> {
@@ -125,12 +132,16 @@ internal fun PhotosScreen(
                         )
                     }
                     is ThumbnailPhotoUiItem -> with(sharedElementTransition) {
-                        val id = item.uri.toString()
+                        val id = item.key
                         Box {
+                            var isHigResThumbLoaded by remember { mutableStateOf(false) }
                             AsyncImage(
                                 model = item.thumbnail,
                                 contentDescription = null,
                                 contentScale = ContentScale.Crop,
+                                onSuccess = {
+                                    isHigResThumbLoaded = true
+                                },
                                 modifier = modifier
                                     .aspectRatio(1f)
                                     .sharedElement(
@@ -139,6 +150,22 @@ internal fun PhotosScreen(
                                         animatedVisibilityScope = animatedContentScope
                                     ).clickable { onPhotoClick(item) }
                             )
+                            if (isHigResThumbLoaded.not()) {
+                                AsyncImage(
+                                    model = item.lowResThumbnail,
+                                    contentDescription = null,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = modifier
+                                        .aspectRatio(1f)
+                                        .blur(10.dp)
+                                        .sharedElement(
+                                            sharedContentState = sharedElementTransition
+                                                .rememberSharedContentState(key = "image-$id"),
+                                            animatedVisibilityScope = animatedContentScope
+                                        ).clickable { onPhotoClick(item) }
+                                )
+                            }
+
                             if (item is VideoPhotoUiItem) {
                                 Text(
                                     text = item.duration,

@@ -145,8 +145,8 @@ class FfmpegThumbnailGenerator(
 
             val filter =
                 "split=2[v1][v2];" +
-                        "[v1]scale=320:320:force_original_aspect_ratio=decrease[v1out];" +
-                        "[v2]scale=1080:1080:force_original_aspect_ratio=decrease[v2out]"
+                        "[v1]scale=144:144:force_original_aspect_ratio=decrease[v1out];" +
+                        "[v2]scale=720:720:force_original_aspect_ratio=decrease[v2out]"
 
             val command = listOf(
                 ffmpegFile.absolutePath(),

@@ -27,13 +27,17 @@ fun MediaItemWithUriEntity.toMediaItem(): MediaItem {
         .fromEpochMilliseconds(mediaItemEntity.timeStampUtcMs + mediaItemEntity.timeOffsetMs)
         .toLocalDateTime(TimeZone.UTC)
 
+
+    val thumbFile = mediaItemEntity.remoteThumbnailUri?.let { PlatformFile(it) }
+    val uri = mediaItemUri.uri.toUri()
     return when (mediaItemEntity.mediaType) {
         MediaType.Image -> {
             MediaImageItem(
                 localUuid = mediaItemEntity.localUuid,
                 remoteUuid = mediaItemEntity.remoteUuid,
                 uri = mediaItemUri.uri.toUri(),
-                lowResThumbnail = mediaItemEntity.remoteThumbnailUri?.let { PlatformFile(it) },
+                thumbnailUri = thumbFile?.path?.toUri() ?: uri,
+                lowResThumbnail = mediaItemEntity.remoteThumbnailUri?.replace("high_res_thumbnails", "low_res_thumbnails")?.let { PlatformFile(it) },
                 fileName = mediaItemEntity.fileName,
                 dateInFeed = dateInFeed,
                 size = mediaItemEntity.size
@@ -41,14 +45,12 @@ fun MediaItemWithUriEntity.toMediaItem(): MediaItem {
         }
         MediaType.Video -> {
             val duration = (mediaItemEntity.videoDurationMs ?: 0L).milliseconds
-            val thumbFile = mediaItemEntity.remoteThumbnailUri?.let { PlatformFile(it) }
-            val uri = mediaItemUri.uri.toUri()
             MediaVideoItem(
                 localUuid = mediaItemEntity.localUuid,
                 remoteUuid = mediaItemEntity.remoteUuid,
                 uri = uri,
                 thumbnailUri = thumbFile?.path?.toUri() ?: uri,
-                lowResThumbnail = mediaItemEntity.remoteThumbnailUri?.let { PlatformFile(it) },
+                lowResThumbnail = mediaItemEntity.remoteThumbnailUri?.replace("high_res_thumbnails", "low_res_thumbnails")?.let { PlatformFile(it) },
                 fileName = mediaItemEntity.fileName,
                 dateInFeed = dateInFeed,
                 size = mediaItemEntity.size,
