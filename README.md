@@ -20,7 +20,7 @@ Phovo is currently undergoing active development. Core logic, architecture, and 
 
 ---
 
-### 🚩 March 31, 2026 — Alpha Release
+### 🚩 June 31, 2026 — Alpha Release
 **Availability:** Internal  
 **Focus:**  
 - Early testing of core features  
@@ -30,7 +30,7 @@ Phovo is currently undergoing active development. Core logic, architecture, and 
 
 ---
 
-### 🚩 May 31, 2026 — Beta Release
+### 🚩 August 31, 2026 — Beta Release
 **Availability:** Public  
 **Focus:**  
 - Initial feature development complete  
@@ -40,7 +40,7 @@ Phovo is currently undergoing active development. Core logic, architecture, and 
 
 ---
 
-### 🏁 July 31, 2026 — Stable Release
+### 🏁 November 31, 2026 — Stable Release
 **Availability:** Android, iOS & Desktop  
 **Focus:**  
 - Production-ready release  
