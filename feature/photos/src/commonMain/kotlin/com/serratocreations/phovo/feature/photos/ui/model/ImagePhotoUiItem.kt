@@ -2,9 +2,7 @@ package com.serratocreations.phovo.feature.photos.ui.model
 
 import coil3.Uri
 import coil3.toUri
-import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
-import com.serratocreations.phovo.data.photos.repository.model.MediaItem
-import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
+import com.serratocreations.phovo.core.domain.model.MediaItemWithThumbnails
 import com.serratocreations.phovo.feature.photos.util.toFormattedDurationString
 import io.github.vinceglb.filekit.absolutePath
 
@@ -30,17 +28,18 @@ sealed interface ThumbnailPhotoUiItem : PhotoUiItem {
     val thumbnail: Uri
 }
 
-fun MediaItem.toPhotoUiItem(): PhotoUiItem {
+fun MediaItemWithThumbnails.toPhotoUiItem(): PhotoUiItem {
     return when (this) {
-        is MediaImageItem -> {
+        is MediaItemWithThumbnails.MediaImageItem -> {
             ImagePhotoUiItem(
                 uri = uri,
+                // TODO Add filekit Coil integration
                 lowResThumbnail = lowResThumbnail?.absolutePath()?.toUri(),
                 thumbnail = thumbnailUri,
                 key = this.localUuid
             )
         }
-        is MediaVideoItem -> {
+        is MediaItemWithThumbnails.MediaVideoItem -> {
             VideoPhotoUiItem(
                 uri = uri,
                 duration = duration.toFormattedDurationString(),

@@ -1,5 +1,6 @@
 package com.serratocreations.phovo.data.thumbnails
 
+import com.serratocreations.phovo.core.logger.PhovoLogger
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.absolutePath
 import io.github.vinceglb.filekit.exists
@@ -17,8 +18,11 @@ import java.net.URI
 
 class FfmpegThumbnailGenerator(
     private val ioDispatcher: CoroutineDispatcher,
-    private val appScope: CoroutineScope
+    private val appScope: CoroutineScope,
+    logger: PhovoLogger
 ) {
+    private val log = logger.withTag("FfmpegThumbnailGenerator")
+
     // TODO Can move to constructor DI if other classes need it
     val deferredFfmpegFile: Deferred<PlatformFile> by lazy {
         return@lazy appScope.async {
@@ -43,7 +47,7 @@ class FfmpegThumbnailGenerator(
         videoFile: PlatformFile,
         outputDirectories: ThumbnailDirectories,
         thumbnailNameWithoutExtension: String
-    ): ThumbnailResult = withContext(ioDispatcher) {
+    ): Unit = withContext(ioDispatcher) {
         val ffmpegFile = deferredFfmpegFile.await()
 
         val lowResThumbnail = PlatformFile(
@@ -105,12 +109,10 @@ class FfmpegThumbnailGenerator(
             ) {
                 error("FFmpeg failed to generate thumbnails")
             }
-
-            return@withContext ThumbnailResult.Success(highResThumbnail)
         } catch (e: Exception) {
             when(e) {
                 is IllegalStateException, is IOException -> {
-                    return@withContext ThumbnailResult.Failure
+                    log.e { "Thumbnail extraction failed with exception $e" }
                 }
                 else -> {
                     // Re-throw unexpected exception
@@ -124,7 +126,7 @@ class FfmpegThumbnailGenerator(
         imageFile: PlatformFile,
         outputDirectories: ThumbnailDirectories,
         thumbnailNameWithoutExtension: String
-    ): ThumbnailResult = withContext(ioDispatcher) {
+    ): Unit = withContext(ioDispatcher) {
 
         val ffmpegFile = deferredFfmpegFile.await()
 
@@ -187,21 +189,13 @@ class FfmpegThumbnailGenerator(
             ) {
                 error("FFmpeg failed to generate thumbnails")
             }
-
-            return@withContext ThumbnailResult.Success(highResThumbnail)
-
         } catch (e: Exception) {
             when (e) {
                 is IllegalStateException, is IOException -> {
-                    return@withContext ThumbnailResult.Failure
+                    log.e { "Thumbnail extraction failed with exception $e" }
                 }
                 else -> throw e
             }
         }
     }
-}
-
-sealed interface ThumbnailResult {
-    data class Success(val platformFile: PlatformFile): ThumbnailResult
-    data object Failure: ThumbnailResult
 }

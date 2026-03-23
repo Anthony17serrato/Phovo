@@ -9,9 +9,7 @@ import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
 import com.serratocreations.phovo.data.thumbnails.ThumbnailRepository
-import com.serratocreations.phovo.data.thumbnails.ThumbnailResult
 import io.github.vinceglb.filekit.PlatformFile
-import io.github.vinceglb.filekit.path
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.SendChannel
@@ -129,25 +127,18 @@ class DesktopLocalMediaProcessor(
             } ?: return@withContext null // TODO find other methods to get a date
 
         val uuid = Uuid.random().toString()
-        val thumbnailFile = thumbnailRepository.generateVideoThumbnails(
+        thumbnailRepository.generateVideoThumbnails(
             rootOutputDirectory = PlatformFile(outputDirectory),
             videoFile = PlatformFile(file),
             thumbnailName = uuid
-        ).let {
-            when (it) {
-                ThumbnailResult.Failure -> null
-                is ThumbnailResult.Success -> it.platformFile
-            }
-        }
+        )
         val itemUri = file.path.toUri()
         return@withContext MediaVideoItem(
             uri = itemUri,
-            thumbnailUri = thumbnailFile?.path?.toUri() ?: itemUri,
             fileName = file.name,
             dateInFeed = creationDate,
             size = file.length().toInt(),
             duration = durationSeconds.seconds,
-            lowResThumbnail = thumbnailFile,
             localUuid = uuid,
             remoteUuid = uuid
         )
@@ -164,27 +155,20 @@ class DesktopLocalMediaProcessor(
         // Define the custom format pattern
         val formatter = DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss")
         val uuid = Uuid.random().toString()
-        val thumbnailFile = thumbnailRepository.generateImageThumbnails(
+        thumbnailRepository.generateImageThumbnails(
             rootOutputDirectory = PlatformFile(outputDirectory),
             imageFile = PlatformFile(file),
             thumbnailName = uuid
-        ).let {
-            when (it) {
-                ThumbnailResult.Failure -> null
-                is ThumbnailResult.Success -> it.platformFile
-            }
-        }
+        )
         val itemUri = file.path.toUri()
         return@withContext MediaImageItem(
             uri = itemUri,
-            thumbnailUri = thumbnailFile?.path?.toUri() ?: itemUri,
             fileName = file.name,
             dateInFeed = takenDate.let { date ->
                 java.time.LocalDateTime.parse(date, formatter).toKotlinLocalDateTime()
             },
             // TODO
             size = file.length().toInt(),
-            lowResThumbnail = thumbnailFile,
             localUuid = uuid,
             remoteUuid = uuid
         )

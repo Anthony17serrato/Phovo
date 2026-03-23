@@ -16,6 +16,7 @@ kotlin {
             implementation(projects.core.model)
             implementation(projects.data.photos)
             implementation(libs.serialization.json)
+            implementation(libs.filekit.core)
         }
 
         commonTest.dependencies {

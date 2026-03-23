@@ -18,6 +18,7 @@ kotlin {
             implementation(libs.compose.resources)
             implementation(libs.filekit.core)
             implementation(projects.core.common)
+            implementation(projects.core.logger)
         }
     }
 }

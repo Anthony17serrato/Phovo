@@ -2,6 +2,7 @@ package com.serratocreations.phovo
 
 import com.serratocreations.phovo.data.photos.LocalMediaManager
 import com.serratocreations.phovo.data.server.data.repository.ServerConfigRepository
+import io.github.vinceglb.filekit.absolutePath
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.firstOrNull
@@ -23,7 +24,7 @@ abstract class AndroidDesktopIosAppInitializer(
                 .mapNotNull { it?.backupDirectory }
                 .distinctUntilChanged()
                 .firstOrNull()
-            localMediaManager.initMediaProcessing(backupDirectory)
+            localMediaManager.initMediaProcessing(backupDirectory?.absolutePath())
         }
     }
 }

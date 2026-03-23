@@ -30,6 +30,7 @@ kotlin {
             implementation(libs.coil.compose)
             implementation(libs.kotlin.datetime)
             implementation(libs.bundles.navigation3)
+            implementation(libs.filekit.core)
         }
 
         commonTest.dependencies {

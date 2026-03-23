@@ -22,7 +22,7 @@ class ThumbnailRepository(
         rootOutputDirectory: PlatformFile,
         videoFile: PlatformFile,
         thumbnailName: String
-    ): ThumbnailResult {
+    ) {
         return thumbnailGenerator.generateVideoThumbnail(
             videoFile = videoFile,
             outputDirectories = getThumbnailDirectoriesFromRootOutputDirectory(rootOutputDirectory),
@@ -34,7 +34,7 @@ class ThumbnailRepository(
         rootOutputDirectory: PlatformFile,
         imageFile: PlatformFile,
         thumbnailName: String
-    ): ThumbnailResult {
+    ) {
         return thumbnailGenerator.generateImageThumbnail(
             imageFile = imageFile,
             outputDirectories = getThumbnailDirectoriesFromRootOutputDirectory(rootOutputDirectory),

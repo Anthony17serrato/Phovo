@@ -2,7 +2,7 @@ package com.serratocreations.phovo.feature.photos.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.serratocreations.phovo.data.photos.repository.MediaRepository
+import com.serratocreations.phovo.core.domain.GetPhotosFeedWithThumbnailsUseCase
 import com.serratocreations.phovo.feature.photos.ui.model.DateHeaderPhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.PhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.ThumbnailPhotoUiItem
@@ -22,7 +22,7 @@ import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class PhotosViewModel(
-    mediaRepository: MediaRepository,
+    getPhotosFeedWithThumbnailsUseCase: GetPhotosFeedWithThumbnailsUseCase,
     ioDispatcher: CoroutineDispatcher
 ): ViewModel() {
     @OptIn(ExperimentalTime::class)
@@ -31,7 +31,7 @@ class PhotosViewModel(
     val photosUiState = _photosUiState.asStateFlow()
 
     init {
-        mediaRepository.phovoMediaFlow().onEach { phovoItems ->
+        getPhotosFeedWithThumbnailsUseCase().onEach { phovoItems ->
             val uiItemList = mutableListOf<PhotoUiItem>()
             phovoItems.groupBy { Pair(it.dateInFeed.month, it.dateInFeed.year) }.forEach { entry ->
                 uiItemList.add(

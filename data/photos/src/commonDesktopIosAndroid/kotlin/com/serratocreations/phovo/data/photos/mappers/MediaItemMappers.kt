@@ -9,8 +9,6 @@ import com.serratocreations.phovo.core.model.network.MediaItemDto
 import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
-import io.github.vinceglb.filekit.PlatformFile
-import io.github.vinceglb.filekit.path
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.TimeZone
@@ -27,17 +25,13 @@ fun MediaItemWithUriEntity.toMediaItem(): MediaItem {
         .fromEpochMilliseconds(mediaItemEntity.timeStampUtcMs + mediaItemEntity.timeOffsetMs)
         .toLocalDateTime(TimeZone.UTC)
 
-
-    val thumbFile = mediaItemEntity.remoteThumbnailUri?.let { PlatformFile(it) }
     val uri = mediaItemUri.uri.toUri()
     return when (mediaItemEntity.mediaType) {
         MediaType.Image -> {
             MediaImageItem(
                 localUuid = mediaItemEntity.localUuid,
                 remoteUuid = mediaItemEntity.remoteUuid,
-                uri = mediaItemUri.uri.toUri(),
-                thumbnailUri = thumbFile?.path?.toUri() ?: uri,
-                lowResThumbnail = mediaItemEntity.remoteThumbnailUri?.replace("high_res_thumbnails", "low_res_thumbnails")?.let { PlatformFile(it) },
+                uri = uri,
                 fileName = mediaItemEntity.fileName,
                 dateInFeed = dateInFeed,
                 size = mediaItemEntity.size
@@ -49,8 +43,6 @@ fun MediaItemWithUriEntity.toMediaItem(): MediaItem {
                 localUuid = mediaItemEntity.localUuid,
                 remoteUuid = mediaItemEntity.remoteUuid,
                 uri = uri,
-                thumbnailUri = thumbFile?.path?.toUri() ?: uri,
-                lowResThumbnail = mediaItemEntity.remoteThumbnailUri?.replace("high_res_thumbnails", "low_res_thumbnails")?.let { PlatformFile(it) },
                 fileName = mediaItemEntity.fileName,
                 dateInFeed = dateInFeed,
                 size = mediaItemEntity.size,
@@ -83,7 +75,6 @@ fun MediaItemWithUriEntity.toMediaItemDto(): MediaItemDto = MediaItemDto(
     fileName = mediaItemEntity.fileName,
     localUuid = mediaItemEntity.localUuid,
     remoteUuid = mediaItemEntity.remoteUuid,
-    remoteThumbnailUri = mediaItemEntity.remoteThumbnailUri,
     size = mediaItemEntity.size.toLong(),
     timeStampUtcMs = mediaItemEntity.timeStampUtcMs,
     timeOffsetMs = mediaItemEntity.timeOffsetMs,
@@ -95,7 +86,6 @@ fun MediaItemDto.toMediaItemEntity(): MediaItemEntity {
     return MediaItemEntity(
         localUuid = localUuid,
         remoteUuid = remoteUuid,
-        remoteThumbnailUri = remoteThumbnailUri,
         fileName = fileName,
         timeStampUtcMs = timeStampUtcMs,
         timeOffsetMs = timeOffsetMs,
@@ -121,7 +111,6 @@ fun MediaItem.toMediaItemWithUriEntity(): MediaItemWithUriEntity {
         mediaItemEntity = MediaItemEntity(
             localUuid = localUuid,
             remoteUuid = remoteUuid,
-            remoteThumbnailUri = lowResThumbnail?.toString(),
             fileName = fileName,
             timeStampUtcMs = timeStampUtcMs,
             timeOffsetMs = timeOffsetMs,
