@@ -50,7 +50,7 @@ class IosLocalMediaProcessor(
         processMediaChannel: SendChannel<MediaItem>
     ) = launch {
         requestPhotoLibraryPermission()
-        val status = PHPhotoLibrary.Companion.authorizationStatus()
+        val status = PHPhotoLibrary.authorizationStatus()
         log.i { "Photo Library Authorization Status: $status" }
         val (processedVideos, processedImages) = processedItems.segregate()
         fetchImages(processedImages).onEach { processedImage ->
@@ -62,7 +62,9 @@ class IosLocalMediaProcessor(
     }
 
     private suspend fun requestPhotoLibraryPermission() = suspendCoroutine { continuation ->
-        PHPhotoLibrary.Companion.requestAuthorization { status ->
+        // TODO API is deprecated
+        //  https://developer.apple.com/documentation/photos/phphotolibrary/requestauthorization(_:)?language=objc
+        PHPhotoLibrary.requestAuthorization { status ->
             when (status) {
                 PHAuthorizationStatusAuthorized -> {
                     log.i { "Photo Library access granted" }
@@ -91,7 +93,7 @@ class IosLocalMediaProcessor(
     @OptIn(ExperimentalForeignApi::class, ExperimentalTime::class, ExperimentalUuidApi::class)
     private fun fetchImages(processedImages: List<MediaImageItem>): Flow<MediaImageItem> = flow {
         val fetchOptions = PHFetchOptions()
-        val assets = PHAsset.Companion.fetchAssetsWithMediaType(PHAssetMediaTypeImage, fetchOptions)
+        val assets = PHAsset.fetchAssetsWithMediaType(PHAssetMediaTypeImage, fetchOptions)
         val imageItems = mutableListOf<PHAsset>()
         val processedImageUris = processedImages.map { it.uri }
         // Enumerate the assets using the block-based approach
@@ -102,12 +104,12 @@ class IosLocalMediaProcessor(
         imageItems.forEach { asset ->
             val assetUri = phAssetUriFromLocalId(asset.localIdentifier)
             if (assetUri in processedImageUris) return@forEach
-            val resource = PHAssetResource.Companion.assetResourcesForAsset(asset)
+            val resource = PHAssetResource.assetResourcesForAsset(asset)
                 .firstOrNull() as? PHAssetResource ?: return@forEach
             val name = resource.originalFilename
             val instant = asset.creationDate?.toKotlinInstant()
             // TODO: Instead of excluding images where date could not be determined parse the date from exif data
-            val localDateTime = instant?.toLocalDateTime(TimeZone.Companion.currentSystemDefault())
+            val localDateTime = instant?.toLocalDateTime(TimeZone.currentSystemDefault())
                 ?: return@forEach
 
             val size = resource.valueForKey("fileSize") as? NSNumber
@@ -117,7 +119,6 @@ class IosLocalMediaProcessor(
                 fileName = name,
                 dateInFeed = localDateTime,
                 size = bytes.toInt(),
-                lowResThumbnail = null,
                 localUuid = Uuid.random().toString(),
                 remoteUuid = null
             ))
@@ -130,7 +131,7 @@ class IosLocalMediaProcessor(
         val videoItems = mutableListOf<PHAsset>()
         val processedVideoUris = processedVideos.map { it.uri }
         val videoAssets =
-            PHAsset.Companion.fetchAssetsWithMediaType(PHAssetMediaTypeVideo, fetchOptions)
+            PHAsset.fetchAssetsWithMediaType(PHAssetMediaTypeVideo, fetchOptions)
         videoAssets.enumerateObjectsUsingBlock { obj, _, _ ->
             videoItems.add(obj as PHAsset)
         }
@@ -138,11 +139,11 @@ class IosLocalMediaProcessor(
         videoItems.forEach { asset ->
             val assetUri = phAssetUriFromLocalId(asset.localIdentifier)
             if (assetUri in processedVideoUris) return@forEach
-            val resource = PHAssetResource.Companion.assetResourcesForAsset(asset)
+            val resource = PHAssetResource.assetResourcesForAsset(asset)
                 .firstOrNull() as? PHAssetResource ?: return@forEach
             val name = resource.originalFilename
             val instant = asset.creationDate?.toKotlinInstant()
-            val localDateTime = instant?.toLocalDateTime(TimeZone.Companion.currentSystemDefault())
+            val localDateTime = instant?.toLocalDateTime(TimeZone.currentSystemDefault())
                 ?: return@forEach
             val size = resource.valueForKey("fileSize") as? NSNumber
             val bytes = size?.longValue ?: 0L
@@ -153,7 +154,6 @@ class IosLocalMediaProcessor(
                     dateInFeed = localDateTime,
                     size = bytes.toInt(),
                     duration = asset.duration.toLong().seconds,
-                    lowResThumbnail = null,
                     localUuid = Uuid.random().toString(),
                     remoteUuid = null
                 )

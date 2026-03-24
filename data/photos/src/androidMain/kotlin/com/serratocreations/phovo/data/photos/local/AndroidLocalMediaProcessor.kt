@@ -100,7 +100,6 @@ class AndroidLocalMediaProcessor(
 
                 val mediaImageItem = MediaImageItem(
                     uri = contentUri,
-                    lowResThumbnail = null,
                     fileName = fileName,
                     dateInFeed = dateInFeed,
                     size = size,
@@ -158,7 +157,6 @@ class AndroidLocalMediaProcessor(
 
                 val mediaVideoItem = MediaVideoItem(
                     uri = contentUri,
-                    lowResThumbnail = null,
                     fileName = name,
                     dateInFeed = dateInFeed,
                     size = size,
@@ -174,10 +172,10 @@ class AndroidLocalMediaProcessor(
     @OptIn(ExperimentalTime::class)
     private fun Long.utcMsToLocalDateTime(): LocalDateTime {
         // Convert seconds to milliseconds
-        val instant = Instant.Companion.fromEpochMilliseconds(this)
+        val instant = Instant.fromEpochMilliseconds(this)
 
         // Convert to LocalDateTime in the system's default time zone
-        return instant.toLocalDateTime(TimeZone.Companion.currentSystemDefault())
+        return instant.toLocalDateTime(TimeZone.currentSystemDefault())
     }
 
     // TODO Address lint
