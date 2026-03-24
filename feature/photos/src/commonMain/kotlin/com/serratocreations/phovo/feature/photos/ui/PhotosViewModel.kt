@@ -6,7 +6,7 @@ import com.serratocreations.phovo.core.domain.GetPhotosFeedWithThumbnailsUseCase
 import com.serratocreations.phovo.feature.photos.ui.model.DateHeaderPhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.PhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.ThumbnailPhotoUiItem
-import com.serratocreations.phovo.feature.photos.ui.model.toPhotoUiItem
+import com.serratocreations.phovo.feature.photos.mappers.toPhotoUiItem
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow

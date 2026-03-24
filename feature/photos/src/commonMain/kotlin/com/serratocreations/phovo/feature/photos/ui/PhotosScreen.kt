@@ -42,6 +42,7 @@ import com.serratocreations.phovo.feature.photos.ui.model.ThumbnailPhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.VideoPhotoUiItem
 import com.serratocreations.phovo.feature.photos.util.getPlatformDecoderFactory
 import com.serratocreations.phovo.feature.photos.util.getPlatformFetcherFactory
+import io.github.vinceglb.filekit.coil.addPlatformFileSupport
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -59,6 +60,7 @@ internal fun PhotosHomeScreen(
             .components {
                 add(getPlatformDecoderFactory())
                 add(getPlatformFetcherFactory())
+                addPlatformFileSupport()
             }
             .build()
     }
