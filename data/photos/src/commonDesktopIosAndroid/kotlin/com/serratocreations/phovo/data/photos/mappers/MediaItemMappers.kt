@@ -25,13 +25,13 @@ fun MediaItemWithUriEntity.toMediaItem(): MediaItem {
         .fromEpochMilliseconds(mediaItemEntity.timeStampUtcMs + mediaItemEntity.timeOffsetMs)
         .toLocalDateTime(TimeZone.UTC)
 
+    val uri = mediaItemUri.uri.toUri()
     return when (mediaItemEntity.mediaType) {
         MediaType.Image -> {
             MediaImageItem(
                 localUuid = mediaItemEntity.localUuid,
                 remoteUuid = mediaItemEntity.remoteUuid,
-                uri = mediaItemUri.uri.toUri(),
-                remoteThumbnailUri = mediaItemEntity.remoteThumbnailUri?.toUri(),
+                uri = uri,
                 fileName = mediaItemEntity.fileName,
                 dateInFeed = dateInFeed,
                 size = mediaItemEntity.size
@@ -42,8 +42,7 @@ fun MediaItemWithUriEntity.toMediaItem(): MediaItem {
             MediaVideoItem(
                 localUuid = mediaItemEntity.localUuid,
                 remoteUuid = mediaItemEntity.remoteUuid,
-                uri = mediaItemUri.uri.toUri(),
-                remoteThumbnailUri = mediaItemEntity.remoteThumbnailUri?.toUri(),
+                uri = uri,
                 fileName = mediaItemEntity.fileName,
                 dateInFeed = dateInFeed,
                 size = mediaItemEntity.size,
@@ -76,7 +75,6 @@ fun MediaItemWithUriEntity.toMediaItemDto(): MediaItemDto = MediaItemDto(
     fileName = mediaItemEntity.fileName,
     localUuid = mediaItemEntity.localUuid,
     remoteUuid = mediaItemEntity.remoteUuid,
-    remoteThumbnailUri = mediaItemEntity.remoteThumbnailUri,
     size = mediaItemEntity.size.toLong(),
     timeStampUtcMs = mediaItemEntity.timeStampUtcMs,
     timeOffsetMs = mediaItemEntity.timeOffsetMs,
@@ -88,7 +86,6 @@ fun MediaItemDto.toMediaItemEntity(): MediaItemEntity {
     return MediaItemEntity(
         localUuid = localUuid,
         remoteUuid = remoteUuid,
-        remoteThumbnailUri = remoteThumbnailUri,
         fileName = fileName,
         timeStampUtcMs = timeStampUtcMs,
         timeOffsetMs = timeOffsetMs,
@@ -114,7 +111,6 @@ fun MediaItem.toMediaItemWithUriEntity(): MediaItemWithUriEntity {
         mediaItemEntity = MediaItemEntity(
             localUuid = localUuid,
             remoteUuid = remoteUuid,
-            remoteThumbnailUri = remoteThumbnailUri?.toString(),
             fileName = fileName,
             timeStampUtcMs = timeStampUtcMs,
             timeOffsetMs = timeOffsetMs,

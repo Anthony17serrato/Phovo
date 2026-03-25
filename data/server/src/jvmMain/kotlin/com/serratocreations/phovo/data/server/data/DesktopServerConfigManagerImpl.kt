@@ -11,6 +11,7 @@ import com.serratocreations.phovo.data.photos.repository.LocalMediaRepository
 import com.serratocreations.phovo.data.server.data.model.ServerConfig
 import com.serratocreations.phovo.data.server.data.repository.DesktopServerConfigRepository
 import com.serratocreations.phovo.data.server.data.repository.ServerEventsRepository
+import io.github.vinceglb.filekit.absolutePath
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.flow.Flow
@@ -101,8 +102,9 @@ class DesktopServerConfigManagerImpl(
             // Upload initialization – send JSON metadata once
             post("/upload/init") {
                 val mediaItemDto = call.receive<MediaItemDto>() // your data class with name, size, etc.
+                // TODO Migrate to filekit
                 val directory = serverConfigRepository.observeServerConfig().first()
-                    ?.backupDirectory?.plus("/") ?: error("No server config")
+                    ?.backupDirectory?.absolutePath().plus("/") ?: error("No server config")
 
                 val dirPath = Paths.get(directory)
                 if (!Files.exists(dirPath)) Files.createDirectories(dirPath)
@@ -129,9 +131,9 @@ class DesktopServerConfigManagerImpl(
                 val fileName = call.request.headers["X-File-Name"] ?: return@post call.respond(HttpStatusCode.BadRequest)
                 val chunkIndex = call.request.headers["X-Chunk-Index"]?.toIntOrNull() ?: 0
                 val totalChunks = call.request.headers["X-Chunk-Total"]?.toIntOrNull()
-
+                // TODO Migrate to FileKit
                 val directory = serverConfigRepository.observeServerConfig().first()
-                    ?.backupDirectory?.plus("/") ?: error("No server config")
+                    ?.backupDirectory?.absolutePath()?.plus("/") ?: error("No server config")
 
                 val filePath = Paths.get(directory, "$fileName.part")
                 call.receiveChannel().copyAndClose(filePath.toFile().writeChannel())

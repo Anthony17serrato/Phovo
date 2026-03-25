@@ -21,13 +21,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.serratocreations.phovo.core.designsystem.icon.PhovoIcons
+import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.absolutePath
 import io.github.vinceglb.filekit.dialogs.compose.rememberDirectoryPickerLauncher
-import io.github.vinceglb.filekit.path
+import io.github.vinceglb.filekit.div
 
 @Composable
 actual fun ConfigStorageSelectionPane(
-    onSelectedDirectory: (String) -> Unit,
-    selectedDirectory: String?,
+    onSelectedDirectory: (PlatformFile) -> Unit,
+    selectedDirectory: PlatformFile?,
     onClickEnableServer: () -> Unit,
     modifier: Modifier
 ) {
@@ -50,13 +52,14 @@ actual fun ConfigStorageSelectionPane(
         val launcher = rememberDirectoryPickerLauncher(
             title = "Select a backup directory"
         ) { directory ->
-            directory?.path?.let {
-                onSelectedDirectory(it)
+            directory?.let {
+                val finalDir = it / "DO_NOT_DELETE_PHOVO"
+                onSelectedDirectory(finalDir)
             }
         }
         Spacer(Modifier.height(20.dp))
         OutlinedTextField(
-            value = selectedDirectory ?: "",
+            value = selectedDirectory?.absolutePath() ?: "",
             onValueChange = { },
             readOnly = true,
             label = { Text("Selected directory") },

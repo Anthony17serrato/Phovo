@@ -1,5 +1,6 @@
 [versions]
 # Check AGP KMP compatability https://kotlinlang.org/docs/multiplatform-compatibility-guide.html
+# Check AGP Kotlin R8 compatability https://developer.android.com/build/kotlin-support?utm_source=android-studio-app&utm_medium=app
 #noinspection AndroidGradlePluginVersion since AGP depends on KMP support
 androidGradlePlugin = "8.13.2"
 kotlin = "2.3.10"

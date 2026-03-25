@@ -8,9 +8,7 @@ sealed interface MediaItem {
     val remoteUuid: String?
     /** The location where the media can be accessed */
     val uri: Uri
-    val remoteThumbnailUri: Uri?
     val fileName: String
-    // TODO MediaItem should use ZonedDateTime
     val dateInFeed: LocalDateTime
     // TODO Does size need to be long?
     val size: Int

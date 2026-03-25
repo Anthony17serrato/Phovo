@@ -1,34 +1,26 @@
 package com.serratocreations.phovo.feature.photos.ui.model
 
 import coil3.Uri
-import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
-import com.serratocreations.phovo.data.photos.repository.model.MediaItem
-import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
-import com.serratocreations.phovo.feature.photos.util.toFormattedDurationString
+import io.github.vinceglb.filekit.PlatformFile
 
 data class ImagePhotoUiItem(
-    override val uri: Uri
-) : UriPhotoUiItem
+    override val uri: Uri,
+    override val lowResThumbnail: PlatformFile?,
+    override val thumbnail: Uri,
+    override val key: String
+) : ThumbnailPhotoUiItem
 
 data class VideoPhotoUiItem(
     override val uri: Uri,
-    val duration: String
-) : UriPhotoUiItem
+    override val lowResThumbnail: PlatformFile?,
+    val duration: String,
+    override val thumbnail: Uri,
+    override val key: String
+) : ThumbnailPhotoUiItem
 
-sealed interface UriPhotoUiItem : PhotoUiItem {
+sealed interface ThumbnailPhotoUiItem : PhotoUiItem {
+    /** Source quality media URI */
     val uri: Uri
-}
-
-fun MediaItem.toPhotoUiItem(): PhotoUiItem {
-    return when (this) {
-        is MediaImageItem -> {
-            ImagePhotoUiItem(uri = uri)
-        }
-        is MediaVideoItem -> {
-            VideoPhotoUiItem(
-                uri = uri,
-                duration = duration.toFormattedDurationString()
-            )
-        }
-    }
+    val lowResThumbnail: PlatformFile?
+    val thumbnail: Uri
 }
