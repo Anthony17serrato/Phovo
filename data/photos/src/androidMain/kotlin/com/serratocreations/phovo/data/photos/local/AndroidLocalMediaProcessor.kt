@@ -9,11 +9,12 @@ import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import androidx.core.database.getLongOrNull
-import coil3.toCoilUri
+import com.serratocreations.phovo.data.photos.repository.model.LocalOrRemoteAsset
 import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
 import com.serratocreations.phovo.data.photos.repository.util.segregate
+import io.github.vinceglb.filekit.PlatformFile
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.SendChannel
@@ -61,7 +62,7 @@ class AndroidLocalMediaProcessor(
     private fun queryImages(
         alreadyProcessedImages: List<MediaImageItem>
     ): Flow<MediaItem> = flow {
-        val processedImageUris = alreadyProcessedImages.map { it.uri }
+        val processedImageUris = alreadyProcessedImages.map { it.assetLocation }
         val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
         } else {
@@ -91,15 +92,15 @@ class AndroidLocalMediaProcessor(
                 val fileName = cursor.getString(nameColumn)
                 val size = cursor.getInt(sizeColumn)
                 val androidUri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
-                val contentUri = androidUri.toCoilUri()
+                val assetLocation = LocalOrRemoteAsset.LocalAsset(PlatformFile(androidUri))
                 // Check if media has already been processed
-                if (contentUri in processedImageUris) continue
+                if (assetLocation in processedImageUris) continue
                 val dateInFeed = cursor.getLongOrNull(dateTakenColumn)?.utcMsToLocalDateTime()
                     ?: resolver.parseDateTakenFromExif(androidUri)
                     ?: (cursor.getLong(dateAddedColumn) * 1000).utcMsToLocalDateTime()
 
                 val mediaImageItem = MediaImageItem(
-                    uri = contentUri,
+                    assetLocation = assetLocation,
                     fileName = fileName,
                     dateInFeed = dateInFeed,
                     size = size,
@@ -115,7 +116,7 @@ class AndroidLocalMediaProcessor(
     private fun queryVideos(
         alreadyProcessedVideos: List<MediaVideoItem>
     ): Flow<MediaItem> = flow {
-        val processedVideoUris = alreadyProcessedVideos.map { it.uri }
+        val processedVideoUris = alreadyProcessedVideos.map { it.assetLocation }
         val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
         } else {
@@ -148,15 +149,15 @@ class AndroidLocalMediaProcessor(
                 val size = cursor.getInt(sizeColumn)
                 val duration = cursor.getLong(durationColumn).milliseconds
                 val androidUri = ContentUris.withAppendedId(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, id)
-                val contentUri = androidUri.toCoilUri()
+                val assetLocation = LocalOrRemoteAsset.LocalAsset(PlatformFile(androidUri))
                 // Check if media has already been processed
-                if (contentUri in processedVideoUris) continue
+                if (assetLocation in processedVideoUris) continue
 
                 val dateInFeed = cursor.getLongOrNull(dateTakenColumn)?.utcMsToLocalDateTime()
                     ?: (cursor.getLong(dateAddedColumn) * 1000).utcMsToLocalDateTime()
 
                 val mediaVideoItem = MediaVideoItem(
-                    uri = contentUri,
+                    assetLocation = assetLocation,
                     fileName = name,
                     dateInFeed = dateInFeed,
                     size = size,

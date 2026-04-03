@@ -27,6 +27,7 @@ open class LocalMediaManager(
      * Processing includes tasks such as extracting media metadata and generating md5 hashes and
      * deduplication logic
      */
+    // TODO Only Desktop client API should accept local directory
     fun initMediaProcessing(localDirectory: String?) {
         log.i { "initMediaProcessing" }
         appScope.launch {

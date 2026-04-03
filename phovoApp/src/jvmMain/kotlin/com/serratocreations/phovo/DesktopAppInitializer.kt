@@ -2,17 +2,21 @@ package com.serratocreations.phovo
 
 import com.serratocreations.phovo.data.photos.LocalMediaManager
 import com.serratocreations.phovo.data.server.data.DesktopServerConfigManager
-import com.serratocreations.phovo.data.server.data.repository.ServerConfigRepository
+import com.serratocreations.phovo.data.server.data.repository.DesktopServerConfigRepository
 import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.absolutePath
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 
 class DesktopAppInitializer(
     private val applicationScope: CoroutineScope,
-    private val serverConfigRepository: ServerConfigRepository,
+    private val serverConfigRepository: DesktopServerConfigRepository,
     private val desktopServerConfigManager: DesktopServerConfigManager,
-    localMediaManager: LocalMediaManager
+    private val localMediaManager: LocalMediaManager
 ): AndroidDesktopIosAppInitializer(
     applicationScope,
     serverConfigRepository,
@@ -28,6 +32,14 @@ class DesktopAppInitializer(
             serverConfig?.let { availableServerConfig ->
                 desktopServerConfigManager.configureDeviceAsServer(availableServerConfig)
             }
+        }
+        applicationScope.launch {
+            // Suspends until a config is available(consider withTimeout)
+            val backupDirectory = serverConfigRepository.observeServerConfig()
+                .mapNotNull { it?.backupDirectory }
+                .distinctUntilChanged()
+                .firstOrNull()
+            localMediaManager.initMediaProcessing(backupDirectory?.absolutePath())
         }
     }
 }

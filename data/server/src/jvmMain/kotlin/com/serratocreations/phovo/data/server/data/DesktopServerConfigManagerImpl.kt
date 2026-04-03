@@ -149,7 +149,7 @@ class DesktopServerConfigManagerImpl(
                 var mediaItemWithUriEntity = localMediaRepository.getMediaItemByLocalUuid(localUuid)
                     ?: run {
                         call.respond(HttpStatusCode.NotFound, "Server is missing" +
-                                "a record for the provided uuid.")
+                                " a record for the provided uuid.")
                         return@post
                     }
                 val uri = URI.create(mediaItemWithUriEntity.mediaItemUri.uri)
@@ -181,7 +181,7 @@ class DesktopServerConfigManagerImpl(
         }.launchIn(this)
     }
 
-    override fun configureDeviceAsServer(serverConfig: ServerConfig) {
+    override fun configureDeviceAsServer(serverConfig: ServerConfig.ServerSpecificServerConfig) {
         appScope.launch {
             log.i { "configureDeviceAsServer $serverConfig" }
             serverConfigRepository.updateServerConfig(serverConfig)

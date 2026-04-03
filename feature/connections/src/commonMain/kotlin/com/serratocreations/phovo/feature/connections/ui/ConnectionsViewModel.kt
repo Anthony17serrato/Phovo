@@ -33,7 +33,7 @@ class ConnectionsViewModel(
         if (serverConfigManager is DesktopServerConfigManager) {
             // Todo safely handle null scenario(unlikely)
             _connectionsUiState.value.selectedDirectory?.let { directory ->
-                serverConfigManager.configureDeviceAsServer(ServerConfig(directory))
+                serverConfigManager.configureDeviceAsServer(ServerConfig.ServerSpecificServerConfig(directory))
             }
         }
     }

@@ -28,6 +28,7 @@ data class MediaItemEntity(
 data class MediaItemUriEntity(
     @PrimaryKey
     val mediaUuid: String,
+    // TODO add a flag property indicating if file is local or remote
     /**
      * Uri where the asset can be access this may be a local or remote file depending on if the
      * client has the file stored locally

@@ -8,11 +8,11 @@ interface ServerConfigManager
 
 interface DesktopServerConfigManager: ServerConfigManager {
     fun observeDeviceServerConfigurationState(scope: CoroutineScope): Flow<ServerConfigState>
-    fun configureDeviceAsServer(serverConfig: ServerConfig)
+    fun configureDeviceAsServer(serverConfig: ServerConfig.ServerSpecificServerConfig)
 }
 
 /**
- * Non operational server config manager for non-desktop environments
+ * Non-operational server config manager for non-desktop environments
  * Currently only desktop clients support being configured as a server
  */
 class NoOpServerConfigManager: ServerConfigManager

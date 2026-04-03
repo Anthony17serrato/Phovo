@@ -1,10 +1,10 @@
 package com.serratocreations.phovo.data.photos.local
 
-import coil3.toUri
 import com.ashampoo.kim.Kim
 import com.ashampoo.kim.format.tiff.constant.ExifTag
 import com.ashampoo.kim.jvm.readMetadata
 import com.serratocreations.phovo.core.logger.PhovoLogger
+import com.serratocreations.phovo.data.photos.repository.model.LocalOrRemoteAsset
 import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
@@ -76,12 +76,12 @@ class DesktopLocalMediaProcessor(
             directory.listFiles()?.toList()?.filterNotNull() ?: emptyList()
         }
 
-        val processedItemIds = processedItems.map { it.uri }
+        val processedItemIds = processedItems.map { it.assetLocation }
         // TODO This work can be optimized with parallel decomposition
         directoryFiles.filter { availableFile ->
             // TODO In the future this should use md5 hash
-            val uri = availableFile.path.toUri()
-            uri !in processedItemIds
+            val assetLocation = LocalOrRemoteAsset.LocalAsset(PlatformFile(availableFile))
+            assetLocation !in processedItemIds
         }.forEach { file ->
             val fileType = file.getFileType()
             when (fileType) {
@@ -127,14 +127,14 @@ class DesktopLocalMediaProcessor(
             } ?: return@withContext null // TODO find other methods to get a date
 
         val uuid = Uuid.random().toString()
+        val platformFile = PlatformFile(file)
         thumbnailRepository.generateVideoThumbnails(
             rootOutputDirectory = PlatformFile(outputDirectory),
-            videoFile = PlatformFile(file),
+            videoFile = platformFile,
             thumbnailName = uuid
         )
-        val itemUri = file.path.toUri()
         return@withContext MediaVideoItem(
-            uri = itemUri,
+            assetLocation = LocalOrRemoteAsset.LocalAsset(platformFile),
             fileName = file.name,
             dateInFeed = creationDate,
             size = file.length().toInt(),
@@ -155,14 +155,14 @@ class DesktopLocalMediaProcessor(
         // Define the custom format pattern
         val formatter = DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss")
         val uuid = Uuid.random().toString()
+        val platformFile = PlatformFile(file)
         thumbnailRepository.generateImageThumbnails(
             rootOutputDirectory = PlatformFile(outputDirectory),
-            imageFile = PlatformFile(file),
+            imageFile = platformFile,
             thumbnailName = uuid
         )
-        val itemUri = file.path.toUri()
         return@withContext MediaImageItem(
-            uri = itemUri,
+            assetLocation = LocalOrRemoteAsset.LocalAsset(platformFile),
             fileName = file.name,
             dateInFeed = takenDate.let { date ->
                 java.time.LocalDateTime.parse(date, formatter).toKotlinLocalDateTime()

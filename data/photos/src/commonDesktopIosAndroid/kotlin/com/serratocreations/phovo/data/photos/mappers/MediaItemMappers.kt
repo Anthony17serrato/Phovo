@@ -1,14 +1,16 @@
 package com.serratocreations.phovo.data.photos.mappers
 
-import coil3.toUri
 import com.serratocreations.phovo.core.database.entities.MediaItemEntity
 import com.serratocreations.phovo.core.database.entities.MediaItemUriEntity
 import com.serratocreations.phovo.core.database.entities.MediaItemWithUriEntity
 import com.serratocreations.phovo.core.model.MediaType
 import com.serratocreations.phovo.core.model.network.MediaItemDto
+import com.serratocreations.phovo.data.photos.repository.model.LocalOrRemoteAsset
 import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
+import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.absolutePath
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.TimeZone
@@ -25,13 +27,14 @@ fun MediaItemWithUriEntity.toMediaItem(): MediaItem {
         .fromEpochMilliseconds(mediaItemEntity.timeStampUtcMs + mediaItemEntity.timeOffsetMs)
         .toLocalDateTime(TimeZone.UTC)
 
-    val uri = mediaItemUri.uri.toUri()
+    // TODO for now we assume all db media items are stored locally
+    val assetLocation = LocalOrRemoteAsset.LocalAsset(PlatformFile(mediaItemUri.uri))
     return when (mediaItemEntity.mediaType) {
         MediaType.Image -> {
             MediaImageItem(
                 localUuid = mediaItemEntity.localUuid,
                 remoteUuid = mediaItemEntity.remoteUuid,
-                uri = uri,
+                assetLocation = assetLocation,
                 fileName = mediaItemEntity.fileName,
                 dateInFeed = dateInFeed,
                 size = mediaItemEntity.size
@@ -42,7 +45,7 @@ fun MediaItemWithUriEntity.toMediaItem(): MediaItem {
             MediaVideoItem(
                 localUuid = mediaItemEntity.localUuid,
                 remoteUuid = mediaItemEntity.remoteUuid,
-                uri = uri,
+                assetLocation = assetLocation,
                 fileName = mediaItemEntity.fileName,
                 dateInFeed = dateInFeed,
                 size = mediaItemEntity.size,
@@ -120,7 +123,14 @@ fun MediaItem.toMediaItemWithUriEntity(): MediaItemWithUriEntity {
         ),
         mediaItemUri = MediaItemUriEntity(
             mediaUuid = localUuid,
-            uri = uri.toString(),
+            uri = when(val location = assetLocation) {
+                is LocalOrRemoteAsset.LocalAsset -> {
+                    location.localAssetLocation.absolutePath()
+                }
+                is LocalOrRemoteAsset.RemoteAsset -> {
+                    location.remoteAssetUri.toString()
+                }
+            }
         )
     )
 }

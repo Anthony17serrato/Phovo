@@ -2,10 +2,12 @@ package com.serratocreations.phovo.data.photos.local
 
 import com.serratocreations.phovo.core.common.util.phAssetUriFromLocalId
 import com.serratocreations.phovo.core.logger.PhovoLogger
+import com.serratocreations.phovo.data.photos.repository.model.LocalOrRemoteAsset
 import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
 import com.serratocreations.phovo.data.photos.repository.util.segregate
+import io.github.vinceglb.filekit.PlatformFile
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -95,14 +97,16 @@ class IosLocalMediaProcessor(
         val fetchOptions = PHFetchOptions()
         val assets = PHAsset.fetchAssetsWithMediaType(PHAssetMediaTypeImage, fetchOptions)
         val imageItems = mutableListOf<PHAsset>()
-        val processedImageUris = processedImages.map { it.uri }
+        val processedImageUris = processedImages.map { it.assetLocation }
         // Enumerate the assets using the block-based approach
         assets.enumerateObjectsUsingBlock { obj, _, _ ->
             imageItems.add(obj as PHAsset)
         }
         log.i { "IosPhovoItemDao images $imageItems" }
         imageItems.forEach { asset ->
-            val assetUri = phAssetUriFromLocalId(asset.localIdentifier)
+            val assetUri = LocalOrRemoteAsset.LocalAsset(
+                PlatformFile(phAssetUriFromLocalId(asset.localIdentifier).toString())
+            )
             if (assetUri in processedImageUris) return@forEach
             val resource = PHAssetResource.assetResourcesForAsset(asset)
                 .firstOrNull() as? PHAssetResource ?: return@forEach
@@ -115,7 +119,7 @@ class IosLocalMediaProcessor(
             val size = resource.valueForKey("fileSize") as? NSNumber
             val bytes = size?.longValue ?: 0L
             emit(MediaImageItem(
-                uri = assetUri,
+                assetLocation = assetUri,
                 fileName = name,
                 dateInFeed = localDateTime,
                 size = bytes.toInt(),
@@ -129,7 +133,7 @@ class IosLocalMediaProcessor(
     private fun fetchVideos(processedVideos: List<MediaVideoItem>): Flow<MediaVideoItem> = flow {
         val fetchOptions = PHFetchOptions()
         val videoItems = mutableListOf<PHAsset>()
-        val processedVideoUris = processedVideos.map { it.uri }
+        val processedVideoUris = processedVideos.map { it.assetLocation }
         val videoAssets =
             PHAsset.fetchAssetsWithMediaType(PHAssetMediaTypeVideo, fetchOptions)
         videoAssets.enumerateObjectsUsingBlock { obj, _, _ ->
@@ -137,7 +141,9 @@ class IosLocalMediaProcessor(
         }
         log.i { "IosPhovoItemDao fetchVideos $videoItems" }
         videoItems.forEach { asset ->
-            val assetUri = phAssetUriFromLocalId(asset.localIdentifier)
+            val assetUri = LocalOrRemoteAsset.LocalAsset(
+                PlatformFile(phAssetUriFromLocalId(asset.localIdentifier).toString())
+            )
             if (assetUri in processedVideoUris) return@forEach
             val resource = PHAssetResource.assetResourcesForAsset(asset)
                 .firstOrNull() as? PHAssetResource ?: return@forEach
@@ -149,7 +155,7 @@ class IosLocalMediaProcessor(
             val bytes = size?.longValue ?: 0L
             emit(
                 MediaVideoItem(
-                    uri = assetUri,
+                    assetLocation = assetUri,
                     fileName = name,
                     dateInFeed = localDateTime,
                     size = bytes.toInt(),

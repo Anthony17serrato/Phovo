@@ -15,7 +15,7 @@ import org.koin.dsl.module
 internal actual fun getAndroidDesktopIosWasmModules(): org.koin.core.module.Module = module {
     includes(getDatabaseModule())
 
-    factory {
+    single {
         DesktopServerConfigRepository(get())
     } binds arrayOf(DesktopServerConfigRepository::class, ServerConfigRepository::class)
 

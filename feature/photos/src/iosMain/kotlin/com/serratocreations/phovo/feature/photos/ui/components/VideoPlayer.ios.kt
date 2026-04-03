@@ -9,8 +9,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.UIKitViewController
-import coil3.Uri
+import coil3.toUri
 import com.serratocreations.phovo.core.common.util.localIdFromPhAssetUri
+import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.path
 import platform.AVFoundation.AVPlayer
 import platform.AVFoundation.AVPlayerItem
 import platform.AVFoundation.pause
@@ -21,7 +23,12 @@ import platform.Photos.PHAsset
 import platform.Photos.PHImageManager
 
 @Composable
-actual fun VideoPlayer(videoUri: Uri, modifier: Modifier) {
+actual fun VideoPlayer(
+    videoPlatformFile: PlatformFile,
+    modifier: Modifier
+) {
+    // TODO improve conversion logic
+    val videoUri = videoPlatformFile.path.toUri()
     var player: AVPlayer? by remember { mutableStateOf(null) }
 
     UIKitViewController(

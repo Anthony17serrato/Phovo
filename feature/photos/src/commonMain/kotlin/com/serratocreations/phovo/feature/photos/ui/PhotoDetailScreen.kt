@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import coil3.compose.AsyncImage
+import com.serratocreations.phovo.data.photos.repository.model.LocalOrRemoteAsset
 import com.serratocreations.phovo.feature.photos.ui.model.ImagePhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.ThumbnailPhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.VideoPhotoUiItem
@@ -62,7 +63,7 @@ internal fun PhotoViewerScreen(
                     Box {
                         var isSourceQualityImageLoaded by remember { mutableStateOf(false) }
                         AsyncImage(
-                            model = item.uri,
+                            model = item.sourceAsset,
                             contentDescription = null,
                             contentScale = ContentScale.Fit,
                             onSuccess = {
@@ -117,14 +118,18 @@ internal fun PhotoViewerScreen(
                 }
 
                 is VideoPhotoUiItem -> {
-                    VideoPlayer(
-                        videoUri = item.uri,
-                        modifier = Modifier.sharedElement(
-                            sharedContentState = sharedElementTransition
-                                .rememberSharedContentState(key = "image-$key"),
-                            animatedVisibilityScope = animatedContentScope
+                    // TODO Support both local and remote video
+                    if (item.sourceAsset is LocalOrRemoteAsset.LocalAsset) {
+                        VideoPlayer(
+                            videoPlatformFile = item.sourceAsset.localAssetLocation,
+                            modifier = Modifier.sharedElement(
+                                sharedContentState = sharedElementTransition
+                                    .rememberSharedContentState(key = "image-$key"),
+                                animatedVisibilityScope = animatedContentScope
+                            )
                         )
-                    )
+                    }
+
                 }
             }
         }

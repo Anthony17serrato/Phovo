@@ -10,18 +10,18 @@ fun MediaItemWithThumbnails.toPhotoUiItem(): PhotoUiItem {
     return when (this) {
         is MediaItemWithThumbnails.MediaImageItem -> {
             ImagePhotoUiItem(
-                uri = uri,
-                lowResThumbnail = lowResThumbnail,
-                thumbnail = thumbnailUri,
+                sourceAsset = assetLocation,
+                lowResThumbnail = lowResThumbnailLocation,
+                thumbnail = highResThumbnailLocation,
                 key = this.localUuid
             )
         }
         is MediaItemWithThumbnails.MediaVideoItem -> {
             VideoPhotoUiItem(
-                uri = uri,
+                sourceAsset = assetLocation,
                 duration = duration.toFormattedDurationString(),
-                lowResThumbnail = lowResThumbnail,
-                thumbnail = thumbnailUri,
+                lowResThumbnail = lowResThumbnailLocation,
+                thumbnail = highResThumbnailLocation,
                 key = this.localUuid
             )
         }

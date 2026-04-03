@@ -40,6 +40,7 @@ import com.serratocreations.phovo.feature.photos.ui.model.DateHeaderPhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.PhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.ThumbnailPhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.VideoPhotoUiItem
+import com.serratocreations.phovo.feature.photos.util.LocalOrRemoteAssetMapper
 import com.serratocreations.phovo.feature.photos.util.getPlatformDecoderFactory
 import com.serratocreations.phovo.feature.photos.util.getPlatformFetcherFactory
 import io.github.vinceglb.filekit.coil.addPlatformFileSupport
@@ -60,6 +61,7 @@ internal fun PhotosHomeScreen(
             .components {
                 add(getPlatformDecoderFactory())
                 add(getPlatformFetcherFactory())
+                add(LocalOrRemoteAssetMapper())
                 addPlatformFileSupport()
             }
             .build()

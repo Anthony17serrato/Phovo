@@ -2,9 +2,9 @@ package com.serratocreations.phovo.feature.photos.ui.components
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import coil3.Uri
+import io.github.vinceglb.filekit.PlatformFile
 
 @Composable
-actual fun VideoPlayer(videoUri: Uri, modifier: Modifier) {
+actual fun VideoPlayer(videoPlatformFile: PlatformFile, modifier: Modifier) {
 
 }

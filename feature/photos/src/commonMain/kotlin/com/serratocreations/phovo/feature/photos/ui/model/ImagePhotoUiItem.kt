@@ -1,26 +1,25 @@
 package com.serratocreations.phovo.feature.photos.ui.model
 
-import coil3.Uri
-import io.github.vinceglb.filekit.PlatformFile
+import com.serratocreations.phovo.data.photos.repository.model.LocalOrRemoteAsset
 
 data class ImagePhotoUiItem(
-    override val uri: Uri,
-    override val lowResThumbnail: PlatformFile?,
-    override val thumbnail: Uri,
+    override val sourceAsset: LocalOrRemoteAsset,
+    override val lowResThumbnail: LocalOrRemoteAsset?,
+    override val thumbnail: LocalOrRemoteAsset,
     override val key: String
 ) : ThumbnailPhotoUiItem
 
 data class VideoPhotoUiItem(
-    override val uri: Uri,
-    override val lowResThumbnail: PlatformFile?,
+    override val sourceAsset: LocalOrRemoteAsset,
+    override val lowResThumbnail: LocalOrRemoteAsset?,
     val duration: String,
-    override val thumbnail: Uri,
+    override val thumbnail: LocalOrRemoteAsset,
     override val key: String
 ) : ThumbnailPhotoUiItem
 
 sealed interface ThumbnailPhotoUiItem : PhotoUiItem {
     /** Source quality media URI */
-    val uri: Uri
-    val lowResThumbnail: PlatformFile?
-    val thumbnail: Uri
+    val sourceAsset: LocalOrRemoteAsset
+    val lowResThumbnail: LocalOrRemoteAsset?
+    val thumbnail: LocalOrRemoteAsset
 }
