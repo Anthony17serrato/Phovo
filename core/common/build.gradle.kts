@@ -11,6 +11,7 @@ kotlin {
         commonMain.dependencies {
             implementation(projects.core.logger)
             implementation(libs.coil.compose)
+            implementation(libs.filekit.core)
         }
 
         commonTest.dependencies {

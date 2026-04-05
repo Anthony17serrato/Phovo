@@ -9,7 +9,7 @@ class IosAndroidWasmServerConfigRepository: ServerConfigRepository {
         // TODO add logic for setting and reading config from DB
         return flowOf(
             ServerConfig.ClientSpecificServerConfig(
-                serverBaseUrlString = "http://10.0.0.183:8080/"
+                serverBaseUrlString = "http://10.0.0.231:8080/"
             )
         )
     }

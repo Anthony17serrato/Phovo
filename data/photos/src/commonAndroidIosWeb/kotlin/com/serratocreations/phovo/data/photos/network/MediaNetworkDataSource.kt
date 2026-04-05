@@ -26,7 +26,8 @@ abstract class MediaNetworkDataSource(
     logger: PhovoLogger
 ) {
     companion object {
-        private const val IP = "10.0.0.183:8080"
+        // TODO IP should be provided instead of hardcoded and it must come from [ServerConfigRepository]
+        private const val IP = "10.0.0.231:8080"
     }
     private val log = logger.withTag("MediaNetworkDataSource")
 

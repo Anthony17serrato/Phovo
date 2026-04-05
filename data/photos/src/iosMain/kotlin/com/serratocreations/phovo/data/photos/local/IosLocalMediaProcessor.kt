@@ -23,6 +23,7 @@ import kotlinx.datetime.toKotlinInstant
 import kotlinx.datetime.toLocalDateTime
 import platform.Foundation.NSNumber
 import platform.Foundation.valueForKey
+import platform.Photos.PHAccessLevelReadWrite
 import platform.Photos.PHAsset
 import platform.Photos.PHAssetMediaTypeImage
 import platform.Photos.PHAssetMediaTypeVideo
@@ -66,7 +67,7 @@ class IosLocalMediaProcessor(
     private suspend fun requestPhotoLibraryPermission() = suspendCoroutine { continuation ->
         // TODO API is deprecated
         //  https://developer.apple.com/documentation/photos/phphotolibrary/requestauthorization(_:)?language=objc
-        PHPhotoLibrary.requestAuthorization { status ->
+        PHPhotoLibrary.requestAuthorizationForAccessLevel(PHAccessLevelReadWrite) { status ->
             when (status) {
                 PHAuthorizationStatusAuthorized -> {
                     log.i { "Photo Library access granted" }
