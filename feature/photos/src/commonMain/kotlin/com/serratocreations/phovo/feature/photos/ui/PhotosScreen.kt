@@ -20,8 +20,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
@@ -34,15 +38,17 @@ import coil3.request.crossfade
 import com.serratocreations.phovo.core.designsystem.component.CallToActionComponent
 import com.serratocreations.phovo.feature.photos.ui.model.DateHeaderPhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.PhotoUiItem
-import com.serratocreations.phovo.feature.photos.ui.model.UriPhotoUiItem
+import com.serratocreations.phovo.feature.photos.ui.model.ThumbnailPhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.VideoPhotoUiItem
+import com.serratocreations.phovo.feature.photos.util.LocalOrRemoteAssetMapper
 import com.serratocreations.phovo.feature.photos.util.getPlatformDecoderFactory
 import com.serratocreations.phovo.feature.photos.util.getPlatformFetcherFactory
+import io.github.vinceglb.filekit.coil.addPlatformFileSupport
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 internal fun PhotosHomeScreen(
-    onPhotoClick: (UriPhotoUiItem) -> Unit,
+    onPhotoClick: (ThumbnailPhotoUiItem) -> Unit,
     sharedElementTransition: SharedTransitionScope,
     animatedContentScope: AnimatedContentScope,
     photosViewModel: PhotosViewModel,
@@ -55,6 +61,8 @@ internal fun PhotosHomeScreen(
             .components {
                 add(getPlatformDecoderFactory())
                 add(getPlatformFetcherFactory())
+                add(LocalOrRemoteAssetMapper())
+                addPlatformFileSupport()
             }
             .build()
     }
@@ -73,7 +81,7 @@ internal fun PhotosHomeScreen(
 @Composable
 internal fun PhotosScreen(
     photosItems: List<PhotoUiItem>,
-    onPhotoClick: (UriPhotoUiItem) -> Unit,
+    onPhotoClick: (ThumbnailPhotoUiItem) -> Unit,
     sharedElementTransition: SharedTransitionScope,
     animatedContentScope: AnimatedContentScope,
     modifier: Modifier = Modifier,
@@ -103,12 +111,15 @@ internal fun PhotosScreen(
             }
             itemsIndexed(
                 items = photosItems,
+                key = { _, item ->
+                    item.key
+                },
                 span = { index, item ->
                     when (item) {
                         is DateHeaderPhotoUiItem -> {
                             GridItemSpan(maxLineSpan)
                         }
-                        is UriPhotoUiItem -> {
+                        is ThumbnailPhotoUiItem -> {
                             GridItemSpan(1)
                         }
                     }
@@ -124,13 +135,17 @@ internal fun PhotosScreen(
                             modifier = modifier.padding(16.dp)
                         )
                     }
-                    is UriPhotoUiItem -> with(sharedElementTransition) {
-                        val id = item.uri.toString()
+                    is ThumbnailPhotoUiItem -> with(sharedElementTransition) {
+                        val id = item.key
                         Box {
+                            var isHigResThumbLoaded by remember { mutableStateOf(false) }
                             AsyncImage(
-                                model = item.uri,
+                                model = item.thumbnail,
                                 contentDescription = null,
                                 contentScale = ContentScale.Crop,
+                                onSuccess = {
+                                    isHigResThumbLoaded = true
+                                },
                                 modifier = modifier
                                     .aspectRatio(1f)
                                     .sharedElement(
@@ -139,6 +154,22 @@ internal fun PhotosScreen(
                                         animatedVisibilityScope = animatedContentScope
                                     ).clickable { onPhotoClick(item) }
                             )
+                            if (isHigResThumbLoaded.not()) {
+                                AsyncImage(
+                                    model = item.lowResThumbnail,
+                                    contentDescription = null,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = modifier
+                                        .aspectRatio(1f)
+                                        .blur(10.dp)
+                                        .sharedElement(
+                                            sharedContentState = sharedElementTransition
+                                                .rememberSharedContentState(key = "image-$id"),
+                                            animatedVisibilityScope = animatedContentScope
+                                        ).clickable { onPhotoClick(item) }
+                                )
+                            }
+
                             if (item is VideoPhotoUiItem) {
                                 Text(
                                     text = item.duration,

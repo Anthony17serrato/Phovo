@@ -1,5 +1,6 @@
 package com.serratocreations.phovo.feature.photos.ui.components
 
+import android.net.Uri
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -10,17 +11,20 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
-import coil3.Uri
-import coil3.toAndroidUri
+import io.github.vinceglb.filekit.AndroidFile
+import io.github.vinceglb.filekit.PlatformFile
 
 @Composable
 actual fun VideoPlayer(
-    videoUri: Uri,
+    videoPlatformFile: PlatformFile,
     modifier: Modifier
 ) {
     val context = LocalContext.current
     val exoPlayer = remember {
-        val androidUri = videoUri.toAndroidUri()
+        val androidUri = when(val file = videoPlatformFile.androidFile) {
+            is AndroidFile.FileWrapper -> Uri.fromFile(file.file)
+            is AndroidFile.UriWrapper -> file.uri
+        }
         ExoPlayer.Builder(context).build().apply {
             setMediaItem(MediaItem.fromUri(androidUri))
             prepare()

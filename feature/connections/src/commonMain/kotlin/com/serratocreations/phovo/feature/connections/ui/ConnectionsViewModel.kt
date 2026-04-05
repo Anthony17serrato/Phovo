@@ -8,6 +8,7 @@ import com.serratocreations.phovo.data.server.data.ConfigStatus
 import com.serratocreations.phovo.data.server.data.DesktopServerConfigManager
 import com.serratocreations.phovo.data.server.data.ServerConfigManager
 import com.serratocreations.phovo.data.server.data.model.ServerConfig
+import io.github.vinceglb.filekit.PlatformFile
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
@@ -32,7 +33,7 @@ class ConnectionsViewModel(
         if (serverConfigManager is DesktopServerConfigManager) {
             // Todo safely handle null scenario(unlikely)
             _connectionsUiState.value.selectedDirectory?.let { directory ->
-                serverConfigManager.configureDeviceAsServer(ServerConfig(directory))
+                serverConfigManager.configureDeviceAsServer(ServerConfig.ServerSpecificServerConfig(directory))
             }
         }
     }
@@ -95,9 +96,9 @@ class ConnectionsViewModel(
         return canNavigateBack
     }
 
-    fun setSelectedDirectory(selectedDirectory: String) {
+    fun setSelectedDirectory(selectedDirectory: PlatformFile) {
         _connectionsUiState.update { currentUiState ->
-            currentUiState.copy(selectedDirectory = "$selectedDirectory/DO_NOT_DELETE_PHOVO",)
+            currentUiState.copy(selectedDirectory = selectedDirectory)
         }
     }
 }
@@ -112,7 +113,7 @@ data class ConnectionsUiState(
     val doesCurrentDeviceSupportServer: Boolean = false,
     val serverEventLogs: List<String> = emptyList(),
     val currentConnectionsPane: ConnectionsPane = ConnectionsPane.Home,
-    val selectedDirectory: String? = null,
+    val selectedDirectory: PlatformFile? = null,
     val hostUrl: String? = null
 )
 

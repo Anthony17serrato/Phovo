@@ -2,10 +2,12 @@ package com.serratocreations.phovo.data.photos.local
 
 import com.serratocreations.phovo.core.common.util.phAssetUriFromLocalId
 import com.serratocreations.phovo.core.logger.PhovoLogger
+import com.serratocreations.phovo.data.photos.repository.model.LocalOrRemoteAsset
 import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
 import com.serratocreations.phovo.data.photos.repository.util.segregate
+import io.github.vinceglb.filekit.PlatformFile
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -16,23 +18,25 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toKotlinInstant
 import kotlinx.datetime.toLocalDateTime
 import platform.Foundation.NSNumber
 import platform.Foundation.valueForKey
+import platform.Photos.PHAccessLevelReadWrite
 import platform.Photos.PHAsset
 import platform.Photos.PHAssetMediaTypeImage
 import platform.Photos.PHAssetMediaTypeVideo
 import platform.Photos.PHAssetResource
 import platform.Photos.PHAuthorizationStatusAuthorized
 import platform.Photos.PHAuthorizationStatusDenied
+import platform.Photos.PHAuthorizationStatusLimited
 import platform.Photos.PHAuthorizationStatusNotDetermined
 import platform.Photos.PHAuthorizationStatusRestricted
 import platform.Photos.PHFetchOptions
 import platform.Photos.PHPhotoLibrary
 import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 import kotlin.uuid.ExperimentalUuidApi
@@ -50,7 +54,7 @@ class IosLocalMediaProcessor(
         processMediaChannel: SendChannel<MediaItem>
     ) = launch {
         requestPhotoLibraryPermission()
-        val status = PHPhotoLibrary.Companion.authorizationStatus()
+        val status = PHPhotoLibrary.authorizationStatus()
         log.i { "Photo Library Authorization Status: $status" }
         val (processedVideos, processedImages) = processedItems.segregate()
         fetchImages(processedImages).onEach { processedImage ->
@@ -61,63 +65,72 @@ class IosLocalMediaProcessor(
         }.launchIn(this)
     }
 
-    private suspend fun requestPhotoLibraryPermission() = suspendCoroutine { continuation ->
-        PHPhotoLibrary.Companion.requestAuthorization { status ->
-            when (status) {
-                PHAuthorizationStatusAuthorized -> {
-                    log.i { "Photo Library access granted" }
-                    // Proceed with photo fetching logic
-                }
+    private suspend fun requestPhotoLibraryPermission() =
+        suspendCancellableCoroutine { continuation ->
+            PHPhotoLibrary.requestAuthorizationForAccessLevel(PHAccessLevelReadWrite) { status ->
+                when (status) {
+                    PHAuthorizationStatusAuthorized -> {
+                        log.i { "Photo Library access granted" }
+                        // Proceed with photo fetching logic
+                    }
 
-                PHAuthorizationStatusDenied -> {
-                    log.w { "Photo Library access denied" }
-                    // Guide the user to settings if needed
-                }
+                    PHAuthorizationStatusDenied -> {
+                        log.w { "Photo Library access denied" }
+                        // Guide the user to settings if needed
+                    }
 
-                PHAuthorizationStatusRestricted -> {
-                    log.w { "Photo Library access restricted" }
-                    // Handle the case for restricted access (e.g., parental controls)
-                }
+                    PHAuthorizationStatusRestricted -> {
+                        log.w { "Photo Library access restricted" }
+                        // Handle the case for restricted access (e.g., parental controls)
+                    }
 
-                PHAuthorizationStatusNotDetermined -> {
-                    log.w { "Photo Library access not determined" }
-                    // The user hasn't been asked yet, possibly retry request
+                    PHAuthorizationStatusNotDetermined -> {
+                        log.w { "Photo Library access not determined" }
+                        // The user hasn't been asked yet, possibly retry request
+                    }
+
+                    PHAuthorizationStatusLimited -> {
+                        log.i { "Photo Library access limited" }
+                    }
                 }
+                continuation.resume(Unit)
             }
-            continuation.resume(Unit)
+            continuation.invokeOnCancellation {
+                // request does not have a cancel API, do nothing
+            }
         }
-    }
 
     @OptIn(ExperimentalForeignApi::class, ExperimentalTime::class, ExperimentalUuidApi::class)
     private fun fetchImages(processedImages: List<MediaImageItem>): Flow<MediaImageItem> = flow {
         val fetchOptions = PHFetchOptions()
-        val assets = PHAsset.Companion.fetchAssetsWithMediaType(PHAssetMediaTypeImage, fetchOptions)
+        val assets = PHAsset.fetchAssetsWithMediaType(PHAssetMediaTypeImage, fetchOptions)
         val imageItems = mutableListOf<PHAsset>()
-        val processedImageUris = processedImages.map { it.uri }
+        val processedImageUris = processedImages.map { it.assetLocation }
         // Enumerate the assets using the block-based approach
         assets.enumerateObjectsUsingBlock { obj, _, _ ->
             imageItems.add(obj as PHAsset)
         }
         log.i { "IosPhovoItemDao images $imageItems" }
         imageItems.forEach { asset ->
-            val assetUri = phAssetUriFromLocalId(asset.localIdentifier)
+            val assetUri = LocalOrRemoteAsset.LocalAsset(
+                PlatformFile(phAssetUriFromLocalId(asset.localIdentifier).toString())
+            )
             if (assetUri in processedImageUris) return@forEach
-            val resource = PHAssetResource.Companion.assetResourcesForAsset(asset)
+            val resource = PHAssetResource.assetResourcesForAsset(asset)
                 .firstOrNull() as? PHAssetResource ?: return@forEach
             val name = resource.originalFilename
             val instant = asset.creationDate?.toKotlinInstant()
             // TODO: Instead of excluding images where date could not be determined parse the date from exif data
-            val localDateTime = instant?.toLocalDateTime(TimeZone.Companion.currentSystemDefault())
+            val localDateTime = instant?.toLocalDateTime(TimeZone.currentSystemDefault())
                 ?: return@forEach
 
             val size = resource.valueForKey("fileSize") as? NSNumber
             val bytes = size?.longValue ?: 0L
             emit(MediaImageItem(
-                uri = assetUri,
+                assetLocation = assetUri,
                 fileName = name,
                 dateInFeed = localDateTime,
                 size = bytes.toInt(),
-                remoteThumbnailUri = null,
                 localUuid = Uuid.random().toString(),
                 remoteUuid = null
             ))
@@ -128,32 +141,33 @@ class IosLocalMediaProcessor(
     private fun fetchVideos(processedVideos: List<MediaVideoItem>): Flow<MediaVideoItem> = flow {
         val fetchOptions = PHFetchOptions()
         val videoItems = mutableListOf<PHAsset>()
-        val processedVideoUris = processedVideos.map { it.uri }
+        val processedVideoUris = processedVideos.map { it.assetLocation }
         val videoAssets =
-            PHAsset.Companion.fetchAssetsWithMediaType(PHAssetMediaTypeVideo, fetchOptions)
+            PHAsset.fetchAssetsWithMediaType(PHAssetMediaTypeVideo, fetchOptions)
         videoAssets.enumerateObjectsUsingBlock { obj, _, _ ->
             videoItems.add(obj as PHAsset)
         }
         log.i { "IosPhovoItemDao fetchVideos $videoItems" }
         videoItems.forEach { asset ->
-            val assetUri = phAssetUriFromLocalId(asset.localIdentifier)
+            val assetUri = LocalOrRemoteAsset.LocalAsset(
+                PlatformFile(phAssetUriFromLocalId(asset.localIdentifier).toString())
+            )
             if (assetUri in processedVideoUris) return@forEach
-            val resource = PHAssetResource.Companion.assetResourcesForAsset(asset)
+            val resource = PHAssetResource.assetResourcesForAsset(asset)
                 .firstOrNull() as? PHAssetResource ?: return@forEach
             val name = resource.originalFilename
             val instant = asset.creationDate?.toKotlinInstant()
-            val localDateTime = instant?.toLocalDateTime(TimeZone.Companion.currentSystemDefault())
+            val localDateTime = instant?.toLocalDateTime(TimeZone.currentSystemDefault())
                 ?: return@forEach
             val size = resource.valueForKey("fileSize") as? NSNumber
             val bytes = size?.longValue ?: 0L
             emit(
                 MediaVideoItem(
-                    uri = assetUri,
+                    assetLocation = assetUri,
                     fileName = name,
                     dateInFeed = localDateTime,
                     size = bytes.toInt(),
                     duration = asset.duration.toLong().seconds,
-                    remoteThumbnailUri = null,
                     localUuid = Uuid.random().toString(),
                     remoteUuid = null
                 )

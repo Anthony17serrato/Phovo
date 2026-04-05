@@ -1,34 +1,25 @@
 package com.serratocreations.phovo.feature.photos.ui.model
 
-import coil3.Uri
-import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
-import com.serratocreations.phovo.data.photos.repository.model.MediaItem
-import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
-import com.serratocreations.phovo.feature.photos.util.toFormattedDurationString
+import com.serratocreations.phovo.data.photos.repository.model.LocalOrRemoteAsset
 
 data class ImagePhotoUiItem(
-    override val uri: Uri
-) : UriPhotoUiItem
+    override val sourceAsset: LocalOrRemoteAsset,
+    override val lowResThumbnail: LocalOrRemoteAsset?,
+    override val thumbnail: LocalOrRemoteAsset,
+    override val key: String
+) : ThumbnailPhotoUiItem
 
 data class VideoPhotoUiItem(
-    override val uri: Uri,
-    val duration: String
-) : UriPhotoUiItem
+    override val sourceAsset: LocalOrRemoteAsset,
+    override val lowResThumbnail: LocalOrRemoteAsset?,
+    val duration: String,
+    override val thumbnail: LocalOrRemoteAsset,
+    override val key: String
+) : ThumbnailPhotoUiItem
 
-sealed interface UriPhotoUiItem : PhotoUiItem {
-    val uri: Uri
-}
-
-fun MediaItem.toPhotoUiItem(): PhotoUiItem {
-    return when (this) {
-        is MediaImageItem -> {
-            ImagePhotoUiItem(uri = uri)
-        }
-        is MediaVideoItem -> {
-            VideoPhotoUiItem(
-                uri = uri,
-                duration = duration.toFormattedDurationString()
-            )
-        }
-    }
+sealed interface ThumbnailPhotoUiItem : PhotoUiItem {
+    /** Source quality media URI */
+    val sourceAsset: LocalOrRemoteAsset
+    val lowResThumbnail: LocalOrRemoteAsset?
+    val thumbnail: LocalOrRemoteAsset
 }

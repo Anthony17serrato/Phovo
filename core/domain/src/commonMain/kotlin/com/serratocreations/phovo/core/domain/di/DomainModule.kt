@@ -7,6 +7,7 @@ import org.koin.dsl.module
 
 val domainModule: Module = module {
     includes(getPhotosDataModule(), getServerDataModule(), platformModule)
+
 }
 
 internal expect val platformModule: Module

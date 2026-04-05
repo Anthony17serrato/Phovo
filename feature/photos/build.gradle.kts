@@ -28,8 +28,10 @@ kotlin {
             implementation(libs.compose.resources)
             implementation(libs.serialization.json)
             implementation(libs.coil.compose)
+            implementation(libs.filekit.coil)
             implementation(libs.kotlin.datetime)
             implementation(libs.bundles.navigation3)
+            implementation(libs.filekit.core)
         }
 
         commonTest.dependencies {
@@ -40,7 +42,8 @@ kotlin {
         }
 
         jvmMain.dependencies {
-            implementation(projects.data.ffmpeg)
+            implementation(projects.data.thumbnails)
+            implementation(libs.filekit.core)
         }
     }
 }

@@ -9,26 +9,27 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.UIKitViewController
-import coil3.Uri
-import com.serratocreations.phovo.core.common.util.localIdFromPhAssetUri
+import com.serratocreations.phovo.core.common.util.toPhAsset
+import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.extension
 import platform.AVFoundation.AVPlayer
 import platform.AVFoundation.AVPlayerItem
 import platform.AVFoundation.pause
 import platform.AVFoundation.play
 import platform.AVFoundation.replaceCurrentItemWithPlayerItem
 import platform.AVKit.AVPlayerViewController
-import platform.Photos.PHAsset
 import platform.Photos.PHImageManager
 
 @Composable
-actual fun VideoPlayer(videoUri: Uri, modifier: Modifier) {
+actual fun VideoPlayer(
+    videoPlatformFile: PlatformFile,
+    modifier: Modifier
+) {
     var player: AVPlayer? by remember { mutableStateOf(null) }
 
     UIKitViewController(
         factory = {
-            val localId = localIdFromPhAssetUri(videoUri)
-            val assets = PHAsset.fetchAssetsWithLocalIdentifiers(listOf(localId), null)
-            val asset = assets.firstObject as? PHAsset
+            val asset = videoPlatformFile.toPhAsset()
 
             val controller = AVPlayerViewController()
 
@@ -52,7 +53,7 @@ actual fun VideoPlayer(videoUri: Uri, modifier: Modifier) {
         modifier = modifier.fillMaxSize()
     )
 
-    DisposableEffect(videoUri) {
+    DisposableEffect("${videoPlatformFile.hashCode()}-${videoPlatformFile.extension}") {
         onDispose {
             player?.pause()
             player?.replaceCurrentItemWithPlayerItem(null)

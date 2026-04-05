@@ -1,6 +1,6 @@
 package com.serratocreations.phovo.feature.photos.util
 
-import coil3.Uri
+import com.serratocreations.phovo.data.photos.repository.model.LocalOrRemoteAsset
 
-actual fun handleVideoDesktop(uri: Uri) {
+actual fun handleVideoDesktop(localOrRemoteAsset: LocalOrRemoteAsset) {
 }

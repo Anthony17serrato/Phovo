@@ -1,16 +1,16 @@
 package com.serratocreations.phovo.feature.photos.util
 
-import coil3.Uri
+import com.serratocreations.phovo.data.photos.repository.model.LocalOrRemoteAsset
+import io.github.vinceglb.filekit.exists
 import java.awt.Desktop
-import java.io.File
 
-actual fun handleVideoDesktop(uri: Uri) {
-    val path = uri.path ?: return
-    val file = File(path)
+// TODO Use instead https://github.com/kdroidFilter/ComposeMediaPlayer
+actual fun handleVideoDesktop(localOrRemoteAsset: LocalOrRemoteAsset) {
+    val file = if (localOrRemoteAsset is LocalOrRemoteAsset.LocalAsset) localOrRemoteAsset.localAssetLocation else return
 
     if (Desktop.isDesktopSupported() && file.exists()) {
         try {
-            Desktop.getDesktop().open(file)
+            Desktop.getDesktop().open(file.file)
         } catch (e: Exception) {
             e.printStackTrace()
         }

@@ -15,8 +15,6 @@ data class MediaItemEntity(
     @PrimaryKey val localUuid: String,
     val remoteUuid: String?,
     // val md5Hash: String,
-    /** Uri for accessing the asset locally on device */
-    val remoteThumbnailUri: String?,
     val fileName: String,
     val timeStampUtcMs: Long,
     val timeOffsetMs: Long,
@@ -30,6 +28,11 @@ data class MediaItemEntity(
 data class MediaItemUriEntity(
     @PrimaryKey
     val mediaUuid: String,
+    // TODO add a flag property indicating if file is local or remote
+    /**
+     * Uri where the asset can be access this may be a local or remote file depending on if the
+     * client has the file stored locally
+     */
     val uri: String
 )
 

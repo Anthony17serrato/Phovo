@@ -1,13 +1,15 @@
 package com.serratocreations.phovo.data.photos.local
 
-import coil3.Uri
 import com.ashampoo.kim.Kim
 import com.ashampoo.kim.format.tiff.constant.ExifTag
 import com.ashampoo.kim.jvm.readMetadata
 import com.serratocreations.phovo.core.logger.PhovoLogger
+import com.serratocreations.phovo.data.photos.repository.model.LocalOrRemoteAsset
 import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
+import com.serratocreations.phovo.data.thumbnails.ThumbnailRepository
+import io.github.vinceglb.filekit.PlatformFile
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.SendChannel
@@ -35,10 +37,11 @@ import kotlin.uuid.Uuid
 
 // TODO Investigate if both metadata parsers here can be replaced by FFMPEG
 class DesktopLocalMediaProcessor(
+    private val thumbnailRepository: ThumbnailRepository,
     logger: PhovoLogger,
     private val ioDispatcher: CoroutineDispatcher
 ) : LocalMediaProcessor {
-    private val log = logger.withTag("DesktopPhovoItemDao")
+    private val log = logger.withTag("DesktopLocalMediaProcessor")
 
     enum class FileType {
         Directory, Photo, Video, Other
@@ -60,24 +63,25 @@ class DesktopLocalMediaProcessor(
         localDirectory: String?,
         processMediaChannel: SendChannel<MediaItem>
     ) = launch(ioDispatcher) {
-        val dirPath = localDirectory?.let { Paths.get(it) }
-        if (dirPath != null && !Files.exists(dirPath)) {
+        val dirPath = localDirectory?.let { Paths.get(it) } ?: return@launch
+        if (!Files.exists(dirPath)) {
             Files.createDirectories(dirPath)
         }
 
-        val directory = localDirectory?.let { File(it) }
-        val directoryFiles = if (directory == null || !directory.exists() || !directory.isDirectory) {
+        val directory = File(localDirectory)
+        val directoryFiles = if (!directory.exists() || !directory.isDirectory) {
             log.e { "Invalid directory: $localDirectory" }
             emptyList()
         } else {
             directory.listFiles()?.toList()?.filterNotNull() ?: emptyList()
         }
 
-        val processedItemIds = processedItems.map { it.uri }
+        val processedItemIds = processedItems.map { it.assetLocation }
         // TODO This work can be optimized with parallel decomposition
         directoryFiles.filter { availableFile ->
-            val uri = Uri(scheme = "file", path = availableFile.toURI().path)
-            uri !in processedItemIds
+            // TODO In the future this should use md5 hash
+            val assetLocation = LocalOrRemoteAsset.LocalAsset(PlatformFile(availableFile))
+            assetLocation !in processedItemIds
         }.forEach { file ->
             val fileType = file.getFileType()
             when (fileType) {
@@ -87,11 +91,11 @@ class DesktopLocalMediaProcessor(
                 }
 
                 FileType.Photo -> {
-                    processImage(file)
+                    processImage(file, localDirectory)
                 }
 
                 FileType.Video -> {
-                    processVideo(file)
+                    processVideo(file, localDirectory)
                 }
 
                 FileType.Other -> null
@@ -103,7 +107,10 @@ class DesktopLocalMediaProcessor(
 
     // TODO Migrate to Ffmpeg for metadata extraction
     @OptIn(ExperimentalTime::class, ExperimentalUuidApi::class)
-    private suspend fun processVideo(file: File): MediaVideoItem? = withContext(ioDispatcher) {
+    private suspend fun processVideo(
+        file: File,
+        outputDirectory: String
+    ): MediaVideoItem? = withContext(ioDispatcher) {
         val metadata = Metadata()
         FileInputStream(file).use { stream ->
             val parser = AutoDetectParser()
@@ -115,40 +122,53 @@ class DesktopLocalMediaProcessor(
         val creationDate: LocalDateTime =
             metadata.get(TikaCoreProperties.CREATED)?.let { creationDate ->
                 runCatching {
-                    Instant.Companion.parse(creationDate)
-                }.getOrNull()?.toLocalDateTime(TimeZone.Companion.UTC)
+                    Instant.parse(creationDate)
+                }.getOrNull()?.toLocalDateTime(TimeZone.UTC)
             } ?: return@withContext null // TODO find other methods to get a date
 
         val uuid = Uuid.random().toString()
+        val platformFile = PlatformFile(file)
+        thumbnailRepository.generateVideoThumbnails(
+            rootOutputDirectory = PlatformFile(outputDirectory),
+            videoFile = platformFile,
+            thumbnailName = uuid
+        )
         return@withContext MediaVideoItem(
-            uri = Uri(scheme = "file", path = file.toURI().path),
+            assetLocation = LocalOrRemoteAsset.LocalAsset(platformFile),
             fileName = file.name,
             dateInFeed = creationDate,
             size = file.length().toInt(),
             duration = durationSeconds.seconds,
-            remoteThumbnailUri = null,
             localUuid = uuid,
             remoteUuid = uuid
         )
     }
 
     @OptIn(ExperimentalUuidApi::class)
-    private suspend fun processImage(file: File): MediaImageItem? = withContext(ioDispatcher) {
+    private suspend fun processImage(
+        file: File,
+        outputDirectory: String
+    ): MediaImageItem? = withContext(ioDispatcher) {
         val metadata = Kim.readMetadata(file)
         val takenDate = metadata?.findStringValue(ExifTag.EXIF_TAG_DATE_TIME_ORIGINAL)
             ?: return@withContext null
         // Define the custom format pattern
         val formatter = DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss")
         val uuid = Uuid.random().toString()
+        val platformFile = PlatformFile(file)
+        thumbnailRepository.generateImageThumbnails(
+            rootOutputDirectory = PlatformFile(outputDirectory),
+            imageFile = platformFile,
+            thumbnailName = uuid
+        )
         return@withContext MediaImageItem(
-            uri = Uri(scheme = "file", path = file.toURI().path),
+            assetLocation = LocalOrRemoteAsset.LocalAsset(platformFile),
             fileName = file.name,
             dateInFeed = takenDate.let { date ->
                 java.time.LocalDateTime.parse(date, formatter).toKotlinLocalDateTime()
             },
             // TODO
             size = file.length().toInt(),
-            remoteThumbnailUri = null,
             localUuid = uuid,
             remoteUuid = uuid
         )

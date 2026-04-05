@@ -6,8 +6,8 @@ import coil3.decode.ImageSource
 import coil3.fetch.FetchResult
 import coil3.fetch.SourceFetchResult
 import coil3.request.Options
-import com.serratocreations.phovo.core.common.util.localIdFromPhAssetUri
 import com.serratocreations.phovo.core.common.util.toByteArray
+import com.serratocreations.phovo.core.common.util.toPhAsset
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -16,8 +16,6 @@ import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.usePinned
 import kotlinx.coroutines.suspendCancellableCoroutine
 import okio.Buffer
-import okio.BufferedSource
-import okio.ByteString.Companion.encodeUtf8
 import platform.Foundation.NSData
 import platform.Foundation.create
 import platform.Photos.*
@@ -28,20 +26,13 @@ import kotlin.coroutines.resume
 class PhAssetFetcher(data: Any, options: Options) : PlatformFetcher(data, options) {
     companion object {
         private const val COMPRESSION = 0.8
-        private val HEIF_HEADER_FTYP = "ftyp".encodeUtf8()
-        private val HEIF_BRAND_MIF1 = "mif1".encodeUtf8()
-        private val HEIF_BRAND_HEIC = "heic".encodeUtf8()
-        private val HEIF_BRAND_HEIX = "heix".encodeUtf8()
-        private val HEIF_BRAND_AVIF = "avif".encodeUtf8()
-        private val HEIF_BRAND_AVIS = "avis".encodeUtf8()
         private val log = PhovoLogger.withTag("PhAssetFetcher")
     }
 
     override suspend fun fetch(): FetchResult? {
         log.i { "PhAssetFetcher fetch" }
         val uri = data as Uri
-        val localIdentifier = localIdFromPhAssetUri(uri)
-        val asset = fetchAssetByIdentifier(localIdentifier) ?: throw IllegalArgumentException("PHAsset not found.")
+        val asset = uri.toPhAsset() ?: return null
         log.i { "PhAssetFetcher asset found ${asset.localIdentifier}" }
         val imageData = fetchImageData(asset) ?: return null
         log.i { ("PhAssetFetcher imageData found ${imageData.length}") }
@@ -57,33 +48,18 @@ class PhAssetFetcher(data: Any, options: Options) : PlatformFetcher(data, option
         )
     }
 
-    private fun fetchAssetByIdentifier(localIdentifier: String): PHAsset? {
-        val fetchResult = PHAsset.fetchAssetsWithLocalIdentifiers(listOf(localIdentifier), null)
-        return fetchResult.firstObject() as? PHAsset
-    }
-
     private suspend fun fetchImageData(asset: PHAsset): NSData? = suspendCancellableCoroutine { continuation ->
         val options = PHImageRequestOptions().apply {
             this.networkAccessAllowed = true
             resizeMode = PHImageRequestOptionsResizeModeFast
         }
 
-        PHImageManager.defaultManager().requestImageDataForAsset(asset, options) { data, _, _, _ ->
+        val request = PHImageManager.defaultManager().requestImageDataForAsset(asset, options) { data, _, _, _ ->
             continuation.resume(data)
         }
-    }
-
-    /**
-     * Return 'true' if the [source] contains a HEIF image. The [source] is not consumed.
-     */
-    private fun isHeif(source: BufferedSource): Boolean {
-        // Check if 'ftyp' exists at offset 4
-        return source.rangeEquals(4, HEIF_HEADER_FTYP) &&
-                (source.rangeEquals(8, HEIF_BRAND_MIF1) || // Single image HEIF
-                        source.rangeEquals(8, HEIF_BRAND_HEIC) || // HEIF with HEVC codec
-                        source.rangeEquals(8, HEIF_BRAND_HEIX) || // HEIF extension
-                        source.rangeEquals(8, HEIF_BRAND_AVIF) || // HEIF with AV1 codec
-                        source.rangeEquals(8, HEIF_BRAND_AVIS))   // AV1 Image Sequence
+        continuation.invokeOnCancellation {
+            PHImageManager.defaultManager().cancelImageRequest(request)
+        }
     }
 
     @OptIn(ExperimentalForeignApi::class)

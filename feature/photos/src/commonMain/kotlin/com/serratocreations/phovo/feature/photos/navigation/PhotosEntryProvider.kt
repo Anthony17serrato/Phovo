@@ -44,7 +44,7 @@ fun EntryProviderScope<NavKey>.photosEntries(
                 if (uriPhotoUiItem is VideoPhotoUiItem && getPlatform() == Platform.Desktop) {
                     // Special video handling on desktop for now
                     // TODO[Low priority] Investigate if video can be displayed directly in app for desktop
-                    handleVideoDesktop(uriPhotoUiItem.uri)
+                    handleVideoDesktop(uriPhotoUiItem.sourceAsset)
                 } else {
                     navigationViewModel.navigate(PhotoDetailNavKey)
                 }
