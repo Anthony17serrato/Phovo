@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toKotlinInstant
 import kotlinx.datetime.toLocalDateTime
@@ -64,34 +65,33 @@ class IosLocalMediaProcessor(
         }.launchIn(this)
     }
 
-    private suspend fun requestPhotoLibraryPermission() = suspendCoroutine { continuation ->
-        // TODO API is deprecated
-        //  https://developer.apple.com/documentation/photos/phphotolibrary/requestauthorization(_:)?language=objc
-        PHPhotoLibrary.requestAuthorizationForAccessLevel(PHAccessLevelReadWrite) { status ->
-            when (status) {
-                PHAuthorizationStatusAuthorized -> {
-                    log.i { "Photo Library access granted" }
-                    // Proceed with photo fetching logic
-                }
+    private suspend fun requestPhotoLibraryPermission() =
+        suspendCancellableCoroutine { continuation ->
+            PHPhotoLibrary.requestAuthorizationForAccessLevel(PHAccessLevelReadWrite) { status ->
+                when (status) {
+                    PHAuthorizationStatusAuthorized -> {
+                        log.i { "Photo Library access granted" }
+                        // Proceed with photo fetching logic
+                    }
 
-                PHAuthorizationStatusDenied -> {
-                    log.w { "Photo Library access denied" }
-                    // Guide the user to settings if needed
-                }
+                    PHAuthorizationStatusDenied -> {
+                        log.w { "Photo Library access denied" }
+                        // Guide the user to settings if needed
+                    }
 
-                PHAuthorizationStatusRestricted -> {
-                    log.w { "Photo Library access restricted" }
-                    // Handle the case for restricted access (e.g., parental controls)
-                }
+                    PHAuthorizationStatusRestricted -> {
+                        log.w { "Photo Library access restricted" }
+                        // Handle the case for restricted access (e.g., parental controls)
+                    }
 
-                PHAuthorizationStatusNotDetermined -> {
-                    log.w { "Photo Library access not determined" }
-                    // The user hasn't been asked yet, possibly retry request
+                    PHAuthorizationStatusNotDetermined -> {
+                        log.w { "Photo Library access not determined" }
+                        // The user hasn't been asked yet, possibly retry request
+                    }
                 }
+                continuation.resume(Unit)
             }
-            continuation.resume(Unit)
         }
-    }
 
     @OptIn(ExperimentalForeignApi::class, ExperimentalTime::class, ExperimentalUuidApi::class)
     private fun fetchImages(processedImages: List<MediaImageItem>): Flow<MediaImageItem> = flow {

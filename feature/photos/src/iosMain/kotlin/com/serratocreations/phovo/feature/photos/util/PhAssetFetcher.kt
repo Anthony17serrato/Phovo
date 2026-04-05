@@ -54,8 +54,11 @@ class PhAssetFetcher(data: Any, options: Options) : PlatformFetcher(data, option
             resizeMode = PHImageRequestOptionsResizeModeFast
         }
 
-        PHImageManager.defaultManager().requestImageDataForAsset(asset, options) { data, _, _, _ ->
+        val request = PHImageManager.defaultManager().requestImageDataForAsset(asset, options) { data, _, _, _ ->
             continuation.resume(data)
+        }
+        continuation.invokeOnCancellation {
+            PHImageManager.defaultManager().cancelImageRequest(request)
         }
     }
 
