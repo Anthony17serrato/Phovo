@@ -31,12 +31,12 @@ import platform.Photos.PHAssetMediaTypeVideo
 import platform.Photos.PHAssetResource
 import platform.Photos.PHAuthorizationStatusAuthorized
 import platform.Photos.PHAuthorizationStatusDenied
+import platform.Photos.PHAuthorizationStatusLimited
 import platform.Photos.PHAuthorizationStatusNotDetermined
 import platform.Photos.PHAuthorizationStatusRestricted
 import platform.Photos.PHFetchOptions
 import platform.Photos.PHPhotoLibrary
 import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 import kotlin.uuid.ExperimentalUuidApi
@@ -88,8 +88,15 @@ class IosLocalMediaProcessor(
                         log.w { "Photo Library access not determined" }
                         // The user hasn't been asked yet, possibly retry request
                     }
+
+                    PHAuthorizationStatusLimited -> {
+                        log.i { "Photo Library access limited" }
+                    }
                 }
                 continuation.resume(Unit)
+            }
+            continuation.invokeOnCancellation {
+                // request does not have a cancel API, do nothing
             }
         }
 
