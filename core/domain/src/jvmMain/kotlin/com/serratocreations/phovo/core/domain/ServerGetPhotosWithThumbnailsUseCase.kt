@@ -30,12 +30,24 @@ class ServerGetPhotosFeedWithThumbnailsUseCase(
                         highResThumbnailLocation = mediaItem.assetLocation
                     )
                 val lowResThumbDir = rootOutputDirectory / GetPhotosFeedWithThumbnailsUseCase.LOW_RES_THUMBNAIL_DIR
-                val lowResThumb = (lowResThumbDir / "${mediaItem.localUuid}.webp").let {
-                    if (it.exists()) LocalOrRemoteAsset.LocalAsset(it) else null
+                val lowResThumb = (lowResThumbDir / "${mediaItem.uniqueAssetIdentifier}.webp").let {
+                    if (it.exists()) {
+                        LocalOrRemoteAsset.LocalAsset(
+                            localAssetLocation = it,
+                            // TODO isAlsoAvailableRemotely must be removed from LocalAsset
+                            isAlsoAvailableRemotely = true
+                        )
+                    } else { null }
                 }
                 val highResThumbDir = rootOutputDirectory / GetPhotosFeedWithThumbnailsUseCase.HIGH_RES_THUMBNAIL_DIR
-                val highResThumb = (highResThumbDir / "${mediaItem.localUuid}.webp").let {
-                    if (it.exists()) LocalOrRemoteAsset.LocalAsset(it) else mediaItem.assetLocation
+                val highResThumb = (highResThumbDir / "${mediaItem.uniqueAssetIdentifier}.webp").let {
+                    if (it.exists()) {
+                        LocalOrRemoteAsset.LocalAsset(
+                            localAssetLocation = it,
+                            // TODO isAlsoAvailableRemotely must be removed from LocalAsset
+                            isAlsoAvailableRemotely = true
+                        )
+                    } else { mediaItem.assetLocation }
                 }
                 mediaItem.toMediaItemWithThumbnails(
                     lowResThumbnailLocation = lowResThumb,

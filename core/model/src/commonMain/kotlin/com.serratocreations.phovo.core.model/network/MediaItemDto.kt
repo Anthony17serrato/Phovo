@@ -6,8 +6,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class MediaItemDto(
     val fileName: String,
-    val localUuid: String,
-    val remoteUuid: String?,
+    val assetHash: String,
     val size: Long,
     val timeStampUtcMs: Long,
     val timeOffsetMs: Long,

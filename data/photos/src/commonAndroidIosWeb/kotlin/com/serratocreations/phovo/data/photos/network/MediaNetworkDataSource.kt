@@ -90,7 +90,7 @@ abstract class MediaNetworkDataSource(
         try {
             val updatedItem: MediaItemDto = client.post("http://$IP/upload/complete") {
                 contentType(ContentType.Text.Plain)
-                setBody(mediaItemDto.localUuid)
+                setBody(mediaItemDto.assetHash)
             }.body()
 
             log.i { "Upload complete for ${updatedItem.fileName}" }

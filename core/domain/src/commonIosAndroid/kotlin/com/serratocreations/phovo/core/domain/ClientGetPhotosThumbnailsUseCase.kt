@@ -32,10 +32,10 @@ class ClientGetPhotosFeedWithThumbnailsUseCase(
         ) { mediaList, serverConfig ->
             return@combine mediaList.map { mediaItem ->
                 // Prefer file thumb if exists, fallback to network thumb, no thumb if no base url
-                val lowResThumb = (FileKit.filesDir / GetPhotosFeedWithThumbnailsUseCase.LOW_RES_THUMBNAIL_DIR / "${mediaItem.localUuid}.webp").let {
-                    if (it.exists()) { LocalOrRemoteAsset.LocalAsset(it) } else {
+                val lowResThumb = (FileKit.filesDir / GetPhotosFeedWithThumbnailsUseCase.LOW_RES_THUMBNAIL_DIR / "${mediaItem.uniqueAssetIdentifier}.webp").let {
+                    if (it.exists()) { LocalOrRemoteAsset.LocalAsset(it, isAlsoAvailableRemotely = true) } else {
                         serverConfig?.serverBaseUrlString?.let { baseUrlNotNull ->
-                            val remoteUri = (baseUrlNotNull + GetPhotosFeedWithThumbnailsUseCase.LOW_RES_THUMBNAIL_API + mediaItem.localUuid).toUri()
+                            val remoteUri = (baseUrlNotNull + GetPhotosFeedWithThumbnailsUseCase.LOW_RES_THUMBNAIL_API + mediaItem.uniqueAssetIdentifier).toUri()
                             LocalOrRemoteAsset.RemoteAsset(remoteUri)
                         }
                     }
@@ -45,7 +45,7 @@ class ClientGetPhotosFeedWithThumbnailsUseCase(
                     mediaItem.assetLocation
                 } else {
                     serverConfig?.serverBaseUrlString?.let { baseUrlNotNull ->
-                        val remoteUri = (baseUrlNotNull + GetPhotosFeedWithThumbnailsUseCase.HIGH_RES_THUMBNAIL_API + mediaItem.localUuid).toUri()
+                        val remoteUri = (baseUrlNotNull + GetPhotosFeedWithThumbnailsUseCase.HIGH_RES_THUMBNAIL_API + mediaItem.uniqueAssetIdentifier).toUri()
                         LocalOrRemoteAsset.RemoteAsset(remoteUri)
                     } ?: mediaItem.assetLocation // fallback to asset location, this should never happen
                 }

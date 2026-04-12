@@ -1,7 +1,8 @@
 package com.serratocreations.phovo.data.server.data
 
-import com.serratocreations.phovo.core.database.entities.MediaItemUriEntity
-import com.serratocreations.phovo.core.database.entities.MediaItemWithUriEntity
+import com.serratocreations.phovo.core.database.entities.AssetLocation
+import com.serratocreations.phovo.core.database.entities.MediaItemLocationEntity
+import com.serratocreations.phovo.core.database.entities.MediaItemWithMetadata
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.core.model.network.MediaItemDto
 import com.serratocreations.phovo.data.photos.mappers.toMediaItem
@@ -50,7 +51,6 @@ import java.net.URI
 import java.nio.file.StandardCopyOption
 import java.nio.file.StandardOpenOption
 import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
 
 class DesktopServerConfigManagerImpl(
     logger: PhovoLogger,
@@ -112,17 +112,19 @@ class DesktopServerConfigManagerImpl(
 
                 // Create or truncate file to start fresh
                 Files.newOutputStream(filePath, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING).use { }
-
-                val mediaItemWithUriEntity = MediaItemWithUriEntity(
-                    mediaItemEntity = mediaItemDto.toMediaItemEntity(),
-                    mediaItemUri = MediaItemUriEntity(
-                        mediaUuid = mediaItemDto.localUuid,
+                // TODO Metadata for incoming uploads should come from DesktopLocalMediaProcessor, otherwise
+                //  the feed will be missing thumbnails
+                val mediaItemWithMetadataIfExists = MediaItemWithMetadata(
+                    mediaItemMetadata = mediaItemDto.toMediaItemEntity(),
+                    mediaItemLocation = MediaItemLocationEntity(
+                        assetHash = mediaItemDto.assetHash,
+                        assetLocation = AssetLocation.LocalAndRemote,
                         uri = filePath.toUri().toString()
                     )
                 )
 
                 this@DesktopServerConfigManagerImpl.log.i { "Initialized upload for ${mediaItemDto.fileName}" }
-                localMediaRepository.addOrUpdateMediaItem(mediaItemWithUriEntity)
+                localMediaRepository.addOrUpdateMediaItem(mediaItemWithMetadataIfExists)
                 call.respond(HttpStatusCode.Created, "Upload initialized")
             }
 
@@ -152,16 +154,16 @@ class DesktopServerConfigManagerImpl(
                                 " a record for the provided uuid.")
                         return@post
                     }
-                val uri = URI.create(mediaItemWithUriEntity.mediaItemUri.uri)
+                val uri = URI.create(mediaItemWithUriEntity.mediaItemLocation.uri)
                 val filePath = Paths.get(uri)
-                val finalPath = filePath.parent.resolve(mediaItemWithUriEntity.mediaItemEntity.fileName)
+                val finalPath = filePath.parent.resolve(mediaItemWithUriEntity.mediaItemMetadata.fileName)
 
                 Files.move(filePath, finalPath, StandardCopyOption.REPLACE_EXISTING)
 
                 this@DesktopServerConfigManagerImpl.log.i { "Upload complete for $localUuid" }
                 mediaItemWithUriEntity = mediaItemWithUriEntity.copy(
-                    mediaItemEntity = mediaItemWithUriEntity.mediaItemEntity.copy(remoteUuid = Uuid.random().toString()),
-                    mediaItemUri = mediaItemWithUriEntity.mediaItemUri.copy(uri = finalPath.toUri().toString()),
+                    mediaItemMetadata = mediaItemWithUriEntity.mediaItemMetadata,
+                    mediaItemLocation = mediaItemWithUriEntity.mediaItemLocation.copy(uri = finalPath.toUri().toString()),
                 )
                 localMediaRepository.addOrUpdateMediaItem(mediaItemWithUriEntity.toMediaItem())
                 val response = mediaItemWithUriEntity.toMediaItemDto()

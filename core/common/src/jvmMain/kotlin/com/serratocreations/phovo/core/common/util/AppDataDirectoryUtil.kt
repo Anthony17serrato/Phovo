@@ -2,6 +2,7 @@ package com.serratocreations.phovo.core.common.util
 
 import java.io.File
 
+// TODO Delete and use filekit utils instead
 object AppDataDirectoryUtil {
     fun getAppDataDirectory(appName: String): File {
         val os = System.getProperty("os.name").lowercase()

@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "91abbb6f0b4e9f49badfad92b6770ed6",
+    "identityHash": "62d09bea25f59778dba88df5a8d85bd1",
     "entities": [
       {
         "tableName": "ServerConfigEntity",
@@ -29,19 +29,14 @@
         }
       },
       {
-        "tableName": "MediaItemEntity",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`localUuid` TEXT NOT NULL, `remoteUuid` TEXT, `fileName` TEXT NOT NULL, `timeStampUtcMs` INTEGER NOT NULL, `timeOffsetMs` INTEGER NOT NULL, `size` INTEGER NOT NULL, `mediaType` TEXT NOT NULL, `videoDurationMs` INTEGER, PRIMARY KEY(`localUuid`))",
+        "tableName": "MediaItemMetadata",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`metadataAssetHash` TEXT NOT NULL, `fileName` TEXT NOT NULL, `timeStampUtcMs` INTEGER NOT NULL, `timeOffsetMs` INTEGER NOT NULL, `size` INTEGER NOT NULL, `mediaType` TEXT NOT NULL, `videoDurationMs` INTEGER, PRIMARY KEY(`metadataAssetHash`))",
         "fields": [
           {
-            "fieldPath": "localUuid",
-            "columnName": "localUuid",
+            "fieldPath": "metadataAssetHash",
+            "columnName": "metadataAssetHash",
             "affinity": "TEXT",
             "notNull": true
-          },
-          {
-            "fieldPath": "remoteUuid",
-            "columnName": "remoteUuid",
-            "affinity": "TEXT"
           },
           {
             "fieldPath": "fileName",
@@ -82,18 +77,24 @@
         "primaryKey": {
           "autoGenerate": false,
           "columnNames": [
-            "localUuid"
+            "metadataAssetHash"
           ]
         }
       },
       {
-        "tableName": "MediaItemUriEntity",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`mediaUuid` TEXT NOT NULL, `uri` TEXT NOT NULL, PRIMARY KEY(`mediaUuid`))",
+        "tableName": "MediaItemLocationEntity",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`assetHash` TEXT NOT NULL, `assetLocation` INTEGER NOT NULL, `uri` TEXT NOT NULL, PRIMARY KEY(`assetHash`))",
         "fields": [
           {
-            "fieldPath": "mediaUuid",
-            "columnName": "mediaUuid",
+            "fieldPath": "assetHash",
+            "columnName": "assetHash",
             "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "assetLocation",
+            "columnName": "assetLocation",
+            "affinity": "INTEGER",
             "notNull": true
           },
           {
@@ -106,14 +107,14 @@
         "primaryKey": {
           "autoGenerate": false,
           "columnNames": [
-            "mediaUuid"
+            "assetHash"
           ]
         }
       }
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '91abbb6f0b4e9f49badfad92b6770ed6')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '62d09bea25f59778dba88df5a8d85bd1')"
     ]
   }
 }

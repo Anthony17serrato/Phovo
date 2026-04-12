@@ -1,4 +1,4 @@
-package com.serratocreations.phovo.data.photos.repository.util
+package com.serratocreations.phovo.data.photos.util
 
 import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem

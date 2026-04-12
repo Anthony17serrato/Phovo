@@ -1,8 +1,8 @@
 package com.serratocreations.phovo.data.photos.repository
 
 import com.serratocreations.phovo.core.common.util.SafeSet
-import com.serratocreations.phovo.core.database.entities.MediaItemEntity
-import com.serratocreations.phovo.core.database.entities.MediaItemWithUriEntity
+import com.serratocreations.phovo.core.database.entities.MediaItemMetadata
+import com.serratocreations.phovo.core.database.entities.MediaItemWithMetadata
 import com.serratocreations.phovo.core.model.MediaType
 import com.serratocreations.phovo.core.model.network.MediaItemDto
 import com.serratocreations.phovo.data.photos.LocalMediaBackupProgress
@@ -93,14 +93,14 @@ class LocalAndRemoteMediaRepositoryImpl(
     /**
      * @return null if there are no remaining unsynced items for the media type
      */
-    private suspend fun getNextUnsyncedItem(type: MediaType): MediaItemWithUriEntity? {
+    private suspend fun getNextUnsyncedItem(type: MediaType): MediaItemWithMetadata? {
         do {
             yield()
             val syncCandidate = localMediaRepository.getNextUnsyncedItemExcludingUuidSet(
                 syncInProgressSet = syncSafeSet.snapshot(),
                 mediaType = type
             ) ?: return null
-            val isAddedToSync = syncSafeSet.add(syncCandidate.mediaItemEntity.localUuid)
+            val isAddedToSync = syncSafeSet.add(syncCandidate.mediaItemMetadata.metadataAssetHash)
             // TODO should check again if the item is still unsynced and remove from set if no longer
             //  eligible for sync
             if (isAddedToSync) return syncCandidate
@@ -110,11 +110,10 @@ class LocalAndRemoteMediaRepositoryImpl(
 
     private fun CoroutineScope.syncWorker(type: MediaType) = launch {
         while (this.isActive) {
-            val nextUnsyncedItem: MediaItemWithUriEntity? = getNextUnsyncedItem(type)
+            val nextUnsyncedItem = getNextUnsyncedItem(type) ?: return@launch
             // Terminate the worker if there is no remaining items to sync
-            if (nextUnsyncedItem == null) return@launch
             val result = sync(nextUnsyncedItem)
-            syncSafeSet.remove(nextUnsyncedItem.mediaItemEntity.localUuid)
+            syncSafeSet.remove(nextUnsyncedItem.mediaItemMetadata.metadataAssetHash)
             if (result is SyncSuccessful) {
                 _syncProgressState.update { currentState ->
                     currentState.copy(syncedCount = (currentState.syncedCount + 1))
@@ -135,10 +134,10 @@ class LocalAndRemoteMediaRepositoryImpl(
         }
     }
 
-    private suspend fun sync(mediaItemEntity: MediaItemWithUriEntity): SyncResult {
+    private suspend fun sync(mediaItemEntity: MediaItemWithMetadata): SyncResult {
         val result = remoteMediaRepository.syncMedia(
             media = mediaItemEntity.toMediaItemDto(),
-            mediaUri = mediaItemEntity.mediaItemUri.uri
+            mediaUri = mediaItemEntity.mediaItemLocation.uri
         )
         if (result is SyncSuccessful) {
             localMediaRepository.updateMediaItem(
@@ -153,7 +152,7 @@ class LocalAndRemoteMediaRepositoryImpl(
         val localItemsFlow = localMediaRepository.phovoMediaFlow()
 
         return combine(remoteItemsFlow, localItemsFlow) { remote, local ->
-            (local + remote).distinctBy { it.localUuid }
+            (local + remote).distinctBy { it.uniqueAssetIdentifier }
         }.flowOn(ioDispatcher)
     }
 
@@ -170,13 +169,12 @@ class LocalAndRemoteMediaRepositoryImpl(
             LocalMediaBackupProgress(currentPendingSyncQuantity = initialUnsyncedCount)
         }
 
-        val pendingSyncCountObservationJob =
-            localMediaRepository.observeUnsyncedMediaCount()
-                .onEach { unsyncedCount ->
-                    _syncProgressState.update { currentProgress ->
-                        currentProgress.copy(currentPendingSyncQuantity = unsyncedCount)
-                    }
-                }.launchIn(this)
+        val pendingSyncCountObservationJob = observeUnsyncedMediaCount()
+            .onEach { unsyncedCount ->
+                _syncProgressState.update { currentProgress ->
+                    currentProgress.copy(currentPendingSyncQuantity = unsyncedCount)
+                }
+            }.launchIn(this)
         val syncJobs = mutableListOf<Job>()
         repeat(SYNC_IMAGE_WORKER_COUNT) {
             syncJobs.add(syncWorker(MediaType.Image))
@@ -224,17 +222,15 @@ class LocalAndRemoteMediaRepositoryImpl(
 
     override suspend fun addOrUpdateMediaItem(mediaItem: MediaItem) = localMediaRepository.addOrUpdateMediaItem(mediaItem)
 
-    override suspend fun addOrUpdateMediaItem(mediaItemWithUriEntity: MediaItemWithUriEntity) =
-        localMediaRepository.addOrUpdateMediaItem(mediaItemWithUriEntity)
-
-    override fun observeUnsyncedMedia() = localMediaRepository.observeUnsyncedMedia()
+    override suspend fun addOrUpdateMediaItem(mediaItemWithMetadata: MediaItemWithMetadata) =
+        localMediaRepository.addOrUpdateMediaItem(mediaItemWithMetadata)
 
     override fun observeUnsyncedMediaCount() = localMediaRepository.observeUnsyncedMediaCount()
 
     override suspend fun getUnsyncedMediaCount() = localMediaRepository.getUnsyncedMediaCount()
 
-    override suspend fun updateMediaItem(mediaItemEntity: MediaItemEntity) =
-        localMediaRepository.updateMediaItem(mediaItemEntity)
+    override suspend fun updateMediaItem(mediaItemMetadata: MediaItemMetadata) =
+        localMediaRepository.updateMediaItem(mediaItemMetadata)
 
     override suspend fun getNextUnsyncedItemExcludingUuidSet(
         syncInProgressSet: Set<String>,

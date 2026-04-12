@@ -6,7 +6,6 @@ import kotlin.time.Duration
 
 sealed interface MediaItemWithThumbnails {
     val localUuid: String
-    val remoteUuid: String?
     /** The location where the media can be accessed */
     val assetLocation: LocalOrRemoteAsset
 
@@ -21,8 +20,7 @@ sealed interface MediaItemWithThumbnails {
     val lowResThumbnailLocation: LocalOrRemoteAsset?
     val fileName: String
     val dateInFeed: LocalDateTime
-    // TODO Does size need to be long?
-    val size: Int
+    val size: Long
 
     data class MediaImageItem(
         override val assetLocation: LocalOrRemoteAsset,
@@ -30,9 +28,8 @@ sealed interface MediaItemWithThumbnails {
         override val highResThumbnailLocation: LocalOrRemoteAsset = assetLocation,
         override val fileName: String,
         override val dateInFeed: LocalDateTime,
-        override val size: Int,
+        override val size: Long,
         override val localUuid: String,
-        override val remoteUuid: String?,
     ) : MediaItemWithThumbnails
 
     data class MediaVideoItem(
@@ -41,9 +38,8 @@ sealed interface MediaItemWithThumbnails {
         override val highResThumbnailLocation: LocalOrRemoteAsset = assetLocation,
         override val fileName: String,
         override val dateInFeed: LocalDateTime,
-        override val size: Int,
+        override val size: Long,
         override val localUuid: String,
-        override val remoteUuid: String?,
         val duration: Duration,
     ) : MediaItemWithThumbnails
 }

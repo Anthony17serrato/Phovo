@@ -8,7 +8,6 @@ import io.github.vinceglb.filekit.absolutePath
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 
@@ -38,8 +37,8 @@ class DesktopAppInitializer(
             val backupDirectory = serverConfigRepository.observeServerConfig()
                 .mapNotNull { it?.backupDirectory }
                 .distinctUntilChanged()
-                .firstOrNull()
-            localMediaManager.initMediaProcessing(backupDirectory?.absolutePath())
+                .first()
+            localMediaManager.initMediaProcessing(backupDirectory.absolutePath())
         }
     }
 }
