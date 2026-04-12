@@ -32,6 +32,7 @@ kotlin {
             implementation(libs.kotlin.datetime)
             implementation(libs.bundles.navigation3)
             implementation(libs.filekit.core)
+            implementation(libs.telephoto.zoomable)
         }
 
         commonTest.dependencies {

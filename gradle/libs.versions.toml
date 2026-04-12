@@ -41,6 +41,7 @@ platformtools = "0.7.5"
 room-kmp = "2.8.4"
 serialization-json = "1.10.0"
 sqlite = "2.6.2"
+telephoto = "0.19.0"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -104,6 +105,10 @@ room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "
 # but may result in a bloated application size for IOS & Android targets(if app size becomes an issue
 # consider sqlite-framework for IOS/Android targets and bundled for desktop)
 room-bundled-sqlite = { group = "androidx.sqlite", name = "sqlite-bundled", version.ref = "sqlite" }
+# Unfortunately zoomable image does not support KMP yet :(
+# https://github.com/saket/telephoto/issues/9
+# https://saket.github.io/telephoto/zoomableimage/
+telephoto-zoomable = { group = "me.saket.telephoto", name = "zoomable", version.ref = "telephoto"}
 # Dependencies of the included build-logic
 android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "androidGradlePlugin" }
 compose-compiler-gradlePlugin = { module = "org.jetbrains.kotlin:compose-compiler-gradle-plugin", version.ref = "kotlin" }

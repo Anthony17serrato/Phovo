@@ -11,12 +11,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.layout.ContentScale
 import coil3.compose.AsyncImage
 import com.serratocreations.phovo.data.photos.repository.model.LocalOrRemoteAsset
@@ -24,6 +27,8 @@ import com.serratocreations.phovo.feature.photos.ui.model.ImagePhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.ThumbnailPhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.VideoPhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.components.VideoPlayer
+import me.saket.telephoto.zoomable.rememberZoomableState
+import me.saket.telephoto.zoomable.zoomable
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -61,6 +66,13 @@ internal fun PhotoViewerScreen(
             when (item) {
                 is ImagePhotoUiItem -> {
                     Box {
+                        val focusRequester = remember { FocusRequester() }
+                        LaunchedEffect(Unit) {
+                            // Automatically request focus when the image is displayed. This assumes there
+                            // is only one zoomable image present in the hierarchy. If you're displaying
+                            // multiple images in a pager, apply this only for the active page.
+                            focusRequester.requestFocus()
+                        }
                         var isSourceQualityImageLoaded by remember { mutableStateOf(false) }
                         AsyncImage(
                             model = item.sourceAsset,
@@ -73,7 +85,10 @@ internal fun PhotoViewerScreen(
                                 sharedContentState = sharedElementTransition
                                     .rememberSharedContentState(key = "image-$key"),
                                 animatedVisibilityScope = animatedContentScope
-                            ).fillMaxSize()
+                            )
+                                .focusRequester(focusRequester)
+                                .zoomable(rememberZoomableState())
+                                .fillMaxSize()
                         )
                         var isHighResThumbLoaded by remember { mutableStateOf(false) }
                         Column {
