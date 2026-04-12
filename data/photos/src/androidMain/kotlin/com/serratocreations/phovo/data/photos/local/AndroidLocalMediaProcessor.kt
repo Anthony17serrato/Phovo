@@ -13,7 +13,7 @@ import com.serratocreations.phovo.data.photos.repository.model.LocalOrRemoteAsse
 import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
-import com.serratocreations.phovo.data.photos.repository.util.segregate
+import com.serratocreations.phovo.data.photos.util.segregate
 import io.github.vinceglb.filekit.PlatformFile
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -90,9 +90,9 @@ class AndroidLocalMediaProcessor(
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(idColumn)
                 val fileName = cursor.getString(nameColumn)
-                val size = cursor.getInt(sizeColumn)
+                val size = cursor.getInt(sizeColumn).toLong()
                 val androidUri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
-                val assetLocation = LocalOrRemoteAsset.LocalAsset(PlatformFile(androidUri))
+                val assetLocation = LocalOrRemoteAsset.LocalAsset(PlatformFile(androidUri), isAlsoAvailableRemotely = false)
                 // Check if media has already been processed
                 if (assetLocation in processedImageUris) continue
                 val dateInFeed = cursor.getLongOrNull(dateTakenColumn)?.utcMsToLocalDateTime()
@@ -104,8 +104,7 @@ class AndroidLocalMediaProcessor(
                     fileName = fileName,
                     dateInFeed = dateInFeed,
                     size = size,
-                    localUuid = Uuid.random().toString(),
-                    remoteUuid = null
+                    uniqueAssetIdentifier = Uuid.random().toString()
                 )
                 emit(mediaImageItem)
             }
@@ -146,10 +145,10 @@ class AndroidLocalMediaProcessor(
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(idColumn)
                 val name = cursor.getString(nameColumn)
-                val size = cursor.getInt(sizeColumn)
+                val size = cursor.getInt(sizeColumn).toLong()
                 val duration = cursor.getLong(durationColumn).milliseconds
                 val androidUri = ContentUris.withAppendedId(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, id)
-                val assetLocation = LocalOrRemoteAsset.LocalAsset(PlatformFile(androidUri))
+                val assetLocation = LocalOrRemoteAsset.LocalAsset(PlatformFile(androidUri), isAlsoAvailableRemotely = false)
                 // Check if media has already been processed
                 if (assetLocation in processedVideoUris) continue
 
@@ -161,8 +160,7 @@ class AndroidLocalMediaProcessor(
                     fileName = name,
                     dateInFeed = dateInFeed,
                     size = size,
-                    localUuid = Uuid.random().toString(),
-                    remoteUuid = null,
+                    uniqueAssetIdentifier = Uuid.random().toString(),
                     duration = duration
                 )
                 emit(mediaVideoItem)
