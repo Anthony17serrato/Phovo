@@ -1,8 +1,8 @@
 package com.serratocreations.phovo.data.photos.repository
 
 import com.serratocreations.phovo.core.database.dao.PhovoMediaDao
-import com.serratocreations.phovo.core.database.entities.MediaItemEntity
-import com.serratocreations.phovo.core.database.entities.MediaItemWithUriEntity
+import com.serratocreations.phovo.core.database.entities.MediaItemMetadata
+import com.serratocreations.phovo.core.database.entities.MediaItemWithMetadata
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.core.model.MediaType
 import com.serratocreations.phovo.data.photos.mappers.toMediaItemWithUriEntity
@@ -12,17 +12,16 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 
 interface LocalMediaRepository: MediaRepository {
-    suspend fun getMediaItemByLocalUuid(uuid: String): MediaItemWithUriEntity?
+    suspend fun getMediaItemByLocalUuid(uuid: String): MediaItemWithMetadata?
     suspend fun addOrUpdateMediaItem(mediaItem: MediaItem)
-    suspend fun addOrUpdateMediaItem(mediaItemWithUriEntity: MediaItemWithUriEntity)
-    fun observeUnsyncedMedia():  Flow<List<MediaItem>>
+    suspend fun addOrUpdateMediaItem(mediaItemWithMetadata: MediaItemWithMetadata)
     fun observeUnsyncedMediaCount(): Flow<Int>
     suspend fun getUnsyncedMediaCount(): Int
-    suspend fun updateMediaItem(mediaItemEntity: MediaItemEntity)
+    suspend fun updateMediaItem(mediaItemMetadata: MediaItemMetadata)
     suspend fun getNextUnsyncedItemExcludingUuidSet(
         syncInProgressSet: Set<String>,
         mediaType: MediaType
-    ): MediaItemWithUriEntity?
+    ): MediaItemWithMetadata?
 }
 
 class LocalMediaRepositoryImpl(
@@ -37,7 +36,6 @@ class LocalMediaRepositoryImpl(
             .toMediaItems()
     }
 
-    // TODO Map to media item when model URI uses a common solution(use filekit)
     override suspend fun getMediaItemByLocalUuid(uuid: String) =
         localMediaDataSource.getMediaItemByLocalUuid(uuid)
 
@@ -45,31 +43,28 @@ class LocalMediaRepositoryImpl(
         addOrUpdateMediaItem(mediaItem.toMediaItemWithUriEntity())
     }
 
-    override suspend fun addOrUpdateMediaItem(mediaItemWithUriEntity: MediaItemWithUriEntity) {
-        val (mediaItemEntity, mediaItemUriEntity) = mediaItemWithUriEntity
-        localMediaDataSource.insert(mediaItemEntity, mediaItemUriEntity)
+    override suspend fun addOrUpdateMediaItem(mediaItemWithMetadata: MediaItemWithMetadata) {
+        val (mediaItemMetadata, mediaItemLocation) = mediaItemWithMetadata
+        localMediaDataSource.insert(mediaItemMetadata, mediaItemLocation)
     }
 
-    override suspend fun updateMediaItem(mediaItemEntity: MediaItemEntity) {
-        localMediaDataSource.update(mediaItemEntity)
+    override fun observeUnsyncedMediaCount(): Flow<Int> =
+        localMediaDataSource.observeUnsyncedMediaItemCount()
+
+    override suspend fun updateMediaItem(mediaItemMetadata: MediaItemMetadata) {
+        localMediaDataSource.update(mediaItemMetadata)
     }
 
     override suspend fun getNextUnsyncedItemExcludingUuidSet(
         syncInProgressSet: Set<String>,
         mediaType: MediaType
-    ): MediaItemWithUriEntity? {
+    ): MediaItemWithMetadata? {
         return localMediaDataSource.getNextUnsyncedItemExcludingUuidSet(
-            excludingUuids = syncInProgressSet,
+            excludingHashes = syncInProgressSet,
             mediaType = mediaType,
             excludeNotEmpty = syncInProgressSet.isNotEmpty()
         )
     }
-
-    override fun observeUnsyncedMedia(): Flow<List<MediaItem>> =
-        localMediaDataSource.observeAllUnsyncedMediaItems().toMediaItems()
-
-    override fun observeUnsyncedMediaCount(): Flow<Int> =
-        localMediaDataSource.observeUnsyncedMediaItemCount()
 
     override suspend fun getUnsyncedMediaCount(): Int = observeUnsyncedMediaCount().first()
 }

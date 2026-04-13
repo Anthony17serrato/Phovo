@@ -32,16 +32,28 @@ class ServerGetPhotosFeedWithThumbnailsUseCase(
                 val lowResThumbDir = rootOutputDirectory / GetPhotosFeedWithThumbnailsUseCase.LOW_RES_THUMBNAIL_DIR
                 val lowResThumb = PlatformFile(
                     base = lowResThumbDir,
-                    child = "${mediaItem.localUuid}.webp"
+                    child = "${mediaItem.uniqueAssetIdentifier}.webp"
                 ).let {
-                    if (it.exists()) LocalOrRemoteAsset.LocalAsset(it) else null
+                    if (it.exists()) {
+                        LocalOrRemoteAsset.LocalAsset(
+                            localAssetLocation = it,
+                            // TODO isAlsoAvailableRemotely must be removed from LocalAsset
+                            isAlsoAvailableRemotely = true
+                        )
+                    } else { null }
                 }
                 val highResThumbDir = rootOutputDirectory / GetPhotosFeedWithThumbnailsUseCase.HIGH_RES_THUMBNAIL_DIR
                 val highResThumb = PlatformFile(
                     base = highResThumbDir,
-                    child = "${mediaItem.localUuid}.webp"
+                    child = "${mediaItem.uniqueAssetIdentifier}.webp"
                 ).let {
-                    if (it.exists()) LocalOrRemoteAsset.LocalAsset(it) else mediaItem.assetLocation
+                    if (it.exists()) {
+                        LocalOrRemoteAsset.LocalAsset(
+                            localAssetLocation = it,
+                            // TODO isAlsoAvailableRemotely must be removed from LocalAsset
+                            isAlsoAvailableRemotely = true
+                        )
+                    } else { mediaItem.assetLocation }
                 }
                 mediaItem.toMediaItemWithThumbnails(
                     lowResThumbnailLocation = lowResThumb,

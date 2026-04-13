@@ -67,7 +67,7 @@ class FfmpegThumbnailGenerator(
             // Build FFmpeg command
             val filter =
                 "thumbnail,split=2[v1][v2];" +
-                        "[v1]scale=320:320:force_original_aspect_ratio=decrease[v1out];" +
+                        "[v1]scale=100:100:force_original_aspect_ratio=decrease[v1out];" +
                         "[v2]scale=1080:1080:force_original_aspect_ratio=decrease[v2out]"
 
             val command = listOf(

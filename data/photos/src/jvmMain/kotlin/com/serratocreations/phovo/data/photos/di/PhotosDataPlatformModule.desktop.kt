@@ -7,6 +7,8 @@ import com.serratocreations.phovo.data.photos.local.DesktopLocalMediaProcessor
 import com.serratocreations.phovo.data.photos.local.LocalMediaProcessor
 import com.serratocreations.phovo.data.photos.repository.LocalMediaRepository
 import com.serratocreations.phovo.data.photos.repository.MediaRepository
+import com.serratocreations.phovo.data.photos.util.DesktopFileHashCalculator
+import com.serratocreations.phovo.data.photos.util.FileHashCalculator
 import com.serratocreations.phovo.data.thumbnails.di.thumbnailsModule
 import kotlinx.coroutines.CoroutineDispatcher
 import org.koin.core.module.Module
@@ -32,12 +34,17 @@ internal actual fun getAndroidDesktopIosModules(): Module = module {
         get<LocalMediaRepository>()
     }
 
+    factory<FileHashCalculator> {
+        DesktopFileHashCalculator(ioDispatcher = get(IO_DISPATCHER))
+    }
+
     single<LocalMediaProcessor> {
         val ioDispatcher: CoroutineDispatcher = get(IO_DISPATCHER)
         DesktopLocalMediaProcessor(
             thumbnailRepository = get(),
-            logger = get(),
-            ioDispatcher = ioDispatcher
+            ioDispatcher = ioDispatcher,
+            fileHashCalculator = get(),
+            logger = get()
         )
     }
 }

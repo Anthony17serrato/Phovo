@@ -37,10 +37,10 @@ class IosAndroidMediaNetworkDataSource(
         )
 
         return if (response.status.isSuccess()) {
-            log.i { "Uploaded media ${mediaItemDto.localUuid}" }
+            log.i { "Uploaded media ${mediaItemDto.assetHash}" }
             completeSuccessfulUpload(mediaItemDto = mediaItemDto)
         } else {
-            log.e { "Failed upload ${mediaItemDto.localUuid}: ${response.status}" }
+            log.e { "Failed upload ${mediaItemDto.assetHash}: ${response.status}" }
             SyncError
         }
     }

@@ -10,7 +10,9 @@ import io.github.vinceglb.filekit.PlatformFile
  */
 sealed interface LocalOrRemoteAsset {
     data class LocalAsset(
-        val localAssetLocation: PlatformFile
+        val localAssetLocation: PlatformFile,
+        // TODO remove an move to core model
+        val isAlsoAvailableRemotely: Boolean
     ): LocalOrRemoteAsset
 
     data class RemoteAsset(
