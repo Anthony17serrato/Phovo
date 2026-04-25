@@ -30,17 +30,11 @@ class ServerGetPhotosFeedWithThumbnailsUseCase(
                         highResThumbnailLocation = mediaItem.assetLocation
                     )
                 val lowResThumbDir = rootOutputDirectory / GetPhotosFeedWithThumbnailsUseCase.LOW_RES_THUMBNAIL_DIR
-                val lowResThumb = PlatformFile(
-                    base = lowResThumbDir,
-                    child = "${mediaItem.localUuid}.webp"
-                ).let {
+                val lowResThumb = (lowResThumbDir / "${mediaItem.localUuid}.webp").let {
                     if (it.exists()) LocalOrRemoteAsset.LocalAsset(it) else null
                 }
                 val highResThumbDir = rootOutputDirectory / GetPhotosFeedWithThumbnailsUseCase.HIGH_RES_THUMBNAIL_DIR
-                val highResThumb = PlatformFile(
-                    base = highResThumbDir,
-                    child = "${mediaItem.localUuid}.webp"
-                ).let {
+                val highResThumb = (highResThumbDir / "${mediaItem.localUuid}.webp").let {
                     if (it.exists()) LocalOrRemoteAsset.LocalAsset(it) else mediaItem.assetLocation
                 }
                 mediaItem.toMediaItemWithThumbnails(

@@ -44,7 +44,9 @@ kotlin {
 
         jvmMain.dependencies {
             implementation(projects.data.thumbnails)
+
             implementation(libs.filekit.core)
+            implementation(libs.compose.video.player)
         }
     }
 }

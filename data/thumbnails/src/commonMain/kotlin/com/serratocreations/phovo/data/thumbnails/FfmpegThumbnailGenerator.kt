@@ -3,6 +3,7 @@ package com.serratocreations.phovo.data.thumbnails
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.absolutePath
+import io.github.vinceglb.filekit.div
 import io.github.vinceglb.filekit.exists
 import io.github.vinceglb.filekit.utils.Platform
 import io.github.vinceglb.filekit.utils.PlatformUtil
@@ -50,15 +51,8 @@ class FfmpegThumbnailGenerator(
     ): Unit = withContext(ioDispatcher) {
         val ffmpegFile = deferredFfmpegFile.await()
 
-        val lowResThumbnail = PlatformFile(
-            outputDirectories.lowResThumbnailDirectory,
-            "$thumbnailNameWithoutExtension.webp"
-        )
-
-        val highResThumbnail = PlatformFile(
-            outputDirectories.highResThumbnailDirectory,
-            "$thumbnailNameWithoutExtension.webp"
-        )
+        val lowResThumbnail = outputDirectories.lowResThumbnailDirectory / "$thumbnailNameWithoutExtension.webp"
+        val highResThumbnail = outputDirectories.highResThumbnailDirectory / "$thumbnailNameWithoutExtension.webp"
 
         try {
             if (!ffmpegFile.exists()) {
@@ -130,15 +124,8 @@ class FfmpegThumbnailGenerator(
 
         val ffmpegFile = deferredFfmpegFile.await()
 
-        val lowResThumbnail = PlatformFile(
-            outputDirectories.lowResThumbnailDirectory,
-            "$thumbnailNameWithoutExtension.webp"
-        )
-
-        val highResThumbnail = PlatformFile(
-            outputDirectories.highResThumbnailDirectory,
-            "$thumbnailNameWithoutExtension.webp"
-        )
+        val lowResThumbnail = outputDirectories.lowResThumbnailDirectory / "$thumbnailNameWithoutExtension.webp"
+        val highResThumbnail = outputDirectories.highResThumbnailDirectory / "$thumbnailNameWithoutExtension.webp"
 
         try {
             if (!ffmpegFile.exists()) {
