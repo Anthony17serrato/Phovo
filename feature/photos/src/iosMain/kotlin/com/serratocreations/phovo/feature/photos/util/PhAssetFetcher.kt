@@ -30,6 +30,7 @@ class PhAssetFetcher(data: Any, options: Options) : PlatformFetcher(data, option
     }
 
     override suspend fun fetch(): FetchResult? {
+
         log.i { "PhAssetFetcher fetch" }
         val uri = data as Uri
         val asset = uri.toPhAsset() ?: return null
