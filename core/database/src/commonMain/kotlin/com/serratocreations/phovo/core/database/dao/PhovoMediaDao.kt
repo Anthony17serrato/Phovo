@@ -6,86 +6,103 @@ import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
 import androidx.room.Upsert
-import com.serratocreations.phovo.core.database.entities.LOCAL_SERIAL_ID
-import com.serratocreations.phovo.core.database.entities.MediaItemMetadata
-import com.serratocreations.phovo.core.database.entities.MediaItemLocationEntity
+import com.serratocreations.phovo.core.database.entities.MediaItemMetadataEntity
+import com.serratocreations.phovo.core.database.entities.LocalMediaEntity
+import com.serratocreations.phovo.core.database.entities.LocalMediaItemWithMetadata
 import com.serratocreations.phovo.core.database.entities.MediaItemWithMetadata
 import com.serratocreations.phovo.core.model.MediaType
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface PhovoMediaDao {
-    // Already in a transaction as per transaction documentation
+
     @Upsert
-    suspend fun insert(item: MediaItemMetadata, uri: MediaItemLocationEntity)
+    suspend fun upsertMetadata(item: MediaItemMetadataEntity)
+
+    @Upsert
+    suspend fun upsertLocal(local: LocalMediaEntity)
+
+    @Query(
+        """
+    UPDATE MediaItemMetadataEntity
+    SET isSynced = TRUE
+    WHERE assetHash = :assetHash
+    """
+    )
+    suspend fun markAsSynced(assetHash: String)
+
+    @Transaction
+    suspend fun upsertMetadataWithLocalEntity(
+        metadata: MediaItemMetadataEntity,
+        local: LocalMediaEntity
+    ) {
+        upsertMetadata(metadata)
+        upsertLocal(local)
+    }
 
     @Update(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun update(item: MediaItemMetadata)
+    suspend fun update(item: MediaItemMetadataEntity)
 
-    @Query(
-        """
-    SELECT 
-        MediaItemMetadata.*,
-        MediaItemLocationEntity.assetHash AS uri_assetHash,
-        MediaItemLocationEntity.assetLocation AS uri_assetLocation,
-        MediaItemLocationEntity.uri AS uri_uri
-    FROM MediaItemMetadata
-    INNER JOIN MediaItemLocationEntity
-        ON MediaItemMetadata.metadataAssetHash = MediaItemLocationEntity.assetHash
-    ORDER BY MediaItemMetadata.timeStampUtcMs DESC
-    """
-    )
+    @Transaction
+    @Query("SELECT * FROM MediaItemMetadataEntity ORDER BY timeStampUtcMs DESC")
     fun observeAllDescendingTimestamp(): Flow<List<MediaItemWithMetadata>>
 
-    // 0 indicates Local Asset as per AssetLocation.Local
-    @Query("SELECT COUNT(*) FROM MediaItemLocationEntity WHERE assetLocation == $LOCAL_SERIAL_ID")
+    @Query("SELECT COUNT(*) FROM MediaItemMetadataEntity WHERE isSynced = FALSE")
     fun observeUnsyncedMediaItemCount(): Flow<Int>
 
+    @Transaction
+    @Query("SELECT * FROM MediaItemMetadataEntity WHERE assetHash = :assetHash LIMIT 1")
+    suspend fun getMediaItemByAssetHash(
+        assetHash: String
+    ): MediaItemWithMetadata?
+
+    @Query("SELECT * FROM LocalMediaEntity WHERE assetHash = :assetHash LIMIT 1")
+    suspend fun getLocalMediaByAssetHash(assetHash: String): LocalMediaEntity?
+
+    @Transaction
     @Query(
         """
     SELECT 
-        MediaItemMetadata.*,
-        MediaItemLocationEntity.assetHash AS uri_assetHash,
-        MediaItemLocationEntity.assetLocation AS uri_assetLocation,
-        MediaItemLocationEntity.uri AS uri_uri
-    FROM MediaItemMetadata
-    INNER JOIN MediaItemLocationEntity
-        ON MediaItemMetadata.metadataAssetHash = MediaItemLocationEntity.assetHash
-    WHERE MediaItemMetadata.metadataAssetHash = :uuid
+        m.*, 
+        l.assetHash AS local_assetHash,
+        l.localUri AS local_localUri
+    FROM MediaItemMetadataEntity m
+    INNER JOIN LocalMediaEntity l
+        ON m.assetHash = l.assetHash
+    WHERE m.assetHash = :assetHash
     LIMIT 1
     """
     )
-    suspend fun getMediaItemByLocalUuid(
-        uuid: String
-    ): MediaItemWithMetadata?
+    suspend fun getLocalMediaItemWithMetadataByAssetHash(
+        assetHash: String
+    ): LocalMediaItemWithMetadata?
 
     @Query(
         """
     SELECT 
-        MediaItemMetadata.*,
-        MediaItemLocationEntity.assetHash AS uri_assetHash,
-        MediaItemLocationEntity.assetLocation AS uri_assetLocation,
-        MediaItemLocationEntity.uri AS uri_uri
-    FROM MediaItemMetadata
-    INNER JOIN MediaItemLocationEntity
-        ON MediaItemMetadata.metadataAssetHash = MediaItemLocationEntity.assetHash
-    WHERE MediaItemMetadata.mediaType = :mediaType
-      AND (:excludeNotEmpty OR MediaItemMetadata.metadataAssetHash NOT IN (:excludingHashes))
-      AND MediaItemLocationEntity.assetLocation = $LOCAL_SERIAL_ID
-    ORDER BY MediaItemMetadata.timeStampUtcMs DESC
+        m.*,
+        l.assetHash AS local_assetHash,
+        l.localUri AS local_localUri
+    FROM MediaItemMetadataEntity m
+    INNER JOIN LocalMediaEntity l
+        ON m.assetHash = l.assetHash
+    WHERE m.isSynced = FALSE
+      AND m.mediaType = :mediaType
+      AND (:excludeNotEmpty OR m.assetHash NOT IN (:excludingHashes))
+    ORDER BY m.timeStampUtcMs DESC
     LIMIT 1
     """
     )
-    suspend fun getNextUnsyncedItemExcludingUuidSet(
+    suspend fun getNextUnsyncedLocalItemExcludingSet(
         excludingHashes: Set<String>,
         mediaType: MediaType,
         excludeNotEmpty: Boolean
-    ): MediaItemWithMetadata?
+    ): LocalMediaItemWithMetadata?
 
-    @Query("DELETE FROM MediaItemMetadata")
+    @Query("DELETE FROM MediaItemMetadataEntity")
     suspend fun clearAllMediaItems()
 
-    @Query("DELETE FROM MediaItemLocationEntity")
+    @Query("DELETE FROM LocalMediaEntity")
     suspend fun clearAllMediaItemUris()
 
     // Deletes all records from both tables in a single transaction

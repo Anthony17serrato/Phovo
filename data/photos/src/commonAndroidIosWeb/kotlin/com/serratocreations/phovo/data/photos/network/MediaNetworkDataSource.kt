@@ -2,9 +2,7 @@ package com.serratocreations.phovo.data.photos.network
 
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.core.model.network.MediaItemDto
-import com.serratocreations.phovo.data.photos.repository.model.SyncError
 import com.serratocreations.phovo.data.photos.repository.model.SyncResult
-import com.serratocreations.phovo.data.photos.repository.model.SyncSuccessful
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -62,7 +60,7 @@ abstract class MediaNetworkDataSource(
             }
         } catch (e: IOException) {
             log.e { "error initializing upload $e" }
-            return SyncError
+            return SyncResult.SyncError
         }
 
         // Step 2: Chunked upload
@@ -94,10 +92,10 @@ abstract class MediaNetworkDataSource(
             }.body()
 
             log.i { "Upload complete for ${updatedItem.fileName}" }
-            return SyncSuccessful(updatedItem)
+            return SyncResult.SyncSuccessful
         } catch (e: IOException) {
             log.e { "Upload completion failed: ${e.message}" }
-            return SyncError
+            return SyncResult.SyncError
         }
     }
 }

@@ -2,7 +2,6 @@ package com.serratocreations.phovo.data.photos.network
 
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.core.model.network.MediaItemDto
-import com.serratocreations.phovo.data.photos.repository.model.SyncError
 import com.serratocreations.phovo.data.photos.repository.model.SyncResult
 import com.serratocreations.phovo.data.photos.util.getPlatformFile
 import io.github.vinceglb.filekit.exists
@@ -21,10 +20,10 @@ class IosAndroidMediaNetworkDataSource(
     private val log = logger.withTag("IosAndroidMediaNetworkDataSource")
 
     override suspend fun chunkedUpload(mediaItemDto: MediaItemDto, mediaUri: String): SyncResult {
-        val file = mediaItemDto.mediaType.getPlatformFile(mediaUri, ioDispatcher) ?: return SyncError
+        val file = mediaItemDto.mediaType.getPlatformFile(mediaUri, ioDispatcher) ?: return SyncResult.SyncError
         if (!file.exists()) {
             log.e { "File not found at $mediaUri" }
-            return SyncError
+            return SyncResult.SyncError
         }
 
         // TODO chunking has been disabled, for photographs it is mostly not needed, in the future
@@ -41,7 +40,7 @@ class IosAndroidMediaNetworkDataSource(
             completeSuccessfulUpload(mediaItemDto = mediaItemDto)
         } else {
             log.e { "Failed upload ${mediaItemDto.assetHash}: ${response.status}" }
-            SyncError
+            SyncResult.SyncError
         }
     }
 }

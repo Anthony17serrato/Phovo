@@ -1,15 +1,14 @@
 package com.serratocreations.phovo.data.photos.repository
 
 import com.serratocreations.phovo.core.common.util.SafeSet
-import com.serratocreations.phovo.core.database.entities.MediaItemMetadata
-import com.serratocreations.phovo.core.database.entities.MediaItemWithMetadata
+import com.serratocreations.phovo.core.database.entities.LocalMediaEntity
+import com.serratocreations.phovo.core.database.entities.LocalMediaItemWithMetadata
+import com.serratocreations.phovo.core.database.entities.MediaItemMetadataEntity
 import com.serratocreations.phovo.core.model.MediaType
 import com.serratocreations.phovo.core.model.network.MediaItemDto
 import com.serratocreations.phovo.data.photos.LocalMediaBackupProgress
 import com.serratocreations.phovo.data.photos.mappers.toMediaItemDto
-import com.serratocreations.phovo.data.photos.mappers.toMediaItemEntity
 import com.serratocreations.phovo.data.photos.repository.model.SyncResult
-import com.serratocreations.phovo.data.photos.repository.model.SyncSuccessful
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import com.serratocreations.phovo.data.photos.repository.model.SyncImage
 import com.serratocreations.phovo.data.photos.repository.model.SyncQueueable
@@ -93,14 +92,14 @@ class LocalAndRemoteMediaRepositoryImpl(
     /**
      * @return null if there are no remaining unsynced items for the media type
      */
-    private suspend fun getNextUnsyncedItem(type: MediaType): MediaItemWithMetadata? {
+    private suspend fun getNextUnsyncedItem(type: MediaType): LocalMediaItemWithMetadata? {
         do {
             yield()
             val syncCandidate = localMediaRepository.getNextUnsyncedItemExcludingUuidSet(
                 syncInProgressSet = syncSafeSet.snapshot(),
                 mediaType = type
             ) ?: return null
-            val isAddedToSync = syncSafeSet.add(syncCandidate.mediaItemMetadata.metadataAssetHash)
+            val isAddedToSync = syncSafeSet.add(syncCandidate.mediaItemMetadataEntity.assetHash)
             // TODO should check again if the item is still unsynced and remove from set if no longer
             //  eligible for sync
             if (isAddedToSync) return syncCandidate
@@ -113,8 +112,8 @@ class LocalAndRemoteMediaRepositoryImpl(
             val nextUnsyncedItem = getNextUnsyncedItem(type) ?: return@launch
             // Terminate the worker if there is no remaining items to sync
             val result = sync(nextUnsyncedItem)
-            syncSafeSet.remove(nextUnsyncedItem.mediaItemMetadata.metadataAssetHash)
-            if (result is SyncSuccessful) {
+            syncSafeSet.remove(nextUnsyncedItem.mediaItemMetadataEntity.assetHash)
+            if (result is SyncResult.SyncSuccessful) {
                 _syncProgressState.update { currentState ->
                     currentState.copy(syncedCount = (currentState.syncedCount + 1))
                 }
@@ -123,25 +122,25 @@ class LocalAndRemoteMediaRepositoryImpl(
     }
 
     private fun CoroutineScope.syncWorker(syncReceiveChannel: ReceiveChannel<String>) = launch {
-        for (uuid in syncReceiveChannel) {
+        for (assetHash in syncReceiveChannel) {
             yield()
-            // TODO check uuid is not being processed by other workers and add to set of uuids
+            // TODO check assetHash is not being processed by other workers and add to set of uuids
             //  which are being currently processed
-            val mediaItemEntity = localMediaRepository.getMediaItemByLocalUuid(uuid)
-            mediaItemEntity?.let { mediaItemEntityNotNull ->
+            val localMediaItemWithMetadata = localMediaRepository.getLocalMediaItemWithMetadataByAssetHash(assetHash)
+            localMediaItemWithMetadata?.let { mediaItemEntityNotNull ->
                 sync(mediaItemEntityNotNull)
             }
         }
     }
 
-    private suspend fun sync(mediaItemEntity: MediaItemWithMetadata): SyncResult {
+    private suspend fun sync(mediaItemEntity: LocalMediaItemWithMetadata): SyncResult {
         val result = remoteMediaRepository.syncMedia(
-            media = mediaItemEntity.toMediaItemDto(),
-            mediaUri = mediaItemEntity.mediaItemLocation.uri
+            media = mediaItemEntity.mediaItemMetadataEntity.toMediaItemDto(),
+            mediaUri = mediaItemEntity.localLocation.localUri
         )
-        if (result is SyncSuccessful) {
-            localMediaRepository.updateMediaItem(
-                result.updatedMediaItemDto.toMediaItemEntity()
+        if (result is SyncResult.SyncSuccessful) {
+            localMediaRepository.markAsSynced(
+                assetHash = mediaItemEntity.mediaItemMetadataEntity.assetHash
             )
         }
         return result
@@ -218,22 +217,34 @@ class LocalAndRemoteMediaRepositoryImpl(
 
     override fun observeServerConnection() = remoteMediaRepository.observeServerConnection()
 
-    override suspend fun getMediaItemByLocalUuid(uuid: String) = localMediaRepository.getMediaItemByLocalUuid(uuid)
+    override suspend fun getMediaItemByAssetHash(assetHash: String) = localMediaRepository.getMediaItemByAssetHash(assetHash)
+
+    override suspend fun getLocalMediaItemWithMetadataByAssetHash(assetHash: String): LocalMediaItemWithMetadata? {
+        return localMediaRepository.getLocalMediaItemWithMetadataByAssetHash(assetHash)
+    }
+
+    override suspend fun getLocalMediaByAssetHash(assetHash: String): LocalMediaEntity? {
+        return localMediaRepository.getLocalMediaByAssetHash(assetHash = assetHash)
+    }
 
     override suspend fun addOrUpdateMediaItem(mediaItem: MediaItem) = localMediaRepository.addOrUpdateMediaItem(mediaItem)
 
-    override suspend fun addOrUpdateMediaItem(mediaItemWithMetadata: MediaItemWithMetadata) =
-        localMediaRepository.addOrUpdateMediaItem(mediaItemWithMetadata)
+    override suspend fun addOrUpdateLocalMediaItem(localMediaEntity: LocalMediaEntity) =
+        localMediaRepository.addOrUpdateLocalMediaItem(localMediaEntity)
 
     override fun observeUnsyncedMediaCount() = localMediaRepository.observeUnsyncedMediaCount()
 
     override suspend fun getUnsyncedMediaCount() = localMediaRepository.getUnsyncedMediaCount()
 
-    override suspend fun updateMediaItem(mediaItemMetadata: MediaItemMetadata) =
-        localMediaRepository.updateMediaItem(mediaItemMetadata)
+    override suspend fun updateMediaItem(mediaItemMetadataEntity: MediaItemMetadataEntity) =
+        localMediaRepository.updateMediaItem(mediaItemMetadataEntity)
 
     override suspend fun getNextUnsyncedItemExcludingUuidSet(
         syncInProgressSet: Set<String>,
         mediaType: MediaType
     ) = localMediaRepository.getNextUnsyncedItemExcludingUuidSet(syncInProgressSet, mediaType)
+
+    override suspend fun markAsSynced(assetHash: String) {
+        localMediaRepository.markAsSynced(assetHash)
+    }
 }

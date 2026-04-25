@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "62d09bea25f59778dba88df5a8d85bd1",
+    "identityHash": "222554e52987c5accec39be96758072f",
     "entities": [
       {
         "tableName": "ServerConfigEntity",
@@ -29,13 +29,19 @@
         }
       },
       {
-        "tableName": "MediaItemMetadata",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`metadataAssetHash` TEXT NOT NULL, `fileName` TEXT NOT NULL, `timeStampUtcMs` INTEGER NOT NULL, `timeOffsetMs` INTEGER NOT NULL, `size` INTEGER NOT NULL, `mediaType` TEXT NOT NULL, `videoDurationMs` INTEGER, PRIMARY KEY(`metadataAssetHash`))",
+        "tableName": "MediaItemMetadataEntity",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`assetHash` TEXT NOT NULL, `isSynced` INTEGER NOT NULL, `fileName` TEXT NOT NULL, `timeStampUtcMs` INTEGER NOT NULL, `timeOffsetMs` INTEGER NOT NULL, `size` INTEGER NOT NULL, `mediaType` TEXT NOT NULL, `videoDurationMs` INTEGER, PRIMARY KEY(`assetHash`))",
         "fields": [
           {
-            "fieldPath": "metadataAssetHash",
-            "columnName": "metadataAssetHash",
+            "fieldPath": "assetHash",
+            "columnName": "assetHash",
             "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isSynced",
+            "columnName": "isSynced",
+            "affinity": "INTEGER",
             "notNull": true
           },
           {
@@ -77,13 +83,13 @@
         "primaryKey": {
           "autoGenerate": false,
           "columnNames": [
-            "metadataAssetHash"
+            "assetHash"
           ]
         }
       },
       {
-        "tableName": "MediaItemLocationEntity",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`assetHash` TEXT NOT NULL, `assetLocation` INTEGER NOT NULL, `uri` TEXT NOT NULL, PRIMARY KEY(`assetHash`))",
+        "tableName": "LocalMediaEntity",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`assetHash` TEXT NOT NULL, `localUri` TEXT NOT NULL, PRIMARY KEY(`assetHash`))",
         "fields": [
           {
             "fieldPath": "assetHash",
@@ -92,14 +98,8 @@
             "notNull": true
           },
           {
-            "fieldPath": "assetLocation",
-            "columnName": "assetLocation",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "uri",
-            "columnName": "uri",
+            "fieldPath": "localUri",
+            "columnName": "localUri",
             "affinity": "TEXT",
             "notNull": true
           }
@@ -114,7 +114,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '62d09bea25f59778dba88df5a8d85bd1')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '222554e52987c5accec39be96758072f')"
     ]
   }
 }

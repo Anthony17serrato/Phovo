@@ -1,21 +1,40 @@
 package com.serratocreations.phovo.core.domain.mapper
 
 import com.serratocreations.phovo.core.domain.model.MediaItemWithThumbnails
-import com.serratocreations.phovo.data.photos.repository.model.LocalOrRemoteAsset
+import com.serratocreations.phovo.data.photos.network.ApiEndpoints
+import com.serratocreations.phovo.data.photos.repository.model.AssetLocation
 import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
 
+/**
+ * Mapper returns null if the asset is only available remotely and a base URL has not been
+ * provided.
+ */
 fun MediaItem.toMediaItemWithThumbnails(
-    lowResThumbnailLocation: LocalOrRemoteAsset?,
-    highResThumbnailLocation: LocalOrRemoteAsset
-): MediaItemWithThumbnails {
+    lowResThumbnailLocation: AssetLocation?,
+    highResThumbnailLocation: AssetLocation,
+    assetHash: String,
+    baseUrl: String?
+): MediaItemWithThumbnails? {
     return when(this) {
         is MediaImageItem -> {
             MediaItemWithThumbnails.MediaImageItem(
-                assetLocation = assetLocation,
-                lowResThumbnailLocation = lowResThumbnailLocation,
-                highResThumbnailLocation = highResThumbnailLocation,
+                assetLocation = assetLocation.toDomainAssetLocation(
+                    assetHash = assetHash,
+                    endpoint = ApiEndpoints.GET_MEDIA,
+                    baseUrl = baseUrl
+                ) ?: return null,
+                lowResThumbnailLocation = lowResThumbnailLocation?.toDomainAssetLocation(
+                    assetHash = assetHash,
+                    endpoint = ApiEndpoints.LOW_RES_THUMBNAIL_API,
+                    baseUrl = baseUrl
+                ),
+                highResThumbnailLocation = highResThumbnailLocation.toDomainAssetLocation(
+                    assetHash = assetHash,
+                    endpoint = ApiEndpoints.HIGH_RES_THUMBNAIL_API,
+                    baseUrl = baseUrl
+                ) ?: return null,
                 fileName = fileName,
                 dateInFeed = dateInFeed,
                 size = size,
@@ -24,9 +43,21 @@ fun MediaItem.toMediaItemWithThumbnails(
         }
         is MediaVideoItem -> {
             MediaItemWithThumbnails.MediaVideoItem(
-                assetLocation = assetLocation,
-                lowResThumbnailLocation = lowResThumbnailLocation,
-                highResThumbnailLocation = highResThumbnailLocation,
+                assetLocation = assetLocation.toDomainAssetLocation(
+                    assetHash = assetHash,
+                    endpoint = ApiEndpoints.HIGH_RES_THUMBNAIL_API,
+                    baseUrl = baseUrl
+                ) ?: return null,
+                lowResThumbnailLocation = lowResThumbnailLocation?.toDomainAssetLocation(
+                    assetHash = assetHash,
+                    endpoint = ApiEndpoints.HIGH_RES_THUMBNAIL_API,
+                    baseUrl = baseUrl
+                ),
+                highResThumbnailLocation = highResThumbnailLocation.toDomainAssetLocation(
+                    assetHash = assetHash,
+                    endpoint = ApiEndpoints.HIGH_RES_THUMBNAIL_API,
+                    baseUrl = baseUrl
+                ) ?: return null,
                 fileName = fileName,
                 dateInFeed = dateInFeed,
                 size = size,

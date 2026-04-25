@@ -9,7 +9,7 @@ import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import androidx.core.database.getLongOrNull
-import com.serratocreations.phovo.data.photos.repository.model.LocalOrRemoteAsset
+import com.serratocreations.phovo.data.photos.repository.model.AssetLocation
 import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
@@ -92,7 +92,7 @@ class AndroidLocalMediaProcessor(
                 val fileName = cursor.getString(nameColumn)
                 val size = cursor.getInt(sizeColumn).toLong()
                 val androidUri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
-                val assetLocation = LocalOrRemoteAsset.LocalAsset(PlatformFile(androidUri), isAlsoAvailableRemotely = false)
+                val assetLocation = AssetLocation.LocalAssetLocation(PlatformFile(androidUri))
                 // Check if media has already been processed
                 if (assetLocation in processedImageUris) continue
                 val dateInFeed = cursor.getLongOrNull(dateTakenColumn)?.utcMsToLocalDateTime()
@@ -101,6 +101,7 @@ class AndroidLocalMediaProcessor(
 
                 val mediaImageItem = MediaImageItem(
                     assetLocation = assetLocation,
+                    isSynced = false,
                     fileName = fileName,
                     dateInFeed = dateInFeed,
                     size = size,
@@ -148,7 +149,7 @@ class AndroidLocalMediaProcessor(
                 val size = cursor.getInt(sizeColumn).toLong()
                 val duration = cursor.getLong(durationColumn).milliseconds
                 val androidUri = ContentUris.withAppendedId(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, id)
-                val assetLocation = LocalOrRemoteAsset.LocalAsset(PlatformFile(androidUri), isAlsoAvailableRemotely = false)
+                val assetLocation = AssetLocation.LocalAssetLocation(PlatformFile(androidUri))
                 // Check if media has already been processed
                 if (assetLocation in processedVideoUris) continue
 
@@ -157,6 +158,7 @@ class AndroidLocalMediaProcessor(
 
                 val mediaVideoItem = MediaVideoItem(
                     assetLocation = assetLocation,
+                    isSynced = false,
                     fileName = name,
                     dateInFeed = dateInFeed,
                     size = size,

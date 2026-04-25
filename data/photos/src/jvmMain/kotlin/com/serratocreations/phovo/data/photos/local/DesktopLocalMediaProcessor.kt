@@ -4,7 +4,7 @@ import com.ashampoo.kim.Kim
 import com.ashampoo.kim.format.tiff.constant.ExifTag
 import com.ashampoo.kim.jvm.readMetadata
 import com.serratocreations.phovo.core.logger.PhovoLogger
-import com.serratocreations.phovo.data.photos.repository.model.LocalOrRemoteAsset
+import com.serratocreations.phovo.data.photos.repository.model.AssetLocation
 import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
@@ -141,10 +141,10 @@ class DesktopLocalMediaProcessor(
             thumbnailName = sha256Hash
         )
         return@withContext MediaVideoItem(
-            assetLocation = LocalOrRemoteAsset.LocalAsset(
-                localAssetLocation = file,
-                isAlsoAvailableRemotely = true
+            assetLocation = AssetLocation.LocalAssetLocation(
+                localAssetLocation = file
             ),
+            isSynced = true,
             fileName = file.name,
             dateInFeed = creationDate,
             size = file.size(),
@@ -171,15 +171,14 @@ class DesktopLocalMediaProcessor(
             thumbnailName = sha256Hash
         )
         return@withContext MediaImageItem(
-            assetLocation = LocalOrRemoteAsset.LocalAsset(
-                localAssetLocation = file,
-                isAlsoAvailableRemotely = true
+            assetLocation = AssetLocation.LocalAssetLocation(
+                localAssetLocation = file
             ),
+            isSynced = true,
             fileName = file.name,
             dateInFeed = takenDate.let { date ->
                 java.time.LocalDateTime.parse(date, formatter).toKotlinLocalDateTime()
             },
-            // TODO
             size = file.size(),
             uniqueAssetIdentifier = sha256Hash
         )

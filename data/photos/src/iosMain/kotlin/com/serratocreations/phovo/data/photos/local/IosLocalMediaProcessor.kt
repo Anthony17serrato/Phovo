@@ -2,7 +2,7 @@ package com.serratocreations.phovo.data.photos.local
 
 import com.serratocreations.phovo.core.common.util.phAssetUriFromLocalId
 import com.serratocreations.phovo.core.logger.PhovoLogger
-import com.serratocreations.phovo.data.photos.repository.model.LocalOrRemoteAsset
+import com.serratocreations.phovo.data.photos.repository.model.AssetLocation
 import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
@@ -112,9 +112,8 @@ class IosLocalMediaProcessor(
         }
         log.i { "IosPhovoItemDao images $imageItems" }
         imageItems.forEach { asset ->
-            val assetUri = LocalOrRemoteAsset.LocalAsset(
-                PlatformFile(phAssetUriFromLocalId(asset.localIdentifier).toString()),
-                isAlsoAvailableRemotely = false
+            val assetUri = AssetLocation.LocalAssetLocation(
+                PlatformFile(phAssetUriFromLocalId(asset.localIdentifier).toString())
             )
             if (assetUri in processedImageUris) return@forEach
             val resource = PHAssetResource.assetResourcesForAsset(asset)
@@ -132,7 +131,8 @@ class IosLocalMediaProcessor(
                 fileName = name,
                 dateInFeed = localDateTime,
                 size = bytes,
-                uniqueAssetIdentifier = Uuid.random().toString()
+                uniqueAssetIdentifier = Uuid.random().toString(),
+                isSynced = false
             ))
         }
     }.flowOn(ioDispatcher)
@@ -149,9 +149,8 @@ class IosLocalMediaProcessor(
         }
         log.i { "IosPhovoItemDao fetchVideos $videoItems" }
         videoItems.forEach { asset ->
-            val assetUri = LocalOrRemoteAsset.LocalAsset(
-                PlatformFile(phAssetUriFromLocalId(asset.localIdentifier).toString()),
-                isAlsoAvailableRemotely = false
+            val assetUri = AssetLocation.LocalAssetLocation(
+                PlatformFile(phAssetUriFromLocalId(asset.localIdentifier).toString())
             )
             if (assetUri in processedVideoUris) return@forEach
             val resource = PHAssetResource.assetResourcesForAsset(asset)
@@ -169,7 +168,8 @@ class IosLocalMediaProcessor(
                     dateInFeed = localDateTime,
                     size = bytes,
                     duration = asset.duration.toLong().seconds,
-                    uniqueAssetIdentifier = Uuid.random().toString()
+                    uniqueAssetIdentifier = Uuid.random().toString(),
+                    isSynced = false
                 )
             )
         }

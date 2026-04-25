@@ -1,13 +1,11 @@
 package com.serratocreations.phovo.data.photos.mappers
 
-import coil3.toUri
-import com.serratocreations.phovo.core.database.entities.AssetLocation
-import com.serratocreations.phovo.core.database.entities.MediaItemMetadata
-import com.serratocreations.phovo.core.database.entities.MediaItemLocationEntity
+import com.serratocreations.phovo.core.database.entities.MediaItemMetadataEntity
+import com.serratocreations.phovo.core.database.entities.LocalMediaEntity
 import com.serratocreations.phovo.core.database.entities.MediaItemWithMetadata
 import com.serratocreations.phovo.core.model.MediaType
 import com.serratocreations.phovo.core.model.network.MediaItemDto
-import com.serratocreations.phovo.data.photos.repository.model.LocalOrRemoteAsset
+import com.serratocreations.phovo.data.photos.repository.model.AssetLocation
 import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
@@ -26,47 +24,37 @@ import kotlin.time.Instant
 fun MediaItemWithMetadata.toMediaItem(): MediaItem {
     // Combine UTC timestamp with offset to get local wall-clock time for feed
     val dateInFeed = Instant
-        .fromEpochMilliseconds(mediaItemMetadata.timeStampUtcMs + mediaItemMetadata.timeOffsetMs)
+        .fromEpochMilliseconds(mediaItemMetadataEntity.timeStampUtcMs + mediaItemMetadataEntity.timeOffsetMs)
         .toLocalDateTime(TimeZone.UTC)
 
-    // TODO for now we assume all db media items are stored locally
-    val assetLocation = when(mediaItemLocation.assetLocation) {
-        AssetLocation.Local -> {
-            LocalOrRemoteAsset.LocalAsset(
-                localAssetLocation = PlatformFile(mediaItemLocation.uri),
-                isAlsoAvailableRemotely = false
-            )
-        }
-        AssetLocation.LocalAndRemote -> {
-            LocalOrRemoteAsset.LocalAsset(
-                localAssetLocation = PlatformFile(mediaItemLocation.uri),
-                isAlsoAvailableRemotely = true
-            )
-        }
-        AssetLocation.Remote -> {
-            LocalOrRemoteAsset.RemoteAsset(
-                remoteAssetUri = mediaItemLocation.uri.toUri()
-            )
-        }
+    val assetLocation = localLocation?.let { locationNotNull ->
+        AssetLocation.LocalAssetLocation(
+            localAssetLocation = PlatformFile(locationNotNull.localUri)
+        )
+    } ?: run {
+        AssetLocation.RemoteAssetLocation
     }
-    return when (mediaItemMetadata.mediaType) {
+
+    return when (mediaItemMetadataEntity.mediaType) {
         MediaType.Image -> {
             MediaImageItem(
-                uniqueAssetIdentifier = mediaItemMetadata.metadataAssetHash,
+                uniqueAssetIdentifier = mediaItemMetadataEntity.assetHash,
+                isSynced = mediaItemMetadataEntity.isSynced,
                 assetLocation = assetLocation,
-                fileName = mediaItemMetadata.fileName,
+                fileName = mediaItemMetadataEntity.fileName,
                 dateInFeed = dateInFeed,
-                size = mediaItemMetadata.size
+                size = mediaItemMetadataEntity.size
             )
         }
         MediaType.Video -> {
-            val duration = (mediaItemMetadata.videoDurationMs ?: 0L).milliseconds
+            val duration = (mediaItemMetadataEntity.videoDurationMs ?: 0L).milliseconds
             MediaVideoItem(
-                uniqueAssetIdentifier = mediaItemMetadata.metadataAssetHash,
+                uniqueAssetIdentifier = mediaItemMetadataEntity.assetHash,
+                isSynced = mediaItemMetadataEntity.isSynced,
                 assetLocation = assetLocation,
-                fileName = mediaItemMetadata.fileName,
+                fileName = mediaItemMetadataEntity.fileName,
                 dateInFeed = dateInFeed,
-                size = mediaItemMetadata.size,
+                size = mediaItemMetadataEntity.size,
                 duration = duration
             )
         }
@@ -92,19 +80,23 @@ fun Flow<List<MediaItemWithMetadata>>.toMediaItems(): Flow<List<MediaItem>> =
         }
     }
 
-fun MediaItemWithMetadata.toMediaItemDto(): MediaItemDto = MediaItemDto(
-    fileName = mediaItemMetadata.fileName,
-    assetHash = mediaItemMetadata.metadataAssetHash,
-    size = mediaItemMetadata.size,
-    timeStampUtcMs = mediaItemMetadata.timeStampUtcMs,
-    timeOffsetMs = mediaItemMetadata.timeOffsetMs,
-    mediaType = mediaItemMetadata.mediaType,
-    videoDurationMs = mediaItemMetadata.videoDurationMs,
+fun MediaItemWithMetadata.toMediaItemDto(): MediaItemDto =
+    this.mediaItemMetadataEntity.toMediaItemDto()
+
+fun MediaItemMetadataEntity.toMediaItemDto(): MediaItemDto = MediaItemDto(
+    fileName = fileName,
+    assetHash = assetHash,
+    size = size,
+    timeStampUtcMs = timeStampUtcMs,
+    timeOffsetMs = timeOffsetMs,
+    mediaType = mediaType,
+    videoDurationMs = videoDurationMs,
 )
 
-fun MediaItemDto.toMediaItemEntity(): MediaItemMetadata {
-    return MediaItemMetadata(
-        metadataAssetHash = assetHash,
+fun MediaItemDto.toMediaItemEntity(isSynced: Boolean): MediaItemMetadataEntity {
+    return MediaItemMetadataEntity(
+        assetHash = assetHash,
+        isSynced = isSynced,
         fileName = fileName,
         timeStampUtcMs = timeStampUtcMs,
         timeOffsetMs = timeOffsetMs,
@@ -127,8 +119,9 @@ fun MediaItem.toMediaItemWithUriEntity(): MediaItemWithMetadata {
     }
 
     return MediaItemWithMetadata(
-        mediaItemMetadata = MediaItemMetadata(
-            metadataAssetHash = uniqueAssetIdentifier,
+        mediaItemMetadataEntity = MediaItemMetadataEntity(
+            assetHash = uniqueAssetIdentifier,
+            isSynced = isSynced,
             fileName = fileName,
             timeStampUtcMs = timeStampUtcMs,
             timeOffsetMs = timeOffsetMs,
@@ -136,29 +129,17 @@ fun MediaItem.toMediaItemWithUriEntity(): MediaItemWithMetadata {
             mediaType = mediaType,
             videoDurationMs = videoDurationMs,
         ),
-        mediaItemLocation = MediaItemLocationEntity(
-            assetHash = uniqueAssetIdentifier,
-            assetLocation = when(val location = assetLocation) {
-                is LocalOrRemoteAsset.LocalAsset -> {
-                    if (location.isAlsoAvailableRemotely) {
-                        AssetLocation.LocalAndRemote
-                    } else {
-                        AssetLocation.Local
-                    }
-                }
-                is LocalOrRemoteAsset.RemoteAsset -> {
-                    AssetLocation.Remote
-                }
-            },
-            uri = when(val location = assetLocation) {
-                is LocalOrRemoteAsset.LocalAsset -> {
-                    location.localAssetLocation.absolutePath()
-                }
-                is LocalOrRemoteAsset.RemoteAsset -> {
-                    location.remoteAssetUri.toString()
-                }
+        localLocation = when(val location = assetLocation) {
+            is AssetLocation.LocalAssetLocation -> {
+                LocalMediaEntity(
+                    assetHash = uniqueAssetIdentifier,
+                    localUri = location.localAssetLocation.absolutePath()
+                )
             }
-        )
+            AssetLocation.RemoteAssetLocation -> {
+                null
+            }
+        }
     )
 }
 
