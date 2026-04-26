@@ -20,6 +20,7 @@ class IosAndroidMediaNetworkDataSource(
     private val log = logger.withTag("IosAndroidMediaNetworkDataSource")
 
     override suspend fun chunkedUpload(mediaItemDto: MediaItemDto, mediaUri: String): SyncResult {
+        // TODO Clients need to be updated to use asset hash
         val file = mediaItemDto.mediaType.getPlatformFile(mediaUri, ioDispatcher) ?: return SyncResult.SyncError
         if (!file.exists()) {
             log.e { "File not found at $mediaUri" }

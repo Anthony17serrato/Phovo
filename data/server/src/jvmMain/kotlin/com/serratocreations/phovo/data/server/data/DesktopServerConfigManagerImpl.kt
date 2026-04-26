@@ -1,5 +1,6 @@
 package com.serratocreations.phovo.data.server.data
 
+import com.serratocreations.phovo.core.common.PART_EXTENSION
 import com.serratocreations.phovo.core.database.entities.LocalMediaEntity
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.core.model.network.MediaItemDto
@@ -46,10 +47,8 @@ import java.nio.file.Paths
 import java.time.LocalDateTime
 import java.net.NetworkInterface
 import java.net.Inet4Address
-import java.net.URI
 import java.nio.file.StandardCopyOption
 import java.nio.file.StandardOpenOption
-import kotlin.io.path.name
 import kotlin.uuid.ExperimentalUuidApi
 
 class DesktopServerConfigManagerImpl(
@@ -63,10 +62,6 @@ class DesktopServerConfigManagerImpl(
     // Caches the current config state for new subscribers
     private val serverConfigState = MutableStateFlow(ServerConfigState())
     private val log = logger.withTag("DesktopServerConfigManagerImpl")
-
-    companion object {
-        private const val PART_EXTENSION = ".part"
-    }
 
     private fun getHostIPv4(): String {
         return try {
@@ -106,7 +101,8 @@ class DesktopServerConfigManagerImpl(
             // Upload initialization – send JSON metadata once
             post("/upload/init") {
                 val mediaItemDto = call.receive<MediaItemDto>()
-
+                // TODO If file exists but is partial, delete file and allow re-upload
+                // TODO if filename exist but asset hash is different, append a _n to the filename
                 if (localMediaRepository.doesAssetExist(mediaItemDto.assetHash)) {
                     call.respond(
                         HttpStatusCode.OK,
@@ -167,6 +163,7 @@ class DesktopServerConfigManagerImpl(
 
             // Finalize upload – rename .part → real file
             post("/upload/complete") {
+                // TODO verify final file matches the asset hash
                 val localUuid = call.receiveText() // client just sends file uuid
                 var localMediaEntity = localMediaRepository.getLocalMediaByAssetHash(localUuid)
                     ?: run {
@@ -175,17 +172,25 @@ class DesktopServerConfigManagerImpl(
                         return@post
                     }
 
-                suspend fun moveFileToFinalPath(): URI = withContext(ioDispatcher) {
-                    val uri = URI.create(localMediaEntity.localUri)
-                    val filePath = Paths.get(uri)
-                    val finalPath =
-                        filePath.parent.resolve(filePath.fileName.name.removeSuffix(PART_EXTENSION))
-                    Files.move(filePath, finalPath, StandardCopyOption.REPLACE_EXISTING)
-                    return@withContext finalPath.toUri()
+                suspend fun moveFileToFinalPath(): String = withContext(ioDispatcher) {
+                    try {
+                        val filePath = Paths.get(localMediaEntity.localUri)
+
+                        val finalPath = filePath.parent.resolve(
+                            filePath.fileName.toString().removeSuffix(PART_EXTENSION)
+                        )
+
+                        Files.move(filePath, finalPath, StandardCopyOption.REPLACE_EXISTING)
+
+                        finalPath.toAbsolutePath().toString()
+                    } catch (e: Exception) {
+                        this@DesktopServerConfigManagerImpl.log.e(e) { "Exception moving file" }
+                        throw e
+                    }
                 }
                 this@DesktopServerConfigManagerImpl.log.i { "Upload complete for $localUuid" }
                 localMediaEntity = localMediaEntity.copy(
-                    localUri = moveFileToFinalPath().toString(),
+                    localUri = moveFileToFinalPath(),
                 )
                 localMediaRepository.addOrUpdateLocalMediaItem(localMediaEntity)
                 call.respond(HttpStatusCode.OK)

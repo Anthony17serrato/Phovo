@@ -1,5 +1,6 @@
 package com.serratocreations.phovo.data.photos.repository
 
+import com.serratocreations.phovo.core.common.PART_EXTENSION
 import com.serratocreations.phovo.core.database.dao.PhovoMediaDao
 import com.serratocreations.phovo.core.database.entities.LocalMediaEntity
 import com.serratocreations.phovo.core.database.entities.LocalMediaItemWithMetadata
@@ -69,7 +70,7 @@ class LocalMediaRepositoryImpl(
 
     override suspend fun doesAssetExist(assetHash: String): Boolean {
         val asset = localMediaDataSource.getLocalMediaByAssetHash(assetHash)
-        return (asset != null)
+        return (asset != null && asset.localUri.endsWith(PART_EXTENSION).not())
     }
 
     override fun observeUnsyncedMediaCount(): Flow<Int> =

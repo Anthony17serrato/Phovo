@@ -89,17 +89,22 @@ abstract class MediaNetworkDataSource(
     }
 
     protected suspend fun completeSuccessfulUpload(mediaItemDto: MediaItemDto): SyncResult {
-        try {
-            val updatedItem: MediaItemDto = client.post("http://$IP/upload/complete") {
+        return try {
+            val response = client.post("http://$IP/upload/complete") {
                 contentType(ContentType.Text.Plain)
                 setBody(mediaItemDto.assetHash)
-            }.body()
+            }
 
-            log.i { "Upload complete for ${updatedItem.fileName}" }
-            return SyncResult.SyncSuccessful
+            if (response.status.isSuccess()) {
+                log.i { "Upload complete for ${mediaItemDto.fileName}" }
+                SyncResult.SyncSuccessful
+            } else {
+                log.e { "Upload completion failed with status: ${response.status}" }
+                SyncResult.SyncError
+            }
         } catch (e: IOException) {
             log.e { "Upload completion failed: ${e.message}" }
-            return SyncResult.SyncError
+            SyncResult.SyncError
         }
     }
 }
