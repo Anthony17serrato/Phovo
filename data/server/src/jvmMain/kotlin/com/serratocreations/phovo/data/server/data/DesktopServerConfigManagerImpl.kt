@@ -3,11 +3,14 @@ package com.serratocreations.phovo.data.server.data
 import com.serratocreations.phovo.core.database.entities.LocalMediaEntity
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.core.model.network.MediaItemDto
+import com.serratocreations.phovo.core.model.network.UploadInitResponse
 import com.serratocreations.phovo.data.photos.repository.LocalMediaRepository
 import com.serratocreations.phovo.data.server.data.model.ServerConfig
 import com.serratocreations.phovo.data.server.data.repository.DesktopServerConfigRepository
 import com.serratocreations.phovo.data.server.data.repository.ServerEventsRepository
 import io.github.vinceglb.filekit.absolutePath
+import io.github.vinceglb.filekit.createDirectories
+import io.github.vinceglb.filekit.div
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.flow.Flow
@@ -102,28 +105,46 @@ class DesktopServerConfigManagerImpl(
 
             // Upload initialization – send JSON metadata once
             post("/upload/init") {
-                val mediaItemDto = call.receive<MediaItemDto>() // your data class with name, size, etc.
-                // TODO Migrate to filekit
+                val mediaItemDto = call.receive<MediaItemDto>()
+
+                if (localMediaRepository.doesAssetExist(mediaItemDto.assetHash)) {
+                    call.respond(
+                        HttpStatusCode.OK,
+                        UploadInitResponse(
+                            uploadRequired = false,
+                            message = "Asset already exists"
+                        )
+                    )
+                    return@post
+                }
+
                 val directory = serverConfigRepository.observeServerConfig().first()
-                    ?.backupDirectory?.absolutePath()?.plus("/") ?: error("No server config")
+                    ?.backupDirectory ?: error("No Server Config")
 
-                val dirPath = Paths.get(directory)
-                if (!Files.exists(dirPath)) Files.createDirectories(dirPath)
-                // TODO Need to reject the file if it already exists(query db for asset hash)
-                //  If file exists but is partial, delete file and allow re-upload
-                // TODO if filename exist but asset hash is different, append a _n to the filename
-                val filePath = dirPath.resolve(mediaItemDto.fileName + PART_EXTENSION)
+                directory.createDirectories(mustCreate = false)
 
-                // Create or truncate file to start fresh
-                Files.newOutputStream(filePath, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING).use { }
+                val filePath = directory / (mediaItemDto.fileName + PART_EXTENSION)
+
+                Files.newOutputStream(
+                    filePath.file.toPath(),
+                    StandardOpenOption.CREATE,
+                    StandardOpenOption.TRUNCATE_EXISTING
+                ).use { }
+
                 val localMediaEntity = LocalMediaEntity(
                     assetHash = mediaItemDto.assetHash,
-                    localUri = filePath.toUri().toString()
+                    localUri = filePath.absolutePath()
                 )
 
-                this@DesktopServerConfigManagerImpl.log.i { "Initialized upload for ${mediaItemDto.fileName}" }
                 localMediaRepository.addOrUpdateLocalMediaItem(localMediaEntity)
-                call.respond(HttpStatusCode.Created, "Upload initialized")
+
+                call.respond(
+                    HttpStatusCode.Created,
+                    UploadInitResponse(
+                        uploadRequired = true,
+                        message = "Upload initialized"
+                    )
+                )
             }
 
             // Chunk appending – raw bytes

@@ -2,6 +2,7 @@ package com.serratocreations.phovo.data.photos.network
 
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.core.model.network.MediaItemDto
+import com.serratocreations.phovo.core.model.network.UploadInitResponse
 import com.serratocreations.phovo.data.photos.repository.model.SyncResult
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import io.ktor.client.HttpClient
@@ -52,18 +53,21 @@ abstract class MediaNetworkDataSource(
     ): SyncResult {
         log.i { "syncMedia $mediaItemDto" }
 
-        // Step 1: Init
-        try {
+        val initResponse = try {
             client.post("http://$IP/upload/init") {
                 contentType(ContentType.Application.Json)
                 setBody(mediaItemDto)
-            }
+            }.body<UploadInitResponse>()
         } catch (e: IOException) {
             log.e { "error initializing upload $e" }
             return SyncResult.SyncError
         }
 
-        // Step 2: Chunked upload
+        if (!initResponse.uploadRequired) {
+            log.i { "Skipping upload: ${initResponse.message}" }
+            return SyncResult.SyncSuccessful
+        }
+
         return chunkedUpload(mediaItemDto, mediaUri)
     }
 

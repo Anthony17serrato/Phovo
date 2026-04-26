@@ -18,6 +18,7 @@ interface LocalMediaRepository: MediaRepository {
     suspend fun getMediaItemByAssetHash(assetHash: String): MediaItemWithMetadata?
     suspend fun getLocalMediaItemWithMetadataByAssetHash(assetHash: String): LocalMediaItemWithMetadata?
     suspend fun getLocalMediaByAssetHash(assetHash: String): LocalMediaEntity?
+    suspend fun doesAssetExist(assetHash: String): Boolean
     suspend fun addOrUpdateMediaItem(mediaItem: MediaItem)
     // TODO Repository APIs should not expose DAO data models
     suspend fun addOrUpdateLocalMediaItem(localMediaEntity: LocalMediaEntity)
@@ -64,6 +65,11 @@ class LocalMediaRepositoryImpl(
 
     override suspend fun addOrUpdateLocalMediaItem(localMediaEntity: LocalMediaEntity) {
         localMediaDataSource.upsertLocal(localMediaEntity)
+    }
+
+    override suspend fun doesAssetExist(assetHash: String): Boolean {
+        val asset = localMediaDataSource.getLocalMediaByAssetHash(assetHash)
+        return (asset != null)
     }
 
     override fun observeUnsyncedMediaCount(): Flow<Int> =

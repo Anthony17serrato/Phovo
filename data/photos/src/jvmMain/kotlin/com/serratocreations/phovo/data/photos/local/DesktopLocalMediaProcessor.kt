@@ -86,9 +86,10 @@ class DesktopLocalMediaProcessor(
 
         val processedItemIds = processedItems.map { it.uniqueAssetIdentifier }
         // TODO This work can be optimized with parallel decomposition
-        directoryFiles.filter { availableFile ->
+        directoryFiles.filter { directoryChild ->
+            if (directoryChild.isDirectory()) return@filter false
             // TODO check computation time, logic may need to revise for performance improvements
-            val fileHash = fileHashCalculator.computeSha256(availableFile)
+            val fileHash = fileHashCalculator.computeSha256(directoryChild)
             fileHash !in processedItemIds
         }.forEach { file ->
             val fileType = file.getFileType()
