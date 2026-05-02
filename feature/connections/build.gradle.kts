@@ -13,6 +13,7 @@ kotlin {
         commonMain.dependencies {
             implementation(projects.core.designsystem)
             implementation(projects.core.common)
+            implementation(projects.core.model)
             implementation(projects.data.server)
             implementation(projects.core.navigation)
 

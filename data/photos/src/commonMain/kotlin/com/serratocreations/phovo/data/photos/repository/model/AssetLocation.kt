@@ -1,7 +1,8 @@
 package com.serratocreations.phovo.data.photos.repository.model
 
 import coil3.toUri
-import com.serratocreations.phovo.data.photos.network.Endpoint
+import com.serratocreations.phovo.core.model.network.BaseUrl
+import com.serratocreations.phovo.core.model.network.Endpoint
 import io.github.vinceglb.filekit.PlatformFile
 
 /**
@@ -18,7 +19,7 @@ sealed interface AssetLocation {
         fun getAssetUri(
             assetHash: String,
             endpoint: Endpoint,
-            baseUrl: String
+            baseUrl: BaseUrl
         ) = "$baseUrl${endpoint.value}${assetHash}".toUri()
     }
 }

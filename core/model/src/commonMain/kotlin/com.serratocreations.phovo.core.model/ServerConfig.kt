@@ -1,5 +1,6 @@
-package com.serratocreations.phovo.data.server.data.model
+package com.serratocreations.phovo.core.model
 
+import com.serratocreations.phovo.core.model.network.BaseUrl
 import io.github.vinceglb.filekit.PlatformFile
 
 /**
@@ -17,6 +18,6 @@ sealed interface ServerConfig {
     ): ServerConfig
 
     data class ClientSpecificServerConfig(
-        val serverBaseUrlString: String
+        val serverBaseUrlString: BaseUrl
     ): ServerConfig
 }

@@ -1,8 +1,8 @@
 package com.serratocreations.phovo
 
+import com.serratocreations.phovo.core.serverconfig.DesktopServerConfigRepository
 import com.serratocreations.phovo.data.photos.LocalMediaManager
 import com.serratocreations.phovo.data.server.data.DesktopServerConfigManager
-import com.serratocreations.phovo.data.server.data.repository.DesktopServerConfigRepository
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.absolutePath
 import kotlinx.coroutines.CoroutineScope

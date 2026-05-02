@@ -9,7 +9,9 @@ import org.koin.dsl.module
 internal actual fun getPlatformModulesBranch2(): Module = module {
     single {
         RemoteMediaRepositoryImpl(
-            remotePhotosDataSource = get()
+            remotePhotosDataSource = get(),
+            serverConfigRepository = get(),
+            logger = get()
         )
     } binds arrayOf(
         RemoteMediaRepository::class

@@ -6,8 +6,8 @@ import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.core.model.network.MediaItemDto
 import com.serratocreations.phovo.core.model.network.UploadInitResponse
 import com.serratocreations.phovo.data.photos.repository.LocalMediaRepository
-import com.serratocreations.phovo.data.server.data.model.ServerConfig
-import com.serratocreations.phovo.data.server.data.repository.DesktopServerConfigRepository
+import com.serratocreations.phovo.core.model.ServerConfig
+import com.serratocreations.phovo.core.serverconfig.DesktopServerConfigRepository
 import com.serratocreations.phovo.data.server.data.repository.ServerEventsRepository
 import io.github.vinceglb.filekit.absolutePath
 import io.github.vinceglb.filekit.createDirectories

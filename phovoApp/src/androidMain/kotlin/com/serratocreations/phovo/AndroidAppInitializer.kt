@@ -1,7 +1,7 @@
 package com.serratocreations.phovo
 
+import com.serratocreations.phovo.core.serverconfig.IosAndroidWasmServerConfigRepository
 import com.serratocreations.phovo.data.photos.LocalMediaManager
-import com.serratocreations.phovo.data.server.data.repository.IosAndroidWasmServerConfigRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 

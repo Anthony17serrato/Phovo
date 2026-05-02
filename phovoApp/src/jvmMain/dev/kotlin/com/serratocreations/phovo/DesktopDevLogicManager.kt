@@ -1,7 +1,7 @@
 package com.serratocreations.phovo
 
 import com.serratocreations.phovo.core.database.dao.PhovoMediaDao
-import com.serratocreations.phovo.data.server.data.repository.DesktopServerConfigRepository
+import com.serratocreations.phovo.core.serverconfig.DesktopServerConfigRepository
 import io.github.vinceglb.filekit.delete
 import io.github.vinceglb.filekit.list
 import kotlinx.coroutines.flow.first

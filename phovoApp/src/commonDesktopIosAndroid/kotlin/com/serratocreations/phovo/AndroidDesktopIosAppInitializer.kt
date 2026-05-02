@@ -1,7 +1,7 @@
 package com.serratocreations.phovo
 
 import com.serratocreations.phovo.data.photos.LocalMediaManager
-import com.serratocreations.phovo.data.server.data.repository.ServerConfigRepository
+import com.serratocreations.phovo.core.serverconfig.ServerConfigRepository
 import kotlinx.coroutines.CoroutineScope
 
 abstract class AndroidDesktopIosAppInitializer(

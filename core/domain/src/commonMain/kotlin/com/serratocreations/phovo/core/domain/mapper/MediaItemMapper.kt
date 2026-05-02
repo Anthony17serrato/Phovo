@@ -1,7 +1,8 @@
 package com.serratocreations.phovo.core.domain.mapper
 
 import com.serratocreations.phovo.core.domain.model.MediaItemWithThumbnails
-import com.serratocreations.phovo.data.photos.network.ApiEndpoints
+import com.serratocreations.phovo.core.model.network.ApiEndpoints
+import com.serratocreations.phovo.core.model.network.BaseUrl
 import com.serratocreations.phovo.data.photos.repository.model.AssetLocation
 import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
@@ -15,14 +16,14 @@ fun MediaItem.toMediaItemWithThumbnails(
     lowResThumbnailLocation: AssetLocation?,
     highResThumbnailLocation: AssetLocation,
     assetHash: String,
-    baseUrl: String?
+    baseUrl: BaseUrl?
 ): MediaItemWithThumbnails? {
     return when(this) {
         is MediaImageItem -> {
             MediaItemWithThumbnails.MediaImageItem(
                 assetLocation = assetLocation.toDomainAssetLocation(
                     assetHash = assetHash,
-                    endpoint = ApiEndpoints.GET_MEDIA,
+                    endpoint = ApiEndpoints.GET_MEDIA_API,
                     baseUrl = baseUrl
                 ) ?: return null,
                 lowResThumbnailLocation = lowResThumbnailLocation?.toDomainAssetLocation(
@@ -45,12 +46,12 @@ fun MediaItem.toMediaItemWithThumbnails(
             MediaItemWithThumbnails.MediaVideoItem(
                 assetLocation = assetLocation.toDomainAssetLocation(
                     assetHash = assetHash,
-                    endpoint = ApiEndpoints.GET_MEDIA,
+                    endpoint = ApiEndpoints.GET_MEDIA_API,
                     baseUrl = baseUrl
                 ) ?: return null,
                 lowResThumbnailLocation = lowResThumbnailLocation?.toDomainAssetLocation(
                     assetHash = assetHash,
-                    endpoint = ApiEndpoints.HIGH_RES_THUMBNAIL_API,
+                    endpoint = ApiEndpoints.LOW_RES_THUMBNAIL_API,
                     baseUrl = baseUrl
                 ),
                 highResThumbnailLocation = highResThumbnailLocation.toDomainAssetLocation(

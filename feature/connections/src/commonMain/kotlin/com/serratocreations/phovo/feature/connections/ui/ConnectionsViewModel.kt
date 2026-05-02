@@ -7,7 +7,7 @@ import com.serratocreations.phovo.core.designsystem.component.PhovoRoute
 import com.serratocreations.phovo.data.server.data.ConfigStatus
 import com.serratocreations.phovo.data.server.data.DesktopServerConfigManager
 import com.serratocreations.phovo.data.server.data.ServerConfigManager
-import com.serratocreations.phovo.data.server.data.model.ServerConfig
+import com.serratocreations.phovo.core.model.ServerConfig
 import io.github.vinceglb.filekit.PlatformFile
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow

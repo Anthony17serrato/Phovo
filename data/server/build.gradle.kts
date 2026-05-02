@@ -15,6 +15,7 @@ kotlin {
             implementation(projects.core.logger)
             implementation(projects.core.model)
             implementation(projects.data.photos)
+            implementation(projects.core.serverconfig)
             implementation(libs.serialization.json)
             implementation(libs.filekit.core)
         }

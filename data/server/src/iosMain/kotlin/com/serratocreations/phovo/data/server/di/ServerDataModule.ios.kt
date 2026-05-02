@@ -2,8 +2,8 @@ package com.serratocreations.phovo.data.server.di
 
 import com.serratocreations.phovo.data.server.data.NoOpServerConfigManager
 import com.serratocreations.phovo.data.server.data.ServerConfigManager
-import com.serratocreations.phovo.data.server.data.repository.IosAndroidWasmServerConfigRepository
-import com.serratocreations.phovo.data.server.data.repository.ServerConfigRepository
+import com.serratocreations.phovo.core.serverconfig.IosAndroidWasmServerConfigRepository
+import com.serratocreations.phovo.core.serverconfig.ServerConfigRepository
 import org.koin.core.module.Module
 import org.koin.dsl.binds
 import org.koin.dsl.module

@@ -5,7 +5,7 @@ import com.serratocreations.phovo.core.domain.model.MediaItemWithThumbnails
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.data.photos.repository.MediaRepository
 import com.serratocreations.phovo.data.photos.repository.model.AssetLocation
-import com.serratocreations.phovo.data.server.data.repository.IosAndroidWasmServerConfigRepository
+import com.serratocreations.phovo.core.serverconfig.IosAndroidWasmServerConfigRepository
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.div
 import io.github.vinceglb.filekit.exists

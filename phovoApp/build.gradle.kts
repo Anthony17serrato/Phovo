@@ -27,6 +27,8 @@ kotlin {
             implementation(projects.feature.connections)
             implementation(projects.core.common)
             implementation(projects.core.logger)
+            implementation(projects.core.model)
+            implementation(projects.core.serverconfig)
             implementation(projects.data.server)
             implementation(projects.data.photos)
             implementation(projects.core.navigation)
