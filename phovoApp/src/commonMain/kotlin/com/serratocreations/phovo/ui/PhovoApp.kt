@@ -52,6 +52,7 @@ import com.serratocreations.phovo.feature.photos.navigation.PhotosHomeNavKey
 import com.serratocreations.phovo.core.navigation.rememberNavigationState
 import com.serratocreations.phovo.feature.connections.ui.ConnectionsRouteComponent
 import com.serratocreations.phovo.feature.connections.ui.connectionsEntries
+import com.serratocreations.phovo.feature.photos.extensions.showAppBar
 import com.serratocreations.phovo.feature.photos.navigation.photosEntries
 import com.serratocreations.phovo.navigation.PhovoNavSavedStateConfiguration
 import com.serratocreations.phovo.navigation.TOP_LEVEL_NAV_ITEMS
@@ -203,7 +204,8 @@ internal fun InternalPhovoApp(
                         val entryProvider = entryProvider {
                             photosEntries(
                                 sharedElementTransition = this@SharedTransitionLayout,
-                                navigationViewModel = navigationViewModel
+                                navigationViewModel = navigationViewModel,
+                                onShowAppBarRequested = { scrollBehavior.showAppBar() }
                             )
                             searchEntries(navigationViewModel = navigationViewModel)
                             connectionsEntries(phovoViewModel = phovoViewModel, navigationViewModel = navigationViewModel)
