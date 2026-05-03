@@ -10,13 +10,13 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImagePainter
 import coil3.compose.rememberAsyncImagePainter
 import com.serratocreations.phovo.core.common.util.letIf
-import com.serratocreations.phovo.data.photos.repository.model.LocalOrRemoteAsset
+import com.serratocreations.phovo.core.domain.model.DomainAssetLocation
 
 @Composable
 fun LoadMultiResImage(
-    lowRes: LocalOrRemoteAsset? = null,
-    highRes: LocalOrRemoteAsset? = null,
-    sourceRes: LocalOrRemoteAsset? = null,
+    lowRes: DomainAssetLocation? = null,
+    highRes: DomainAssetLocation? = null,
+    sourceRes: DomainAssetLocation? = null,
     contentScale: ContentScale,
     modifier: Modifier = Modifier
 ) {
