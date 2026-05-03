@@ -6,22 +6,13 @@ import com.ashampoo.kim.jvm.readMetadata
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.data.photos.repository.model.AssetLocation
 import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
-import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
 import com.serratocreations.phovo.data.photos.util.FileHashCalculator
 import com.serratocreations.phovo.data.thumbnails.ThumbnailRepository
 import io.github.vinceglb.filekit.PlatformFile
-import io.github.vinceglb.filekit.createDirectories
-import io.github.vinceglb.filekit.exists
-import io.github.vinceglb.filekit.extension
-import io.github.vinceglb.filekit.isDirectory
-import io.github.vinceglb.filekit.list
 import io.github.vinceglb.filekit.name
 import io.github.vinceglb.filekit.size
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.channels.SendChannel
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
@@ -45,78 +36,16 @@ class DesktopLocalMediaProcessor(
     private val ioDispatcher: CoroutineDispatcher,
     private val fileHashCalculator: FileHashCalculator,
     logger: PhovoLogger
-) : LocalMediaProcessor {
+) {
     private val log = logger.withTag("DesktopLocalMediaProcessor")
 
     enum class FileType {
         Directory, Photo, Video, Other
     }
-    private fun PlatformFile.getFileType(): FileType {
-        if (this.isDirectory()) return FileType.Directory
-
-        val extension = this.extension.lowercase()
-
-        return when (extension) {
-            in listOf("jpg", "jpeg", "png", "heic", "webp", "gif", "bmp", "tiff") -> FileType.Photo
-            in listOf("mp4", "mov", "mkv", "avi", "webm", "flv") -> FileType.Video
-            else -> FileType.Other
-        }
-    }
-
-    override fun CoroutineScope.processLocalItems(
-        processedItems: List<MediaItem>,
-        // Todo update API signature to remove nullability
-        localDirectory: String?,
-        processMediaChannel: SendChannel<MediaItem>
-    ) = launch(ioDispatcher) {
-
-        val directory = localDirectory?.let { PlatformFile(localDirectory) } ?: run {
-            log.e { "Directory is null" }
-            return@launch
-        }
-        if (directory.exists().not()) {
-            directory.createDirectories(mustCreate = false)
-        }
-        val directoryFiles = if (!directory.exists() || !directory.isDirectory()) {
-            log.e { "Invalid directory: $localDirectory" }
-            emptyList()
-        } else {
-            directory.list()
-        }
-
-        val processedItemIds = processedItems.map { it.uniqueAssetIdentifier }
-        // TODO This work can be optimized with parallel decomposition
-        directoryFiles.filter { directoryChild ->
-            if (directoryChild.isDirectory()) return@filter false
-            // TODO check computation time, logic may need to revise for performance improvements
-            val fileHash = fileHashCalculator.computeSha256(directoryChild)
-            fileHash !in processedItemIds
-        }.forEach { file ->
-            val fileType = file.getFileType()
-            when (fileType) {
-                FileType.Directory -> {
-                    // TODO: Some recursion implementation
-                    null
-                }
-
-                FileType.Photo -> {
-                    processImage(file, localDirectory)
-                }
-
-                FileType.Video -> {
-                    processVideo(file, localDirectory)
-                }
-
-                FileType.Other -> null
-            }?.let { mediaItem ->
-                processMediaChannel.send(mediaItem)
-            }
-        }
-    }
 
     // TODO Migrate to Ffmpeg for metadata extraction
     @OptIn(ExperimentalTime::class, ExperimentalUuidApi::class)
-    private suspend fun processVideo(
+    suspend fun processVideo(
         file: PlatformFile,
         outputDirectory: String
     ): MediaVideoItem? = withContext(ioDispatcher) {
@@ -155,7 +84,7 @@ class DesktopLocalMediaProcessor(
     }
 
     @OptIn(ExperimentalUuidApi::class)
-    private suspend fun processImage(
+    suspend fun processImage(
         file: PlatformFile,
         outputDirectory: String
     ): MediaImageItem? = withContext(ioDispatcher) {

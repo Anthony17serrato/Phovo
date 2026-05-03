@@ -1,7 +1,7 @@
 package com.serratocreations.phovo
 
 import com.serratocreations.phovo.core.serverconfig.DesktopServerConfigRepository
-import com.serratocreations.phovo.data.photos.LocalMediaManager
+import com.serratocreations.phovo.data.photos.DesktopLocalMediaManager
 import com.serratocreations.phovo.data.server.data.DesktopServerConfigManager
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.absolutePath
@@ -15,11 +15,10 @@ class DesktopAppInitializer(
     private val applicationScope: CoroutineScope,
     private val serverConfigRepository: DesktopServerConfigRepository,
     private val desktopServerConfigManager: DesktopServerConfigManager,
-    private val localMediaManager: LocalMediaManager
+    private val localMediaManager: DesktopLocalMediaManager
 ): AndroidDesktopIosAppInitializer(
     applicationScope,
-    serverConfigRepository,
-    localMediaManager
+    serverConfigRepository
 ) {
     override fun initialize() {
         super.initialize()

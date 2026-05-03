@@ -2,9 +2,8 @@ package com.serratocreations.phovo.data.photos.di
 
 import com.serratocreations.phovo.core.common.di.APPLICATION_SCOPE
 import com.serratocreations.phovo.core.common.di.IO_DISPATCHER
-import com.serratocreations.phovo.data.photos.LocalMediaManager
+import com.serratocreations.phovo.data.photos.DesktopLocalMediaManager
 import com.serratocreations.phovo.data.photos.local.DesktopLocalMediaProcessor
-import com.serratocreations.phovo.data.photos.local.LocalMediaProcessor
 import com.serratocreations.phovo.data.photos.repository.LocalMediaRepository
 import com.serratocreations.phovo.data.photos.repository.MediaRepository
 import com.serratocreations.phovo.data.photos.util.DesktopFileHashCalculator
@@ -21,12 +20,14 @@ internal actual fun getAndroidDesktopIosModules(): Module = module {
 //    }
 
     includes(thumbnailsModule)
-    single<LocalMediaManager> {
-        LocalMediaManager(
-            get(),
-            get(),
-            get(APPLICATION_SCOPE),
-            get()
+    single<DesktopLocalMediaManager> {
+        DesktopLocalMediaManager(
+            localMediaRepository = get(),
+            localMediaProcessor = get(),
+            ioDispatcher = get(IO_DISPATCHER),
+            fileHashCalculator = get(),
+            appScope = get(APPLICATION_SCOPE),
+            logger = get()
         )
     }
 
@@ -38,7 +39,7 @@ internal actual fun getAndroidDesktopIosModules(): Module = module {
         DesktopFileHashCalculator(ioDispatcher = get(IO_DISPATCHER))
     }
 
-    single<LocalMediaProcessor> {
+    single<DesktopLocalMediaProcessor> {
         val ioDispatcher: CoroutineDispatcher = get(IO_DISPATCHER)
         DesktopLocalMediaProcessor(
             thumbnailRepository = get(),

@@ -11,8 +11,7 @@ class IosAppInitializer(
     private val localMediaManager: LocalMediaManager
 ): AndroidDesktopIosAppInitializer(
     applicationScope,
-    serverConfigRepository,
-    localMediaManager
+    serverConfigRepository
 ) {
     override fun initialize() {
         super.initialize()

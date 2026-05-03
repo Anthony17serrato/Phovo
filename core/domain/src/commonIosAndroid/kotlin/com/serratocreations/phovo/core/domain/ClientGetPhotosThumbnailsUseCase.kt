@@ -32,8 +32,12 @@ class ClientGetPhotosFeedWithThumbnailsUseCase(
             return@combine mediaList.mapNotNull { mediaItem ->
                 // Prefer file thumb if exists, fallback to network thumb, no thumb if no base url
                 val lowResThumb = (FileKit.filesDir / GetPhotosFeedWithThumbnailsUseCase.LOW_RES_THUMBNAIL_DIR / "${mediaItem.uniqueAssetIdentifier}.webp").let {
-                    if (it.exists()) { AssetLocation.LocalAssetLocation(it) } else {
+                    if (it.exists()) {
+                        AssetLocation.LocalAssetLocation(it)
+                    } else if (mediaItem.isSynced) {
                         AssetLocation.RemoteAssetLocation
+                    } else {
+                        null
                     }
                 }
                 // If asset is stored locally pass asset directly, if not get high-res thumb from server

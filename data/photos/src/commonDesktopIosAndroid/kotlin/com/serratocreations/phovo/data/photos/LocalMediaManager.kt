@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
-open class LocalMediaManager(
+abstract class LocalMediaManager(
     private val localMediaRepository: LocalMediaRepository,
     private val localMediaProcessor: LocalMediaProcessor,
     private val appScope: CoroutineScope,

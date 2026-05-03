@@ -19,6 +19,11 @@ interface LocalMediaRepository: MediaRepository {
     suspend fun getMediaItemByAssetHash(assetHash: String): MediaItemWithMetadata?
     suspend fun getLocalMediaItemWithMetadataByAssetHash(assetHash: String): LocalMediaItemWithMetadata?
     suspend fun getLocalMediaByAssetHash(assetHash: String): LocalMediaEntity?
+
+    /**
+     * TODO API has some special logic which needs to be documented better
+     *  the API name may be misleading
+     */
     suspend fun doesAssetExist(assetHash: String): Boolean
     suspend fun addOrUpdateMediaItem(mediaItem: MediaItem)
     // TODO Repository APIs should not expose DAO data models
