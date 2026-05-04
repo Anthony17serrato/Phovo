@@ -1,13 +1,12 @@
 package com.serratocreations.phovo.feature.photos.navigation
 
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
-import com.serratocreations.phovo.core.common.Platform
-import com.serratocreations.phovo.core.common.getPlatform
 import com.serratocreations.phovo.core.navigation.AppBarConfig
 import com.serratocreations.phovo.core.navigation.DefaultNavigationIcon
 import com.serratocreations.phovo.core.navigation.NavigationViewModel
@@ -17,13 +16,13 @@ import com.serratocreations.phovo.feature.photos.ui.PhotoViewerScreen
 import com.serratocreations.phovo.feature.photos.ui.PhotosHomeScreen
 import com.serratocreations.phovo.feature.photos.ui.PhotosViewModel
 import com.serratocreations.phovo.feature.photos.ui.components.PhotosHomeTitleContent
-import com.serratocreations.phovo.feature.photos.ui.model.VideoPhotoUiItem
-import com.serratocreations.phovo.feature.photos.util.handleVideoDesktop
 import org.koin.compose.viewmodel.koinViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 fun EntryProviderScope<NavKey>.photosEntries(
     sharedElementTransition: SharedTransitionScope,
-    navigationViewModel: NavigationViewModel
+    navigationViewModel: NavigationViewModel,
+    onShowAppBarRequested: () -> Unit
 ) {
     entry<PhotosHomeNavKey>(
         clazzContentKey = { key -> key.toContentKey() }
@@ -40,6 +39,7 @@ fun EntryProviderScope<NavKey>.photosEntries(
         }
         PhotosHomeScreen(
             onPhotoClick = { uriPhotoUiItem ->
+                onShowAppBarRequested()
                 photosViewModel.onPhotoClick(uriPhotoUiItem)
                 navigationViewModel.navigate(PhotoDetailNavKey)
             },
