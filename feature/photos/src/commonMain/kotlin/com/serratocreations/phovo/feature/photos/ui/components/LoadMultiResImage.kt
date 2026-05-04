@@ -30,8 +30,8 @@ fun LoadMultiResImage(
             .size(144, 144)
             .scale(Scale.FIT)
             .precision(Precision.INEXACT)
-            .memoryCacheKey("thumb_${it.hashCode()}")
-            .diskCacheKey("thumb_${it.hashCode()}")
+            .memoryCacheKey("low_thumb_${it.hashCode()}")
+            .diskCacheKey("low_thumb_${it.hashCode()}")
             .build()
         rememberAsyncImagePainter(model = thumbRequest)
     }
@@ -41,8 +41,8 @@ fun LoadMultiResImage(
             .size(720, 720)
             .scale(Scale.FIT)
             .precision(Precision.INEXACT)
-            .memoryCacheKey("thumb_${it.hashCode()}")
-            .diskCacheKey("thumb_${it.hashCode()}")
+            .memoryCacheKey("high_thumb_${it.hashCode()}")
+            .diskCacheKey("high_thumb_${it.hashCode()}")
             .build()
         rememberAsyncImagePainter(thumbRequest)
     }
