@@ -9,11 +9,12 @@ import kotlinx.io.buffered
 import java.security.MessageDigest
 import kotlin.use
 
-class DesktopFileHashCalculator(
-    val ioDispatcher: CoroutineDispatcher
-): FileHashCalculator {
-    // TODO: Should handle exceptions
-    override suspend fun computeSha256(file: PlatformFile): String = logTimeToComplete(apiTag = "DesktopFileHashCalculator::computeSha256") {
+// TODO This implementation is same as desktop, create a common source set for both platforms and move there
+class AndroidFileHashCalculator(
+    private val ioDispatcher: CoroutineDispatcher
+) : FileHashCalculator {
+
+    override suspend fun computeSha256(file: PlatformFile): String = logTimeToComplete(apiTag = "AndroidFileHashCalculator::computeSha256") {
         withContext(ioDispatcher) {
             val digest = MessageDigest.getInstance("SHA-256")
 

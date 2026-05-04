@@ -1,6 +1,5 @@
 package com.serratocreations.phovo.data.photos.repository
 
-import com.serratocreations.phovo.core.common.PART_EXTENSION
 import com.serratocreations.phovo.core.database.dao.PhovoMediaDao
 import com.serratocreations.phovo.core.database.entities.LocalMediaEntity
 import com.serratocreations.phovo.core.database.entities.LocalMediaItemWithMetadata
@@ -8,7 +7,7 @@ import com.serratocreations.phovo.core.database.entities.MediaItemMetadataEntity
 import com.serratocreations.phovo.core.database.entities.MediaItemWithMetadata
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.core.model.MediaType
-import com.serratocreations.phovo.data.photos.mappers.toMediaItemWithUriEntity
+import com.serratocreations.phovo.data.photos.mappers.toMediaItemWithMetadataEntity
 import com.serratocreations.phovo.data.photos.mappers.toMediaItems
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import kotlinx.coroutines.flow.Flow
@@ -19,12 +18,8 @@ interface LocalMediaRepository: MediaRepository {
     suspend fun getMediaItemByAssetHash(assetHash: String): MediaItemWithMetadata?
     suspend fun getLocalMediaItemWithMetadataByAssetHash(assetHash: String): LocalMediaItemWithMetadata?
     suspend fun getLocalMediaByAssetHash(assetHash: String): LocalMediaEntity?
-
-    /**
-     * TODO API has some special logic which needs to be documented better
-     *  the API name may be misleading
-     */
-    suspend fun doesAssetExist(assetHash: String): Boolean
+    suspend fun doesCompleteAssetExist(assetHash: String): Boolean
+    suspend fun observeFirstUnprocessedFullLocalMedia(): Flow<LocalMediaEntity?>
     suspend fun addOrUpdateMediaItem(mediaItem: MediaItem)
     // TODO Repository APIs should not expose DAO data models
     suspend fun addOrUpdateLocalMediaItem(localMediaEntity: LocalMediaEntity)
@@ -63,7 +58,7 @@ class LocalMediaRepositoryImpl(
     }
 
     override suspend fun addOrUpdateMediaItem(mediaItem: MediaItem) {
-        val (mediaItemMetadata, mediaItemLocation) = mediaItem.toMediaItemWithUriEntity()
+        val (mediaItemMetadata, mediaItemLocation) = mediaItem.toMediaItemWithMetadataEntity()
         mediaItemLocation?.let { mediaItemLocationNotNull ->
             localMediaDataSource.upsertMetadataWithLocalEntity(mediaItemMetadata, mediaItemLocationNotNull)
         } ?: localMediaDataSource.upsertMetadata(mediaItemMetadata)
@@ -73,10 +68,13 @@ class LocalMediaRepositoryImpl(
         localMediaDataSource.upsertLocal(localMediaEntity)
     }
 
-    override suspend fun doesAssetExist(assetHash: String): Boolean {
-        val asset = localMediaDataSource.getLocalMediaByAssetHash(assetHash)
-        return (asset != null && asset.localUri.endsWith(PART_EXTENSION).not())
+    override suspend fun doesCompleteAssetExist(assetHash: String): Boolean {
+        val asset = localMediaDataSource.getNonPartialLocalMediaByAssetHash(assetHash)
+        return (asset != null)
     }
+
+    override suspend fun observeFirstUnprocessedFullLocalMedia(): Flow<LocalMediaEntity?> =
+        localMediaDataSource.observeFirstUnprocessedFullLocalMedia()
 
     override fun observeUnsyncedMediaCount(): Flow<Int> =
         localMediaDataSource.observeUnsyncedMediaItemCount()

@@ -227,8 +227,11 @@ class LocalAndRemoteMediaRepositoryImpl(
         return localMediaRepository.getLocalMediaByAssetHash(assetHash = assetHash)
     }
 
-    override suspend fun doesAssetExist(assetHash: String): Boolean =
-        localMediaRepository.doesAssetExist(assetHash = assetHash)
+    override suspend fun doesCompleteAssetExist(assetHash: String): Boolean =
+        localMediaRepository.doesCompleteAssetExist(assetHash = assetHash)
+
+    override suspend fun observeFirstUnprocessedFullLocalMedia(): Flow<LocalMediaEntity?> =
+        localMediaRepository.observeFirstUnprocessedFullLocalMedia()
 
     override suspend fun addOrUpdateMediaItem(mediaItem: MediaItem) = localMediaRepository.addOrUpdateMediaItem(mediaItem)
 

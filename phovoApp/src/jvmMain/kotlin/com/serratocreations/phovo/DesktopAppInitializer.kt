@@ -38,7 +38,7 @@ class DesktopAppInitializer(
                 .distinctUntilChanged()
                 .first()
             localMediaManager.initMediaProcessing(
-                localDirectory = backupDirectory.absolutePath()
+                outputDirectory = backupDirectory.absolutePath()
             )
         }
     }

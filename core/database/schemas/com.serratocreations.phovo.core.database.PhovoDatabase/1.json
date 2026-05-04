@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "222554e52987c5accec39be96758072f",
+    "identityHash": "b427f4444b5ce43bb29d403f30fb926b",
     "entities": [
       {
         "tableName": "ServerConfigEntity",
@@ -89,7 +89,7 @@
       },
       {
         "tableName": "LocalMediaEntity",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`assetHash` TEXT NOT NULL, `localUri` TEXT NOT NULL, PRIMARY KEY(`assetHash`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`assetHash` TEXT NOT NULL, `localUri` TEXT NOT NULL, `isPartial` INTEGER NOT NULL, PRIMARY KEY(`assetHash`))",
         "fields": [
           {
             "fieldPath": "assetHash",
@@ -101,6 +101,12 @@
             "fieldPath": "localUri",
             "columnName": "localUri",
             "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isPartial",
+            "columnName": "isPartial",
+            "affinity": "INTEGER",
             "notNull": true
           }
         ],
@@ -114,7 +120,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '222554e52987c5accec39be96758072f')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'b427f4444b5ce43bb29d403f30fb926b')"
     ]
   }
 }

@@ -59,13 +59,25 @@ interface PhovoMediaDao {
     @Query("SELECT * FROM LocalMediaEntity WHERE assetHash = :assetHash LIMIT 1")
     suspend fun getLocalMediaByAssetHash(assetHash: String): LocalMediaEntity?
 
+    @Query(
+        """
+        SELECT * 
+        FROM LocalMediaEntity
+        WHERE assetHash = :assetHash
+            AND isPartial = FALSE
+        LIMIT 1
+    """
+    )
+    suspend fun getNonPartialLocalMediaByAssetHash(assetHash: String): LocalMediaEntity?
+
     @Transaction
     @Query(
         """
     SELECT 
         m.*, 
         l.assetHash AS local_assetHash,
-        l.localUri AS local_localUri
+        l.localUri AS local_localUri,
+        l.isPartial AS local_isPartial
     FROM MediaItemMetadataEntity m
     INNER JOIN LocalMediaEntity l
         ON m.assetHash = l.assetHash
@@ -77,12 +89,25 @@ interface PhovoMediaDao {
         assetHash: String
     ): LocalMediaItemWithMetadata?
 
+    @Query("""
+        SELECT l.*
+        FROM LocalMediaEntity l
+        LEFT JOIN MediaItemMetadataEntity m
+        ON l.assetHash = m.assetHash
+        WHERE m.assetHash IS NULL
+        AND l.isPartial = 0
+        LIMIT 1
+    """
+    )
+    fun observeFirstUnprocessedFullLocalMedia(): Flow<LocalMediaEntity?>
+
     @Query(
         """
     SELECT 
         m.*,
         l.assetHash AS local_assetHash,
-        l.localUri AS local_localUri
+        l.localUri AS local_localUri,
+        l.isPartial AS local_isPartial
     FROM MediaItemMetadataEntity m
     INNER JOIN LocalMediaEntity l
         ON m.assetHash = l.assetHash

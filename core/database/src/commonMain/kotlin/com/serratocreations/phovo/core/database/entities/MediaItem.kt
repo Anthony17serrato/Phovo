@@ -34,7 +34,11 @@ data class LocalMediaEntity(
     /**
      * Uri where the asset can be accessed locally.
      */
-    val localUri: String
+    val localUri: String,
+    /**
+     * Indicates if the asset is completely present locally
+     */
+    val isPartial: Boolean
 )
 
 /**

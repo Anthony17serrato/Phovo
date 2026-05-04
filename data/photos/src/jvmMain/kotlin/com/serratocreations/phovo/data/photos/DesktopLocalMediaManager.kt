@@ -42,12 +42,12 @@ class DesktopLocalMediaManager(
 
     fun initMediaProcessing(
         // TODO Use PlatformFile
-        localDirectory: String
+        outputDirectory: String
     ) {
         log.i { "initMediaProcessing" }
         appScope.launch {
             val processJob = processJob(
-                localDirectory = localDirectory
+                outputDirectory = outputDirectory
             )
         }
     }
@@ -57,16 +57,45 @@ class DesktopLocalMediaManager(
     }
 
     private fun CoroutineScope.processJob(
-        localDirectory: String
+        outputDirectory: String
     ) = launch {
         val processMediaChannel = Channel<MediaItem>()
         appScope.consumeProcessedMedia(processMediaChannel)
 
-        processUnknownLocalItems(
-            localDirectory = localDirectory,
-            processMediaChannel = processMediaChannel
-        ).join()
-        processMediaChannel.close()
+        launch {
+            processKnownLocalItems(
+                outputDirectory = outputDirectory,
+                processMediaChannel = processMediaChannel
+            )
+        }
+        launch(ioDispatcher) {
+            // TODO Need to implement a strategy to rescan unknown items periodically
+            //  (As configured by the user)
+            processUnknownLocalItems(
+                outputDirectory = outputDirectory,
+                processMediaChannel = processMediaChannel
+            )
+        }
+    }
+
+    /**
+     * Process media items which are known to the Desktop server but
+     * are missing metadata and thumbnail extractions.
+     */
+    suspend fun processKnownLocalItems(
+        outputDirectory: String,
+        processMediaChannel: SendChannel<MediaItem>
+    ) {
+        // TODO This will get stuck if a media item fails to process, need to
+        //  implement a way to filter items which failed to process.
+        localMediaRepository.observeFirstUnprocessedFullLocalMedia().collect { localItemToProcess ->
+            if (localItemToProcess == null) {
+                log.i { "All known items have been processed currently" }
+                return@collect
+            }
+            val fileToProcess = PlatformFile(localItemToProcess.localUri)
+            fileToProcess.mapAndProcessFile(outputDirectory, processMediaChannel)
+        }
     }
 
     /**
@@ -74,23 +103,23 @@ class DesktopLocalMediaManager(
      * are not known to the Phovo applications, these items need to be processed
      * in order to become known to Phovo.
      */
-    fun CoroutineScope.processUnknownLocalItems(
-        localDirectory: String,
+    suspend fun processUnknownLocalItems(
+        outputDirectory: String,
         processMediaChannel: SendChannel<MediaItem>
-    ) = launch(ioDispatcher) {
-        val directory = PlatformFile(localDirectory)
+    ) {
+        val directory = PlatformFile(outputDirectory)
         if (directory.exists().not()) {
             directory.createDirectories(mustCreate = false)
         }
         val directoryFiles = if (!directory.exists() || !directory.isDirectory()) {
-            log.e { "Invalid directory: $localDirectory" }
+            log.e { "Invalid directory: $outputDirectory" }
             emptyList()
         } else {
             directory.list()
         }
 
         // TODO This work can be optimized with parallel decomposition
-        val unProcessedFilesFlow: Flow<PlatformFile> = flow {
+        val unProcessedUnknownFilesFlow: Flow<PlatformFile> = flow {
             directoryFiles.forEach { directoryChild ->
                 if (directoryChild.isDirectory()) return@forEach
                 val fileHash = fileHashCalculator.computeSha256(directoryChild)
@@ -100,26 +129,33 @@ class DesktopLocalMediaManager(
             }
         }
         // TODO This work can be optimized with parallel decomposition
-        unProcessedFilesFlow.collect { file ->
-            val fileType = file.getFileType()
-            when (fileType) {
-                FileType.Directory -> {
-                    // TODO: Some recursion implementation
-                    null
-                }
+        unProcessedUnknownFilesFlow.collect { file ->
+            file.mapAndProcessFile(outputDirectory, processMediaChannel)
+        }
+    }
 
-                FileType.Photo -> {
-                    localMediaProcessor.processImage(file, localDirectory)
-                }
-
-                FileType.Video -> {
-                    localMediaProcessor.processVideo(file, localDirectory)
-                }
-
-                FileType.Other -> null
-            }?.let { mediaItem ->
-                processMediaChannel.send(mediaItem)
+    private suspend fun PlatformFile.mapAndProcessFile(
+        outputDirectory: String,
+        processMediaChannel: SendChannel<MediaItem>
+    ) {
+        val fileType = this.getFileType()
+        when (fileType) {
+            FileType.Directory -> {
+                // TODO: Some recursion implementation
+                null
             }
+
+            FileType.Photo -> {
+                localMediaProcessor.processImage(this, outputDirectory)
+            }
+
+            FileType.Video -> {
+                localMediaProcessor.processVideo(this, outputDirectory)
+            }
+
+            FileType.Other -> null
+        }?.let { mediaItem ->
+            processMediaChannel.send(mediaItem)
         }
     }
 
@@ -127,7 +163,7 @@ class DesktopLocalMediaManager(
         if (this.isDirectory()) return FileType.Directory
 
         val extension = this.extension.lowercase()
-
+        // TODO this logic can be problematic if file is not actually what the extension says
         return when (extension) {
             in listOf("jpg", "jpeg", "png", "heic", "webp", "gif", "bmp", "tiff") -> FileType.Photo
             in listOf("mp4", "mov", "mkv", "avi", "webm", "flv") -> FileType.Video

@@ -103,7 +103,7 @@ class DesktopServerConfigManagerImpl(
                 val mediaItemDto = call.receive<MediaItemDto>()
                 // TODO If file exists but is partial, delete file and allow re-upload
                 // TODO if filename exist but asset hash is different, append a _n to the filename
-                if (localMediaRepository.doesAssetExist(mediaItemDto.assetHash)) {
+                if (localMediaRepository.doesCompleteAssetExist(mediaItemDto.assetHash)) {
                     call.respond(
                         HttpStatusCode.OK,
                         UploadInitResponse(
@@ -129,7 +129,8 @@ class DesktopServerConfigManagerImpl(
 
                 val localMediaEntity = LocalMediaEntity(
                     assetHash = mediaItemDto.assetHash,
-                    localUri = filePath.absolutePath()
+                    localUri = filePath.absolutePath(),
+                    isPartial = true
                 )
 
                 localMediaRepository.addOrUpdateLocalMediaItem(localMediaEntity)
@@ -191,6 +192,7 @@ class DesktopServerConfigManagerImpl(
                 this@DesktopServerConfigManagerImpl.log.i { "Upload complete for $localUuid" }
                 localMediaEntity = localMediaEntity.copy(
                     localUri = moveFileToFinalPath(),
+                    isPartial = false
                 )
                 localMediaRepository.addOrUpdateLocalMediaItem(localMediaEntity)
                 call.respond(HttpStatusCode.OK)

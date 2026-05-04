@@ -107,7 +107,7 @@ fun MediaItemDto.toMediaItemEntity(isSynced: Boolean): MediaItemMetadataEntity {
 }
 
 @OptIn(ExperimentalTime::class)
-fun MediaItem.toMediaItemWithUriEntity(): MediaItemWithMetadata {
+fun MediaItem.toMediaItemWithMetadataEntity(): MediaItemWithMetadata {
     // TODO MediaItem should use ZonedDateTime
     val instant = dateInFeed.toInstant(TimeZone.UTC)
     val timeStampUtcMs = instant.toEpochMilliseconds()
@@ -133,7 +133,8 @@ fun MediaItem.toMediaItemWithUriEntity(): MediaItemWithMetadata {
             is AssetLocation.LocalAssetLocation -> {
                 LocalMediaEntity(
                     assetHash = uniqueAssetIdentifier,
-                    localUri = location.localAssetLocation.absolutePath()
+                    localUri = location.localAssetLocation.absolutePath(),
+                    isPartial = false
                 )
             }
             AssetLocation.RemoteAssetLocation -> {
