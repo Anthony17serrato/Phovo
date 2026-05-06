@@ -21,6 +21,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -34,6 +35,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
+import kotlin.time.Duration.Companion.seconds
 
 interface LocalAndRemoteMediaRepository: LocalMediaRepository, RemoteMediaRepository {
     val syncProgressState: StateFlow<LocalMediaBackupProgress>
@@ -47,11 +49,16 @@ interface LocalAndRemoteMediaRepository: LocalMediaRepository, RemoteMediaReposi
      * Initiates an application wide sync job, when this API is called multiple times and there is
      * already a sync job running, subsequent calls are dropped and the existing Job object is returned.
      * This API should typically be initiated by a work manager(or equivalent platform API)
+     *
+     * @param processingJob a reference to the Job which is scanning for new media, while the scan job is
+     * active sync workers will remain running.
      * @return a [Deferred] of type [Job]. The deferred is guaranteed to complete promptly as it is only
      * used to avoid a locking algorithm implementation. The Job will allow callers to suspend until
      * the sync completes(Useful for periodic sync workers which must wrap the Job)
      */
-    fun initiateSyncJob(): Deferred<Job>
+    fun initiateSyncJob(
+        processingJob: Job
+    ): Deferred<Job>
 }
 
 class LocalAndRemoteMediaRepositoryImpl(
@@ -64,6 +71,7 @@ class LocalAndRemoteMediaRepositoryImpl(
     companion object {
         private const val SYNC_VIDEO_WORKER_COUNT = 2
         private const val SYNC_IMAGE_WORKER_COUNT = 4
+        private val WORKER_IDLE_DELAY = 1.seconds
     }
 
     private val syncImageRequestChannel = Channel<String>(Channel.RENDEZVOUS)
@@ -107,9 +115,20 @@ class LocalAndRemoteMediaRepositoryImpl(
         return null
     }
 
-    private fun CoroutineScope.syncWorker(type: MediaType) = launch {
+    private fun CoroutineScope.syncWorker(
+        type: MediaType,
+        processingJob: Job
+    ) = launch {
         while (this.isActive) {
-            val nextUnsyncedItem = getNextUnsyncedItem(type) ?: return@launch
+            val nextUnsyncedItem = getNextUnsyncedItem(type) ?: run {
+                // Keep worker running if processing job has not completed
+                if (processingJob.isActive) {
+                    delay(WORKER_IDLE_DELAY)
+                    continue
+                } else {
+                    return@launch
+                }
+            }
             // Terminate the worker if there is no remaining items to sync
             val result = sync(nextUnsyncedItem)
             syncSafeSet.remove(nextUnsyncedItem.mediaItemMetadataEntity.assetHash)
@@ -162,7 +181,7 @@ class LocalAndRemoteMediaRepositoryImpl(
         }
     }
 
-    private suspend fun initiateSyncJobInternal() = coroutineScope {
+    private suspend fun initiateSyncJobInternal(processingJob: Job) = coroutineScope {
         val initialUnsyncedCount = localMediaRepository.getUnsyncedMediaCount()
         _syncProgressState.update { currentProgress ->
             LocalMediaBackupProgress(currentPendingSyncQuantity = initialUnsyncedCount)
@@ -176,10 +195,10 @@ class LocalAndRemoteMediaRepositoryImpl(
             }.launchIn(this)
         val syncJobs = mutableListOf<Job>()
         repeat(SYNC_IMAGE_WORKER_COUNT) {
-            syncJobs.add(syncWorker(MediaType.Image))
+            syncJobs.add(syncWorker(MediaType.Image, processingJob))
         }
         repeat(SYNC_VIDEO_WORKER_COUNT) {
-            syncJobs.add(syncWorker(MediaType.Video))
+            syncJobs.add(syncWorker(MediaType.Video, processingJob))
         }
         joinAll(*syncJobs.toTypedArray())
         pendingSyncCountObservationJob.cancel()
@@ -193,7 +212,9 @@ class LocalAndRemoteMediaRepositoryImpl(
         }
     }
 
-    override fun initiateSyncJob(): Deferred<Job> =
+    override fun initiateSyncJob(
+        processingJob: Job
+    ): Deferred<Job> =
         applicationScope.async(singleThreadDefaultDispatcher) {
             syncJob?.let { syncJobNotNull ->
                 if (syncJobNotNull.isActive) {
@@ -204,7 +225,7 @@ class LocalAndRemoteMediaRepositoryImpl(
             syncJob?.cancel()
             // Job can be launched with full parallelism support since the need for thread safety has passed
             return@async launch(defaultDispatcher) {
-                initiateSyncJobInternal()
+                initiateSyncJobInternal(processingJob)
             }.apply {
                 syncJob = this
             }

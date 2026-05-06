@@ -52,7 +52,7 @@ abstract class LocalMediaManager(
     }
 
     // Syncs any local media which is still pending sync
-    protected open fun CoroutineScope.syncJob(processJob: Job) {
+    protected open fun CoroutineScope.syncJob(processingJob: Job) {
         // TODO Server may eventually support syncing to other servers, for now it is not supported
     }
 

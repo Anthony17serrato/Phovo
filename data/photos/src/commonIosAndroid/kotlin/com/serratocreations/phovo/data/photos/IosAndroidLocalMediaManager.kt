@@ -28,10 +28,9 @@ class IosAndroidLocalMediaManager(
     private val _localMediaState = MutableStateFlow<LocalMediaState>(Scanning)
     val localMediaState = _localMediaState.asStateFlow()
 
-    override fun CoroutineScope.syncJob(processJob: Job) {
+    override fun CoroutineScope.syncJob(processingJob: Job) {
         launch {
-            processJob.join()
-            localAndRemoteMediaRepository.initiateSyncJob()
+            localAndRemoteMediaRepository.initiateSyncJob(processingJob)
             localAndRemoteMediaRepository.syncProgressState.onEach { syncStatusUpdate ->
                 _localMediaState.update { currentState ->
                     if (syncStatusUpdate.isSyncComplete) {
