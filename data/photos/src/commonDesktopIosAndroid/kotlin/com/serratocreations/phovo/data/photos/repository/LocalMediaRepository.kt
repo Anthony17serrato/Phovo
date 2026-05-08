@@ -5,6 +5,8 @@ import com.serratocreations.phovo.core.database.entities.LocalMediaEntity
 import com.serratocreations.phovo.core.database.entities.LocalMediaItemWithMetadata
 import com.serratocreations.phovo.core.database.entities.MediaItemMetadataEntity
 import com.serratocreations.phovo.core.database.entities.MediaItemWithMetadata
+import com.serratocreations.phovo.core.database.entities.ProcessingMediaEntity
+import com.serratocreations.phovo.core.database.entities.ProcessingState
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.core.model.MediaType
 import com.serratocreations.phovo.data.photos.mappers.toMediaItemWithMetadataEntity
@@ -20,6 +22,8 @@ interface LocalMediaRepository: MediaRepository {
     suspend fun getLocalMediaByAssetHash(assetHash: String): LocalMediaEntity?
     suspend fun doesCompleteAssetExist(assetHash: String): Boolean
     suspend fun observeFirstUnprocessedFullLocalMedia(): Flow<LocalMediaEntity?>
+    suspend fun tryProcessingClaim(assetHash: String): Boolean
+    suspend fun removeProcessingClaim(assetHash: String)
     suspend fun addOrUpdateMediaItem(mediaItem: MediaItem)
     // TODO Repository APIs should not expose DAO data models
     suspend fun addOrUpdateLocalMediaItem(localMediaEntity: LocalMediaEntity)
@@ -75,6 +79,15 @@ class LocalMediaRepositoryImpl(
 
     override suspend fun observeFirstUnprocessedFullLocalMedia(): Flow<LocalMediaEntity?> =
         localMediaDataSource.observeFirstUnprocessedFullLocalMedia()
+
+    override suspend fun tryProcessingClaim(assetHash: String): Boolean {
+        val result = localMediaDataSource.tryClaim(ProcessingMediaEntity(assetHash, ProcessingState.Processing))
+        return result != -1L
+    }
+
+    override suspend fun removeProcessingClaim(assetHash: String) {
+        localMediaDataSource.removeClaim(assetHash = assetHash)
+    }
 
     override fun observeUnsyncedMediaCount(): Flow<Int> =
         localMediaDataSource.observeUnsyncedMediaItemCount()

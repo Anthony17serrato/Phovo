@@ -1,6 +1,7 @@
 package com.serratocreations.phovo.core.database.dao
 
 import androidx.room.Dao
+import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
@@ -10,6 +11,7 @@ import com.serratocreations.phovo.core.database.entities.MediaItemMetadataEntity
 import com.serratocreations.phovo.core.database.entities.LocalMediaEntity
 import com.serratocreations.phovo.core.database.entities.LocalMediaItemWithMetadata
 import com.serratocreations.phovo.core.database.entities.MediaItemWithMetadata
+import com.serratocreations.phovo.core.database.entities.ProcessingMediaEntity
 import com.serratocreations.phovo.core.model.MediaType
 import kotlinx.coroutines.flow.Flow
 
@@ -93,13 +95,24 @@ interface PhovoMediaDao {
         SELECT l.*
         FROM LocalMediaEntity l
         LEFT JOIN MediaItemMetadataEntity m
-        ON l.assetHash = m.assetHash
+            ON l.assetHash = m.assetHash
+        LEFT JOIN ProcessingMediaEntity p
+            ON l.assetHash = p.assetHash
         WHERE m.assetHash IS NULL
+        AND p.assetHash IS NULL
         AND l.isPartial = 0
         LIMIT 1
-    """
-    )
+    """)
     fun observeFirstUnprocessedFullLocalMedia(): Flow<LocalMediaEntity?>
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun tryClaim(entity: ProcessingMediaEntity): Long
+
+    @Query("""
+    DELETE FROM ProcessingMediaEntity
+    WHERE assetHash = :assetHash
+    """)
+    suspend fun removeClaim(assetHash: String): Int
 
     @Query(
         """

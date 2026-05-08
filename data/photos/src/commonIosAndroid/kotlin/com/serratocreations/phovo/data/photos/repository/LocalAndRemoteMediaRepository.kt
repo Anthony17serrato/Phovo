@@ -254,6 +254,12 @@ class LocalAndRemoteMediaRepositoryImpl(
     override suspend fun observeFirstUnprocessedFullLocalMedia(): Flow<LocalMediaEntity?> =
         localMediaRepository.observeFirstUnprocessedFullLocalMedia()
 
+    override suspend fun tryProcessingClaim(assetHash: String): Boolean =
+        localMediaRepository.tryProcessingClaim(assetHash)
+
+    override suspend fun removeProcessingClaim(assetHash: String) =
+        localMediaRepository.removeProcessingClaim(assetHash = assetHash)
+
     override suspend fun addOrUpdateMediaItem(mediaItem: MediaItem) = localMediaRepository.addOrUpdateMediaItem(mediaItem)
 
     override suspend fun addOrUpdateLocalMediaItem(localMediaEntity: LocalMediaEntity) =

@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "b427f4444b5ce43bb29d403f30fb926b",
+    "identityHash": "7f52a942dba2a8a5cf363134b49bca07",
     "entities": [
       {
         "tableName": "ServerConfigEntity",
@@ -116,11 +116,35 @@
             "assetHash"
           ]
         }
+      },
+      {
+        "tableName": "ProcessingMediaEntity",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`assetHash` TEXT NOT NULL, `processingState` TEXT NOT NULL, PRIMARY KEY(`assetHash`))",
+        "fields": [
+          {
+            "fieldPath": "assetHash",
+            "columnName": "assetHash",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "processingState",
+            "columnName": "processingState",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "assetHash"
+          ]
+        }
       }
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'b427f4444b5ce43bb29d403f30fb926b')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '7f52a942dba2a8a5cf363134b49bca07')"
     ]
   }
 }

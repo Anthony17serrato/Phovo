@@ -4,7 +4,6 @@ import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.data.photos.local.DesktopLocalMediaProcessor
 import com.serratocreations.phovo.data.photos.local.DesktopLocalMediaProcessor.FileType
 import com.serratocreations.phovo.data.photos.repository.LocalMediaRepository
-import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import com.serratocreations.phovo.data.photos.util.FileHashCalculator
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.createDirectories
@@ -18,10 +17,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
 class DesktopLocalMediaManager(
@@ -33,38 +29,38 @@ class DesktopLocalMediaManager(
     logger: PhovoLogger,
 ) {
     private val log = logger.withTag("LocalMediaManager")
+    companion object {
+        // We need at least one worker
+        private val WORKER_COUNT = maxOf(1, Runtime.getRuntime().availableProcessors() -1)
+    }
 
     /**
      * API initializes job to process local media and synchronize to server.
      * Processing includes tasks such as extracting media metadata and generating md5 hashes and
      * deduplication logic
      */
-
     fun initMediaProcessing(
         // TODO Use PlatformFile
         outputDirectory: String
     ) {
         log.i { "initMediaProcessing" }
-        appScope.launch {
-            val processJob = processJob(
-                outputDirectory = outputDirectory
-            )
-        }
-    }
 
-    private suspend fun handleProcessedMediaItem(mediaItem: MediaItem) {
-        localMediaRepository.addOrUpdateMediaItem(mediaItem)
+        appScope.processJob(
+            outputDirectory = outputDirectory
+        )
     }
 
     private fun CoroutineScope.processJob(
         outputDirectory: String
     ) = launch {
-        val processMediaChannel = Channel<MediaItem>()
-        appScope.consumeProcessedMedia(processMediaChannel)
+        val processMediaChannel = Channel<PlatformFile>()
+
+        repeat(WORKER_COUNT) {
+            processMediaWorker(processMediaChannel, outputDirectory)
+        }
 
         launch {
             processKnownLocalItems(
-                outputDirectory = outputDirectory,
                 processMediaChannel = processMediaChannel
             )
         }
@@ -83,18 +79,17 @@ class DesktopLocalMediaManager(
      * are missing metadata and thumbnail extractions.
      */
     suspend fun processKnownLocalItems(
-        outputDirectory: String,
-        processMediaChannel: SendChannel<MediaItem>
+        processMediaChannel: SendChannel<PlatformFile>
     ) {
-        // TODO This will get stuck if a media item fails to process, need to
-        //  implement a way to filter items which failed to process.
         localMediaRepository.observeFirstUnprocessedFullLocalMedia().collect { localItemToProcess ->
             if (localItemToProcess == null) {
                 log.i { "All known items have been processed currently" }
                 return@collect
             }
-            val fileToProcess = PlatformFile(localItemToProcess.localUri)
-            fileToProcess.mapAndProcessFile(outputDirectory, processMediaChannel)
+            val claimed = localMediaRepository.tryProcessingClaim(localItemToProcess.assetHash)
+            if (claimed) {
+                processMediaChannel.send(PlatformFile(localItemToProcess.localUri))
+            }
         }
     }
 
@@ -105,7 +100,7 @@ class DesktopLocalMediaManager(
      */
     suspend fun processUnknownLocalItems(
         outputDirectory: String,
-        processMediaChannel: SendChannel<MediaItem>
+        processMediaChannel: SendChannel<PlatformFile>
     ) {
         val directory = PlatformFile(outputDirectory)
         if (directory.exists().not()) {
@@ -118,30 +113,31 @@ class DesktopLocalMediaManager(
             directory.list()
         }
 
-        // TODO This work can be optimized with parallel decomposition
         val unProcessedUnknownFilesFlow: Flow<PlatformFile> = flow {
+            // TODO files may become very large, investigate memory optimizations
             directoryFiles.forEach { directoryChild ->
                 if (directoryChild.isDirectory()) return@forEach
+                // TODO This work can be optimized with parallel decomposition
                 val fileHash = fileHashCalculator.computeSha256(directoryChild)
                 val existingKnownAsset = localMediaRepository.getLocalMediaByAssetHash(fileHash)
                 // asset is not known, process it
                 if (existingKnownAsset == null) emit(directoryChild)
             }
         }
-        // TODO This work can be optimized with parallel decomposition
+
         unProcessedUnknownFilesFlow.collect { file ->
-            file.mapAndProcessFile(outputDirectory, processMediaChannel)
+            processMediaChannel.send(file)
         }
     }
 
     private suspend fun PlatformFile.mapAndProcessFile(
-        outputDirectory: String,
-        processMediaChannel: SendChannel<MediaItem>
+        outputDirectory: String
     ) {
         val fileType = this.getFileType()
         when (fileType) {
             FileType.Directory -> {
                 // TODO: Some recursion implementation
+                log.w { "file $this is a directory" }
                 null
             }
 
@@ -155,10 +151,12 @@ class DesktopLocalMediaManager(
 
             FileType.Other -> null
         }?.let { mediaItem ->
-            processMediaChannel.send(mediaItem)
+            localMediaRepository.addOrUpdateMediaItem(mediaItem)
+            localMediaRepository.removeProcessingClaim(mediaItem.uniqueAssetIdentifier)
         }
     }
 
+    // TODO check if PlatformFile offers better APIs
     private fun PlatformFile.getFileType(): FileType {
         if (this.isDirectory()) return FileType.Directory
 
@@ -171,9 +169,12 @@ class DesktopLocalMediaManager(
         }
     }
 
-    private fun CoroutineScope.consumeProcessedMedia(
-        processMediaChannel: ReceiveChannel<MediaItem>
-    ) = processMediaChannel.consumeAsFlow()
-        .onEach(::handleProcessedMediaItem)
-        .launchIn(this)
+    private fun CoroutineScope.processMediaWorker(
+        processMediaChannel: ReceiveChannel<PlatformFile>,
+        outputDirectory: String
+    ) = launch {
+        for (fileToProcess in processMediaChannel) {
+            fileToProcess.mapAndProcessFile(outputDirectory)
+        }
+    }
 }

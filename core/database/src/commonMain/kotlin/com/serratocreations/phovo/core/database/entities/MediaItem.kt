@@ -41,6 +41,20 @@ data class LocalMediaEntity(
     val isPartial: Boolean
 )
 
+@Entity
+data class ProcessingMediaEntity(
+    /** Sha-256 hash **/
+    @PrimaryKey
+    val assetHash: String,
+    /** Indicates if a media item is processing or it failed */
+    val processingState: ProcessingState
+)
+
+enum class ProcessingState {
+    Processing,
+    Failed
+}
+
 /**
  * Model for media items which have been processed
  */
