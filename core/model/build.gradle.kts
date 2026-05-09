@@ -10,6 +10,7 @@ kotlin {
     }
     sourceSets {
         commonMain.dependencies {
+            implementation(libs.filekit.core)
         }
         commonTest.dependencies {
         }

@@ -15,8 +15,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.layout.ContentScale
-import com.serratocreations.phovo.data.photos.repository.model.LocalOrRemoteAsset
 import com.serratocreations.phovo.feature.photos.ui.components.LoadMultiResImage
+import com.serratocreations.phovo.core.domain.model.DomainAssetLocation
 import com.serratocreations.phovo.feature.photos.ui.model.ImagePhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.ThumbnailPhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.VideoPhotoUiItem
@@ -86,7 +86,7 @@ internal fun PhotoViewerScreen(
 
                 is VideoPhotoUiItem -> {
                     // TODO Support both local and remote video
-                    if (item.sourceAsset is LocalOrRemoteAsset.LocalAsset) {
+                    if (item.sourceAsset is DomainAssetLocation.LocalAssetLocation) {
                         VideoPlayer(
                             videoPlatformFile = item.sourceAsset.localAssetLocation,
                             modifier = Modifier.sharedElement(

@@ -1,12 +1,11 @@
 package com.serratocreations.phovo.core.domain
 
-import coil3.toUri
 import com.serratocreations.phovo.core.domain.mapper.toMediaItemWithThumbnails
 import com.serratocreations.phovo.core.domain.model.MediaItemWithThumbnails
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.data.photos.repository.MediaRepository
-import com.serratocreations.phovo.data.photos.repository.model.LocalOrRemoteAsset
-import com.serratocreations.phovo.data.server.data.repository.IosAndroidWasmServerConfigRepository
+import com.serratocreations.phovo.data.photos.repository.model.AssetLocation
+import com.serratocreations.phovo.core.serverconfig.IosAndroidWasmServerConfigRepository
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.div
 import io.github.vinceglb.filekit.exists
@@ -30,29 +29,29 @@ class ClientGetPhotosFeedWithThumbnailsUseCase(
             mediaRepository.phovoMediaFlow(),
             serverConfigRepository.observeServerConfig().distinctUntilChanged()
         ) { mediaList, serverConfig ->
-            return@combine mediaList.map { mediaItem ->
+            return@combine mediaList.mapNotNull { mediaItem ->
                 // Prefer file thumb if exists, fallback to network thumb, no thumb if no base url
-                val lowResThumb = (FileKit.filesDir / GetPhotosFeedWithThumbnailsUseCase.LOW_RES_THUMBNAIL_DIR / "${mediaItem.localUuid}.webp").let {
-                    if (it.exists()) { LocalOrRemoteAsset.LocalAsset(it) } else {
-                        serverConfig?.serverBaseUrlString?.let { baseUrlNotNull ->
-                            val remoteUri = (baseUrlNotNull + GetPhotosFeedWithThumbnailsUseCase.LOW_RES_THUMBNAIL_API + mediaItem.localUuid).toUri()
-                            LocalOrRemoteAsset.RemoteAsset(remoteUri)
-                        }
+                val lowResThumb = (FileKit.filesDir / GetPhotosFeedWithThumbnailsUseCase.LOW_RES_THUMBNAIL_DIR / "${mediaItem.uniqueAssetIdentifier}.webp").let {
+                    if (it.exists()) {
+                        AssetLocation.LocalAssetLocation(it)
+                    } else if (mediaItem.isSynced) {
+                        AssetLocation.RemoteAssetLocation
+                    } else {
+                        null
                     }
                 }
                 // If asset is stored locally pass asset directly, if not get high-res thumb from server
-                val highResThumb = if (mediaItem.assetLocation is LocalOrRemoteAsset.LocalAsset) {
+                val highResThumb = if (mediaItem.assetLocation is AssetLocation.LocalAssetLocation) {
                     mediaItem.assetLocation
                 } else {
-                    serverConfig?.serverBaseUrlString?.let { baseUrlNotNull ->
-                        val remoteUri = (baseUrlNotNull + GetPhotosFeedWithThumbnailsUseCase.HIGH_RES_THUMBNAIL_API + mediaItem.localUuid).toUri()
-                        LocalOrRemoteAsset.RemoteAsset(remoteUri)
-                    } ?: mediaItem.assetLocation // fallback to asset location, this should never happen
+                    AssetLocation.RemoteAssetLocation
                 }
 
                 mediaItem.toMediaItemWithThumbnails(
                     lowResThumbnailLocation = lowResThumb,
-                    highResThumbnailLocation = highResThumb
+                    highResThumbnailLocation = highResThumb,
+                    assetHash = mediaItem.uniqueAssetIdentifier,
+                    baseUrl = serverConfig?.serverBaseUrlString
                 )
             }
         }.flowOn(ioDispatcher)

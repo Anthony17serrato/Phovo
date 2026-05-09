@@ -1,11 +1,11 @@
 package com.serratocreations.phovo.data.photos.mappers
 
-import com.serratocreations.phovo.core.database.entities.MediaItemEntity
-import com.serratocreations.phovo.core.database.entities.MediaItemUriEntity
-import com.serratocreations.phovo.core.database.entities.MediaItemWithUriEntity
+import com.serratocreations.phovo.core.database.entities.MediaItemMetadataEntity
+import com.serratocreations.phovo.core.database.entities.LocalMediaEntity
+import com.serratocreations.phovo.core.database.entities.MediaItemWithMetadata
 import com.serratocreations.phovo.core.model.MediaType
 import com.serratocreations.phovo.core.model.network.MediaItemDto
-import com.serratocreations.phovo.data.photos.repository.model.LocalOrRemoteAsset
+import com.serratocreations.phovo.data.photos.repository.model.AssetLocation
 import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
@@ -21,34 +21,40 @@ import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
 @OptIn(ExperimentalTime::class)
-fun MediaItemWithUriEntity.toMediaItem(): MediaItem {
+fun MediaItemWithMetadata.toMediaItem(): MediaItem {
     // Combine UTC timestamp with offset to get local wall-clock time for feed
     val dateInFeed = Instant
-        .fromEpochMilliseconds(mediaItemEntity.timeStampUtcMs + mediaItemEntity.timeOffsetMs)
+        .fromEpochMilliseconds(mediaItemMetadataEntity.timeStampUtcMs + mediaItemMetadataEntity.timeOffsetMs)
         .toLocalDateTime(TimeZone.UTC)
 
-    // TODO for now we assume all db media items are stored locally
-    val assetLocation = LocalOrRemoteAsset.LocalAsset(PlatformFile(mediaItemUri.uri))
-    return when (mediaItemEntity.mediaType) {
+    val assetLocation = localLocation?.let { locationNotNull ->
+        AssetLocation.LocalAssetLocation(
+            localAssetLocation = PlatformFile(locationNotNull.localUri)
+        )
+    } ?: run {
+        AssetLocation.RemoteAssetLocation
+    }
+
+    return when (mediaItemMetadataEntity.mediaType) {
         MediaType.Image -> {
             MediaImageItem(
-                localUuid = mediaItemEntity.localUuid,
-                remoteUuid = mediaItemEntity.remoteUuid,
+                uniqueAssetIdentifier = mediaItemMetadataEntity.assetHash,
+                isSynced = mediaItemMetadataEntity.isSynced,
                 assetLocation = assetLocation,
-                fileName = mediaItemEntity.fileName,
+                fileName = mediaItemMetadataEntity.fileName,
                 dateInFeed = dateInFeed,
-                size = mediaItemEntity.size
+                size = mediaItemMetadataEntity.size
             )
         }
         MediaType.Video -> {
-            val duration = (mediaItemEntity.videoDurationMs ?: 0L).milliseconds
+            val duration = (mediaItemMetadataEntity.videoDurationMs ?: 0L).milliseconds
             MediaVideoItem(
-                localUuid = mediaItemEntity.localUuid,
-                remoteUuid = mediaItemEntity.remoteUuid,
+                uniqueAssetIdentifier = mediaItemMetadataEntity.assetHash,
+                isSynced = mediaItemMetadataEntity.isSynced,
                 assetLocation = assetLocation,
-                fileName = mediaItemEntity.fileName,
+                fileName = mediaItemMetadataEntity.fileName,
                 dateInFeed = dateInFeed,
-                size = mediaItemEntity.size,
+                size = mediaItemMetadataEntity.size,
                 duration = duration
             )
         }
@@ -67,39 +73,41 @@ fun MediaItemWithUriEntity.toMediaItem(): MediaItem {
 //    videoDurationMs = videoDurationMs,
 //)
 
-fun Flow<List<MediaItemWithUriEntity>>.toMediaItems(): Flow<List<MediaItem>> =
+fun Flow<List<MediaItemWithMetadata>>.toMediaItems(): Flow<List<MediaItem>> =
     map { localItems ->
         localItems.map {
             it.toMediaItem()
         }
     }
 
-fun MediaItemWithUriEntity.toMediaItemDto(): MediaItemDto = MediaItemDto(
-    fileName = mediaItemEntity.fileName,
-    localUuid = mediaItemEntity.localUuid,
-    remoteUuid = mediaItemEntity.remoteUuid,
-    size = mediaItemEntity.size.toLong(),
-    timeStampUtcMs = mediaItemEntity.timeStampUtcMs,
-    timeOffsetMs = mediaItemEntity.timeOffsetMs,
-    mediaType = mediaItemEntity.mediaType,
-    videoDurationMs = mediaItemEntity.videoDurationMs,
+fun MediaItemWithMetadata.toMediaItemDto(): MediaItemDto =
+    this.mediaItemMetadataEntity.toMediaItemDto()
+
+fun MediaItemMetadataEntity.toMediaItemDto(): MediaItemDto = MediaItemDto(
+    fileName = fileName,
+    assetHash = assetHash,
+    size = size,
+    timeStampUtcMs = timeStampUtcMs,
+    timeOffsetMs = timeOffsetMs,
+    mediaType = mediaType,
+    videoDurationMs = videoDurationMs,
 )
 
-fun MediaItemDto.toMediaItemEntity(): MediaItemEntity {
-    return MediaItemEntity(
-        localUuid = localUuid,
-        remoteUuid = remoteUuid,
+fun MediaItemDto.toMediaItemEntity(isSynced: Boolean): MediaItemMetadataEntity {
+    return MediaItemMetadataEntity(
+        assetHash = assetHash,
+        isSynced = isSynced,
         fileName = fileName,
         timeStampUtcMs = timeStampUtcMs,
         timeOffsetMs = timeOffsetMs,
-        size = size.toInt(),
+        size = size,
         mediaType = mediaType,
         videoDurationMs = videoDurationMs
     )
 }
 
 @OptIn(ExperimentalTime::class)
-fun MediaItem.toMediaItemWithUriEntity(): MediaItemWithUriEntity {
+fun MediaItem.toMediaItemWithMetadataEntity(): MediaItemWithMetadata {
     // TODO MediaItem should use ZonedDateTime
     val instant = dateInFeed.toInstant(TimeZone.UTC)
     val timeStampUtcMs = instant.toEpochMilliseconds()
@@ -110,10 +118,10 @@ fun MediaItem.toMediaItemWithUriEntity(): MediaItemWithUriEntity {
         is MediaVideoItem -> MediaType.Video to this.duration.inWholeMilliseconds
     }
 
-    return MediaItemWithUriEntity(
-        mediaItemEntity = MediaItemEntity(
-            localUuid = localUuid,
-            remoteUuid = remoteUuid,
+    return MediaItemWithMetadata(
+        mediaItemMetadataEntity = MediaItemMetadataEntity(
+            assetHash = uniqueAssetIdentifier,
+            isSynced = isSynced,
             fileName = fileName,
             timeStampUtcMs = timeStampUtcMs,
             timeOffsetMs = timeOffsetMs,
@@ -121,17 +129,18 @@ fun MediaItem.toMediaItemWithUriEntity(): MediaItemWithUriEntity {
             mediaType = mediaType,
             videoDurationMs = videoDurationMs,
         ),
-        mediaItemUri = MediaItemUriEntity(
-            mediaUuid = localUuid,
-            uri = when(val location = assetLocation) {
-                is LocalOrRemoteAsset.LocalAsset -> {
-                    location.localAssetLocation.absolutePath()
-                }
-                is LocalOrRemoteAsset.RemoteAsset -> {
-                    location.remoteAssetUri.toString()
-                }
+        localLocation = when(val location = assetLocation) {
+            is AssetLocation.LocalAssetLocation -> {
+                LocalMediaEntity(
+                    assetHash = uniqueAssetIdentifier,
+                    localUri = location.localAssetLocation.absolutePath(),
+                    isPartial = false
+                )
             }
-        )
+            AssetLocation.RemoteAssetLocation -> {
+                null
+            }
+        }
     )
 }
 

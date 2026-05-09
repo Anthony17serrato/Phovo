@@ -1,9 +1,9 @@
-package com.serratocreations.phovo.data.server.data.repository
+package com.serratocreations.phovo.core.serverconfig
 
 import com.serratocreations.phovo.core.database.dao.ServerConfigDao
-import com.serratocreations.phovo.data.server.data.mapper.asEntity
-import com.serratocreations.phovo.data.server.data.mapper.asServerSpecificServerConfig
-import com.serratocreations.phovo.data.server.data.model.ServerConfig
+import com.serratocreations.phovo.core.model.ServerConfig
+import com.serratocreations.phovo.core.serverconfig.mapper.asEntity
+import com.serratocreations.phovo.core.serverconfig.mapper.asServerSpecificServerConfig
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 

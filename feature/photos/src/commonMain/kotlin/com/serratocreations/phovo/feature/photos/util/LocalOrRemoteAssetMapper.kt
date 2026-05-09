@@ -2,16 +2,16 @@ package com.serratocreations.phovo.feature.photos.util
 
 import coil3.map.Mapper
 import coil3.request.Options
-import com.serratocreations.phovo.data.photos.repository.model.LocalOrRemoteAsset
+import com.serratocreations.phovo.core.domain.model.DomainAssetLocation
 
-class LocalOrRemoteAssetMapper : Mapper<LocalOrRemoteAsset, Any> {
+class LocalOrRemoteAssetMapper : Mapper<DomainAssetLocation, Any> {
     override fun map(
-        data: LocalOrRemoteAsset,
+        data: DomainAssetLocation,
         options: Options
     ): Any {
         return when (data) {
-            is LocalOrRemoteAsset.LocalAsset -> data.localAssetLocation
-            is LocalOrRemoteAsset.RemoteAsset -> data.remoteAssetUri
+            is DomainAssetLocation.LocalAssetLocation -> data.localAssetLocation
+            is DomainAssetLocation.RemoteAssetLocation -> data.remoteAssetUri
         }
     }
 }

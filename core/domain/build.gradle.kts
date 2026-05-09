@@ -13,6 +13,8 @@ kotlin {
             implementation(projects.data.server)
             implementation(projects.core.logger)
             implementation(projects.core.common)
+            implementation(projects.core.model)
+            implementation(projects.core.serverconfig)
             implementation(libs.filekit.core)
             implementation(libs.kotlin.datetime)
             // It is used only for creating URIs and the coil URI

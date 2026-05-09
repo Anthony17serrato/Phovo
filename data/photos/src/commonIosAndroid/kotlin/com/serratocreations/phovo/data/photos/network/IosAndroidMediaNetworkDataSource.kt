@@ -1,8 +1,8 @@
 package com.serratocreations.phovo.data.photos.network
 
 import com.serratocreations.phovo.core.logger.PhovoLogger
+import com.serratocreations.phovo.core.model.network.BaseUrl
 import com.serratocreations.phovo.core.model.network.MediaItemDto
-import com.serratocreations.phovo.data.photos.repository.model.SyncError
 import com.serratocreations.phovo.data.photos.repository.model.SyncResult
 import com.serratocreations.phovo.data.photos.util.getPlatformFile
 import io.github.vinceglb.filekit.exists
@@ -20,11 +20,17 @@ class IosAndroidMediaNetworkDataSource(
 ): MediaNetworkDataSource(client, logger) {
     private val log = logger.withTag("IosAndroidMediaNetworkDataSource")
 
-    override suspend fun chunkedUpload(mediaItemDto: MediaItemDto, mediaUri: String): SyncResult {
-        val file = mediaItemDto.mediaType.getPlatformFile(mediaUri, ioDispatcher) ?: return SyncError
+    override suspend fun chunkedUpload(
+        // TODO Pass platform file directly
+        mediaItemDto: MediaItemDto,
+        mediaUri: String,
+        baseUrl: BaseUrl
+    ): SyncResult {
+        // TODO Clients need to be updated to use asset hash
+        val file = mediaItemDto.mediaType.getPlatformFile(mediaUri, ioDispatcher) ?: return SyncResult.SyncError
         if (!file.exists()) {
             log.e { "File not found at $mediaUri" }
-            return SyncError
+            return SyncResult.SyncError
         }
 
         // TODO chunking has been disabled, for photographs it is mostly not needed, in the future
@@ -33,15 +39,19 @@ class IosAndroidMediaNetworkDataSource(
         val response = syncChunk(
             chunk = byteReadChannel,
             fileName = mediaItemDto.fileName,
-            partIndex = "1"
+            partIndex = "1",
+            baseUrl = baseUrl
         )
 
         return if (response.status.isSuccess()) {
-            log.i { "Uploaded media ${mediaItemDto.localUuid}" }
-            completeSuccessfulUpload(mediaItemDto = mediaItemDto)
+            log.i { "Uploaded media ${mediaItemDto.assetHash}" }
+            completeSuccessfulUpload(
+                mediaItemDto = mediaItemDto,
+                baseUrl = baseUrl
+            )
         } else {
-            log.e { "Failed upload ${mediaItemDto.localUuid}: ${response.status}" }
-            SyncError
+            log.e { "Failed upload ${mediaItemDto.assetHash}: ${response.status}" }
+            SyncResult.SyncError
         }
     }
 }

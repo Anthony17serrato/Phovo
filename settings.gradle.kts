@@ -31,6 +31,7 @@ include(":core:database")
 include(":core:model")
 include(":core:navigation")
 include(":core:domain")
+include(":core:serverconfig")
 
 // Features
 include(":feature:photos")

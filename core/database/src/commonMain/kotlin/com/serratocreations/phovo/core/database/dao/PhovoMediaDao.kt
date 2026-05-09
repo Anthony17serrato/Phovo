@@ -1,61 +1,146 @@
 package com.serratocreations.phovo.core.database.dao
 
 import androidx.room.Dao
+import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
 import androidx.room.Upsert
-import com.serratocreations.phovo.core.database.entities.MediaItemEntity
-import com.serratocreations.phovo.core.database.entities.MediaItemUriEntity
-import com.serratocreations.phovo.core.database.entities.MediaItemWithUriEntity
+import com.serratocreations.phovo.core.database.entities.MediaItemMetadataEntity
+import com.serratocreations.phovo.core.database.entities.LocalMediaEntity
+import com.serratocreations.phovo.core.database.entities.LocalMediaItemWithMetadata
+import com.serratocreations.phovo.core.database.entities.MediaItemWithMetadata
+import com.serratocreations.phovo.core.database.entities.ProcessingMediaEntity
 import com.serratocreations.phovo.core.model.MediaType
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface PhovoMediaDao {
+
     @Upsert
-    suspend fun insert(item: MediaItemEntity, uri: MediaItemUriEntity)
+    suspend fun upsertMetadata(item: MediaItemMetadataEntity)
+
+    @Upsert
+    suspend fun upsertLocal(local: LocalMediaEntity)
+
+    @Query(
+        """
+    UPDATE MediaItemMetadataEntity
+    SET isSynced = TRUE
+    WHERE assetHash = :assetHash
+    """
+    )
+    suspend fun markAsSynced(assetHash: String)
+
+    @Transaction
+    suspend fun upsertMetadataWithLocalEntity(
+        metadata: MediaItemMetadataEntity,
+        local: LocalMediaEntity
+    ) {
+        upsertMetadata(metadata)
+        upsertLocal(local)
+    }
 
     @Update(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun update(item: MediaItemEntity)
+    suspend fun update(item: MediaItemMetadataEntity)
 
     @Transaction
-    @Query("SELECT * FROM MediaItemEntity ORDER BY timeStampUtcMs DESC")
-    fun observeAllDescendingTimestamp(): Flow<List<MediaItemWithUriEntity>>
+    @Query("SELECT * FROM MediaItemMetadataEntity ORDER BY timeStampUtcMs DESC")
+    fun observeAllDescendingTimestamp(): Flow<List<MediaItemWithMetadata>>
 
-    @Transaction
-    @Query("SELECT * FROM MediaItemEntity WHERE remoteUuid IS NULL")
-    fun observeAllUnsyncedMediaItems(): Flow<List<MediaItemWithUriEntity>>
-
-    @Query("SELECT COUNT(*) FROM MediaItemEntity WHERE remoteUuid IS NULL")
+    @Query("SELECT COUNT(*) FROM MediaItemMetadataEntity WHERE isSynced = FALSE")
     fun observeUnsyncedMediaItemCount(): Flow<Int>
 
     @Transaction
-    @Query("SELECT * FROM MediaItemEntity WHERE localUuid IS :uuid LIMIT 1")
-    suspend fun getMediaItemByLocalUuid(uuid: String): MediaItemWithUriEntity?
+    @Query("SELECT * FROM MediaItemMetadataEntity WHERE assetHash = :assetHash LIMIT 1")
+    suspend fun getMediaItemByAssetHash(
+        assetHash: String
+    ): MediaItemWithMetadata?
+
+    @Query("SELECT * FROM LocalMediaEntity WHERE assetHash = :assetHash LIMIT 1")
+    suspend fun getLocalMediaByAssetHash(assetHash: String): LocalMediaEntity?
+
+    @Query(
+        """
+        SELECT * 
+        FROM LocalMediaEntity
+        WHERE assetHash = :assetHash
+            AND isPartial = FALSE
+        LIMIT 1
+    """
+    )
+    suspend fun getNonPartialLocalMediaByAssetHash(assetHash: String): LocalMediaEntity?
 
     @Transaction
     @Query(
         """
-    SELECT * FROM MediaItemEntity
-    WHERE remoteUuid IS NULL
-      AND mediaType = :mediaType
-      AND (:excludeNotEmpty OR localUuid NOT IN (:excludingUuids))
-    ORDER BY timeStampUtcMs DESC
+    SELECT 
+        m.*, 
+        l.assetHash AS local_assetHash,
+        l.localUri AS local_localUri,
+        l.isPartial AS local_isPartial
+    FROM MediaItemMetadataEntity m
+    INNER JOIN LocalMediaEntity l
+        ON m.assetHash = l.assetHash
+    WHERE m.assetHash = :assetHash
     LIMIT 1
     """
     )
-    suspend fun getNextUnsyncedItemExcludingUuidSet(
-        excludingUuids: Set<String>,
+    suspend fun getLocalMediaItemWithMetadataByAssetHash(
+        assetHash: String
+    ): LocalMediaItemWithMetadata?
+
+    @Query("""
+        SELECT l.*
+        FROM LocalMediaEntity l
+        LEFT JOIN MediaItemMetadataEntity m
+            ON l.assetHash = m.assetHash
+        LEFT JOIN ProcessingMediaEntity p
+            ON l.assetHash = p.assetHash
+        WHERE m.assetHash IS NULL
+        AND p.assetHash IS NULL
+        AND l.isPartial = 0
+        LIMIT 1
+    """)
+    fun observeFirstUnprocessedFullLocalMedia(): Flow<LocalMediaEntity?>
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun tryClaim(entity: ProcessingMediaEntity): Long
+
+    @Query("""
+    DELETE FROM ProcessingMediaEntity
+    WHERE assetHash = :assetHash
+    """)
+    suspend fun removeClaim(assetHash: String): Int
+
+    @Query(
+        """
+    SELECT 
+        m.*,
+        l.assetHash AS local_assetHash,
+        l.localUri AS local_localUri,
+        l.isPartial AS local_isPartial
+    FROM MediaItemMetadataEntity m
+    INNER JOIN LocalMediaEntity l
+        ON m.assetHash = l.assetHash
+    WHERE m.isSynced = FALSE
+      AND m.mediaType = :mediaType
+      AND (:excludeNotEmpty OR m.assetHash NOT IN (:excludingHashes))
+    ORDER BY m.timeStampUtcMs DESC
+    LIMIT 1
+    """
+    )
+    suspend fun getNextUnsyncedLocalItemExcludingSet(
+        excludingHashes: Set<String>,
         mediaType: MediaType,
         excludeNotEmpty: Boolean
-    ): MediaItemWithUriEntity?
+    ): LocalMediaItemWithMetadata?
 
-    @Query("DELETE FROM MediaItemEntity")
+    @Query("DELETE FROM MediaItemMetadataEntity")
     suspend fun clearAllMediaItems()
 
-    @Query("DELETE FROM MediaItemUriEntity")
+    @Query("DELETE FROM LocalMediaEntity")
     suspend fun clearAllMediaItemUris()
 
     // Deletes all records from both tables in a single transaction

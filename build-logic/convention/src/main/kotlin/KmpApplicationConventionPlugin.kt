@@ -41,7 +41,9 @@ class KmpApplicationConventionPlugin : Plugin<Project> {
                     }
                 }
                 buildTypes {
+                    // TODO temporary config
                     getByName("release") {
+                        //isDebuggable = true
                         isMinifyEnabled = false
                         // TODO Update when ready to release
                         signingConfig = signingConfigs.getByName("debug")

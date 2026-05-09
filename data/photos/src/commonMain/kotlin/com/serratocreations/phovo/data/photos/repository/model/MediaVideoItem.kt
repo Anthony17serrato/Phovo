@@ -4,11 +4,11 @@ import kotlinx.datetime.LocalDateTime
 import kotlin.time.Duration
 
 data class MediaVideoItem(
-    override val assetLocation: LocalOrRemoteAsset,
+    override val assetLocation: AssetLocation,
     override val fileName: String,
     override val dateInFeed: LocalDateTime,
-    override val size: Int,
-    override val localUuid: String,
-    override val remoteUuid: String?,
+    override val size: Long,
+    override val uniqueAssetIdentifier: String,
     val duration: Duration,
+    override val isSynced: Boolean
 ) : MediaItem

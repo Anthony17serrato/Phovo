@@ -17,6 +17,7 @@ kotlin {
             implementation(projects.core.common)
             implementation(projects.core.logger)
             implementation(projects.core.model)
+            implementation(projects.core.serverconfig)
             implementation(libs.serialization.json)
             implementation(libs.kotlin.datetime)
             implementation(libs.coil.compose)

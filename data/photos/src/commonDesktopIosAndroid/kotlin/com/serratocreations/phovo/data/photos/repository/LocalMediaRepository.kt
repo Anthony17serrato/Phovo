@@ -1,28 +1,41 @@
 package com.serratocreations.phovo.data.photos.repository
 
 import com.serratocreations.phovo.core.database.dao.PhovoMediaDao
-import com.serratocreations.phovo.core.database.entities.MediaItemEntity
-import com.serratocreations.phovo.core.database.entities.MediaItemWithUriEntity
+import com.serratocreations.phovo.core.database.entities.LocalMediaEntity
+import com.serratocreations.phovo.core.database.entities.LocalMediaItemWithMetadata
+import com.serratocreations.phovo.core.database.entities.MediaItemMetadataEntity
+import com.serratocreations.phovo.core.database.entities.MediaItemWithMetadata
+import com.serratocreations.phovo.core.database.entities.ProcessingMediaEntity
+import com.serratocreations.phovo.core.database.entities.ProcessingState
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.core.model.MediaType
-import com.serratocreations.phovo.data.photos.mappers.toMediaItemWithUriEntity
+import com.serratocreations.phovo.data.photos.mappers.toMediaItemWithMetadataEntity
 import com.serratocreations.phovo.data.photos.mappers.toMediaItems
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 
+// TODO Repository APIs should not expose DAO data models
 interface LocalMediaRepository: MediaRepository {
-    suspend fun getMediaItemByLocalUuid(uuid: String): MediaItemWithUriEntity?
+    suspend fun getMediaItemByAssetHash(assetHash: String): MediaItemWithMetadata?
+    suspend fun getLocalMediaItemWithMetadataByAssetHash(assetHash: String): LocalMediaItemWithMetadata?
+    suspend fun getLocalMediaByAssetHash(assetHash: String): LocalMediaEntity?
+    suspend fun doesCompleteAssetExist(assetHash: String): Boolean
+    suspend fun observeFirstUnprocessedFullLocalMedia(): Flow<LocalMediaEntity?>
+    suspend fun tryProcessingClaim(assetHash: String): Boolean
+    suspend fun removeProcessingClaim(assetHash: String)
     suspend fun addOrUpdateMediaItem(mediaItem: MediaItem)
-    suspend fun addOrUpdateMediaItem(mediaItemWithUriEntity: MediaItemWithUriEntity)
-    fun observeUnsyncedMedia():  Flow<List<MediaItem>>
+    // TODO Repository APIs should not expose DAO data models
+    suspend fun addOrUpdateLocalMediaItem(localMediaEntity: LocalMediaEntity)
     fun observeUnsyncedMediaCount(): Flow<Int>
     suspend fun getUnsyncedMediaCount(): Int
-    suspend fun updateMediaItem(mediaItemEntity: MediaItemEntity)
+    suspend fun updateMediaItem(mediaItemMetadataEntity: MediaItemMetadataEntity)
     suspend fun getNextUnsyncedItemExcludingUuidSet(
         syncInProgressSet: Set<String>,
         mediaType: MediaType
-    ): MediaItemWithUriEntity?
+    ): LocalMediaItemWithMetadata?
+
+    suspend fun markAsSynced(assetHash: String)
 }
 
 class LocalMediaRepositoryImpl(
@@ -37,39 +50,66 @@ class LocalMediaRepositoryImpl(
             .toMediaItems()
     }
 
-    // TODO Map to media item when model URI uses a common solution(use filekit)
-    override suspend fun getMediaItemByLocalUuid(uuid: String) =
-        localMediaDataSource.getMediaItemByLocalUuid(uuid)
+    override suspend fun getMediaItemByAssetHash(assetHash: String) =
+        localMediaDataSource.getMediaItemByAssetHash(assetHash)
+
+    override suspend fun getLocalMediaItemWithMetadataByAssetHash(assetHash: String): LocalMediaItemWithMetadata? {
+        return localMediaDataSource.getLocalMediaItemWithMetadataByAssetHash(assetHash)
+    }
+
+    override suspend fun getLocalMediaByAssetHash(assetHash: String): LocalMediaEntity? {
+        return localMediaDataSource.getLocalMediaByAssetHash(assetHash)
+    }
 
     override suspend fun addOrUpdateMediaItem(mediaItem: MediaItem) {
-        addOrUpdateMediaItem(mediaItem.toMediaItemWithUriEntity())
+        val (mediaItemMetadata, mediaItemLocation) = mediaItem.toMediaItemWithMetadataEntity()
+        mediaItemLocation?.let { mediaItemLocationNotNull ->
+            localMediaDataSource.upsertMetadataWithLocalEntity(mediaItemMetadata, mediaItemLocationNotNull)
+        } ?: localMediaDataSource.upsertMetadata(mediaItemMetadata)
     }
 
-    override suspend fun addOrUpdateMediaItem(mediaItemWithUriEntity: MediaItemWithUriEntity) {
-        val (mediaItemEntity, mediaItemUriEntity) = mediaItemWithUriEntity
-        localMediaDataSource.insert(mediaItemEntity, mediaItemUriEntity)
+    override suspend fun addOrUpdateLocalMediaItem(localMediaEntity: LocalMediaEntity) {
+        localMediaDataSource.upsertLocal(localMediaEntity)
     }
 
-    override suspend fun updateMediaItem(mediaItemEntity: MediaItemEntity) {
-        localMediaDataSource.update(mediaItemEntity)
+    override suspend fun doesCompleteAssetExist(assetHash: String): Boolean {
+        val asset = localMediaDataSource.getNonPartialLocalMediaByAssetHash(assetHash)
+        return (asset != null)
+    }
+
+    override suspend fun observeFirstUnprocessedFullLocalMedia(): Flow<LocalMediaEntity?> =
+        localMediaDataSource.observeFirstUnprocessedFullLocalMedia()
+
+    override suspend fun tryProcessingClaim(assetHash: String): Boolean {
+        val result = localMediaDataSource.tryClaim(ProcessingMediaEntity(assetHash, ProcessingState.Processing))
+        return result != -1L
+    }
+
+    override suspend fun removeProcessingClaim(assetHash: String) {
+        localMediaDataSource.removeClaim(assetHash = assetHash)
+    }
+
+    override fun observeUnsyncedMediaCount(): Flow<Int> =
+        localMediaDataSource.observeUnsyncedMediaItemCount()
+
+    override suspend fun updateMediaItem(mediaItemMetadataEntity: MediaItemMetadataEntity) {
+        localMediaDataSource.update(mediaItemMetadataEntity)
     }
 
     override suspend fun getNextUnsyncedItemExcludingUuidSet(
         syncInProgressSet: Set<String>,
         mediaType: MediaType
-    ): MediaItemWithUriEntity? {
-        return localMediaDataSource.getNextUnsyncedItemExcludingUuidSet(
-            excludingUuids = syncInProgressSet,
+    ): LocalMediaItemWithMetadata? {
+        return localMediaDataSource.getNextUnsyncedLocalItemExcludingSet(
+            excludingHashes = syncInProgressSet,
             mediaType = mediaType,
             excludeNotEmpty = syncInProgressSet.isNotEmpty()
         )
     }
 
-    override fun observeUnsyncedMedia(): Flow<List<MediaItem>> =
-        localMediaDataSource.observeAllUnsyncedMediaItems().toMediaItems()
-
-    override fun observeUnsyncedMediaCount(): Flow<Int> =
-        localMediaDataSource.observeUnsyncedMediaItemCount()
+    override suspend fun markAsSynced(assetHash: String) {
+        localMediaDataSource.markAsSynced(assetHash)
+    }
 
     override suspend fun getUnsyncedMediaCount(): Int = observeUnsyncedMediaCount().first()
 }

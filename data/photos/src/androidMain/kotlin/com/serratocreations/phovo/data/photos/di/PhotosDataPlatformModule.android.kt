@@ -3,6 +3,8 @@ package com.serratocreations.phovo.data.photos.di
 import com.serratocreations.phovo.core.common.di.IO_DISPATCHER
 import com.serratocreations.phovo.data.photos.local.AndroidLocalMediaProcessor
 import com.serratocreations.phovo.data.photos.local.LocalMediaProcessor
+import com.serratocreations.phovo.data.photos.util.AndroidFileHashCalculator
+import com.serratocreations.phovo.data.photos.util.FileHashCalculator
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -21,6 +23,14 @@ internal actual fun getAndroidIosModules(): Module = module {
     }
 
     single<LocalMediaProcessor> {
-        AndroidLocalMediaProcessor(ioDispatcher = get(IO_DISPATCHER), context = get())
+        AndroidLocalMediaProcessor(
+            ioDispatcher = get(IO_DISPATCHER),
+            fileHashCalculator = get(),
+            context = get(),
+        )
+    }
+
+    factory<FileHashCalculator> {
+        AndroidFileHashCalculator(ioDispatcher = get(IO_DISPATCHER))
     }
 }

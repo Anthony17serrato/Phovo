@@ -3,10 +3,9 @@ package com.serratocreations.phovo.core.domain
 import com.serratocreations.phovo.core.domain.mapper.toMediaItemWithThumbnails
 import com.serratocreations.phovo.core.domain.model.MediaItemWithThumbnails
 import com.serratocreations.phovo.core.logger.PhovoLogger
+import com.serratocreations.phovo.core.serverconfig.DesktopServerConfigRepository
 import com.serratocreations.phovo.data.photos.repository.MediaRepository
-import com.serratocreations.phovo.data.photos.repository.model.LocalOrRemoteAsset
-import com.serratocreations.phovo.data.server.data.repository.DesktopServerConfigRepository
-import io.github.vinceglb.filekit.PlatformFile
+import com.serratocreations.phovo.data.photos.repository.model.AssetLocation
 import io.github.vinceglb.filekit.div
 import io.github.vinceglb.filekit.exists
 import kotlinx.coroutines.flow.Flow
@@ -23,23 +22,33 @@ class ServerGetPhotosFeedWithThumbnailsUseCase(
             mediaRepository.phovoMediaFlow(),
             serverConfigRepository.observeServerConfig().distinctUntilChanged()
         ) { mediaList, serverConfig ->
-            return@combine mediaList.map { mediaItem ->
+            // Because the server is the remote data source assets should always be local, if a remote
+            // asset exists it will be filtered(this is an error state)
+            return@combine mediaList.mapNotNull { mediaItem ->
                 val rootOutputDirectory =
-                    serverConfig?.backupDirectory ?: return@map mediaItem.toMediaItemWithThumbnails(
+                    serverConfig?.backupDirectory ?: return@mapNotNull mediaItem.toMediaItemWithThumbnails(
                         lowResThumbnailLocation = null,
-                        highResThumbnailLocation = mediaItem.assetLocation
+                        highResThumbnailLocation = mediaItem.assetLocation,
+                        assetHash = mediaItem.uniqueAssetIdentifier,
+                        baseUrl = null
                     )
                 val lowResThumbDir = rootOutputDirectory / GetPhotosFeedWithThumbnailsUseCase.LOW_RES_THUMBNAIL_DIR
-                val lowResThumb = (lowResThumbDir / "${mediaItem.localUuid}.webp").let {
-                    if (it.exists()) LocalOrRemoteAsset.LocalAsset(it) else null
+                val lowResThumb = (lowResThumbDir / "${mediaItem.uniqueAssetIdentifier}.webp").let {
+                    if (it.exists()) {
+                        AssetLocation.LocalAssetLocation(localAssetLocation = it)
+                    } else { null }
                 }
                 val highResThumbDir = rootOutputDirectory / GetPhotosFeedWithThumbnailsUseCase.HIGH_RES_THUMBNAIL_DIR
-                val highResThumb = (highResThumbDir / "${mediaItem.localUuid}.webp").let {
-                    if (it.exists()) LocalOrRemoteAsset.LocalAsset(it) else mediaItem.assetLocation
+                val highResThumb = (highResThumbDir / "${mediaItem.uniqueAssetIdentifier}.webp").let {
+                    if (it.exists()) {
+                        AssetLocation.LocalAssetLocation(localAssetLocation = it)
+                    } else { mediaItem.assetLocation }
                 }
                 mediaItem.toMediaItemWithThumbnails(
                     lowResThumbnailLocation = lowResThumb,
-                    highResThumbnailLocation = highResThumb
+                    highResThumbnailLocation = highResThumb,
+                    assetHash = mediaItem.uniqueAssetIdentifier,
+                    baseUrl = null
                 )
             }
         }

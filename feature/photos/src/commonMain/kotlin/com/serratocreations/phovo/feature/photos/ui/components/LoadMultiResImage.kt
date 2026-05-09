@@ -14,13 +14,13 @@ import coil3.request.ImageRequest
 import coil3.size.Precision
 import coil3.size.Scale
 import com.serratocreations.phovo.core.common.util.letIf
-import com.serratocreations.phovo.data.photos.repository.model.LocalOrRemoteAsset
+import com.serratocreations.phovo.core.domain.model.DomainAssetLocation
 
 @Composable
 fun LoadMultiResImage(
-    lowRes: LocalOrRemoteAsset? = null,
-    highRes: LocalOrRemoteAsset? = null,
-    sourceRes: LocalOrRemoteAsset? = null,
+    lowRes: DomainAssetLocation? = null,
+    highRes: DomainAssetLocation? = null,
+    sourceRes: DomainAssetLocation? = null,
     contentScale: ContentScale,
     modifier: Modifier = Modifier
 ) {

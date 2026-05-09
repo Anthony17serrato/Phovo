@@ -6,8 +6,8 @@ import com.serratocreations.phovo.core.database.di.getDatabaseModule
 import com.serratocreations.phovo.data.server.data.DesktopServerConfigManager
 import com.serratocreations.phovo.data.server.data.DesktopServerConfigManagerImpl
 import com.serratocreations.phovo.data.server.data.ServerConfigManager
-import com.serratocreations.phovo.data.server.data.repository.ServerConfigRepository
-import com.serratocreations.phovo.data.server.data.repository.DesktopServerConfigRepository
+import com.serratocreations.phovo.core.serverconfig.ServerConfigRepository
+import com.serratocreations.phovo.core.serverconfig.DesktopServerConfigRepository
 import com.serratocreations.phovo.data.server.data.repository.ServerEventsRepository
 import org.koin.dsl.binds
 import org.koin.dsl.module

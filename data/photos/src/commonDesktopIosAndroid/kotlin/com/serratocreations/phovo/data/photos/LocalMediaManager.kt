@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
-open class LocalMediaManager(
+abstract class LocalMediaManager(
     private val localMediaRepository: LocalMediaRepository,
     private val localMediaProcessor: LocalMediaProcessor,
     private val appScope: CoroutineScope,
@@ -27,11 +27,17 @@ open class LocalMediaManager(
      * Processing includes tasks such as extracting media metadata and generating md5 hashes and
      * deduplication logic
      */
-    // TODO Only Desktop client API should accept local directory
-    fun initMediaProcessing(localDirectory: String?) {
+
+    fun initMediaProcessing(
+        // TODO It may be needed to have platform specific abstraction for media locations
+        // TODO Implement for non-desktop platforms and make not null
+        // TODO Use PlatformFile
+        localDirectory: String?
+    ) {
         log.i { "initMediaProcessing" }
         appScope.launch {
-            // todo in the future paging and db queries should be used to prevent OOM on larger media libraries
+            // todo this approach could lead to OOM ,implement a more memory efficient way to check if media
+            //  is already processed
             val alreadyProcessedLocalItems = localMediaRepository.phovoMediaFlow().first()
             val processJob = processJob(
                 localDirectory = localDirectory,
@@ -46,11 +52,11 @@ open class LocalMediaManager(
     }
 
     // Syncs any local media which is still pending sync
-    protected open fun CoroutineScope.syncJob(processJob: Job) {
+    protected open fun CoroutineScope.syncJob(processingJob: Job) {
         // TODO Server may eventually support syncing to other servers, for now it is not supported
     }
 
-    private fun CoroutineScope.processJob(
+    protected fun CoroutineScope.processJob(
         localDirectory: String?,
         localItems: List<MediaItem>
     ) = launch {

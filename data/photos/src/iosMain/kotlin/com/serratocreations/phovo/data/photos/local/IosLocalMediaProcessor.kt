@@ -2,11 +2,11 @@ package com.serratocreations.phovo.data.photos.local
 
 import com.serratocreations.phovo.core.common.util.phAssetUriFromLocalId
 import com.serratocreations.phovo.core.logger.PhovoLogger
-import com.serratocreations.phovo.data.photos.repository.model.LocalOrRemoteAsset
+import com.serratocreations.phovo.data.photos.repository.model.AssetLocation
 import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
-import com.serratocreations.phovo.data.photos.repository.util.segregate
+import com.serratocreations.phovo.data.photos.util.segregate
 import io.github.vinceglb.filekit.PlatformFile
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.CoroutineDispatcher
@@ -112,7 +112,7 @@ class IosLocalMediaProcessor(
         }
         log.i { "IosPhovoItemDao images $imageItems" }
         imageItems.forEach { asset ->
-            val assetUri = LocalOrRemoteAsset.LocalAsset(
+            val assetUri = AssetLocation.LocalAssetLocation(
                 PlatformFile(phAssetUriFromLocalId(asset.localIdentifier).toString())
             )
             if (assetUri in processedImageUris) return@forEach
@@ -130,9 +130,9 @@ class IosLocalMediaProcessor(
                 assetLocation = assetUri,
                 fileName = name,
                 dateInFeed = localDateTime,
-                size = bytes.toInt(),
-                localUuid = Uuid.random().toString(),
-                remoteUuid = null
+                size = bytes,
+                uniqueAssetIdentifier = Uuid.random().toString(),
+                isSynced = false
             ))
         }
     }.flowOn(ioDispatcher)
@@ -149,7 +149,7 @@ class IosLocalMediaProcessor(
         }
         log.i { "IosPhovoItemDao fetchVideos $videoItems" }
         videoItems.forEach { asset ->
-            val assetUri = LocalOrRemoteAsset.LocalAsset(
+            val assetUri = AssetLocation.LocalAssetLocation(
                 PlatformFile(phAssetUriFromLocalId(asset.localIdentifier).toString())
             )
             if (assetUri in processedVideoUris) return@forEach
@@ -166,10 +166,10 @@ class IosLocalMediaProcessor(
                     assetLocation = assetUri,
                     fileName = name,
                     dateInFeed = localDateTime,
-                    size = bytes.toInt(),
+                    size = bytes,
                     duration = asset.duration.toLong().seconds,
-                    localUuid = Uuid.random().toString(),
-                    remoteUuid = null
+                    uniqueAssetIdentifier = Uuid.random().toString(),
+                    isSynced = false
                 )
             )
         }
