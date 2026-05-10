@@ -1,8 +1,14 @@
 package com.serratocreations.phovo.feature.photos.ui.components
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.layout.ContentScale
@@ -15,6 +21,12 @@ import coil3.size.Precision
 import coil3.size.Scale
 import com.serratocreations.phovo.core.common.util.letIf
 import com.serratocreations.phovo.core.domain.model.DomainAssetLocation
+
+// Keeps the image and its blur state bundled so AnimatedContent transitions them together
+private data class ImageLoadState(
+    val painter: AsyncImagePainter,
+    val shouldShowBlur: Boolean
+)
 
 @Composable
 fun LoadMultiResImage(
@@ -52,22 +64,38 @@ fun LoadMultiResImage(
     val highState = highPainter?.state?.collectAsState()?.value
     val sourceState = sourcePainter?.state?.collectAsState()?.value
 
-    val (successfulPainter, shouldShowBlur) = when {
-        sourceState is AsyncImagePainter.State.Success -> Pair(sourcePainter, false)
-        highState is AsyncImagePainter.State.Success -> Pair(highPainter, false)
-        lowState is AsyncImagePainter.State.Success -> Pair(lowPainter, true)
-        else -> Pair(null, false)
+    val targetImageState = when {
+        sourceState is AsyncImagePainter.State.Success -> ImageLoadState(sourcePainter, false)
+        highState is AsyncImagePainter.State.Success -> ImageLoadState(highPainter, false)
+        lowState is AsyncImagePainter.State.Success -> ImageLoadState(lowPainter, true)
+        else -> null
     }
 
-    if (successfulPainter != null) {
-        Image(
-            painter = successfulPainter,
-            contentDescription = null, // In the future this may come from GenAI
-            contentScale = contentScale,
-            modifier = modifier
-                .letIf(shouldShowBlur) { modifier ->
-                    modifier.blur(10.dp)
-                }
-        )
+    if (targetImageState != null) {
+        AnimatedContent(
+            targetState = targetImageState,
+            // 1. Anchor the modifier here! This keeps the shared element stable(if used).
+            modifier = modifier,
+            transitionSpec = {
+                (fadeIn(animationSpec = tween(400)) togetherWith ExitTransition.KeepUntilTransitionsFinished)
+                    // 2. Disable internal size animations. Let the Shared Element handle bounds.
+                    .using(null)
+            },
+            // 3. Keep everything perfectly centered if the raw image dimensions differ slightly
+            contentAlignment = Alignment.Center,
+            label = "MultiResImageTransition"
+        ) { state ->
+            Image(
+                painter = state.painter,
+                contentDescription = null,
+                contentScale = contentScale,
+                // Note: The shared element modifier is no longer here.
+                // We only apply the blur to the inner image.
+                modifier = Modifier
+                    .letIf(state.shouldShowBlur) { m ->
+                        m.blur(10.dp)
+                    }
+            )
+        }
     }
 }
