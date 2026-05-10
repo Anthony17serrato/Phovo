@@ -29,10 +29,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.window.core.layout.WindowWidthSizeClass
 import coil3.ImageLoader
 import coil3.compose.setSingletonImageLoaderFactory
-import coil3.disk.DiskCache
 import coil3.memory.MemoryCache
 import coil3.request.CachePolicy
 import coil3.request.crossfade
+import coil3.util.DebugLogger
 import com.serratocreations.phovo.core.designsystem.component.CallToActionComponent
 import com.serratocreations.phovo.feature.photos.ui.components.LoadMultiResImage
 import com.serratocreations.phovo.feature.photos.ui.model.DateHeaderPhotoUiItem
@@ -43,7 +43,8 @@ import com.serratocreations.phovo.feature.photos.util.LocalOrRemoteAssetMapper
 import com.serratocreations.phovo.feature.photos.util.getPlatformDecoderFactory
 import com.serratocreations.phovo.feature.photos.util.getPlatformFetcherFactory
 import io.github.vinceglb.filekit.coil.addPlatformFileSupport
-import okio.FileSystem
+
+expect fun ImageLoader.Builder.platformDiskCache(): ImageLoader.Builder
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -66,11 +67,8 @@ internal fun PhotosHomeScreen(
             }
             .diskCachePolicy(CachePolicy.ENABLED)
             .networkCachePolicy(CachePolicy.ENABLED)
-            .diskCache {
-                DiskCache.Builder().directory(FileSystem.SYSTEM_TEMPORARY_DIRECTORY / "image_cache")
-                    .maxSizeBytes(1024L * 1024 * 1024) // 512MB
-                    .build()
-            }
+            .platformDiskCache()
+            .logger(DebugLogger())
             .components {
                 add(getPlatformDecoderFactory())
                 add(getPlatformFetcherFactory())
