@@ -5,8 +5,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarColors
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -40,7 +38,6 @@ fun PhovoTopAppBar(
     actionIcon: ImageVector,
     actionIconContentDescription: String,
     modifier: Modifier = Modifier,
-    colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(),
     menuOptions: Set<OverflowMenuOption>,
     onMenuActionClick: (NavKey) -> Unit = {},
     scrollBehavior: TopAppBarScrollBehavior
@@ -80,7 +77,7 @@ fun PhovoTopAppBar(
                 }
             }
         },
-        colors = colors,
+        colors = appBarState.topAppBarColors(),
         scrollBehavior = scrollBehavior,
         modifier = modifier
     )

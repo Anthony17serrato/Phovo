@@ -89,8 +89,7 @@ fun LoadMultiResImage(
                 painter = state.painter,
                 contentDescription = null,
                 contentScale = contentScale,
-                // Note: The shared element modifier is no longer here.
-                // We only apply the blur to the inner image.
+                // We only apply the blur if the state requires it.
                 modifier = Modifier
                     .letIf(state.shouldShowBlur) { m ->
                         m.blur(10.dp)
