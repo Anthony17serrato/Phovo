@@ -1,7 +1,10 @@
 package com.serratocreations.phovo.navigation
 
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
 import com.serratocreations.phovo.core.navigation.AppBarConfig
@@ -20,7 +23,8 @@ fun PolymorphicModuleBuilder<NavKey>.searchRoutes() {
 }
 
 fun EntryProviderScope<NavKey>.searchEntries(
-    navigationViewModel: NavigationViewModel
+    navigationViewModel: NavigationViewModel,
+    scaffoldPadding: PaddingValues
 ) {
     entry<SearchHomeNavKey> {
         LaunchedEffect(navigationViewModel.state.currentKey) {
@@ -32,6 +36,8 @@ fun EntryProviderScope<NavKey>.searchEntries(
                 )
             }
         }
-        SearchScreen()
+        SearchScreen(
+            modifier = Modifier.padding(scaffoldPadding)
+        )
     }
 }

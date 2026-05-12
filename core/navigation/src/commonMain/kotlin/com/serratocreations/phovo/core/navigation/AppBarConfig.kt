@@ -6,10 +6,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.TopAppBarColors
+import androidx.compose.material3.TopAppBarDefaults
 
 data class AppBarConfig(
     val title: @Composable (() -> Unit) = {},
-    val navigationIcon: @Composable (() -> Unit) = { NoNavigationIcon() }
+    val navigationIcon: @Composable (() -> Unit) = { NoNavigationIcon() },
+    val topAppBarColors: @Composable (() -> TopAppBarColors) = { TopAppBarDefaults.topAppBarColors() }
 )
 
 @Composable

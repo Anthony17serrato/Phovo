@@ -1,8 +1,11 @@
 package com.serratocreations.phovo.navigation
 
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
@@ -17,7 +20,8 @@ import com.serratocreations.phovo.viewmodel.DevViewModel
 import org.koin.compose.viewmodel.koinViewModel
 
 fun EntryProviderScope<NavKey>.flavorEntries(
-    navigationViewModel: NavigationViewModel
+    navigationViewModel: NavigationViewModel,
+    scaffoldPadding: PaddingValues
 ) {
     entry<DevMenuHomeNavKey>(
         clazzContentKey = { key -> key.toContentKey() }
@@ -38,7 +42,8 @@ fun EntryProviderScope<NavKey>.flavorEntries(
         }
         DevMenuHomeScreen(
             devMenuItems = uiState.devMenuListOfRoutes,
-            onClickMenuItem = { key -> navigationViewModel.navigate(key) }
+            onClickMenuItem = { key -> navigationViewModel.navigate(key) },
+            modifier = Modifier.padding(scaffoldPadding)
         )
     }
     entry<DevMenuResetOptionsNavKey>(
@@ -48,7 +53,8 @@ fun EntryProviderScope<NavKey>.flavorEntries(
     ) {
         val devViewModel: DevViewModel = koinViewModel()
         DevMenuResetOptionsScreen(
-            onClickResetAppState = devViewModel::onClickResetAppState
+            onClickResetAppState = devViewModel::onClickResetAppState,
+            modifier = Modifier.padding(scaffoldPadding)
         )
     }
 }

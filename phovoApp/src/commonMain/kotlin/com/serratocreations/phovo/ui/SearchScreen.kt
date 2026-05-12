@@ -25,7 +25,7 @@ internal fun SearchScreen(
     modifier: Modifier = Modifier,
 ) {
     var showContent by remember { mutableStateOf(false) }
-    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         Button(onClick = { showContent = !showContent }) {
             Text("Click me!")
         }

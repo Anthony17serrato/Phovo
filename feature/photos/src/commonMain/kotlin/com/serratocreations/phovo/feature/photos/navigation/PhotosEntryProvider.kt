@@ -1,9 +1,18 @@
 package com.serratocreations.phovo.feature.photos.navigation
 
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
@@ -22,7 +31,8 @@ import org.koin.compose.viewmodel.koinViewModel
 fun EntryProviderScope<NavKey>.photosEntries(
     sharedElementTransition: SharedTransitionScope,
     navigationViewModel: NavigationViewModel,
-    onShowAppBarRequested: () -> Unit
+    onShowAppBarRequested: () -> Unit,
+    scaffoldPadding: PaddingValues
 ) {
     entry<PhotosHomeNavKey>(
         clazzContentKey = { key -> key.toContentKey() }
@@ -32,7 +42,13 @@ fun EntryProviderScope<NavKey>.photosEntries(
             if(navigationViewModel.state.currentKey == PhotosHomeNavKey) {
                 navigationViewModel.setAppBarConfig(
                     AppBarConfig(
-                        title = { PhotosHomeTitleContent() }
+                        title = { PhotosHomeTitleContent() },
+                        topAppBarColors = {
+                            TopAppBarDefaults.topAppBarColors(
+                                containerColor = Color.Transparent,
+                                scrolledContainerColor = Color.Transparent
+                            )
+                        }
                     )
                 )
             }
@@ -45,7 +61,8 @@ fun EntryProviderScope<NavKey>.photosEntries(
             },
             sharedElementTransition = sharedElementTransition,
             animatedContentScope = LocalNavAnimatedContentScope.current,
-            photosViewModel = photosViewModel
+            photosViewModel = photosViewModel,
+            modifier = Modifier.padding(scaffoldPadding)
         )
     }
     entry<PhotoDetailNavKey>(
@@ -62,15 +79,30 @@ fun EntryProviderScope<NavKey>.photosEntries(
                         title = { Text("Details") },
                         navigationIcon = {
                             DefaultNavigationIcon(navigationViewModel::goBack)
+                        },
+                        topAppBarColors = {
+                            val defaultColors = TopAppBarDefaults.topAppBarColors()
+                            defaultColors.copy(
+                                containerColor = defaultColors.containerColor.copy(alpha = 0.7f),
+                                scrolledContainerColor = defaultColors.containerColor.copy(alpha = 0.8f)
+                            )
                         }
                     )
                 )
             }
         }
+        val layoutDirection = LocalLayoutDirection.current
+        val viewerModifier = Modifier.padding(
+            top = 0.dp,
+            bottom = scaffoldPadding.calculateBottomPadding(),
+            start = scaffoldPadding.calculateStartPadding(layoutDirection),
+            end = scaffoldPadding.calculateEndPadding(layoutDirection)
+        )
         PhotoViewerScreen(
             sharedElementTransition = sharedElementTransition,
             animatedContentScope = LocalNavAnimatedContentScope.current,
-            photosViewModel = photosViewModel
+            photosViewModel = photosViewModel,
+            modifier = viewerModifier
         )
     }
 }

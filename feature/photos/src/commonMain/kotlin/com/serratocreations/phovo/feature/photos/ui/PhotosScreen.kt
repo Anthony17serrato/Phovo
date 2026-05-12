@@ -62,7 +62,7 @@ internal fun PhotosHomeScreen(
             .memoryCachePolicy(CachePolicy.ENABLED)
             .memoryCache {
                 MemoryCache.Builder()
-                    .maxSizePercent(context, 0.20) // 20% of app memory
+                    .maxSizePercent(context, 0.30) // 30% of app memory
                     .build()
             }
             .diskCachePolicy(CachePolicy.ENABLED)
@@ -81,7 +81,7 @@ internal fun PhotosHomeScreen(
     PhotosScreen(
         photosItems = photosState.photosFeed,
         onPhotoClick = onPhotoClick,
-        sharedElementTransition =sharedElementTransition,
+        sharedElementTransition = sharedElementTransition,
         animatedContentScope = animatedContentScope,
         modifier = modifier
     )
@@ -96,9 +96,10 @@ internal fun PhotosScreen(
     sharedElementTransition: SharedTransitionScope,
     animatedContentScope: AnimatedContentScope,
     modifier: Modifier = Modifier,
+    // TODO Refactor based on already implemented code in Navigation.kt
     width: WindowWidthSizeClass = currentWindowAdaptiveInfo().windowSizeClass.windowWidthSizeClass
 ) {
-    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
+    Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
         LazyVerticalGrid(
             columns = GridCells.Adaptive(
                 minSize = when (width) {
@@ -143,12 +144,12 @@ internal fun PhotosScreen(
                             //  string res values
                             text = "${item.month} ${item.year ?: ""}",
                             style = MaterialTheme.typography.headlineSmall,
-                            modifier = modifier.padding(16.dp)
+                            modifier = Modifier.padding(16.dp)
                         )
                     }
                     is ThumbnailPhotoUiItem -> with(sharedElementTransition) {
                         val id = item.key
-                        Box(modifier = modifier.aspectRatio(1f)) {
+                        Box(modifier = Modifier.aspectRatio(1f)) {
                             LoadMultiResImage(
                                 highRes = item.thumbnail,
                                 lowRes = item.lowResThumbnail,
@@ -164,7 +165,7 @@ internal fun PhotosScreen(
                                     text = item.duration,
                                     color = Color.White,
                                     style = MaterialTheme.typography.labelMedium,
-                                    modifier = modifier.align(Alignment.TopEnd)
+                                    modifier = Modifier.align(Alignment.TopEnd)
                                         .padding(top = 8.dp, end = 8.dp)
                                 )
                             }

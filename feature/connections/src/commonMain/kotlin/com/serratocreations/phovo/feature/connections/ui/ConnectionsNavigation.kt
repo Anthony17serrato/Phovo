@@ -1,7 +1,10 @@
 package com.serratocreations.phovo.feature.connections.ui
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
@@ -33,7 +36,8 @@ fun PolymorphicModuleBuilder<NavKey>.connectionsRoutes() {
 
 fun EntryProviderScope<NavKey>.connectionsEntries(
     phovoViewModel: PhovoViewModel,
-    navigationViewModel: NavigationViewModel
+    navigationViewModel: NavigationViewModel,
+    scaffoldPadding: PaddingValues
 ) {
     entry<ConnectionsRouteComponent> {
         LaunchedEffect(navigationViewModel.state.currentKey) {
@@ -45,7 +49,12 @@ fun EntryProviderScope<NavKey>.connectionsEntries(
                 )
             }
         }
-        ConnectionsDetailsNavigation(phovoViewModel = phovoViewModel)
+        // TODO remove column wrapper when migrate to nav 3
+        Column(modifier = Modifier.padding(scaffoldPadding)) {
+            ConnectionsDetailsNavigation(
+                phovoViewModel = phovoViewModel
+            )
+        }
     }
 }
 
@@ -123,14 +132,14 @@ fun ConnectionsTwoPaneContent(
         // First pane is permanently home pane
         ConnectionsHomePane(
             onConfigClick = { navigate(ConnectionsNavigation(PaneId.ConfigGettingStarted)) },
-            modifier = modifier.weight(1f)
+            modifier = Modifier.weight(1f)
         )
         currentPane.setNavigationContent(
             connectionsViewModel = connectionsViewModel,
             connectionsUiState = connectionsUiState,
             navigate = navigate,
             paneMode = PhovoPaneMode.TwoPane,
-            modifier = modifier.weight(1f)
+            modifier = Modifier.weight(1f)
         )
     }
 }

@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.only
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -70,14 +69,11 @@ import org.koin.core.parameter.parametersOf
 @Composable
 @Preview
 fun PhovoApp(
-    modifier: Modifier = Modifier,
-    windowAdaptiveInfo: WindowAdaptiveInfo = currentWindowAdaptiveInfo()
+    modifier: Modifier = Modifier
 ) {
     PhovoTheme {
         PhovoBackground(modifier = modifier) {
-            InternalPhovoApp(
-                windowAdaptiveInfo = windowAdaptiveInfo,
-            )
+            InternalPhovoApp()
         }
     }
 }
@@ -101,8 +97,7 @@ internal fun InternalPhovoApp(
     // TODO: Merge PhovoViewModel into NavigationViewmodel
     phovoViewModel: PhovoViewModel = koinViewModel(viewModelStoreOwner = viewModelStoreOwner),
     applicationViewModel: ApplicationViewModel = koinViewModel(viewModelStoreOwner = viewModelStoreOwner),
-    modifier: Modifier = Modifier,
-    windowAdaptiveInfo: WindowAdaptiveInfo = currentWindowAdaptiveInfo(),
+    modifier: Modifier = Modifier
 ) {
     val applicationUiSate by applicationViewModel.applicationUiState.collectAsState()
     val appBarState by navigationViewModel.appBarState.collectAsState()
@@ -157,8 +152,7 @@ internal fun InternalPhovoApp(
                 )
             }
         },
-        shouldShowNavBarOnCompactScreens = navigationState.currentKey.isTopLevel(),
-        windowAdaptiveInfo = windowAdaptiveInfo,
+        shouldShowNavBarOnCompactScreens = navigationState.currentKey.isTopLevel()
     ) {
         val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
         Scaffold(
@@ -170,10 +164,6 @@ internal fun InternalPhovoApp(
                         Res.string.feature_settings_top_app_bar_action_icon_description,
                     ),
                     modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color.Transparent,
-                        scrolledContainerColor = Color.Transparent
-                    ),
                     menuOptions = applicationUiSate.menuOptions,
                     onMenuActionClick = { navigationViewModel.navigate(route = it) },
                     scrollBehavior = scrollBehavior
@@ -187,7 +177,6 @@ internal fun InternalPhovoApp(
             Column(
                 Modifier
                     .fillMaxSize()
-                    .padding(padding)
                     .consumeWindowInsets(padding)
                     .windowInsetsPadding(
                         WindowInsets.safeDrawing.only(
@@ -205,11 +194,22 @@ internal fun InternalPhovoApp(
                             photosEntries(
                                 sharedElementTransition = this@SharedTransitionLayout,
                                 navigationViewModel = navigationViewModel,
-                                onShowAppBarRequested = { scrollBehavior.showAppBar() }
+                                onShowAppBarRequested = { scrollBehavior.showAppBar() },
+                                scaffoldPadding = padding
                             )
-                            searchEntries(navigationViewModel = navigationViewModel)
-                            connectionsEntries(phovoViewModel = phovoViewModel, navigationViewModel = navigationViewModel)
-                            flavorEntries(navigationViewModel)
+                            searchEntries(
+                                navigationViewModel = navigationViewModel,
+                                scaffoldPadding = padding
+                            )
+                            connectionsEntries(
+                                phovoViewModel = phovoViewModel,
+                                navigationViewModel = navigationViewModel,
+                                scaffoldPadding = padding
+                            )
+                            flavorEntries(
+                                navigationViewModel = navigationViewModel,
+                                scaffoldPadding = padding
+                            )
                         }
                         NavDisplay(
                             entries = navigationState.toDecoratedEntries(entryProvider),

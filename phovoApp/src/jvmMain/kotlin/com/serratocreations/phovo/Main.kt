@@ -22,10 +22,15 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
 import io.github.kdroidfilter.platformtools.darkmodedetector.isSystemInDarkMode
 
 fun main() = application {
-    val windowState = rememberWindowState(placement = WindowPlacement.Maximized)
+    val windowState = rememberWindowState(
+        placement = WindowPlacement.Maximized,
+        size = DpSize(1280.dp, 800.dp),
+    )
     var isVisible by remember { mutableStateOf(true) }
     val isDark = isSystemInDarkMode()
 
