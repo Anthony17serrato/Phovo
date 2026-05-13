@@ -23,6 +23,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toKotlinInstant
 import kotlinx.datetime.toLocalDateTime
 import platform.Foundation.NSNumber
+import platform.Foundation.NSURL
 import platform.Foundation.valueForKey
 import platform.Photos.PHAccessLevelReadWrite
 import platform.Photos.PHAsset
@@ -34,8 +35,11 @@ import platform.Photos.PHAuthorizationStatusDenied
 import platform.Photos.PHAuthorizationStatusLimited
 import platform.Photos.PHAuthorizationStatusNotDetermined
 import platform.Photos.PHAuthorizationStatusRestricted
+import platform.Photos.PHContentEditingInputRequestOptions
 import platform.Photos.PHFetchOptions
 import platform.Photos.PHPhotoLibrary
+import platform.Photos.cancelContentEditingInputRequest
+import platform.Photos.requestContentEditingInputWithOptions
 import kotlin.coroutines.resume
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
@@ -123,6 +127,12 @@ class IosLocalMediaProcessor(
             // TODO: Instead of excluding images where date could not be determined parse the date from exif data
             val localDateTime = instant?.toLocalDateTime(TimeZone.currentSystemDefault())
                 ?: return@forEach
+            // TODO replace with hash calculation
+            val assetId = Uuid.random().toString()
+            fetchImageURL(asset = asset)?.let {
+                val imageFile = PlatformFile(it)
+                createThumbnail(imageFile, assetHash = assetId, ioDispatcher)
+            }
 
             val size = resource.valueForKey("fileSize") as? NSNumber
             val bytes = size?.longValue ?: 0L
@@ -131,7 +141,7 @@ class IosLocalMediaProcessor(
                 fileName = name,
                 dateInFeed = localDateTime,
                 size = bytes,
-                uniqueAssetIdentifier = Uuid.random().toString(),
+                uniqueAssetIdentifier = assetId,
                 isSynced = false
             ))
         }
@@ -174,4 +184,21 @@ class IosLocalMediaProcessor(
             )
         }
     }.flowOn(ioDispatcher)
+
+    private suspend fun fetchImageURL(asset: PHAsset): NSURL? = suspendCancellableCoroutine { continuation ->
+        val options = PHContentEditingInputRequestOptions().apply {
+            networkAccessAllowed = false
+        }
+
+        // Request the editing input, which contains the physical file URL
+        val requestID = asset.requestContentEditingInputWithOptions(options) { input, _ ->
+            // Resume the coroutine with the NSURL, or null if it failed
+            continuation.resume(input?.fullSizeImageURL)
+        }
+
+        // Handle cancellation perfectly
+        continuation.invokeOnCancellation {
+            asset.cancelContentEditingInputRequest(requestID)
+        }
+    }
 }

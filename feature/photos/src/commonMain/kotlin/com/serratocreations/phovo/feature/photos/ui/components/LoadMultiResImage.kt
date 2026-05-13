@@ -6,6 +6,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
@@ -75,7 +76,7 @@ fun LoadMultiResImage(
         AnimatedContent(
             targetState = targetImageState,
             // 1. Anchor the modifier here! This keeps the shared element stable(if used).
-            modifier = modifier,
+            modifier = modifier.fillMaxSize(),
             transitionSpec = {
                 (fadeIn(animationSpec = tween(400)) togetherWith ExitTransition.KeepUntilTransitionsFinished)
                     // 2. Disable internal size animations. Let the Shared Element handle bounds.
@@ -91,6 +92,7 @@ fun LoadMultiResImage(
                 contentScale = contentScale,
                 // We only apply the blur if the state requires it.
                 modifier = Modifier
+                    .fillMaxSize()
                     .letIf(state.shouldShowBlur) { m ->
                         m.blur(10.dp)
                     }
