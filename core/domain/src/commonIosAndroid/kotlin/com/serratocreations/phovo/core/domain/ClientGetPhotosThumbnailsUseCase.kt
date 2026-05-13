@@ -1,5 +1,6 @@
 package com.serratocreations.phovo.core.domain
 
+import com.serratocreations.phovo.core.common.LOW_RES_THUMBNAIL_DIR
 import com.serratocreations.phovo.core.domain.mapper.toMediaItemWithThumbnails
 import com.serratocreations.phovo.core.domain.model.MediaItemWithThumbnails
 import com.serratocreations.phovo.core.logger.PhovoLogger
@@ -31,7 +32,7 @@ class ClientGetPhotosFeedWithThumbnailsUseCase(
         ) { mediaList, serverConfig ->
             return@combine mediaList.mapNotNull { mediaItem ->
                 // Prefer file thumb if exists, fallback to network thumb, no thumb if no base url
-                val lowResThumb = (FileKit.filesDir / GetPhotosFeedWithThumbnailsUseCase.LOW_RES_THUMBNAIL_DIR / "${mediaItem.uniqueAssetIdentifier}.webp").let {
+                val lowResThumb = (FileKit.filesDir / LOW_RES_THUMBNAIL_DIR / "${mediaItem.uniqueAssetIdentifier}.jpg").let {
                     if (it.exists()) {
                         AssetLocation.LocalAssetLocation(it)
                     } else if (mediaItem.isSynced) {

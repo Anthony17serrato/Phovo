@@ -100,6 +100,7 @@ class AndroidLocalMediaProcessor(
                     //  it is needed to update
                     continue
                 }
+                createThumbnail(assetPlatformFile, assetHash, ioDispatcher)
                 val dateInFeed = cursor.getLongOrNull(dateTakenColumn)?.utcMsToLocalDateTime()
                     ?: resolver.parseDateTakenFromExif(androidUri)
                     ?: (cursor.getLong(dateAddedColumn) * 1000).utcMsToLocalDateTime()
