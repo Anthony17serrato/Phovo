@@ -40,7 +40,7 @@ Phovo is currently undergoing active development. Core logic, architecture, and 
 
 ---
 
-### 🏁 February 31, 2026 — Stable Release
+### 🏁 February 31, 2027 — Stable Release
 **Availability:** Android, iOS & Desktop  
 **Focus:**  
 - Production-ready release  
