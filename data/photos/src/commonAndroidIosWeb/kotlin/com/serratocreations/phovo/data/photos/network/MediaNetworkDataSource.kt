@@ -56,7 +56,7 @@ abstract class MediaNetworkDataSource(
     ): SyncResult {
         log.i { "syncMedia $mediaItemDto" }
 
-        val uploadUrl = baseUrl + ApiEndpoints.Upload.INIT_API
+        val uploadUrl = baseUrl / ApiEndpoints.Upload.INIT_API
         val initResponse = try {
             client.post(uploadUrl) {
                 contentType(ContentType.Application.Json)
@@ -87,7 +87,7 @@ abstract class MediaNetworkDataSource(
         partIndex: String,
         baseUrl: BaseUrl
     ): HttpResponse {
-        val chunkUrl = baseUrl + ApiEndpoints.Upload.CHUNK_API
+        val chunkUrl = baseUrl / ApiEndpoints.Upload.CHUNK_API
         return client.post(chunkUrl) {
             header("X-File-Name", fileName)
             header("X-Chunk-Index", partIndex)
@@ -99,7 +99,7 @@ abstract class MediaNetworkDataSource(
         mediaItemDto: MediaItemDto,
         baseUrl: BaseUrl
     ): SyncResult {
-        val uploadUrl = baseUrl + ApiEndpoints.Upload.COMPLETE_API
+        val uploadUrl = baseUrl / ApiEndpoints.Upload.COMPLETE_API
         return try {
             val response = client.post(uploadUrl) {
                 contentType(ContentType.Text.Plain)

@@ -20,6 +20,6 @@ sealed interface AssetLocation {
             assetHash: String,
             endpoint: Endpoint,
             baseUrl: BaseUrl
-        ) = "$baseUrl${endpoint.value}${assetHash}".toUri()
+        ) = (baseUrl / (endpoint / Endpoint(assetHash))).toUri()
     }
 }
