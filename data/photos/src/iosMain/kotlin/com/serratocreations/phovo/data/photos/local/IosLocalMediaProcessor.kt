@@ -6,6 +6,7 @@ import com.serratocreations.phovo.data.photos.repository.model.AssetLocation
 import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
+import com.serratocreations.phovo.data.photos.util.FileHashCalculator
 import com.serratocreations.phovo.data.photos.util.segregate
 import io.github.vinceglb.filekit.PlatformFile
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -44,9 +45,9 @@ import kotlin.coroutines.resume
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
 
 class IosLocalMediaProcessor(
+    private val fileHashCalculator: FileHashCalculator,
     logger: PhovoLogger,
     private val ioDispatcher: CoroutineDispatcher
 ) : LocalMediaProcessor {
@@ -109,7 +110,7 @@ class IosLocalMediaProcessor(
         val fetchOptions = PHFetchOptions()
         val assets = PHAsset.fetchAssetsWithMediaType(PHAssetMediaTypeImage, fetchOptions)
         val imageItems = mutableListOf<PHAsset>()
-        val processedImageUris = processedImages.map { it.assetLocation }
+        val processedImageHashes = processedImages.map { it.uniqueAssetIdentifier }
         // Enumerate the assets using the block-based approach
         assets.enumerateObjectsUsingBlock { obj, _, _ ->
             imageItems.add(obj as PHAsset)
@@ -119,7 +120,15 @@ class IosLocalMediaProcessor(
             val assetUri = AssetLocation.LocalAssetLocation(
                 PlatformFile(phAssetUriFromLocalId(asset.localIdentifier).toString())
             )
-            if (assetUri in processedImageUris) return@forEach
+            val fullSizeAssetNsurl = fetchImageURL(asset = asset) ?: run {
+                log.e { "Could not get full size asset for $assetUri" }
+                return@forEach
+            }
+            val fullSizeAssetFile = PlatformFile(fullSizeAssetNsurl)
+            val assetHash = fileHashCalculator.computeSha256(fullSizeAssetFile)
+            if (assetHash in processedImageHashes) return@forEach
+            createThumbnail(fullSizeAssetFile, assetHash = assetHash, ioDispatcher)
+
             val resource = PHAssetResource.assetResourcesForAsset(asset)
                 .firstOrNull() as? PHAssetResource ?: return@forEach
             val name = resource.originalFilename
@@ -127,12 +136,6 @@ class IosLocalMediaProcessor(
             // TODO: Instead of excluding images where date could not be determined parse the date from exif data
             val localDateTime = instant?.toLocalDateTime(TimeZone.currentSystemDefault())
                 ?: return@forEach
-            // TODO replace with hash calculation
-            val assetId = Uuid.random().toString()
-            fetchImageURL(asset = asset)?.let {
-                val imageFile = PlatformFile(it)
-                createThumbnail(imageFile, assetHash = assetId, ioDispatcher)
-            }
 
             val size = resource.valueForKey("fileSize") as? NSNumber
             val bytes = size?.longValue ?: 0L
@@ -141,7 +144,7 @@ class IosLocalMediaProcessor(
                 fileName = name,
                 dateInFeed = localDateTime,
                 size = bytes,
-                uniqueAssetIdentifier = assetId,
+                uniqueAssetIdentifier = assetHash,
                 isSynced = false
             ))
         }
@@ -151,7 +154,7 @@ class IosLocalMediaProcessor(
     private fun fetchVideos(processedVideos: List<MediaVideoItem>): Flow<MediaVideoItem> = flow {
         val fetchOptions = PHFetchOptions()
         val videoItems = mutableListOf<PHAsset>()
-        val processedVideoUris = processedVideos.map { it.assetLocation }
+        val processedVideoHashes = processedVideos.map { it.uniqueAssetIdentifier }
         val videoAssets =
             PHAsset.fetchAssetsWithMediaType(PHAssetMediaTypeVideo, fetchOptions)
         videoAssets.enumerateObjectsUsingBlock { obj, _, _ ->
@@ -162,7 +165,13 @@ class IosLocalMediaProcessor(
             val assetUri = AssetLocation.LocalAssetLocation(
                 PlatformFile(phAssetUriFromLocalId(asset.localIdentifier).toString())
             )
-            if (assetUri in processedVideoUris) return@forEach
+            val fullSizeAssetNsurl = fetchImageURL(asset = asset) ?: run {
+                log.e { "Could not get full size asset for $assetUri" }
+                return@forEach
+            }
+            val fullSizeAssetFile = PlatformFile(fullSizeAssetNsurl)
+            val assetHash = fileHashCalculator.computeSha256(fullSizeAssetFile)
+            if (assetHash in processedVideoHashes) return@forEach
             val resource = PHAssetResource.assetResourcesForAsset(asset)
                 .firstOrNull() as? PHAssetResource ?: return@forEach
             val name = resource.originalFilename
@@ -178,7 +187,7 @@ class IosLocalMediaProcessor(
                     dateInFeed = localDateTime,
                     size = bytes,
                     duration = asset.duration.toLong().seconds,
-                    uniqueAssetIdentifier = Uuid.random().toString(),
+                    uniqueAssetIdentifier = assetHash,
                     isSynced = false
                 )
             )

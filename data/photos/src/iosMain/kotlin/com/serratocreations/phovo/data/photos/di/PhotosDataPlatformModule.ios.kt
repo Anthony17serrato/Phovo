@@ -7,6 +7,8 @@ import io.ktor.client.engine.darwin.Darwin
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.serialization.kotlinx.json.json
 import com.serratocreations.phovo.data.photos.local.IosLocalMediaProcessor
+import com.serratocreations.phovo.data.photos.util.FileHashCalculator
+import com.serratocreations.phovo.data.photos.util.IosFileHashCalculator
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
@@ -21,8 +23,11 @@ internal actual fun getAndroidIosModules(): Module = module {
         }
     }
 
+    factory<FileHashCalculator> { IosFileHashCalculator(get(IO_DISPATCHER)) }
+
     single<LocalMediaProcessor> {
         IosLocalMediaProcessor(
+            fileHashCalculator = get(),
             logger = get(),
             ioDispatcher = get(IO_DISPATCHER)
         )
