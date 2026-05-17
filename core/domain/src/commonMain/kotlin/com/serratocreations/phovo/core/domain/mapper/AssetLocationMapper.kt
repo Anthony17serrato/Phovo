@@ -13,7 +13,10 @@ fun AssetLocation.toDomainAssetLocation(
 ): DomainAssetLocation? {
     return when(this) {
         is AssetLocation.LocalAssetLocation -> {
-            DomainAssetLocation.LocalAssetLocation(this.localAssetLocation)
+            DomainAssetLocation.LocalAssetLocation(
+                this.localAssetLocation,
+                assetId = assetHash
+            )
         }
         is AssetLocation.RemoteAssetLocation -> {
             DomainAssetLocation.RemoteAssetLocation(
@@ -26,7 +29,8 @@ fun AssetLocation.toDomainAssetLocation(
                         }
                         return null
                     }
-                )
+                ),
+                assetId = assetHash
             )
         }
     }

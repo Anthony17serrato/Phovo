@@ -35,34 +35,50 @@ fun LoadMultiResImage(
     highRes: DomainAssetLocation? = null,
     sourceRes: DomainAssetLocation? = null,
     contentScale: ContentScale,
+    shouldLoadSequentially: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val lowPainter = lowRes?.let {
         val thumbRequest = ImageRequest.Builder(LocalPlatformContext.current)
-            .data(it)
+            .data(lowRes)
             .size(144, 144)
             .scale(Scale.FIT)
             .precision(Precision.INEXACT)
-            .memoryCacheKey("low_thumb_${it.hashCode()}")
-            .diskCacheKey("low_thumb_${it.hashCode()}")
+            .memoryCacheKey("low_thumb_${lowRes.assetId}")
+            .diskCacheKey("low_thumb_${lowRes.assetId}")
             .build()
         rememberAsyncImagePainter(model = thumbRequest)
     }
-    val highPainter = highRes?.let {
+
+    val lowState = lowPainter?.state?.collectAsState()?.value
+
+    // A step is "finished" if it was skipped (null) OR if it completed (Success/Error)
+    // We include Error so a failed thumbnail doesn't halt the whole loading chain.
+    val isLowFinished = lowRes == null || lowState is AsyncImagePainter.State.Success || lowState is AsyncImagePainter.State.Error
+    val canLoadHigh = !shouldLoadSequentially || isLowFinished
+
+    // 2. HIGH RES
+    val highPainter = if (canLoadHigh && highRes != null) {
         val thumbRequest = ImageRequest.Builder(LocalPlatformContext.current)
-            .data(it)
+            .data(highRes)
             .size(720, 720)
             .scale(Scale.FIT)
             .precision(Precision.INEXACT)
-            .memoryCacheKey("high_thumb_${it.hashCode()}")
-            .diskCacheKey("high_thumb_${it.hashCode()}")
+            .memoryCacheKey("high_thumb_${highRes.assetId}")
+            .diskCacheKey("high_thumb_${highRes.assetId}")
             .build()
         rememberAsyncImagePainter(thumbRequest)
-    }
-    val sourcePainter = sourceRes?.let { rememberAsyncImagePainter(it) }
+    } else null
 
-    val lowState = lowPainter?.state?.collectAsState()?.value
     val highState = highPainter?.state?.collectAsState()?.value
+
+    val isHighFinished = highRes == null || highState is AsyncImagePainter.State.Success || highState is AsyncImagePainter.State.Error
+    val canLoadSource = !shouldLoadSequentially || (isLowFinished && isHighFinished)
+
+    val sourcePainter = if (canLoadSource && sourceRes != null) {
+        rememberAsyncImagePainter(sourceRes)
+    } else null
+
     val sourceState = sourcePainter?.state?.collectAsState()?.value
 
     val targetImageState = when {

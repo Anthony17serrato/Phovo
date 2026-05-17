@@ -10,22 +10,23 @@ object ApiEndpoints {
     object Upload {
         private val BASE_UPLOAD_API = Endpoint("upload/")
 
-        val INIT_API = BASE_UPLOAD_API + Endpoint("init")
-        val CHUNK_API = BASE_UPLOAD_API + Endpoint("chunk")
-        val COMPLETE_API = BASE_UPLOAD_API + Endpoint("complete")
+        val INIT_API = BASE_UPLOAD_API / Endpoint("init")
+        val CHUNK_API = BASE_UPLOAD_API / Endpoint("chunk")
+        val COMPLETE_API = BASE_UPLOAD_API / Endpoint("complete")
     }
 }
 
+// TODO This needs some improvement
 @JvmInline
 value class Endpoint(val value: String) {
-    operator fun plus(other: Endpoint): Endpoint {
+    operator fun div(other: Endpoint): Endpoint {
         return Endpoint("${this.value}${other.value}")
     }
 }
 
 @JvmInline
 value class BaseUrl(val value: String) {
-    operator fun plus(endpoint: Endpoint): String {
+    operator fun div(endpoint: Endpoint): String {
         return "${this.value}${endpoint.value}"
     }
 }

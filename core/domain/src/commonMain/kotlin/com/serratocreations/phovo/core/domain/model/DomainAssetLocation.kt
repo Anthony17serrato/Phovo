@@ -13,11 +13,15 @@ import io.github.vinceglb.filekit.PlatformFile
  * to pass assetHash or baseUrl
  */
 sealed interface DomainAssetLocation {
+    val assetId: String
+
     data class LocalAssetLocation(
-        val localAssetLocation: PlatformFile
+        val localAssetLocation: PlatformFile,
+        override val assetId: String
     ): DomainAssetLocation
 
     data class RemoteAssetLocation(
-        val remoteAssetUri: Uri
+        val remoteAssetUri: Uri,
+        override val assetId: String
     ): DomainAssetLocation
 }
