@@ -28,7 +28,7 @@ class DesktopFileHashCalculator(
                 }
             }
 
-            digest.digest().joinToString("") { "%02x".format(it) }
+            digest.digest().toHexString()
         }
     }
 }
