@@ -29,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.navigation3.runtime.NavKey
 import com.serratocreations.phovo.core.navigation.AppBarConfig
 import com.serratocreations.phovo.ui.model.OverflowMenuOption
+import com.serratocreations.phovo.util.animated
 import org.jetbrains.compose.resources.stringResource
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,6 +44,7 @@ fun PhovoTopAppBar(
     scrollBehavior: TopAppBarScrollBehavior
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val animatedAppBarColors = appBarState.topAppBarColors().animated()
     TopAppBar(
         title = appBarState.title,
         navigationIcon = appBarState.navigationIcon,
@@ -77,7 +79,7 @@ fun PhovoTopAppBar(
                 }
             }
         },
-        colors = appBarState.topAppBarColors(),
+        colors = animatedAppBarColors,
         scrollBehavior = scrollBehavior,
         modifier = modifier
     )
