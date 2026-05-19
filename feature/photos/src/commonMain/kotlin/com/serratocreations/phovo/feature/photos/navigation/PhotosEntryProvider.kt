@@ -10,7 +10,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.EntryProviderScope
@@ -44,9 +43,10 @@ fun EntryProviderScope<NavKey>.photosEntries(
                     AppBarConfig(
                         title = { PhotosHomeTitleContent() },
                         topAppBarColors = {
-                            TopAppBarDefaults.topAppBarColors(
-                                containerColor = Color.Transparent,
-                                scrolledContainerColor = Color.Transparent
+                            val defaultColors = TopAppBarDefaults.topAppBarColors()
+                            defaultColors.copy(
+                                containerColor = defaultColors.containerColor.copy(alpha = 0f),
+                                scrolledContainerColor = defaultColors.containerColor.copy(alpha = 0f)
                             )
                         }
                     )
