@@ -26,7 +26,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.serratocreations.phovo.core.designsystem.constants.COMPACT_WIDTH
 import com.serratocreations.phovo.core.designsystem.constants.EXPANDED_WIDTH
 import com.serratocreations.phovo.core.designsystem.constants.MEDIUM_WIDTH
 import com.serratocreations.phovo.core.designsystem.icon.PhovoIcons
@@ -188,11 +187,10 @@ fun PhovoNavigationSuiteScaffold(
     val layoutType = when {
         windowAdaptiveInfo.windowSizeClass.isWidthAtLeastBreakpoint(EXPANDED_WIDTH) -> NavigationSuiteType.NavigationDrawer
         windowAdaptiveInfo.windowSizeClass.isWidthAtLeastBreakpoint(MEDIUM_WIDTH) -> NavigationSuiteType.NavigationRail
-        windowAdaptiveInfo.windowSizeClass.isWidthAtLeastBreakpoint(COMPACT_WIDTH) -> {
+        else /*windowAdaptiveInfo.windowSizeClass.isWidthAtLeastBreakpoint(COMPACT_WIDTH)*/ -> {
             if (shouldShowNavBarOnCompactScreens) NavigationSuiteType.NavigationBar
             else NavigationSuiteType.None
         }
-        else -> NavigationSuiteType.NavigationBar
     }
 
     val navigationSuiteItemColors = NavigationSuiteItemColors(
