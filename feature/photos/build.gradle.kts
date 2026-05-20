@@ -14,6 +14,7 @@ kotlin {
             implementation(libs.coil.video)
             implementation(libs.exoplayer)
             implementation(libs.media.ui)
+            implementation(libs.ktor.client.okhttp)
         }
 
         commonMain.dependencies {
@@ -33,6 +34,7 @@ kotlin {
             implementation(libs.bundles.navigation3)
             implementation(libs.filekit.core)
             implementation(libs.telephoto.zoomable)
+            implementation(libs.coil.network.ktor)
         }
 
         commonTest.dependencies {
@@ -40,6 +42,7 @@ kotlin {
         }
 
         iosMain.dependencies {
+            implementation(libs.ktor.client.darwin)
         }
 
         jvmMain.dependencies {

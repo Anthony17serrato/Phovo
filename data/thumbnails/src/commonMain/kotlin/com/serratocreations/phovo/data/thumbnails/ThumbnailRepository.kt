@@ -1,5 +1,7 @@
 package com.serratocreations.phovo.data.thumbnails
 
+import com.serratocreations.phovo.core.common.HIGH_RES_THUMBNAIL_DIR
+import com.serratocreations.phovo.core.common.LOW_RES_THUMBNAIL_DIR
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.createDirectories
 import io.github.vinceglb.filekit.div
@@ -8,9 +10,9 @@ class ThumbnailRepository(
     val thumbnailGenerator: FfmpegThumbnailGenerator
 ) {
     private fun getThumbnailDirectoriesFromRootOutputDirectory(rootOutputDirectory: PlatformFile): ThumbnailDirectories {
-        val lowResThumbDir = rootOutputDirectory / "low_res_thumbnails"
+        val lowResThumbDir = rootOutputDirectory / LOW_RES_THUMBNAIL_DIR
         lowResThumbDir.createDirectories(mustCreate = false)
-        val highResThumbDir = rootOutputDirectory / "high_res_thumbnails"
+        val highResThumbDir = rootOutputDirectory / HIGH_RES_THUMBNAIL_DIR
         highResThumbDir.createDirectories(mustCreate = false)
         return ThumbnailDirectories(
             lowResThumbnailDirectory = lowResThumbDir,
