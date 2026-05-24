@@ -121,7 +121,7 @@ class DesktopServerConfigManagerImpl(
                 }
             }
 
-            get("/${HIGH_RES_THUMBNAIL_API.value}/{hash}") {
+            get("/${HIGH_RES_THUMBNAIL_API.value}{hash}") {
                 val hash = call.parameters["hash"] ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing hash parameter")
 
                 val directory = serverConfigRepository.observeServerConfig().first()
