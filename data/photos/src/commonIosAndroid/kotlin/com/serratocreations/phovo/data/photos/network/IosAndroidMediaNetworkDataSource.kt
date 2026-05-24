@@ -27,10 +27,13 @@ class IosAndroidMediaNetworkDataSource(
         baseUrl: BaseUrl
     ): SyncResult {
         // TODO Clients need to be updated to use asset hash
-        val file = mediaItemDto.mediaType.getPlatformFile(mediaUri, ioDispatcher) ?: return SyncResult.SyncError
+        val file = mediaItemDto.mediaType.getPlatformFile(mediaUri, ioDispatcher) ?: return SyncResult.SyncError(
+            message = "${log.tag} chunkedUpload could not get platform file for $mediaItemDto"
+        )
         if (!file.exists()) {
-            log.e { "File not found at $mediaUri" }
-            return SyncResult.SyncError
+            val errorMessage = "${log.tag} chunkedUpload file not found at $mediaUri"
+            log.e { errorMessage }
+            return SyncResult.SyncError(errorMessage)
         }
 
         // TODO chunking has been disabled, for photographs it is mostly not needed, in the future
@@ -50,8 +53,9 @@ class IosAndroidMediaNetworkDataSource(
                 baseUrl = baseUrl
             )
         } else {
-            log.e { "Failed upload ${mediaItemDto.assetHash}: ${response.status}" }
-            SyncResult.SyncError
+            val errorMessage = "Failed upload ${mediaItemDto.assetHash}: ${response.status}"
+            log.e { errorMessage }
+            SyncResult.SyncError(errorMessage)
         }
     }
 }

@@ -7,6 +7,7 @@ import com.serratocreations.phovo.core.database.entities.MediaItemMetadataEntity
 import com.serratocreations.phovo.core.database.entities.MediaItemWithMetadata
 import com.serratocreations.phovo.core.database.entities.ProcessingMediaEntity
 import com.serratocreations.phovo.core.database.entities.ProcessingState
+import com.serratocreations.phovo.core.database.entities.SyncLogEntity
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.core.model.MediaType
 import com.serratocreations.phovo.data.photos.mappers.toMediaItemWithMetadataEntity
@@ -31,11 +32,25 @@ interface LocalMediaRepository: MediaRepository {
     suspend fun getUnsyncedMediaCount(): Int
     suspend fun updateMediaItem(mediaItemMetadataEntity: MediaItemMetadataEntity)
     suspend fun getNextUnsyncedItemExcludingUuidSet(
-        syncInProgressSet: Set<String>,
         mediaType: MediaType
     ): LocalMediaItemWithMetadata?
 
     suspend fun markAsSynced(assetHash: String)
+
+    /**
+     * Thread safe API which allows any worker JOB to claim an
+     * asset for synchronization. By using this API to claim assets it
+     * guarantees that multiple workers do not synchronize the same asset.
+     * @param assetHash the unique asset identifier
+     * for the asset which is being claimed for synchronization.
+     * @return A [Boolean] which indicates whether the API caller
+     * is allowed to synchronize the asset. If false another worker has
+     * already claimed the asset.
+     */
+    suspend fun addItemToSyncLog(assetHash: String): Boolean
+
+    suspend fun removeSyncAsset(assetHash: String)
+    suspend fun addSyncError(assetHash: String, errorMessage: String?)
 }
 
 class LocalMediaRepositoryImpl(
@@ -97,14 +112,30 @@ class LocalMediaRepositoryImpl(
     }
 
     override suspend fun getNextUnsyncedItemExcludingUuidSet(
-        syncInProgressSet: Set<String>,
         mediaType: MediaType
     ): LocalMediaItemWithMetadata? {
         return localMediaDataSource.getNextUnsyncedLocalItemExcludingSet(
-            excludingHashes = syncInProgressSet,
-            mediaType = mediaType,
-            excludeNotEmpty = syncInProgressSet.isNotEmpty()
+            mediaType = mediaType
         )
+    }
+
+    override suspend fun addItemToSyncLog(assetHash: String): Boolean {
+        val entity = SyncLogEntity(
+            assetHash = assetHash,
+            syncError = null
+        )
+        val result = localMediaDataSource.addItemToSyncLog(entity)
+        return result != -1L
+    }
+
+    override suspend fun removeSyncAsset(assetHash: String) =
+        localMediaDataSource.removeSyncAsset(assetHash)
+
+    override suspend fun addSyncError(assetHash: String, errorMessage: String?) {
+        val syncLogEntity = SyncLogEntity(
+            assetHash = assetHash, syncError = errorMessage
+        )
+        localMediaDataSource.addSyncError(syncLogEntity)
     }
 
     override suspend fun markAsSynced(assetHash: String) {

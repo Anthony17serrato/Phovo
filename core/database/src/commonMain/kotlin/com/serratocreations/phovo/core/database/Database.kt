@@ -10,10 +10,11 @@ import com.serratocreations.phovo.core.database.entities.ServerConfigEntity
 import com.serratocreations.phovo.core.database.entities.MediaItemMetadataEntity
 import com.serratocreations.phovo.core.database.entities.LocalMediaEntity
 import com.serratocreations.phovo.core.database.entities.ProcessingMediaEntity
+import com.serratocreations.phovo.core.database.entities.SyncLogEntity
 
 @Database(
     entities = [ServerConfigEntity::class, MediaItemMetadataEntity::class, LocalMediaEntity::class,
-        ProcessingMediaEntity::class],
+        ProcessingMediaEntity::class, SyncLogEntity::class],
     version = 1
 )
 @ConstructedBy(AppDatabaseConstructor::class)

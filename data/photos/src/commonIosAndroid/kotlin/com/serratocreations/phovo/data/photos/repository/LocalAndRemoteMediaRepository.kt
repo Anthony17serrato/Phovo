@@ -1,6 +1,5 @@
 package com.serratocreations.phovo.data.photos.repository
 
-import com.serratocreations.phovo.core.common.util.SafeSet
 import com.serratocreations.phovo.core.database.entities.LocalMediaEntity
 import com.serratocreations.phovo.core.database.entities.LocalMediaItemWithMetadata
 import com.serratocreations.phovo.core.database.entities.MediaItemMetadataEntity
@@ -82,8 +81,6 @@ class LocalAndRemoteMediaRepositoryImpl(
     // Only one job should be active, this property should only be accessed from the single thread dispatcher
     //  to avoid any parallelism issues
     private var syncJob: Job? = null
-    // A set containing the UUID of media currently being synced, set operations are thread safe
-    private val syncSafeSet = SafeSet<String>()
 
     private val _syncProgressState = MutableStateFlow(LocalMediaBackupProgress())
     override val syncProgressState = _syncProgressState.asStateFlow()
@@ -101,18 +98,15 @@ class LocalAndRemoteMediaRepositoryImpl(
      * @return null if there are no remaining unsynced items for the media type
      */
     private suspend fun getNextUnsyncedItem(type: MediaType): LocalMediaItemWithMetadata? {
+        var syncCandidate: LocalMediaItemWithMetadata?
         do {
             yield()
-            val syncCandidate = localMediaRepository.getNextUnsyncedItemExcludingUuidSet(
-                syncInProgressSet = syncSafeSet.snapshot(),
+            syncCandidate = localMediaRepository.getNextUnsyncedItemExcludingUuidSet(
                 mediaType = type
-            ) ?: return null
-            val isAddedToSync = syncSafeSet.add(syncCandidate.mediaItemMetadataEntity.assetHash)
-            // TODO should check again if the item is still unsynced and remove from set if no longer
-            //  eligible for sync
-            if (isAddedToSync) return syncCandidate
+            ) ?: return null // No remaining items to sync
+            val isAddedToSync = localMediaRepository.addItemToSyncLog(syncCandidate.mediaItemMetadataEntity.assetHash)
         } while (isAddedToSync.not())
-        return null
+        return syncCandidate
     }
 
     private fun CoroutineScope.syncWorker(
@@ -129,9 +123,20 @@ class LocalAndRemoteMediaRepositoryImpl(
                     return@launch
                 }
             }
+            val assetHash = nextUnsyncedItem.mediaItemMetadataEntity.assetHash
             // Terminate the worker if there is no remaining items to sync
             val result = sync(nextUnsyncedItem)
-            syncSafeSet.remove(nextUnsyncedItem.mediaItemMetadataEntity.assetHash)
+            when (result) {
+                is SyncResult.SyncError -> {
+                    localMediaRepository.addSyncError(
+                        assetHash = assetHash,
+                        errorMessage = result.message
+                    )
+                }
+                SyncResult.SyncSuccessful -> {
+                    localMediaRepository.removeSyncAsset(nextUnsyncedItem.mediaItemMetadataEntity.assetHash)
+                }
+            }
             if (result is SyncResult.SyncSuccessful) {
                 _syncProgressState.update { currentState ->
                     currentState.copy(syncedCount = (currentState.syncedCount + 1))
@@ -273,11 +278,19 @@ class LocalAndRemoteMediaRepositoryImpl(
         localMediaRepository.updateMediaItem(mediaItemMetadataEntity)
 
     override suspend fun getNextUnsyncedItemExcludingUuidSet(
-        syncInProgressSet: Set<String>,
         mediaType: MediaType
-    ) = localMediaRepository.getNextUnsyncedItemExcludingUuidSet(syncInProgressSet, mediaType)
+    ) = localMediaRepository.getNextUnsyncedItemExcludingUuidSet(mediaType)
 
     override suspend fun markAsSynced(assetHash: String) {
         localMediaRepository.markAsSynced(assetHash)
     }
+
+    override suspend fun addItemToSyncLog(assetHash: String): Boolean =
+        localMediaRepository.addItemToSyncLog(assetHash)
+
+    override suspend fun removeSyncAsset(assetHash: String) =
+        localMediaRepository.removeSyncAsset(assetHash)
+
+    override suspend fun addSyncError(assetHash: String, errorMessage: String?) =
+        localMediaRepository.addSyncError(assetHash, errorMessage)
 }

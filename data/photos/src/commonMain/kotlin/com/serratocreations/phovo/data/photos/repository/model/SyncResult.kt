@@ -5,5 +5,7 @@ sealed interface SyncResult {
     data object SyncSuccessful: SyncResult
 
     // TODO Better error modeling using rich errors
-    data object SyncError: SyncResult
+    data class SyncError(
+        val message: String? = null
+    ): SyncResult
 }

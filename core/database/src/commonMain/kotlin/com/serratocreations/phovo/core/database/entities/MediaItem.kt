@@ -50,6 +50,15 @@ data class ProcessingMediaEntity(
     val processingState: ProcessingState
 )
 
+@Entity
+data class SyncLogEntity(
+    /** Sha-256 hash **/
+    @PrimaryKey
+    val assetHash: String,
+    /** Only enabled on debug build variants **/
+    val syncError: String?
+)
+
 enum class ProcessingState {
     Processing,
     Failed

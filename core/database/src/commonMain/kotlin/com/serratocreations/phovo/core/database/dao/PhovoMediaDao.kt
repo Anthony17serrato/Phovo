@@ -12,6 +12,7 @@ import com.serratocreations.phovo.core.database.entities.LocalMediaEntity
 import com.serratocreations.phovo.core.database.entities.LocalMediaItemWithMetadata
 import com.serratocreations.phovo.core.database.entities.MediaItemWithMetadata
 import com.serratocreations.phovo.core.database.entities.ProcessingMediaEntity
+import com.serratocreations.phovo.core.database.entities.SyncLogEntity
 import com.serratocreations.phovo.core.model.MediaType
 import kotlinx.coroutines.flow.Flow
 
@@ -124,18 +125,32 @@ interface PhovoMediaDao {
     FROM MediaItemMetadataEntity m
     INNER JOIN LocalMediaEntity l
         ON m.assetHash = l.assetHash
+    LEFT JOIN SyncLogEntity s
+        ON m.assetHash = s.assetHash
     WHERE m.isSynced = FALSE
       AND m.mediaType = :mediaType
-      AND (:excludeNotEmpty OR m.assetHash NOT IN (:excludingHashes))
+      AND s.assetHash IS NULL
     ORDER BY m.timeStampUtcMs DESC
     LIMIT 1
     """
     )
     suspend fun getNextUnsyncedLocalItemExcludingSet(
-        excludingHashes: Set<String>,
-        mediaType: MediaType,
-        excludeNotEmpty: Boolean
+        mediaType: MediaType
     ): LocalMediaItemWithMetadata?
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun addItemToSyncLog(entity: SyncLogEntity): Long
+
+    @Query("""
+    DELETE FROM SyncLogEntity
+    WHERE assetHash = :assetHash
+    """)
+    suspend fun removeSyncAsset(assetHash: String)
+
+    @Upsert
+    suspend fun addSyncError(
+        syncLogEntity: SyncLogEntity
+    )
 
     @Query("DELETE FROM MediaItemMetadataEntity")
     suspend fun clearAllMediaItems()
