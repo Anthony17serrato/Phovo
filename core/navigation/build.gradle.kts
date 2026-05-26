@@ -11,6 +11,7 @@ kotlin {
     }
     sourceSets {
         commonMain.dependencies {
+            implementation(projects.core.common)
             implementation(libs.bundles.navigation3)
             implementation(libs.material.icons.extended)
             implementation(libs.material3)

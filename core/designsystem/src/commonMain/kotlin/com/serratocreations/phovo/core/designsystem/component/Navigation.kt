@@ -3,7 +3,6 @@ package com.serratocreations.phovo.core.designsystem.component
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -12,24 +11,29 @@ import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.NavigationRailItemDefaults
-import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.WindowAdaptiveInfo
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
-import androidx.compose.material3.adaptive.navigationsuite.ExperimentalMaterial3AdaptiveNavigationSuiteApi
-import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteDefaults
-import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteItemColors
-import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
-import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScope
-import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.PermanentNavigationDrawer
+import androidx.compose.material3.PermanentDrawerSheet
+import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.serratocreations.phovo.core.designsystem.constants.EXPANDED_WIDTH
-import com.serratocreations.phovo.core.designsystem.constants.MEDIUM_WIDTH
-import com.serratocreations.phovo.core.designsystem.icon.PhovoIcons
-import com.serratocreations.phovo.core.designsystem.theme.PhovoTheme
+import com.serratocreations.phovo.core.common.ui.EXPANDED_WIDTH
+import com.serratocreations.phovo.core.common.ui.MEDIUM_WIDTH
 
 /**
  * Phovo navigation bar item with icon and label content slots. Wraps Material 3
@@ -163,18 +167,45 @@ fun PhovoNavigationRail(
 }
 
 /**
- * Phovo navigation suite scaffold with item and content slots.
- * Wraps Material 3 [NavigationSuiteScaffold].
  *
  * @param modifier Modifier to be applied to the navigation suite scaffold.
- * @param navigationSuiteItems A slot to display multiple items via [PhovoNavigationSuiteScope].
  * @param windowAdaptiveInfo The window adaptive info.
  * @param content The app content inside the scaffold.
  */
-@OptIn(
-    ExperimentalMaterial3AdaptiveNavigationSuiteApi::class,
-    ExperimentalMaterial3AdaptiveApi::class,
+class PhovoNavigationSuiteItem(
+    val selected: Boolean,
+    val onClick: () -> Unit,
+    val modifier: Modifier,
+    val icon: @Composable () -> Unit,
+    val selectedIcon: @Composable () -> Unit,
+    val label: @Composable (() -> Unit)?
 )
+
+class PhovoNavigationSuiteScope {
+    val items = mutableListOf<PhovoNavigationSuiteItem>()
+
+    fun item(
+        selected: Boolean,
+        onClick: () -> Unit,
+        modifier: Modifier = Modifier,
+        icon: @Composable () -> Unit,
+        selectedIcon: @Composable () -> Unit = icon,
+        label: @Composable (() -> Unit)? = null,
+    ) {
+        items.add(
+            PhovoNavigationSuiteItem(
+                selected = selected,
+                onClick = onClick,
+                modifier = modifier,
+                icon = icon,
+                selectedIcon = selectedIcon,
+                label = label
+            )
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun PhovoNavigationSuiteScaffold(
     navigationSuiteItems: PhovoNavigationSuiteScope.() -> Unit,
@@ -183,167 +214,86 @@ fun PhovoNavigationSuiteScaffold(
     windowAdaptiveInfo: WindowAdaptiveInfo = currentWindowAdaptiveInfo(supportLargeAndXLargeWidth = true),
     content: @Composable () -> Unit,
 ) {
-    // https://developer.android.com/develop/ui/compose/layouts/adaptive/use-window-size-classes
-    val layoutType = when {
-        windowAdaptiveInfo.windowSizeClass.isWidthAtLeastBreakpoint(EXPANDED_WIDTH) -> NavigationSuiteType.NavigationDrawer
-        windowAdaptiveInfo.windowSizeClass.isWidthAtLeastBreakpoint(MEDIUM_WIDTH) -> NavigationSuiteType.NavigationRail
-        else /*windowAdaptiveInfo.windowSizeClass.isWidthAtLeastBreakpoint(COMPACT_WIDTH)*/ -> {
-            if (shouldShowNavBarOnCompactScreens) NavigationSuiteType.NavigationBar
-            else NavigationSuiteType.None
-        }
-    }
+    val isExpanded = windowAdaptiveInfo.windowSizeClass.isWidthAtLeastBreakpoint(EXPANDED_WIDTH)
+    val isMedium = windowAdaptiveInfo.windowSizeClass.isWidthAtLeastBreakpoint(MEDIUM_WIDTH)
 
-    val navigationSuiteItemColors = NavigationSuiteItemColors(
-        navigationBarItemColors = NavigationBarItemDefaults.colors(
-            selectedIconColor = PhovoNavigationDefaults.navigationSelectedItemColor(),
-            unselectedIconColor = PhovoNavigationDefaults.navigationContentColor(),
-            selectedTextColor = PhovoNavigationDefaults.navigationSelectedItemColor(),
-            unselectedTextColor = PhovoNavigationDefaults.navigationContentColor(),
-            indicatorColor = PhovoNavigationDefaults.navigationIndicatorColor(),
-        ),
-        navigationRailItemColors = NavigationRailItemDefaults.colors(
-            selectedIconColor = PhovoNavigationDefaults.navigationSelectedItemColor(),
-            unselectedIconColor = PhovoNavigationDefaults.navigationContentColor(),
-            selectedTextColor = PhovoNavigationDefaults.navigationSelectedItemColor(),
-            unselectedTextColor = PhovoNavigationDefaults.navigationContentColor(),
-            indicatorColor = PhovoNavigationDefaults.navigationIndicatorColor(),
-        ),
-        navigationDrawerItemColors = NavigationDrawerItemDefaults.colors(
-            selectedIconColor = PhovoNavigationDefaults.navigationSelectedItemColor(),
-            unselectedIconColor = PhovoNavigationDefaults.navigationContentColor(),
-            selectedTextColor = PhovoNavigationDefaults.navigationSelectedItemColor(),
-            unselectedTextColor = PhovoNavigationDefaults.navigationContentColor(),
-            selectedContainerColor = PhovoNavigationDefaults.navigationIndicatorColor(),
-        ),
-    )
+    val scope = PhovoNavigationSuiteScope()
+    scope.run(navigationSuiteItems)
 
-    NavigationSuiteScaffold(
-        navigationSuiteItems = {
-            PhovoNavigationSuiteScope(
-                navigationSuiteScope = this,
-                navigationSuiteItemColors = navigationSuiteItemColors,
-                modifier = if (layoutType == NavigationSuiteType.NavigationDrawer) {
-                    Modifier.padding(start = 12.dp, end = 12.dp)
-                } else { Modifier }
-            ).run(navigationSuiteItems)
-        },
-        layoutType = layoutType,
-        containerColor = Color.Transparent,
-        navigationSuiteColors = NavigationSuiteDefaults.colors(
-            navigationBarContentColor = PhovoNavigationDefaults.navigationContentColor(),
-            navigationRailContainerColor = Color.Transparent,
-        ),
-        modifier = modifier
-    ) {
-        content()
-    }
-}
-
-/**
- * A wrapper around [NavigationSuiteScope] to declare navigation items.
- */
-@OptIn(ExperimentalMaterial3AdaptiveNavigationSuiteApi::class)
-class PhovoNavigationSuiteScope internal constructor(
-    private val navigationSuiteScope: NavigationSuiteScope,
-    private val navigationSuiteItemColors: NavigationSuiteItemColors,
-    private val modifier: Modifier = Modifier
-) {
-    fun item(
-        selected: Boolean,
-        onClick: () -> Unit,
-        modifier: Modifier = Modifier,
-        icon: @Composable () -> Unit,
-        selectedIcon: @Composable () -> Unit = icon,
-        label: @Composable (() -> Unit)? = null,
-    ) = navigationSuiteScope.item(
-        selected = selected,
-        onClick = onClick,
-        icon = {
-            if (selected) {
-                selectedIcon()
-            } else {
-                icon()
-            }
-        },
-        label = label,
-        colors = navigationSuiteItemColors,
-        modifier = modifier.then(this.modifier),
-    )
-}
-
-@Composable
-fun PhovoNavigationBarPreview() {
-    val items = listOf("For you", "Saved", "Interests")
-    val icons = listOf(
-        PhovoIcons.UpcomingBorder,
-        PhovoIcons.SearchBorder,
-        PhovoIcons.Dns,
-    )
-    val selectedIcons = listOf(
-        PhovoIcons.Upcoming,
-        PhovoIcons.Search,
-        PhovoIcons.Dns,
-    )
-
-    PhovoTheme {
-        PhovoNavigationBar {
-            items.forEachIndexed { index, item ->
-                PhovoNavigationBarItem(
-                    icon = {
-                        Icon(
-                            imageVector = icons[index],
-                            contentDescription = item,
-                        )
-                    },
-                    selectedIcon = {
-                        Icon(
-                            imageVector = selectedIcons[index],
-                            contentDescription = item,
-                        )
-                    },
-                    label = { Text(item) },
-                    selected = index == 0,
-                    onClick = { },
-                )
+    when {
+        isExpanded -> {
+            PermanentNavigationDrawer(
+                drawerContent = {
+                    PermanentDrawerSheet {
+                        Spacer(Modifier.height(12.dp))
+                        scope.items.forEach { item ->
+                            val drawerItemColors = NavigationDrawerItemDefaults.colors(
+                                selectedIconColor = PhovoNavigationDefaults.navigationSelectedItemColor(),
+                                unselectedIconColor = PhovoNavigationDefaults.navigationContentColor(),
+                                selectedTextColor = PhovoNavigationDefaults.navigationSelectedItemColor(),
+                                unselectedTextColor = PhovoNavigationDefaults.navigationContentColor(),
+                                selectedContainerColor = PhovoNavigationDefaults.navigationIndicatorColor(),
+                            )
+                            NavigationDrawerItem(
+                                icon = {
+                                    if (item.selected) item.selectedIcon() else item.icon()
+                                },
+                                label = item.label ?: {},
+                                selected = item.selected,
+                                onClick = item.onClick,
+                                modifier = item.modifier.padding(horizontal = 12.dp),
+                                colors = drawerItemColors
+                            )
+                        }
+                    }
+                },
+                modifier = modifier
+            ) {
+                content()
             }
         }
-    }
-}
-
-@Composable
-fun PhovoNavigationRailPreview() {
-    val items = listOf("For you", "Saved", "Interests")
-    val icons = listOf(
-        PhovoIcons.UpcomingBorder,
-        PhovoIcons.SearchBorder,
-        PhovoIcons.Dns,
-    )
-    val selectedIcons = listOf(
-        PhovoIcons.Upcoming,
-        PhovoIcons.Search,
-        PhovoIcons.Dns,
-    )
-
-    PhovoTheme {
-        PhovoNavigationRail {
-            items.forEachIndexed { index, item ->
-                PhovoNavigationRailItem(
-                    icon = {
-                        Icon(
-                            imageVector = icons[index],
-                            contentDescription = item,
+        isMedium -> {
+            Row(modifier = modifier.fillMaxSize()) {
+                PhovoNavigationRail {
+                    scope.items.forEach { item ->
+                        PhovoNavigationRailItem(
+                            selected = item.selected,
+                            onClick = item.onClick,
+                            icon = item.icon,
+                            selectedIcon = item.selectedIcon,
+                            label = item.label,
+                            modifier = item.modifier
                         )
-                    },
-                    selectedIcon = {
-                        Icon(
-                            imageVector = selectedIcons[index],
-                            contentDescription = item,
-                        )
-                    },
-                    label = { Text(item) },
-                    selected = index == 0,
-                    onClick = { },
-                )
+                    }
+                }
+                Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
+                    content()
+                }
+            }
+        }
+        else -> {
+            Box(modifier = modifier.fillMaxSize()) {
+                content()
+
+                AnimatedVisibility(
+                    visible = shouldShowNavBarOnCompactScreens,
+                    enter = slideInVertically(initialOffsetY = { it }),
+                    exit = slideOutVertically(targetOffsetY = { it }),
+                    modifier = Modifier.align(Alignment.BottomCenter)
+                ) {
+                    PhovoNavigationBar(modifier = Modifier.fillMaxWidth()) {
+                        scope.items.forEach { item ->
+                            PhovoNavigationBarItem(
+                                selected = item.selected,
+                                onClick = item.onClick,
+                                icon = item.icon,
+                                selectedIcon = item.selectedIcon,
+                                label = item.label,
+                                modifier = item.modifier
+                            )
+                        }
+                    }
+                }
             }
         }
     }

@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.EntryProviderScope
@@ -28,22 +29,25 @@ fun EntryProviderScope<NavKey>.flavorEntries(
     ) {
         val devViewModel: DevViewModel = koinViewModel()
         val uiState by devViewModel.uiState.collectAsStateWithLifecycle()
+        val appBarConfig: AppBarConfig = remember {
+            AppBarConfig(
+                title = { Text("Dev Menu") },
+                navigationIcon = {
+                    DefaultNavigationIcon(navigationViewModel::goBack)
+                }
+            )
+        }
         LaunchedEffect(navigationViewModel.state.currentKey) {
             if(navigationViewModel.state.currentKey == DevMenuHomeNavKey) {
-                navigationViewModel.setAppBarConfig(
-                    AppBarConfig(
-                        title = { Text("Dev Menu") },
-                        navigationIcon = {
-                            DefaultNavigationIcon(navigationViewModel::goBack)
-                        }
-                    )
-                )
+                navigationViewModel.setAppBarConfig(appBarConfig)
             }
         }
         DevMenuHomeScreen(
             devMenuItems = uiState.devMenuListOfRoutes,
             onClickMenuItem = { key -> navigationViewModel.navigate(key) },
-            modifier = Modifier.padding(scaffoldPadding)
+            modifier = Modifier.padding(
+                appBarConfig.calculateAdjustedPadding(scaffoldPadding)
+            )
         )
     }
     entry<DevMenuResetOptionsNavKey>(
