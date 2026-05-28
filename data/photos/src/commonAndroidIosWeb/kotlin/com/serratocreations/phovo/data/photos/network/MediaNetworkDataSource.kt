@@ -63,8 +63,9 @@ abstract class MediaNetworkDataSource(
                 setBody(mediaItemDto)
             }.body<UploadInitResponse>()
         } catch (e: IOException) {
-            log.e { "error initializing upload $e" }
-            return SyncResult.SyncError
+            val errorMessage = "error initializing upload $e"
+            log.e { errorMessage }
+            return SyncResult.SyncError(errorMessage)
         }
 
         if (!initResponse.uploadRequired) {
@@ -110,12 +111,14 @@ abstract class MediaNetworkDataSource(
                 log.i { "Upload complete for ${mediaItemDto.fileName}" }
                 SyncResult.SyncSuccessful
             } else {
-                log.e { "Upload completion failed with status: ${response.status}" }
-                SyncResult.SyncError
+                val errorMessage = "Upload completion failed with status: ${response.status}"
+                log.e { errorMessage }
+                SyncResult.SyncError(errorMessage)
             }
         } catch (e: IOException) {
-            log.e { "Upload completion failed: ${e.message}" }
-            SyncResult.SyncError
+            val errorMessage = "Upload completion failed: ${e.message}"
+            log.e { errorMessage }
+            SyncResult.SyncError(errorMessage)
         }
     }
 }

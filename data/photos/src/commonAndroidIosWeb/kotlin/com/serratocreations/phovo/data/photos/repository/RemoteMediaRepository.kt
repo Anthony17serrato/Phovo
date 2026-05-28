@@ -42,8 +42,9 @@ class RemoteMediaRepositoryImpl(
     ): SyncResult {
         val baseUrl = serverConfigRepository.observeServerConfig().first()?.serverBaseUrlString
         if (baseUrl == null) {
-            log.i { "syncMedia failed because baseUrl is null" }
-            return SyncResult.SyncError
+            val errorMessage = "syncMedia failed because baseUrl is null"
+            log.i { errorMessage }
+            return SyncResult.SyncError(errorMessage)
         }
 
         return remotePhotosDataSource.syncMedia(

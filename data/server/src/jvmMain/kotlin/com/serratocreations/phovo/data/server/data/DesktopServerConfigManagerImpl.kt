@@ -1,5 +1,7 @@
 package com.serratocreations.phovo.data.server.data
 
+import com.serratocreations.phovo.core.common.HIGH_RES_THUMBNAIL_DIR
+import com.serratocreations.phovo.core.common.LOW_RES_THUMBNAIL_DIR
 import com.serratocreations.phovo.core.common.PART_EXTENSION
 import com.serratocreations.phovo.core.database.entities.LocalMediaEntity
 import com.serratocreations.phovo.core.logger.PhovoLogger
@@ -7,6 +9,8 @@ import com.serratocreations.phovo.core.model.network.MediaItemDto
 import com.serratocreations.phovo.core.model.network.UploadInitResponse
 import com.serratocreations.phovo.data.photos.repository.LocalMediaRepository
 import com.serratocreations.phovo.core.model.ServerConfig
+import com.serratocreations.phovo.core.model.network.ApiEndpoints.HIGH_RES_THUMBNAIL_API
+import com.serratocreations.phovo.core.model.network.ApiEndpoints.LOW_RES_THUMBNAIL_API
 import com.serratocreations.phovo.core.serverconfig.DesktopServerConfigRepository
 import com.serratocreations.phovo.data.server.data.repository.ServerEventsRepository
 import io.github.vinceglb.filekit.absolutePath
@@ -26,6 +30,7 @@ import io.ktor.server.request.receive
 import io.ktor.server.request.receiveChannel
 import io.ktor.server.request.receiveText
 import io.ktor.server.response.respond
+import io.ktor.server.response.respondFile
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
@@ -42,6 +47,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import java.io.File
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.LocalDateTime
@@ -96,6 +102,38 @@ class DesktopServerConfigManagerImpl(
             get("/") {
                 serverEventsRepository.addServerEventLog("get ${LocalDateTime.now()}")
                 call.respond(HttpStatusCode.OK, "Phovo server is running")
+            }
+
+            // --- THUMBNAILS API ---
+            get("/${LOW_RES_THUMBNAIL_API.value}{hash}") {
+                val hash = call.parameters["hash"] ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing hash parameter")
+
+                val directory = serverConfigRepository.observeServerConfig().first()
+                    ?.backupDirectory ?: return@get call.respond(HttpStatusCode.InternalServerError, "No server config")
+
+                val thumbnailFile =
+                    File(directory.absolutePath(), "$LOW_RES_THUMBNAIL_DIR/$hash.webp")
+
+                if (thumbnailFile.exists()) {
+                    call.respondFile(thumbnailFile)
+                } else {
+                    call.respond(HttpStatusCode.NotFound, "Low-res thumbnail not found")
+                }
+            }
+
+            get("/${HIGH_RES_THUMBNAIL_API.value}{hash}") {
+                val hash = call.parameters["hash"] ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing hash parameter")
+
+                val directory = serverConfigRepository.observeServerConfig().first()
+                    ?.backupDirectory ?: return@get call.respond(HttpStatusCode.InternalServerError, "No server config")
+
+                val thumbnailFile = File(directory.absolutePath(), "$HIGH_RES_THUMBNAIL_DIR/$hash.webp")
+
+                if (thumbnailFile.exists()) {
+                    call.respondFile(thumbnailFile)
+                } else {
+                    call.respond(HttpStatusCode.NotFound, "High-res thumbnail not found")
+                }
             }
 
             // Upload initialization – send JSON metadata once

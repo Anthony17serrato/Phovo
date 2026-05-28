@@ -1,5 +1,7 @@
 package com.serratocreations.phovo.core.domain
 
+import com.serratocreations.phovo.core.common.HIGH_RES_THUMBNAIL_DIR
+import com.serratocreations.phovo.core.common.LOW_RES_THUMBNAIL_DIR
 import com.serratocreations.phovo.core.domain.mapper.toMediaItemWithThumbnails
 import com.serratocreations.phovo.core.domain.model.MediaItemWithThumbnails
 import com.serratocreations.phovo.core.logger.PhovoLogger
@@ -32,13 +34,13 @@ class ServerGetPhotosFeedWithThumbnailsUseCase(
                         assetHash = mediaItem.uniqueAssetIdentifier,
                         baseUrl = null
                     )
-                val lowResThumbDir = rootOutputDirectory / GetPhotosFeedWithThumbnailsUseCase.LOW_RES_THUMBNAIL_DIR
+                val lowResThumbDir = rootOutputDirectory / LOW_RES_THUMBNAIL_DIR
                 val lowResThumb = (lowResThumbDir / "${mediaItem.uniqueAssetIdentifier}.webp").let {
                     if (it.exists()) {
                         AssetLocation.LocalAssetLocation(localAssetLocation = it)
                     } else { null }
                 }
-                val highResThumbDir = rootOutputDirectory / GetPhotosFeedWithThumbnailsUseCase.HIGH_RES_THUMBNAIL_DIR
+                val highResThumbDir = rootOutputDirectory / HIGH_RES_THUMBNAIL_DIR
                 val highResThumb = (highResThumbDir / "${mediaItem.uniqueAssetIdentifier}.webp").let {
                     if (it.exists()) {
                         AssetLocation.LocalAssetLocation(localAssetLocation = it)
