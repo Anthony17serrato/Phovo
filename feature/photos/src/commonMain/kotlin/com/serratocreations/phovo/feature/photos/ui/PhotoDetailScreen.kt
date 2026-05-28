@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -24,7 +25,9 @@ import com.serratocreations.phovo.feature.photos.ui.components.VideoPlayer
 import me.saket.telephoto.zoomable.rememberZoomableState
 import me.saket.telephoto.zoomable.zoomable
 
-@OptIn(ExperimentalSharedTransitionApi::class)
+@OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3ExpressiveApi::class,
+    ExperimentalMaterial3Api::class
+)
 @Composable
 internal fun PhotoViewerScreen(
     sharedElementTransition: SharedTransitionScope,
@@ -32,7 +35,6 @@ internal fun PhotoViewerScreen(
     photosViewModel: PhotosViewModel,
     modifier: Modifier = Modifier
 ) {
-
     PhotoViewerScreen(
         item = photosViewModel.photosUiState.value.selectedPhoto,
         sharedElementTransition = sharedElementTransition,

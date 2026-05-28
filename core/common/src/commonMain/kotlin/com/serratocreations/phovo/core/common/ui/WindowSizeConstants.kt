@@ -1,4 +1,4 @@
-package com.serratocreations.phovo.core.designsystem.constants
+package com.serratocreations.phovo.core.common.ui
 
 const val COMPACT_WIDTH = 600
 const val MEDIUM_WIDTH = 840

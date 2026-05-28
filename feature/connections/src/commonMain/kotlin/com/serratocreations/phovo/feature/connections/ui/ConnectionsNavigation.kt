@@ -10,6 +10,7 @@ import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.EntryProviderScope
@@ -40,17 +41,20 @@ fun EntryProviderScope<NavKey>.connectionsEntries(
     scaffoldPadding: PaddingValues
 ) {
     entry<ConnectionsRouteComponent> {
+        val appBarConfig: AppBarConfig = remember {
+            AppBarConfig(
+                title = { Text(stringResource(Res.string.feature_connections_title)) }
+            )
+        }
         LaunchedEffect(navigationViewModel.state.currentKey) {
             if(navigationViewModel.state.currentKey == ConnectionsRouteComponent) {
-                navigationViewModel.setAppBarConfig(
-                    AppBarConfig(
-                        title = { Text(stringResource(Res.string.feature_connections_title)) }
-                    )
-                )
+                navigationViewModel.setAppBarConfig(appBarConfig)
             }
         }
         // TODO remove column wrapper when migrate to nav 3
-        Column(modifier = Modifier.padding(scaffoldPadding)) {
+        Column(modifier = Modifier.padding(
+            appBarConfig.calculateAdjustedPadding(scaffoldPadding))
+        ) {
             ConnectionsDetailsNavigation(
                 phovoViewModel = phovoViewModel
             )

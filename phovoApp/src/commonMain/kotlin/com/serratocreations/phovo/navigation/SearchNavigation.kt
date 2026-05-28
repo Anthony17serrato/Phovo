@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
@@ -27,17 +28,20 @@ fun EntryProviderScope<NavKey>.searchEntries(
     scaffoldPadding: PaddingValues
 ) {
     entry<SearchHomeNavKey> {
+        val appBarConfig: AppBarConfig = remember {
+            AppBarConfig(
+                title = { Text(stringResource(Res.string.search_top_app_bar_description)) }
+            )
+        }
         LaunchedEffect(navigationViewModel.state.currentKey) {
             if(navigationViewModel.state.currentKey == SearchHomeNavKey) {
-                navigationViewModel.setAppBarConfig(
-                    AppBarConfig(
-                        title = { Text(stringResource(Res.string.search_top_app_bar_description)) }
-                    )
-                )
+                navigationViewModel.setAppBarConfig(appBarConfig)
             }
         }
         SearchScreen(
-            modifier = Modifier.padding(scaffoldPadding)
+            modifier = Modifier.padding(
+                appBarConfig.calculateAdjustedPadding(scaffoldPadding)
+            )
         )
     }
 }
