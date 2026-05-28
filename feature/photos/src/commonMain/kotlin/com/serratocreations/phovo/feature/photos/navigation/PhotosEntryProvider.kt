@@ -87,7 +87,8 @@ fun EntryProviderScope<NavKey>.photosEntries(
                     )
                 },
                 shouldOverlayTopAppBar = true,
-                showBottomAppBar = false
+                showBottomAppBar = false,
+                showBottomToolbar = true
             )
         }
         LaunchedEffect(navigationViewModel.state.currentKey) {

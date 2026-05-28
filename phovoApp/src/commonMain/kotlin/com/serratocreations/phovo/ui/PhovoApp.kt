@@ -18,8 +18,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.material3.adaptive.WindowAdaptiveInfo
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -57,6 +55,7 @@ import com.serratocreations.phovo.navigation.PhovoNavSavedStateConfiguration
 import com.serratocreations.phovo.navigation.TOP_LEVEL_NAV_ITEMS
 import com.serratocreations.phovo.navigation.flavorEntries
 import com.serratocreations.phovo.navigation.searchEntries
+import com.serratocreations.phovo.ui.components.PhovoBottomToolBar
 import com.serratocreations.phovo.ui.viewmodel.ApplicationViewModel
 import com.serratocreations.phovo.ui.viewmodel.ServerStatusColor
 import org.jetbrains.compose.resources.painterResource
@@ -167,6 +166,11 @@ internal fun InternalPhovoApp(
                     menuOptions = applicationUiSate.menuOptions,
                     onMenuActionClick = { navigationViewModel.navigate(route = it) },
                     scrollBehavior = scrollBehavior
+                )
+            },
+            bottomBar = {
+                PhovoBottomToolBar(
+                    appBarConfig = appBarState
                 )
             },
             modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
