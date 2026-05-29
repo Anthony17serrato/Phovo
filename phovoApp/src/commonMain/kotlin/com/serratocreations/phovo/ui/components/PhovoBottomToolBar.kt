@@ -6,8 +6,13 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
@@ -48,7 +53,9 @@ fun PhovoBottomToolBar(
     ) {
         val vibrantColors = FloatingToolbarDefaults.vibrantFloatingToolbarColors()
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().windowInsetsPadding(
+                WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom)
+            ),
             horizontalArrangement = Arrangement.Center
         ) {
             HorizontalFloatingToolbar(
