@@ -7,7 +7,10 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
@@ -72,7 +75,8 @@ fun EntryProviderScope<NavKey>.photosEntries(
         )
     ) {
         val photosViewModel: PhotosViewModel = koinViewModel()
-        val appBarConfig: AppBarConfig = remember {
+        var areBarsVisible by remember { mutableStateOf(true) }
+        val appBarConfig = remember(areBarsVisible) {
             AppBarConfig(
                 // TODO Display photo date instead
                 title = { Text("Details") },
@@ -88,10 +92,11 @@ fun EntryProviderScope<NavKey>.photosEntries(
                 },
                 shouldOverlayTopAppBar = true,
                 showBottomAppBar = false,
-                showBottomToolbar = true
+                showBottomToolbar = areBarsVisible,
+                showTopAppBar = areBarsVisible
             )
         }
-        LaunchedEffect(navigationViewModel.state.currentKey) {
+        LaunchedEffect(appBarConfig) {
             if(navigationViewModel.state.currentKey == PhotoDetailNavKey) {
                 navigationViewModel.setAppBarConfig(appBarConfig)
             }
@@ -100,6 +105,8 @@ fun EntryProviderScope<NavKey>.photosEntries(
             sharedElementTransition = sharedElementTransition,
             animatedContentScope = LocalNavAnimatedContentScope.current,
             photosViewModel = photosViewModel,
+            areBarsVisible = areBarsVisible,
+            onToggleBars = { areBarsVisible = !areBarsVisible },
             modifier = Modifier.padding(
                 appBarConfig.calculateAdjustedPadding(scaffoldPadding)
             )

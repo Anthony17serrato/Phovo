@@ -1,5 +1,8 @@
 package com.serratocreations.phovo.ui.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -45,42 +48,53 @@ fun PhovoTopAppBar(
 ) {
     var expanded by remember { mutableStateOf(false) }
     val animatedAppBarColors = appBarState.topAppBarColors().animated()
-    TopAppBar(
-        title = appBarState.title,
-        navigationIcon = appBarState.navigationIcon,
-        actions = {
-            Box(modifier = Modifier.wrapContentSize(Alignment.TopStart)) {
-                // Icon button should have a tooltip associated with it for a11y.
-                TooltipBox(
-                    positionProvider =
-                        TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-                    tooltip = { PlainTooltip { Text("Localized description") } },
-                    state = rememberTooltipState(),
-                ) {
-                    IconButton(onClick = { expanded = true }) {
-                        Icon(
-                            imageVector = actionIcon,
-                            contentDescription = actionIconContentDescription,
-                            tint = MaterialTheme.colorScheme.onSurface,
-                        )
+    AnimatedVisibility(
+        visible = appBarState.showTopAppBar,
+        enter = slideInVertically(initialOffsetY = { -it }),
+        exit = slideOutVertically(targetOffsetY = { -it })
+    ) {
+        TopAppBar(
+            title = appBarState.title,
+            navigationIcon = appBarState.navigationIcon,
+            actions = {
+                Box(modifier = Modifier.wrapContentSize(Alignment.TopStart)) {
+                    // Icon button should have a tooltip associated with it for a11y.
+                    TooltipBox(
+                        positionProvider =
+                            TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
+                        tooltip = { PlainTooltip { Text("Localized description") } },
+                        state = rememberTooltipState(),
+                    ) {
+                        IconButton(onClick = { expanded = true }) {
+                            Icon(
+                                imageVector = actionIcon,
+                                contentDescription = actionIconContentDescription,
+                                tint = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
+                    }
+                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                        menuOptions.forEach { menuOption ->
+                            DropdownMenuItem(
+                                text = { Text(stringResource(menuOption.title)) },
+                                onClick = {
+                                    expanded = false
+                                    onMenuActionClick(menuOption.route)
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Outlined.Edit,
+                                        contentDescription = null
+                                    )
+                                },
+                            )
+                        }
                     }
                 }
-                DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                    menuOptions.forEach { menuOption ->
-                        DropdownMenuItem(
-                            text = { Text(stringResource(menuOption.title)) },
-                            onClick = {
-                                expanded = false
-                                onMenuActionClick(menuOption.route)
-                            },
-                            leadingIcon = { Icon(Icons.Outlined.Edit, contentDescription = null) },
-                        )
-                    }
-                }
-            }
-        },
-        colors = animatedAppBarColors,
-        scrollBehavior = scrollBehavior,
-        modifier = modifier
-    )
+            },
+            colors = animatedAppBarColors,
+            scrollBehavior = scrollBehavior,
+            modifier = modifier
+        )
+    }
 }

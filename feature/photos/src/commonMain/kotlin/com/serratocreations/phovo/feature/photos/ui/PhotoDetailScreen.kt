@@ -3,6 +3,8 @@ package com.serratocreations.phovo.feature.photos.ui
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,6 +24,7 @@ import com.serratocreations.phovo.feature.photos.ui.model.ImagePhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.ThumbnailPhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.VideoPhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.components.VideoPlayer
+import com.serratocreations.phovo.feature.photos.ui.components.SystemBarsController
 import me.saket.telephoto.zoomable.rememberZoomableState
 import me.saket.telephoto.zoomable.zoomable
 
@@ -33,12 +36,16 @@ internal fun PhotoViewerScreen(
     sharedElementTransition: SharedTransitionScope,
     animatedContentScope: AnimatedContentScope,
     photosViewModel: PhotosViewModel,
+    areBarsVisible: Boolean,
+    onToggleBars: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     PhotoViewerScreen(
         item = photosViewModel.photosUiState.value.selectedPhoto,
         sharedElementTransition = sharedElementTransition,
         animatedContentScope = animatedContentScope,
+        areBarsVisible = areBarsVisible,
+        onToggleBars = onToggleBars,
         modifier = modifier
     )
 }
@@ -49,9 +56,12 @@ internal fun PhotoViewerScreen(
     item: ThumbnailPhotoUiItem?,
     sharedElementTransition: SharedTransitionScope,
     animatedContentScope: AnimatedContentScope,
+    areBarsVisible: Boolean,
+    onToggleBars: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     if (item == null) return
+    SystemBarsController(visible = areBarsVisible)
     Column(
         modifier = modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
@@ -81,7 +91,10 @@ internal fun PhotoViewerScreen(
                                 animatedVisibilityScope = animatedContentScope
                             )
                             .focusRequester(focusRequester)
-                            .zoomable(rememberZoomableState())
+                            .zoomable(
+                                state = rememberZoomableState(),
+                                onClick = { _ -> onToggleBars() }
+                            )
                             .fillMaxSize()
                     )
                 }
@@ -91,14 +104,19 @@ internal fun PhotoViewerScreen(
                     if (item.sourceAsset is DomainAssetLocation.LocalAssetLocation) {
                         VideoPlayer(
                             videoPlatformFile = item.sourceAsset.localAssetLocation,
-                            modifier = Modifier.sharedElement(
-                                sharedContentState = sharedElementTransition
-                                    .rememberSharedContentState(key = "image-$key"),
-                                animatedVisibilityScope = animatedContentScope
-                            )
+                            modifier = Modifier
+                                .sharedElement(
+                                    sharedContentState = sharedElementTransition
+                                        .rememberSharedContentState(key = "image-$key"),
+                                    animatedVisibilityScope = animatedContentScope
+                                )
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null,
+                                    onClick = onToggleBars
+                                )
                         )
                     }
-
                 }
             }
         }
