@@ -9,8 +9,10 @@ import com.serratocreations.phovo.core.model.network.MediaItemDto
 import com.serratocreations.phovo.core.model.network.UploadInitResponse
 import com.serratocreations.phovo.data.photos.repository.LocalMediaRepository
 import com.serratocreations.phovo.core.model.ServerConfig
+import com.serratocreations.phovo.core.model.network.ApiEndpoints.GET_MEDIA_API
 import com.serratocreations.phovo.core.model.network.ApiEndpoints.HIGH_RES_THUMBNAIL_API
 import com.serratocreations.phovo.core.model.network.ApiEndpoints.LOW_RES_THUMBNAIL_API
+import com.serratocreations.phovo.data.photos.mappers.toMediaItemDto
 import com.serratocreations.phovo.core.serverconfig.DesktopServerConfigRepository
 import com.serratocreations.phovo.data.server.data.repository.ServerEventsRepository
 import io.github.vinceglb.filekit.absolutePath
@@ -102,6 +104,13 @@ class DesktopServerConfigManagerImpl(
             get("/") {
                 serverEventsRepository.addServerEventLog("get ${LocalDateTime.now()}")
                 call.respond(HttpStatusCode.OK, "Phovo server is running")
+            }
+
+            get("/${GET_MEDIA_API.value}") {
+                val mediaItems = localMediaRepository.phovoMediaFlow().first()
+                val mediaItemDtos = mediaItems.map { it.toMediaItemDto() }
+                serverEventsRepository.addServerEventLog("GET_MEDIA_API ${LocalDateTime.now()}")
+                call.respond(HttpStatusCode.OK, mediaItemDtos)
             }
 
             // --- THUMBNAILS API ---
