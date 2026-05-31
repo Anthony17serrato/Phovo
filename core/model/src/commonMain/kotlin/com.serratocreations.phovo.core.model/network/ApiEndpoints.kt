@@ -3,9 +3,10 @@ package com.serratocreations.phovo.core.model.network
 import kotlin.jvm.JvmInline
 
 object ApiEndpoints {
-    val GET_MEDIA_API = Endpoint("media/")
+    val GET_ALL_MEDIA_API = Endpoint("all_media/")
     val LOW_RES_THUMBNAIL_API = Endpoint("low_res_thumbnails/")
     val HIGH_RES_THUMBNAIL_API = Endpoint("high_res_thumbnails/")
+    val SOURCE_FILE_API = Endpoint("source_file/")
 
     object Upload {
         private val BASE_UPLOAD_API = Endpoint("upload/")

@@ -83,6 +83,10 @@ fun Flow<List<MediaItemWithMetadata>>.toMediaItems(): Flow<List<MediaItem>> =
 fun MediaItemWithMetadata.toMediaItemDto(): MediaItemDto =
     this.mediaItemMetadataEntity.toMediaItemDto()
 
+@OptIn(ExperimentalTime::class)
+fun MediaItem.toMediaItemDto(): MediaItemDto =
+    this.toMediaItemWithMetadataEntity().toMediaItemDto()
+
 fun MediaItemMetadataEntity.toMediaItemDto(): MediaItemDto = MediaItemDto(
     fileName = fileName,
     assetHash = assetHash,
@@ -143,40 +147,3 @@ fun MediaItem.toMediaItemWithMetadataEntity(): MediaItemWithMetadata {
         }
     )
 }
-
-//@OptIn(ExperimentalTime::class)
-//fun MediaItemDto.toMediaItem(): MediaItem {
-//    // Combine UTC timestamp with offset to get local wall-clock time for feed
-//    val dateInFeed = Instant
-//        .fromEpochMilliseconds(timeStampUtcMs + timeOffsetMs)
-//        .toLocalDateTime(TimeZone.UTC)
-//
-//    return when (mediaType) {
-//        MediaType.Image -> {
-//            MediaImageItem(
-//                localUuid = localUuid,
-//                remoteUuid = remoteUuid,
-//                uri = ur.toUri(),
-//                remoteUri = remoteUri?.toUri(),
-//                remoteThumbnailUri = remoteThumbnailUri?.toUri(),
-//                fileName = fileName,
-//                dateInFeed = dateInFeed,
-//                size = size.toInt()
-//            )
-//        }
-//        MediaType.Video -> {
-//            val duration = (videoDurationMs ?: 0L).milliseconds
-//            MediaVideoItem(
-//                localUuid = localUuid,
-//                remoteUuid = remoteUuid,
-//                uri = localUri.toUri(),
-//                remoteUri = remoteUri?.toUri(),
-//                remoteThumbnailUri = remoteThumbnailUri?.toUri(),
-//                fileName = fileName,
-//                dateInFeed = dateInFeed,
-//                size = size.toInt(),
-//                duration = duration
-//            )
-//        }
-//    }
-//}

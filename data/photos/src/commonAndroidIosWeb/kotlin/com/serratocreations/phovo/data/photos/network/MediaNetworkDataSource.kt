@@ -18,8 +18,9 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.ktor.utils.io.ByteReadChannel
+import com.serratocreations.phovo.data.photos.mappers.toMediaItem
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flow
 import kotlinx.io.IOException
 
 abstract class MediaNetworkDataSource(
@@ -32,8 +33,23 @@ abstract class MediaNetworkDataSource(
     }
     private val log = logger.withTag("MediaNetworkDataSource")
 
-    // TODO: Implement network API for getting all items
-    fun allItemsFlow(baseUrl: BaseUrl): Flow<List<MediaItem>> = flowOf()
+    fun allItemsFlow(baseUrl: BaseUrl): Flow<List<MediaItem>> = flow {
+        try {
+            val response = client.get(baseUrl / ApiEndpoints.GET_ALL_MEDIA_API)
+            if (response.status.isSuccess()) {
+                val mediaItemDtos = response.body<List<MediaItemDto>>()
+                val mediaItems = mediaItemDtos.map { dto ->
+                    dto.toMediaItem()
+                }
+                emit(mediaItems)
+            } else {
+                emit(emptyList())
+            }
+        } catch (e: Exception) {
+            log.e(e) { "Error fetching all items from server" }
+            emit(emptyList())
+        }
+    }
 
     /**
      * Returns true if a connection to the server is successfully established,
