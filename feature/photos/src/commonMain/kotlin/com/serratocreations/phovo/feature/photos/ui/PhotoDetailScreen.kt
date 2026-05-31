@@ -25,6 +25,8 @@ import com.serratocreations.phovo.feature.photos.ui.model.ThumbnailPhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.VideoPhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.components.VideoPlayer
 import com.serratocreations.phovo.feature.photos.ui.components.SystemBarsController
+import com.serratocreations.phovo.feature.photos.util.CycleZoomOnDoubleClick
+import me.saket.telephoto.zoomable.ZoomSpec
 import me.saket.telephoto.zoomable.rememberZoomableState
 import me.saket.telephoto.zoomable.zoomable
 
@@ -92,8 +94,9 @@ internal fun PhotoViewerScreen(
                             )
                             .focusRequester(focusRequester)
                             .zoomable(
-                                state = rememberZoomableState(),
-                                onClick = { _ -> onToggleBars() }
+                                state = rememberZoomableState(zoomSpec = ZoomSpec(maxZoomFactor = 3f)),
+                                onClick = { _ -> onToggleBars() },
+                                onDoubleClick = CycleZoomOnDoubleClick(onDoubleClick = { onToggleBars() })
                             )
                             .fillMaxSize()
                     )
