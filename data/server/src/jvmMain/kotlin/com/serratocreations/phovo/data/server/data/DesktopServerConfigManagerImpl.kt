@@ -9,15 +9,18 @@ import com.serratocreations.phovo.core.model.network.MediaItemDto
 import com.serratocreations.phovo.core.model.network.UploadInitResponse
 import com.serratocreations.phovo.data.photos.repository.LocalMediaRepository
 import com.serratocreations.phovo.core.model.ServerConfig
-import com.serratocreations.phovo.core.model.network.ApiEndpoints.GET_MEDIA_API
+import com.serratocreations.phovo.core.model.network.ApiEndpoints.GET_ALL_MEDIA_API
 import com.serratocreations.phovo.core.model.network.ApiEndpoints.HIGH_RES_THUMBNAIL_API
 import com.serratocreations.phovo.core.model.network.ApiEndpoints.LOW_RES_THUMBNAIL_API
+import com.serratocreations.phovo.core.model.network.ApiEndpoints.SOURCE_FILE_API
 import com.serratocreations.phovo.data.photos.mappers.toMediaItemDto
 import com.serratocreations.phovo.core.serverconfig.DesktopServerConfigRepository
 import com.serratocreations.phovo.data.server.data.repository.ServerEventsRepository
+import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.absolutePath
 import io.github.vinceglb.filekit.createDirectories
 import io.github.vinceglb.filekit.div
+import io.github.vinceglb.filekit.exists
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.flow.Flow
@@ -106,7 +109,7 @@ class DesktopServerConfigManagerImpl(
                 call.respond(HttpStatusCode.OK, "Phovo server is running")
             }
 
-            get("/${GET_MEDIA_API.value}") {
+            get("/${GET_ALL_MEDIA_API.value}") {
                 val mediaItems = localMediaRepository.phovoMediaFlow().first()
                 val mediaItemDtos = mediaItems.map { it.toMediaItemDto() }
                 serverEventsRepository.addServerEventLog("GET_MEDIA_API ${LocalDateTime.now()}")
@@ -142,6 +145,21 @@ class DesktopServerConfigManagerImpl(
                     call.respondFile(thumbnailFile)
                 } else {
                     call.respond(HttpStatusCode.NotFound, "High-res thumbnail not found")
+                }
+            }
+
+            get("/${SOURCE_FILE_API.value}{hash}") {
+                val hash = call.parameters["hash"] ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing hash parameter")
+
+                val localItem = localMediaRepository.getLocalMediaByAssetHash(hash)
+                    ?: return@get call.respond(HttpStatusCode.InternalServerError, "Asset not found locally")
+
+                val thumbnailFile = PlatformFile(localItem.localUri)
+
+                if (thumbnailFile.exists()) {
+                    call.respondFile(thumbnailFile.file)
+                } else {
+                    call.respond(HttpStatusCode.NotFound, "Source file not found")
                 }
             }
 

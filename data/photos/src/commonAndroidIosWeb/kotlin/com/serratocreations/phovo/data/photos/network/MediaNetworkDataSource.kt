@@ -35,7 +35,7 @@ abstract class MediaNetworkDataSource(
 
     fun allItemsFlow(baseUrl: BaseUrl): Flow<List<MediaItem>> = flow {
         try {
-            val response = client.get(baseUrl / ApiEndpoints.GET_MEDIA_API)
+            val response = client.get(baseUrl / ApiEndpoints.GET_ALL_MEDIA_API)
             if (response.status.isSuccess()) {
                 val mediaItemDtos = response.body<List<MediaItemDto>>()
                 val mediaItems = mediaItemDtos.map { dto ->
