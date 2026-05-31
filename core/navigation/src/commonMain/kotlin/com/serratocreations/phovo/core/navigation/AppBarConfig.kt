@@ -27,7 +27,8 @@ data class AppBarConfig(
     val topAppBarColors: @Composable (() -> TopAppBarColors) = { TopAppBarDefaults.topAppBarColors() },
     val shouldOverlayTopAppBar: Boolean = false,
     val showBottomAppBar: Boolean = true,
-    val showBottomToolbar: Boolean = false
+    val showBottomToolbar: Boolean = false,
+    val showTopAppBar: Boolean = true
 ) {
     @Composable
     fun calculateAdjustedPadding(scaffoldPadding: PaddingValues): PaddingValues {
