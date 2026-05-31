@@ -19,6 +19,7 @@ import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.yield
 
 class DesktopLocalMediaManager(
     private val localMediaRepository: LocalMediaRepository,
@@ -31,7 +32,7 @@ class DesktopLocalMediaManager(
     private val log = logger.withTag("LocalMediaManager")
     companion object {
         // We need at least one worker
-        private val WORKER_COUNT = maxOf(1, Runtime.getRuntime().availableProcessors() -1)
+        private val WORKER_COUNT = maxOf(1, Runtime.getRuntime().availableProcessors() - 1)
     }
 
     /**
@@ -117,6 +118,7 @@ class DesktopLocalMediaManager(
             // TODO files may become very large, investigate memory optimizations
             directoryFiles.forEach { directoryChild ->
                 if (directoryChild.isDirectory()) return@forEach
+                yield()
                 // TODO This work can be optimized with parallel decomposition
                 val fileHash = fileHashCalculator.computeSha256(directoryChild)
                 val existingKnownAsset = localMediaRepository.getLocalMediaByAssetHash(fileHash)
@@ -174,6 +176,7 @@ class DesktopLocalMediaManager(
         outputDirectory: String
     ) = launch {
         for (fileToProcess in processMediaChannel) {
+            yield()
             fileToProcess.mapAndProcessFile(outputDirectory)
         }
     }
