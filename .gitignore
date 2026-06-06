@@ -17,3 +17,8 @@ captures
 !*.xcodeproj/project.xcworkspace/
 !*.xcworkspace/contents.xcworkspacedata
 **/xcshareddata/WorkspaceSettings.xcsettings
+# gemini-cli settings
+.gemini/
+
+# GitHub App credentials
+gha-creds-*.json
