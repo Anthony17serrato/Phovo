@@ -88,6 +88,9 @@ jobs:
           ISSUE_COUNT="$(echo "${ISSUES}" | jq 'length')"
           echo "✅ Found ${ISSUE_COUNT} issue(s) to triage! 🎯"
 
+      - name: 'Install Gemini CLI'
+        run: npm install -g @google/gemini-cli@latest
+
       - name: 'Run Gemini Issue Analysis'
         id: 'gemini_issue_analysis'
         if: |-
@@ -98,9 +101,8 @@ jobs:
           ISSUES_TO_TRIAGE: '${{ steps.find_issues.outputs.issues_to_triage }}'
           REPOSITORY: '${{ github.repository }}'
           AVAILABLE_LABELS: '${{ steps.get_labels.outputs.available_labels }}'
-          GEMINI_SKIP_WORKSPACE_TRUST: 'true'
+          GEMINI_WORKSPACE_TRUST: 'trusted'
           GEMINI_NON_INTERACTIVE: 'true'
-          GEMINI_EXTENSIONS_CONSENT: 'true'
         with:
           gcp_location: '${{ vars.GOOGLE_CLOUD_LOCATION }}'
           gcp_project_id: '${{ vars.GOOGLE_CLOUD_PROJECT }}'

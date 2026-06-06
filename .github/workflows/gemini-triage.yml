@@ -55,6 +55,9 @@ jobs:
             core.info(`Found ${labelNames.length} labels: ${labelNames.join(', ')}`);
             return labelNames;
 
+      - name: 'Install Gemini CLI'
+        run: npm install -g @google/gemini-cli@latest
+
       - name: 'Run Gemini issue analysis'
         id: 'gemini_analysis'
         if: |-
@@ -65,9 +68,8 @@ jobs:
           ISSUE_TITLE: '${{ github.event.issue.title || github.event.pull_request.title }}'
           ISSUE_BODY: '${{ github.event.issue.body || github.event.pull_request.body }}'
           AVAILABLE_LABELS: '${{ steps.get_labels.outputs.available_labels }}'
-          GEMINI_SKIP_WORKSPACE_TRUST: 'true'
+          GEMINI_WORKSPACE_TRUST: 'trusted'
           GEMINI_NON_INTERACTIVE: 'true'
-          GEMINI_EXTENSIONS_CONSENT: 'true'
         with:
           gcp_location: '${{ vars.GOOGLE_CLOUD_LOCATION }}'
           gcp_project_id: '${{ vars.GOOGLE_CLOUD_PROJECT }}'

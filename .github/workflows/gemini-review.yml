@@ -41,6 +41,11 @@ jobs:
       - name: 'Checkout repository'
         uses: 'actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8' # ratchet:actions/checkout@v6
 
+      - name: 'Install Gemini CLI and Extensions'
+        run: |-
+          npm install -g @google/gemini-cli@latest
+          yes | gemini extensions install https://github.com/gemini-cli-extensions/code-review --consent
+
       - name: 'Run Gemini pull request review'
         uses: 'google-github-actions/run-gemini-cli@v0' # ratchet:exclude
         id: 'gemini_pr_review'
@@ -52,9 +57,8 @@ jobs:
           REPOSITORY: '${{ github.repository }}'
           ADDITIONAL_CONTEXT: '${{ inputs.additional_context }}'
           GEMINI_API_KEY: '${{ secrets.GEMINI_API_KEY }}'
-          GEMINI_SKIP_WORKSPACE_TRUST: 'true'
+          GEMINI_WORKSPACE_TRUST: 'trusted'
           GEMINI_NON_INTERACTIVE: 'true'
-          GEMINI_EXTENSIONS_CONSENT: 'true'
         with:
           gcp_location: '${{ vars.GOOGLE_CLOUD_LOCATION }}'
           gcp_project_id: '${{ vars.GOOGLE_CLOUD_PROJECT }}'
@@ -112,8 +116,4 @@ jobs:
                 ]
               }
             }
-          extensions: |
-            [
-              "https://github.com/gemini-cli-extensions/code-review"
-            ]
           prompt: '/pr-code-review'
