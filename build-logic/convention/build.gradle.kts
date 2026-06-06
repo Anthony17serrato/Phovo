@@ -62,9 +62,9 @@ gradlePlugin {
             id = "phovo.kmp.android.ios.desktop.web.library"
             implementationClass = "KmpAndroidIosDesktopWebLibraryConventionPlugin"
         }
-        register("kmpApplicationKoin") {
-            id = "phovo.kmp.application.koin"
-            implementationClass = "KmpApplicationKoinConventionPlugin"
+        register("kmpAndroidApplicationKoin") {
+            id = "phovo.kmp.android.application.koin"
+            implementationClass = "KmpAndroidApplicationKoinConventionPlugin"
         }
         register("kmpLibraryKoin") {
             id = "phovo.kmp.library.koin"
@@ -74,13 +74,9 @@ gradlePlugin {
             id = "phovo.kmp.library.compose"
             implementationClass = "KmpLibraryComposeConventionPlugin"
         }
-        register("kmpApplicationCompose") {
-            id = "phovo.kmp.application.compose"
-            implementationClass = "KmpApplicationComposeConventionPlugin"
-        }
-        register("kmpApplication") {
-            id = "phovo.kmp.application"
-            implementationClass = "KmpApplicationConventionPlugin"
+        register("kmpUmbrella") {
+            id = "phovo.kmp.umbrella.library"
+            implementationClass = "KmpUmbrellaLibraryConventionPlugin"
         }
         register("kmpLibraryRoom") {
             id = "phovo.kmp.library.room"
@@ -89,6 +85,18 @@ gradlePlugin {
         register("kmpDesktopLibrary") {
             id = "phovo.kmp.desktop.library"
             implementationClass = "KmpDesktopLibraryConventionPlugin"
+        }
+        register("kmpDesktopApplication") {
+            id = "phovo.kmp.desktop.application"
+            implementationClass = "KmpDesktopApplicationConventionPlugin"
+        }
+        register("kmpWebApplication") {
+            id = "phovo.kmp.web.application"
+            implementationClass = "KmpWebApplicationConventionPlugin"
+        }
+        register("kmpAndroidApplication") {
+            id = "phovo.kmp.android.application"
+            implementationClass = "KmpAndroidApplicationConventionPlugin"
         }
         register("kmpBuildFlavors") {
             id = "phovo.kmp.build.flavors"

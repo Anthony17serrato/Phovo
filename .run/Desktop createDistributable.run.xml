@@ -10,7 +10,7 @@
       </option>
       <option name="taskNames">
         <list>
-          <option value="phovoApp:createDistributable" />
+          <option value="applicationContainers:desktopApp:createDistributable" />
         </list>
       </option>
       <option name="vmOptions" />

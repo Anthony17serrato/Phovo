@@ -11,7 +11,7 @@ class KmpDesktopLibraryConventionPlugin : Plugin<Project> {
             }
 
             // Configure only the Desktop (JVM) KMP target for libraries
-            configureKotlinMultiplatform(isApplication = false, targetList = setOf(Targets.DESKTOP))
+            configureKotlinMultiplatform(isUmbrella = false, targetList = setOf(Targets.DESKTOP))
         }
     }
 }

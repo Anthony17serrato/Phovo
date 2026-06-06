@@ -15,7 +15,7 @@ class KmpAndroidIosDesktopLibraryConventionPlugin : Plugin<Project> {
             }
 
             configureKotlinMultiplatform(
-                isApplication = false,
+                isUmbrella = false,
                 customSourceSets = setOf(
                     CustomSourceSets.IosAndroid,
                     CustomSourceSets.AndroidDesktop
