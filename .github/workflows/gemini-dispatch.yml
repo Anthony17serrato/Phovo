@@ -10,6 +10,9 @@ on:
   pull_request:
     types:
       - 'opened'
+      - 'synchronize'
+      - 'reopened'
+      - 'edited'
   issues:
     types:
       - 'opened'
@@ -90,12 +93,12 @@ jobs:
         with:
           script: |
             const eventType = process.env.EVENT_TYPE;
-            const request = process.env.REQUEST;
+            const request = (process.env.REQUEST || '').trim();
             core.setOutput('request', request);
 
-            if (eventType === 'pull_request.opened') {
+            if (['pull_request.opened', 'pull_request.synchronize', 'pull_request.reopened'].includes(eventType)) {
               core.setOutput('command', 'review');
-            } else if (['issues.opened', 'issues.reopened'].includes(eventType)) {
+            } else if (['issues.opened', 'issues.reopened', 'pull_request.edited'].includes(eventType)) {
               core.setOutput('command', 'triage');
             } else if (request.startsWith("@gemini-cli /review")) {
               core.setOutput('command', 'review');
