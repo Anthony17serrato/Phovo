@@ -25,6 +25,8 @@ jobs:
         run: ./gradlew kotlinUpgradeYarnLock
       - name: Build Project
         run: ./gradlew build
+      - name: Run Gemini CLI
+        uses: google-github-actions/run-gemini-cli@v0.1.22
 #      - name: Compile Android
 #        run: ./gradlew compileDebugKotlinAndroid
 #      - name: Compile Web
