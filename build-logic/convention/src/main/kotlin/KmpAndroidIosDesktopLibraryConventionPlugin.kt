@@ -14,6 +14,7 @@ class KmpAndroidIosDesktopLibraryConventionPlugin : Plugin<Project> {
                 apply("phovo.kmp.desktop.library")
             }
 
+            // Centralized configuration in configureKotlinMultiplatform
             configureKotlinMultiplatform(
                 isUmbrella = false,
                 customSourceSets = setOf(

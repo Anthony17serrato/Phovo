@@ -10,11 +10,10 @@ class KmpAndroidApplicationConventionPlugin : Plugin<Project> {
             with(pluginManager) {
                 apply("com.android.application")
                 apply("phovo.kmp.library.compose")
-                apply("org.jetbrains.kotlin.android")
             }
 
             extensions.configure<ApplicationExtension> {
-                configureAndroidApplication(this)
+                configureAndroidApplication()
                 defaultConfig {
                     targetSdk = 36
                     applicationId = "com.serratocreations.phovo"

@@ -1,44 +1,11 @@
 package com.serratocreations.phovo.buildlogic
 
-import com.android.build.api.dsl.androidLibrary
-import com.android.build.api.dsl.CommonExtension
-import org.gradle.api.JavaVersion
+import com.android.build.api.dsl.*
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.configure
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
-
-/**
- * Configure base Kotlin Multiplatform with Android options
- */
-internal fun Project.configureAndroidApplication(
-    commonExtension: CommonExtension<*, *, *, *, *, *>,
-) {
-    extensions.configure<KotlinAndroidExtension> {
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
-        }
-    }
-    commonExtension.apply {
-        namespace = "com.serratocreations.phovo"
-        // TODO: Investigate if these can be pulled from TOML file
-        compileSdk = 36
-
-        defaultConfig {
-            minSdk = 23
-        }
-
-        compileOptions {
-            // Up to Java 11 APIs are available through desugaring
-            // https://developer.android.com/studio/write/java11-minimal-support-table
-            sourceCompatibility = JavaVersion.VERSION_11
-            targetCompatibility = JavaVersion.VERSION_11
-            //isCoreLibraryDesugaringEnabled = true
-        }
-    }
-}
 
 internal fun Project.configureKotlinMultiplatform(
     /**
@@ -67,10 +34,7 @@ internal fun Project.configureKotlinMultiplatform(
         }
 
         if (targetList.contains(Targets.ANDROID) && isApplication.not()) {
-            // Use the new plugin for library modules
-            // https://developer.android.com/kotlin/multiplatform/plugin
-            @Suppress("UnstableApiUsage")
-            androidLibrary {
+            configure<KotlinMultiplatformAndroidLibraryTarget> {
                 // TODO: Investigate if these can be pulled from TOML file
                 compileSdk = 36
                 minSdk = 23

@@ -2,7 +2,7 @@
 # Check AGP KMP compatability https://kotlinlang.org/docs/multiplatform-compatibility-guide.html
 # Check AGP Kotlin R8 compatability https://developer.android.com/build/kotlin-support?utm_source=android-studio-app&utm_medium=app
 #noinspection AndroidGradlePluginVersion since AGP depends on KMP support
-androidGradlePlugin = "8.13.2"
+androidGradlePlugin = "9.0.1"
 kotlin = "2.3.10"
 ksp = "2.3.6"
 
@@ -132,10 +132,9 @@ room-common-kmp = ["room-runtime", "room-bundled-sqlite"]
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "androidGradlePlugin" }
-androidLibrary = { id = "com.android.library", version.ref = "androidGradlePlugin" }
+android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "androidGradlePlugin" }
 jetbrainsCompose = { id = "org.jetbrains.compose", version.ref = "compose-plugin" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
-kotlinAndroid = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

@@ -10,7 +10,7 @@ plugins {
 
 kotlin {
     android {
-        namespace = "com.serratocreations.phovo"
+        namespace = "com.serratocreations.phovo.sharedumbrella"
     }
     val buildFlavor = getBuildFlavor()
     sourceSets {
