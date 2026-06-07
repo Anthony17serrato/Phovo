@@ -77,7 +77,7 @@ jobs:
                 "maxSessionTurns": 25
               },
               "telemetry": {
-                "enabled": true,
+                "enabled": false,
                 "target": "local",
                 "outfile": ".gemini/telemetry.log"
               },
