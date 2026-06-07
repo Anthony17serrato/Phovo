@@ -1,40 +1,19 @@
 package com.serratocreations.phovo.buildlogic
 
-import com.android.build.api.dsl.androidLibrary
-import com.android.build.api.dsl.CommonExtension
-import org.gradle.api.JavaVersion
+import com.android.build.api.dsl.*
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.configure
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
-/**
- * Configure base Kotlin Multiplatform with Android options
- */
-internal fun Project.configureAndroidApplication(
-    commonExtension: CommonExtension<*, *, *, *, *, *>,
-) {
-    commonExtension.apply {
-        // TODO: Investigate if these can be pulled from TOML file
-        compileSdk = 36
-
-        defaultConfig {
-            minSdk = 23
-        }
-
-        compileOptions {
-            // Up to Java 11 APIs are available through desugaring
-            // https://developer.android.com/studio/write/java11-minimal-support-table
-            sourceCompatibility = JavaVersion.VERSION_11
-            targetCompatibility = JavaVersion.VERSION_11
-            //isCoreLibraryDesugaringEnabled = true
-        }
-    }
-}
-
 internal fun Project.configureKotlinMultiplatform(
-    isApplication: Boolean,
+    /**
+     * To learn more about umbrella framework see:
+     * https://kotlinlang.org/docs/multiplatform/multiplatform-project-configuration.html#several-shared-modules
+     */
+    isUmbrella: Boolean,
+    isApplication: Boolean = false,
     customSourceSets: Set<CustomSourceSets> = emptySet(),
     // All targets are configured by default
     targetList: Set<Targets> = Targets.entries.toSet()
@@ -54,38 +33,18 @@ internal fun Project.configureKotlinMultiplatform(
             jvm()
         }
 
-        if (targetList.contains(Targets.ANDROID)) {
-            if (isApplication) {
-                // Android target is still the suggested approach for application modules
-                // https://developer.android.com/kotlin/multiplatform/plugin#:~:text=Note%3A%20There%20isn%27t%20a%20direct%20replacement%20for%20configuring%20a%20Kotlin%20Multiplatform%20module%20using%20com.android.application%20plugin.%20To%20migrate%2C%20extract%20your%20Android%20application%20to%20a%20separate%20Gradle%20module.
-                @Suppress("DEPRECATION")
-                androidTarget {
-                    compilerOptions {
-                        jvmTarget.set(JvmTarget.JVM_11)
-                    }
+        if (targetList.contains(Targets.ANDROID) && isApplication.not()) {
+            configure<KotlinMultiplatformAndroidLibraryTarget> {
+                // TODO: Investigate if these can be pulled from TOML file
+                compileSdk = 36
+                minSdk = 23
+                androidResources.enable = true
+                withHostTestBuilder {}.configure {}
+                withDeviceTestBuilder {
+                    sourceSetTreeName = "test"
                 }
-            } else {
-                // Use the new plugin for library modules
-                // https://developer.android.com/kotlin/multiplatform/plugin
-                @Suppress("UnstableApiUsage")
-                androidLibrary {
-                    // TODO: Investigate if these can be pulled from TOML file
-                    compileSdk = 36
-                    minSdk = 23
-                    androidResources.enable = true
-                    withHostTestBuilder {}.configure {}
-                    withDeviceTestBuilder {
-                        sourceSetTreeName = "test"
-                    }
-                    compilations.configureEach {
-                        compileTaskProvider.configure {
-                            compilerOptions {
-                                jvmTarget.set(
-                                    JvmTarget.JVM_11
-                                )
-                            }
-                        }
-                    }
+                compilerOptions {
+                    jvmTarget.set(JvmTarget.JVM_11)
                 }
             }
         }
@@ -109,7 +68,7 @@ internal fun Project.configureKotlinMultiplatform(
             }
         }
 
-        if (isApplication && targetList.contains(Targets.IOS)) {
+        if (isUmbrella && targetList.contains(Targets.IOS)) {
             listOf(
                 iosX64(),
                 iosArm64(),

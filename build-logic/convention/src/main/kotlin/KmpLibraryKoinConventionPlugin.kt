@@ -25,7 +25,7 @@ class KmpLibraryKoinConventionPlugin : Plugin<Project> {
             apply(plugin = "org.jetbrains.kotlin.multiplatform")
             apply(plugin = "com.google.devtools.ksp")
 
-            configureKmpKoin()
+            configureKmpKoin(isAndroidApplication = false)
         }
     }
 }

@@ -1,6 +1,5 @@
 package com.serratocreations.phovo.buildlogic
 
-import com.google.devtools.ksp.gradle.KspExtension
 import com.serratocreations.phovo.buildlogic.extension.getTargetPlatforms
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.configure
@@ -10,29 +9,33 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 /**
  * Configure Koin-specific options
  */
-internal fun Project.configureKmpKoin() {
-    // Get the list of configured targets by examining the source sets
-    lateinit var configuredTargets: Set<Targets>
+internal fun Project.configureKmpKoin(isAndroidApplication: Boolean) {
+    if (isAndroidApplication.not()) {
+        // Get the list of configured targets by examining the source sets
+        lateinit var configuredTargets: Set<Targets>
+        extensions.configure<KotlinMultiplatformExtension> {
+            configuredTargets = getTargetPlatforms()
 
-    extensions.configure<KotlinMultiplatformExtension> {
-        configuredTargets = getTargetPlatforms()
-
-        if (configuredTargets.contains(Targets.ANDROID)) {
-            sourceSets.androidMain.dependencies {
-                implementation(libs.findLibrary("koin.android").get())
+            if (configuredTargets.contains(Targets.ANDROID)) {
+                sourceSets.androidMain.dependencies {
+                    implementation(libs.findLibrary("koin.android").get())
+                }
             }
-        }
 
-        sourceSets.commonMain.dependencies {
-            // Koin
-            implementation(libs.findBundle("koin.common.kmp").get())
-            // TODO Koin Annotations is not stable for KMP(Leaving configuration for reference purposes)
-            // api(libs.findLibrary("koin.annotations").get())
+            sourceSets.commonMain.dependencies {
+                // Koin
+                implementation(libs.findBundle("koin.common.kmp").get())
+                // TODO Koin Annotations is not stable for KMP(Leaving configuration for reference purposes)
+                // api(libs.findLibrary("koin.annotations").get())
+            }
         }
     }
 
    this.apply {
         dependencies {
+            if (isAndroidApplication) {
+                add("implementation", libs.findLibrary("koin.android").get())
+            }
 //            // Common KSP compiler is always needed
 //            add("kspCommonMainMetadata", libs.findLibrary("koin.ksp.compiler").get())
 //
@@ -70,10 +73,10 @@ internal fun Project.configureKmpKoin() {
 //        }
 //    }
 
-    extensions.configure<KspExtension> {
-        // Enable Koin Viewmodel Annotation
-        arg("KOIN_USE_COMPOSE_VIEWMODEL", "true")
-        arg("KOIN_CONFIG_CHECK", "true")
-        arg("KOIN_LOG_TIMES", "true")
-    }
+//    extensions.configure<KspExtension> {
+//        // Enable Koin Viewmodel Annotation
+//        arg("KOIN_USE_COMPOSE_VIEWMODEL", "true")
+//        arg("KOIN_CONFIG_CHECK", "true")
+//        arg("KOIN_LOG_TIMES", "true")
+//    }
 }
