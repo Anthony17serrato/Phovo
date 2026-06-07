@@ -92,14 +92,10 @@ jobs:
               },
               "mcpServers": {
                 "github": {
-                  "command": "docker",
+                  "command": "npx",
                   "args": [
-                    "run",
-                    "-i",
-                    "--rm",
-                    "-e",
-                    "GITHUB_PERSONAL_ACCESS_TOKEN",
-                    "ghcr.io/github/github-mcp-server:v0.27.0"
+                    "-y",
+                    "@modelcontextprotocol/server-github"
                   ],
                   "includeTools": [
                     "add_comment_to_pending_review",
