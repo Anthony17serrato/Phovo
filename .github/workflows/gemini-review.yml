@@ -43,6 +43,9 @@ jobs:
         with:
           persist-credentials: 'false'
 
+      - name: 'Pre-pull GitHub MCP Server image'
+        run: docker pull ghcr.io/github/github-mcp-server:v0.27.0
+
       - name: 'Prepare prompt context'
         shell: 'bash'
         run: |-
@@ -93,10 +96,14 @@ jobs:
               },
               "mcpServers": {
                 "github": {
-                  "command": "npx",
+                  "command": "docker",
                   "args": [
-                    "-y",
-                    "@modelcontextprotocol/server-github"
+                    "run",
+                    "-i",
+                    "--rm",
+                    "-e",
+                    "GITHUB_PERSONAL_ACCESS_TOKEN",
+                    "ghcr.io/github/github-mcp-server:v0.27.0"
                   ],
                   "includeTools": [
                     "add_comment_to_pending_review",
