@@ -42,4 +42,15 @@ class NavigationViewModel(
             appBarConfig
         }
     }
+
+    fun popTo(route: NavKey, inclusive: Boolean = false) {
+        val currentStack = state.backStacks[state.topLevelRoute] ?: return
+        val index = currentStack.indexOf(route)
+        if (index != -1) {
+            val targetIndex = if (inclusive) index else index + 1
+            while (currentStack.size > targetIndex) {
+                currentStack.removeLastOrNull()
+            }
+        }
+    }
 }

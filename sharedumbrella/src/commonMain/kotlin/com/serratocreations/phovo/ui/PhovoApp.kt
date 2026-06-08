@@ -34,7 +34,6 @@ import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
-import com.serratocreations.phovo.core.common.ui.PhovoViewModel
 import com.serratocreations.phovo.core.designsystem.component.PhovoBackground
 import com.serratocreations.phovo.core.designsystem.component.PhovoNavigationSuiteScaffold
 import com.serratocreations.phovo.core.designsystem.constants.CommonDimensions.defaultIconSize
@@ -47,8 +46,9 @@ import com.serratocreations.phovo.core.navigation.NavigationState
 import com.serratocreations.phovo.core.navigation.NavigationViewModel
 import com.serratocreations.phovo.feature.photos.navigation.PhotosHomeNavKey
 import com.serratocreations.phovo.core.navigation.rememberNavigationState
-import com.serratocreations.phovo.feature.connections.ui.ConnectionsRouteComponent
-import com.serratocreations.phovo.feature.connections.ui.connectionsEntries
+import com.serratocreations.phovo.feature.connections.navigation.ConnectionsHomeNavKey
+import com.serratocreations.phovo.feature.connections.navigation.connectionsEntries
+import androidx.compose.material3.adaptive.navigation3.rememberListDetailSceneStrategy
 import com.serratocreations.phovo.feature.photos.extensions.showAppBar
 import com.serratocreations.phovo.feature.photos.navigation.photosEntries
 import com.serratocreations.phovo.navigation.PhovoNavSavedStateConfiguration
@@ -93,8 +93,6 @@ internal fun InternalPhovoApp(
         savedStateConfig = PhovoNavSavedStateConfiguration
     ),
     navigationViewModel: NavigationViewModel = koinViewModel(parameters = { parametersOf(navigationState) }),
-    // TODO: Merge PhovoViewModel into NavigationViewmodel
-    phovoViewModel: PhovoViewModel = koinViewModel(viewModelStoreOwner = viewModelStoreOwner),
     applicationViewModel: ApplicationViewModel = koinViewModel(viewModelStoreOwner = viewModelStoreOwner),
     modifier: Modifier = Modifier
 ) {
@@ -105,7 +103,7 @@ internal fun InternalPhovoApp(
         navigationSuiteItems = {
             TOP_LEVEL_NAV_ITEMS.forEach { (navKey, navItem) ->
                 val selected = navKey == navigationState.topLevelRoute
-                val customModifier = if (navKey == ConnectionsRouteComponent) {
+                val customModifier = if (navKey == ConnectionsHomeNavKey) {
                     Modifier.notificationDot(applicationUiSate.serverStatusColor)
                 } else { Modifier }
                 item(
@@ -206,7 +204,6 @@ internal fun InternalPhovoApp(
                                 scaffoldPadding = padding
                             )
                             connectionsEntries(
-                                phovoViewModel = phovoViewModel,
                                 navigationViewModel = navigationViewModel,
                                 scaffoldPadding = padding
                             )
@@ -215,9 +212,10 @@ internal fun InternalPhovoApp(
                                 scaffoldPadding = padding
                             )
                         }
+                        val listDetailStrategy = rememberListDetailSceneStrategy<NavKey>()
                         NavDisplay(
                             entries = navigationState.toDecoratedEntries(entryProvider),
-                            //sceneStrategy = listDetailStrategy
+                            sceneStrategy = listDetailStrategy,
                             onBack = {
                                 navigationViewModel.goBack()
                             }
