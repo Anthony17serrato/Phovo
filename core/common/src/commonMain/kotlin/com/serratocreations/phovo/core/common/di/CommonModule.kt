@@ -1,6 +1,5 @@
 package com.serratocreations.phovo.core.common.di
 
-import com.serratocreations.phovo.core.common.ui.PhovoViewModel
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -8,7 +7,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import org.koin.core.module.Module
-import org.koin.core.module.dsl.viewModelOf
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
@@ -36,7 +34,6 @@ fun getCoreCommonModule(): Module = module {
         }
         CoroutineScope(SupervisorJob() + defaultDispatcher + handler)
     }
-    viewModelOf(::PhovoViewModel)
 }
 
 expect fun getIoDispatcher(): CoroutineDispatcher

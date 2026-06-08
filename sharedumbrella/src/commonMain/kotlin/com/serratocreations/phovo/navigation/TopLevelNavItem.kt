@@ -6,7 +6,7 @@ import com.serratocreations.phovo.core.designsystem.model.ImageVectorIcon
 import com.serratocreations.phovo.core.designsystem.model.PainterVectorIcon
 import com.serratocreations.phovo.core.designsystem.icon.PhovoIcons
 import com.serratocreations.phovo.feature.photos.navigation.PhotosHomeNavKey
-import com.serratocreations.phovo.feature.connections.ui.ConnectionsRouteComponent
+import com.serratocreations.phovo.feature.connections.navigation.ConnectionsHomeNavKey
 import phovo.sharedumbrella.generated.resources.Res
 import phovo.sharedumbrella.generated.resources.feature_search_title
 import org.jetbrains.compose.resources.StringResource
@@ -48,5 +48,5 @@ val CONNECTIONS = TopLevelNavItem(
 val TOP_LEVEL_NAV_ITEMS: Map<NavKey, TopLevelNavItem> = mapOf(
     PhotosHomeNavKey to PHOTOS,
     SearchHomeNavKey to SEARCH,
-    ConnectionsRouteComponent to CONNECTIONS
+    ConnectionsHomeNavKey to CONNECTIONS
 )
