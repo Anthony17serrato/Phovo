@@ -80,7 +80,7 @@ jobs:
           gemini_api_key: '${{ secrets.GEMINI_API_KEY }}'
           gemini_cli_version: '${{ vars.GEMINI_CLI_VERSION }}'
           gemini_debug: 'true'
-          gemini_model: "${{ vars.GEMINI_MODEL == 'gemini-3.1-flash-lite' && 'gemini-2.5-flash' || vars.GEMINI_MODEL || 'gemini-2.5-flash' }}"
+          gemini_model: "${{ vars.GEMINI_MODEL || 'gemini-1.5-flash' }}"
           google_api_key: '${{ secrets.GOOGLE_API_KEY }}'
           use_gemini_code_assist: '${{ vars.GOOGLE_GENAI_USE_GCA }}'
           use_vertex_ai: '${{ vars.GOOGLE_GENAI_USE_VERTEXAI }}'
@@ -133,6 +133,10 @@ jobs:
         shell: bash
         run: |
           if [ -f gemini-artifacts/stdout.log ]; then
+            if ! jq -e . gemini-artifacts/stdout.log >/dev/null 2>&1; then
+              echo "::error::Gemini CLI stdout was not valid JSON"
+              exit 1
+            fi
             if jq -e '.error' gemini-artifacts/stdout.log >/dev/null 2>&1; then
               ERROR_MSG=$(jq -r '.error.message // "Unknown error"' gemini-artifacts/stdout.log)
               echo "::error title=Gemini CLI reported error::${ERROR_MSG}"
@@ -140,6 +144,10 @@ jobs:
             fi
           fi
           if [ -f gemini-artifacts/stderr.log ]; then
+            if ! jq -e . gemini-artifacts/stderr.log >/dev/null 2>&1; then
+              echo "::error::Gemini CLI stderr was not valid JSON"
+              exit 1
+            fi
             if jq -e '.error' gemini-artifacts/stderr.log >/dev/null 2>&1; then
               ERROR_MSG=$(jq -r '.error.message // "Unknown error"' gemini-artifacts/stderr.log)
               echo "::error title=Gemini CLI reported stderr error::${ERROR_MSG}"
