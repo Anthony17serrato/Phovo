@@ -7,6 +7,10 @@ on:
         type: 'string'
         description: 'Any additional context from the request'
         required: false
+      pull_request_number:
+        type: 'string'
+        description: 'The pull request number'
+        required: false
 
 concurrency:
   group: '${{ github.workflow }}-review-${{ github.event_name }}-${{ github.event.pull_request.number || github.event.issue.number }}'
@@ -76,14 +80,14 @@ jobs:
           gemini_api_key: '${{ secrets.GEMINI_API_KEY }}'
           gemini_cli_version: '${{ vars.GEMINI_CLI_VERSION }}'
           gemini_debug: 'true'
-          gemini_model: '${{ vars.GEMINI_MODEL }}'
+          gemini_model: "${{ vars.GEMINI_MODEL == 'gemini-3.1-flash-lite' && 'gemini-2.5-flash' || vars.GEMINI_MODEL || 'gemini-2.5-flash' }}"
           google_api_key: '${{ secrets.GOOGLE_API_KEY }}'
           use_gemini_code_assist: '${{ vars.GOOGLE_GENAI_USE_GCA }}'
           use_vertex_ai: '${{ vars.GOOGLE_GENAI_USE_VERTEXAI }}'
           upload_artifacts: '${{ vars.UPLOAD_ARTIFACTS }}'
           workflow_name: 'gemini-review'
           # Explicitly set the PR number to handle `issue_comment` triggers (which GitHub treats as issues, not PRs)
-          github_pr_number: '${{ github.event.pull_request.number }}'
+          github_pr_number: '${{ inputs.pull_request_number || github.event.pull_request.number || github.event.issue.number }}'
           settings: |-
             {
               "model": {
@@ -124,3 +128,21 @@ jobs:
               "https://github.com/gemini-cli-extensions/code-review"
             ]
           prompt: '/pr-code-review'
+
+      - name: 'Verify Gemini CLI execution'
+        shell: bash
+        run: |
+          if [ -f gemini-artifacts/stdout.log ]; then
+            if jq -e '.error' gemini-artifacts/stdout.log >/dev/null 2>&1; then
+              ERROR_MSG=$(jq -r '.error.message // "Unknown error"' gemini-artifacts/stdout.log)
+              echo "::error title=Gemini CLI reported error::${ERROR_MSG}"
+              exit 1
+            fi
+          fi
+          if [ -f gemini-artifacts/stderr.log ]; then
+            if jq -e '.error' gemini-artifacts/stderr.log >/dev/null 2>&1; then
+              ERROR_MSG=$(jq -r '.error.message // "Unknown error"' gemini-artifacts/stderr.log)
+              echo "::error title=Gemini CLI reported stderr error::${ERROR_MSG}"
+              exit 1
+            fi
+          fi
