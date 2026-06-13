@@ -25,16 +25,20 @@ kotlin {
         }
 
         jvmMain.dependencies {
-            implementation(projects.core.database)
             implementation(libs.ktor.server.core)
             implementation(libs.ktor.server.status.pages)
             implementation(libs.ktor.server.netty)
             implementation(libs.ktor.serialization)
             implementation(libs.ktor.server.content.negotiation)
+            implementation(libs.jmdns)
         }
 
         webMain.dependencies {
 
+        }
+
+        commonDesktopIosAndroid.dependencies {
+            implementation(projects.core.database)
         }
     }
 }

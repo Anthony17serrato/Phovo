@@ -58,7 +58,7 @@ abstract class MediaNetworkDataSource(
      */
     suspend fun checkServerConnection(baseUrl: BaseUrl): Boolean {
         try {
-            val result = client.get(baseUrl.value)
+            val result = client.get(baseUrl / ApiEndpoints.CHECK_ALIVE_API)
             return result.status.isSuccess()
         } catch (_: IOException) {
             return false

@@ -6,21 +6,24 @@ import androidx.room.RoomDatabase
 import androidx.room.RoomDatabaseConstructor
 import com.serratocreations.phovo.core.database.dao.ServerConfigDao
 import com.serratocreations.phovo.core.database.dao.PhovoMediaDao
+import com.serratocreations.phovo.core.database.dao.ClientConfigDao
 import com.serratocreations.phovo.core.database.entities.ServerConfigEntity
 import com.serratocreations.phovo.core.database.entities.MediaItemMetadataEntity
 import com.serratocreations.phovo.core.database.entities.LocalMediaEntity
 import com.serratocreations.phovo.core.database.entities.ProcessingMediaEntity
 import com.serratocreations.phovo.core.database.entities.SyncLogEntity
+import com.serratocreations.phovo.core.database.entities.ClientConfigEntity
 
 @Database(
     entities = [ServerConfigEntity::class, MediaItemMetadataEntity::class, LocalMediaEntity::class,
-        ProcessingMediaEntity::class, SyncLogEntity::class],
+        ProcessingMediaEntity::class, SyncLogEntity::class, ClientConfigEntity::class],
     version = 1
 )
 @ConstructedBy(AppDatabaseConstructor::class)
 abstract class PhovoDatabase : RoomDatabase() {
     abstract fun getServerConfigDao(): ServerConfigDao
     abstract fun getPhovoItemDao(): PhovoMediaDao
+    abstract fun getClientConfigDao(): ClientConfigDao
 }
 
 // The Room compiler generates the `actual` implementations.

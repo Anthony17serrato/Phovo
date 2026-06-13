@@ -2,7 +2,8 @@ package com.serratocreations.phovo.data.photos.repository
 
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.core.model.network.MediaItemDto
-import com.serratocreations.phovo.core.serverconfig.IosAndroidWasmServerConfigRepository
+import com.serratocreations.phovo.core.model.ServerConfig
+import com.serratocreations.phovo.core.serverconfig.ServerConfigRepository
 import com.serratocreations.phovo.data.photos.network.MediaNetworkDataSource
 import com.serratocreations.phovo.data.photos.repository.model.SyncResult
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
@@ -21,15 +22,16 @@ import kotlin.time.Duration.Companion.seconds
 
 class RemoteMediaRepositoryImpl(
     private val remotePhotosDataSource: MediaNetworkDataSource,
-    private val serverConfigRepository: IosAndroidWasmServerConfigRepository,
+    private val serverConfigRepository: ServerConfigRepository,
     logger: PhovoLogger
 ): RemoteMediaRepository {
     private val log = logger.withTag("RemoteMediaRepositoryImpl")
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun phovoMediaFlow(): Flow<List<MediaItem>> {
-        return serverConfigRepository.observeServerConfig().flatMapLatest {
-            it?.serverBaseUrlString?.let { serverUrlNotNull ->
+        return serverConfigRepository.observeServerConfig().flatMapLatest { config ->
+            val clientConfig = config as? ServerConfig.ClientSpecificServerConfig
+            clientConfig?.serverBaseUrlString?.let { serverUrlNotNull ->
                 remotePhotosDataSource.allItemsFlow(serverUrlNotNull)
                     .onStart { emit(emptyList()) }
             } ?: flowOf(emptyList())
@@ -40,7 +42,8 @@ class RemoteMediaRepositoryImpl(
         media: MediaItemDto,
         mediaUri: String
     ): SyncResult {
-        val baseUrl = serverConfigRepository.observeServerConfig().first()?.serverBaseUrlString
+        val clientConfig = serverConfigRepository.observeServerConfig().first() as? ServerConfig.ClientSpecificServerConfig
+        val baseUrl = clientConfig?.serverBaseUrlString
         if (baseUrl == null) {
             val errorMessage = "syncMedia failed because baseUrl is null"
             log.i { errorMessage }
@@ -56,14 +59,15 @@ class RemoteMediaRepositoryImpl(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun observeServerConnection(): Flow<Boolean> {
-        return serverConfigRepository.observeServerConfig().flatMapLatest {
+        return serverConfigRepository.observeServerConfig().flatMapLatest { config ->
+            val clientConfig = config as? ServerConfig.ClientSpecificServerConfig
             flow {
-                if (it?.serverBaseUrlString == null) {
+                if (clientConfig?.serverBaseUrlString == null) {
                     emit(false)
                 } else {
                     while(currentCoroutineContext().isActive) {
                         yield()
-                        emit(remotePhotosDataSource.checkServerConnection(it.serverBaseUrlString))
+                        emit(remotePhotosDataSource.checkServerConnection(clientConfig.serverBaseUrlString))
                         delay(30.seconds)
                     }
                 }

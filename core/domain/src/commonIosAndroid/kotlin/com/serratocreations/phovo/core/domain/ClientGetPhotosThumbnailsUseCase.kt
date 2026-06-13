@@ -6,7 +6,8 @@ import com.serratocreations.phovo.core.domain.model.MediaItemWithThumbnails
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.data.photos.repository.MediaRepository
 import com.serratocreations.phovo.data.photos.repository.model.AssetLocation
-import com.serratocreations.phovo.core.serverconfig.IosAndroidWasmServerConfigRepository
+import com.serratocreations.phovo.core.serverconfig.ServerConfigRepository
+import com.serratocreations.phovo.core.model.ServerConfig
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.div
 import io.github.vinceglb.filekit.exists
@@ -19,7 +20,7 @@ import kotlinx.coroutines.flow.flowOn
 
 class ClientGetPhotosFeedWithThumbnailsUseCase(
     private val mediaRepository: MediaRepository,
-    private val serverConfigRepository: IosAndroidWasmServerConfigRepository,
+    private val serverConfigRepository: ServerConfigRepository,
     private val ioDispatcher: CoroutineDispatcher,
     logger: PhovoLogger
 ): GetPhotosFeedWithThumbnailsUseCase {
@@ -30,6 +31,7 @@ class ClientGetPhotosFeedWithThumbnailsUseCase(
             mediaRepository.phovoMediaFlow(),
             serverConfigRepository.observeServerConfig().distinctUntilChanged()
         ) { mediaList, serverConfig ->
+            val clientConfig = serverConfig as? ServerConfig.ClientSpecificServerConfig
             return@combine mediaList.mapNotNull { mediaItem ->
                 // Prefer file thumb if exists, fallback to network thumb, no thumb if no base url
                 val lowResThumb = (FileKit.filesDir / LOW_RES_THUMBNAIL_DIR / "${mediaItem.uniqueAssetIdentifier}.jpg").let {
@@ -52,7 +54,7 @@ class ClientGetPhotosFeedWithThumbnailsUseCase(
                     lowResThumbnailLocation = lowResThumb,
                     highResThumbnailLocation = highResThumb,
                     assetHash = mediaItem.uniqueAssetIdentifier,
-                    baseUrl = serverConfig?.serverBaseUrlString
+                    baseUrl = clientConfig?.serverBaseUrlString
                 )
             }
         }.flowOn(ioDispatcher)

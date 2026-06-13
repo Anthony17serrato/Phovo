@@ -14,6 +14,7 @@ kotlin {
             implementation(projects.core.designsystem)
             implementation(projects.core.common)
             implementation(projects.core.model)
+            implementation(projects.core.serverconfig)
             implementation(projects.data.server)
             implementation(projects.core.navigation)
 
