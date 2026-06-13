@@ -14,6 +14,7 @@ internal actual fun getPlatformModulesBranch2(): Module = module {
             logger = get()
         )
     } binds arrayOf(
+        RemoteMediaRepositoryImpl::class,
         RemoteMediaRepository::class
     )
 }

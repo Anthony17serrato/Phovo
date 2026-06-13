@@ -11,9 +11,15 @@ kotlin {
         commonMain.dependencies {
             implementation(libs.filekit.core)
             implementation(projects.core.model)
+            implementation(projects.core.logger)
         }
         jvmMain.dependencies {
             implementation(projects.core.database)
+        }
+        val commonIosAndroid by getting {
+            dependencies {
+                implementation(projects.core.database)
+            }
         }
         commonTest.dependencies {
         }

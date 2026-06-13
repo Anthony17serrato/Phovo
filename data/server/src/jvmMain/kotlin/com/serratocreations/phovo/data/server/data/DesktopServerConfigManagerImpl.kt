@@ -58,6 +58,9 @@ import java.nio.file.Paths
 import java.time.LocalDateTime
 import java.net.NetworkInterface
 import java.net.Inet4Address
+import java.net.InetAddress
+import javax.jmdns.JmDNS
+import javax.jmdns.ServiceInfo
 import java.nio.file.StandardCopyOption
 import java.nio.file.StandardOpenOption
 import kotlin.uuid.ExperimentalUuidApi
@@ -73,6 +76,18 @@ class DesktopServerConfigManagerImpl(
     // Caches the current config state for new subscribers
     private val serverConfigState = MutableStateFlow(ServerConfigState())
     private val log = logger.withTag("DesktopServerConfigManagerImpl")
+    private var jmdns: JmDNS? = null
+
+    init {
+        Runtime.getRuntime().addShutdownHook(Thread {
+            try {
+                jmdns?.unregisterAllServices()
+                jmdns?.close()
+            } catch (e: Exception) {
+                System.err.println("Error shutting down JmDNS: ${e.message}")
+            }
+        })
+    }
 
     private fun getHostIPv4(): String {
         return try {
@@ -286,11 +301,38 @@ class DesktopServerConfigManagerImpl(
                 )
             }
             launch(ioDispatcher) {
+                try {
+                    jmdns?.unregisterAllServices()
+                    jmdns?.close()
+                } catch (e: Exception) {
+                    log.e(e) { "Error closing existing JmDNS" }
+                }
+                jmdns = null
+
                 embeddedServer(factory = Netty, port = 8080, host = "0.0.0.0", module = routingConfig)
                     .start(wait = false)
+
+                val hostIp = getHostIPv4()
+                log.i { "Starting JmDNS advertisement for server IP: $hostIp" }
+                try {
+                    val inetAddress = InetAddress.getByName(hostIp)
+                    jmdns = JmDNS.create(inetAddress, "PhovoServer").apply {
+                        val serviceInfo = ServiceInfo.create(
+                            "_phovo._tcp.local.",
+                            "Phovo Server",
+                            8080,
+                            "Phovo Photo Backup Server"
+                        )
+                        registerService(serviceInfo)
+                    }
+                    log.i { "JmDNS service registered successfully" }
+                } catch (e: Exception) {
+                    log.e(e) { "Failed to start JmDNS service advertising" }
+                }
+
                 serverConfigState.update {
                     it.copy(configStatus = ConfigStatus.Configured(
-                        serverUrl = "http://${getHostIPv4()}:8080"
+                        serverUrl = "http://$hostIp:8080"
                     ))
                 }
             }

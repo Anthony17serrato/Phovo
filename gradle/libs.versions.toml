@@ -45,8 +45,11 @@ room-kmp = "2.8.4"
 serialization-json = "1.10.0"
 sqlite = "2.6.2"
 telephoto = "0.19.0"
+jmdns = "3.5.9"
 
 [libraries]
+jmdns = { group = "org.jmdns", name = "jmdns", version.ref = "jmdns" }
+
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }

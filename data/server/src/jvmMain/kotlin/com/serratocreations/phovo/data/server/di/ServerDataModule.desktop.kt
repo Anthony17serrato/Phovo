@@ -8,6 +8,8 @@ import com.serratocreations.phovo.data.server.data.DesktopServerConfigManagerImp
 import com.serratocreations.phovo.data.server.data.ServerConfigManager
 import com.serratocreations.phovo.core.serverconfig.ServerConfigRepository
 import com.serratocreations.phovo.core.serverconfig.DesktopServerConfigRepository
+import com.serratocreations.phovo.core.serverconfig.discovery.ServerDiscoveryManager
+import com.serratocreations.phovo.core.serverconfig.discovery.JvmServerDiscoveryManager
 import com.serratocreations.phovo.data.server.data.repository.ServerEventsRepository
 import org.koin.dsl.binds
 import org.koin.dsl.module
@@ -20,6 +22,8 @@ internal actual fun getAndroidDesktopIosWasmModules(): org.koin.core.module.Modu
     } binds arrayOf(DesktopServerConfigRepository::class, ServerConfigRepository::class)
 
     single { ServerEventsRepository() }
+
+    single<ServerDiscoveryManager> { JvmServerDiscoveryManager() }
 
     single {
         DesktopServerConfigManagerImpl(

@@ -14,7 +14,7 @@ class AndroidFileHashCalculator(
     private val ioDispatcher: CoroutineDispatcher
 ) : FileHashCalculator {
 
-    override suspend fun computeSha256(file: PlatformFile): String = logTimeToComplete(apiTag = "AndroidFileHashCalculator::computeSha256") {
+    override suspend fun computeSha256(file: PlatformFile): String = //logTimeToComplete(apiTag = "AndroidFileHashCalculator::computeSha256") {
         withContext(ioDispatcher) {
             val digest = MessageDigest.getInstance("SHA-256")
 
@@ -31,5 +31,5 @@ class AndroidFileHashCalculator(
 
             digest.digest().toHexString()
         }
-    }
+    //}
 }
