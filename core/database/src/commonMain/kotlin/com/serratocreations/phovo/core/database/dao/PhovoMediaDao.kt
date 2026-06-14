@@ -13,11 +13,15 @@ import com.serratocreations.phovo.core.database.entities.LocalMediaItemWithMetad
 import com.serratocreations.phovo.core.database.entities.MediaItemWithMetadata
 import com.serratocreations.phovo.core.database.entities.ProcessingMediaEntity
 import com.serratocreations.phovo.core.database.entities.SyncLogEntity
+import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.core.model.MediaType
 import kotlinx.coroutines.flow.Flow
 
+private const val TAG = "PhovoMediaDao"
+
 @Dao
 interface PhovoMediaDao {
+
 
     @Upsert
     suspend fun upsertMetadata(item: MediaItemMetadataEntity)
@@ -129,17 +133,70 @@ interface PhovoMediaDao {
         ON m.assetHash = s.assetHash
     WHERE m.isSynced = FALSE
       AND m.mediaType = :mediaType
-      AND s.assetHash IS NULL
+      AND (
+          s.assetHash IS NULL 
+          OR (
+              s.isSyncInProgress = FALSE 
+              AND s.syncFailedCount <= 3 
+              AND (
+                  s.lastSyncFailTimeUtc IS NULL 
+                  OR s.lastSyncFailTimeUtc <= :currentTimeUtcMs - 300000 
+                  OR s.lastSyncFailTimeUtc > :currentTimeUtcMs
+              )
+          )
+      )
     ORDER BY m.timeStampUtcMs DESC
     LIMIT 1
     """
     )
     suspend fun getNextUnsyncedLocalItemExcludingSet(
-        mediaType: MediaType
+        mediaType: MediaType,
+        currentTimeUtcMs: Long
     ): LocalMediaItemWithMetadata?
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun addItemToSyncLog(entity: SyncLogEntity): Long
+
+    @Query(
+        """
+        UPDATE SyncLogEntity
+        SET isSyncInProgress = TRUE
+        WHERE assetHash = :assetHash AND isSyncInProgress = FALSE
+        """
+    )
+    suspend fun updateSyncInProgressToTrue(assetHash: String): Int
+
+    @Query("SELECT isSyncInProgress FROM SyncLogEntity WHERE assetHash = :assetHash LIMIT 1")
+    suspend fun getSyncInProgressStatus(assetHash: String): Boolean?
+
+    @Transaction
+    suspend fun claimItemForSync(assetHash: String): Boolean {
+        val updatedRows = updateSyncInProgressToTrue(assetHash)
+        if (updatedRows > 0) {
+            return true
+        }
+        val status = getSyncInProgressStatus(assetHash)
+        if (status == null) {
+            val insertResult = addItemToSyncLog(
+                SyncLogEntity(
+                    assetHash = assetHash,
+                    isSyncInProgress = true,
+                    syncError = null
+                )
+            )
+            val isClaimed = insertResult != -1L
+            if (isClaimed.not()) {
+                PhovoLogger.withTag(TAG).i {
+                    "claimItemForSync Failed to claim assetHash $assetHash, with syncInProgressStatus $status"
+                }
+            }
+            return isClaimed
+        }
+        PhovoLogger.withTag(TAG).i {
+            "claimItemForSync Failed to claim assetHash $assetHash, with syncInProgressStatus $status"
+        }
+        return false
+    }
 
     @Query("""
     DELETE FROM SyncLogEntity
@@ -147,10 +204,51 @@ interface PhovoMediaDao {
     """)
     suspend fun removeSyncAsset(assetHash: String)
 
-    @Upsert
-    suspend fun addSyncError(
-        syncLogEntity: SyncLogEntity
+    @Query(
+        """
+        UPDATE SyncLogEntity
+        SET isSyncInProgress = FALSE,
+            syncError = :syncError,
+            syncFailedCount = syncFailedCount + 1,
+            lastSyncFailTimeUtc = :lastSyncFailTimeUtc
+        WHERE assetHash = :assetHash
+        """
     )
+    suspend fun incrementSyncFailedCount(
+        assetHash: String,
+        syncError: String?,
+        lastSyncFailTimeUtc: Long
+    ): Int
+
+    @Transaction
+    suspend fun addSyncFailure(
+        assetHash: String,
+        syncError: String?,
+        lastSyncFailTimeUtc: Long
+    ) {
+        val updatedRows = incrementSyncFailedCount(assetHash, syncError, lastSyncFailTimeUtc)
+        if (updatedRows == 0) {
+            PhovoLogger.withTag(TAG).e {
+                "addSyncFailure could not find existing sync log for assetHash $assetHash"
+            }
+            addItemToSyncLog(
+                SyncLogEntity(
+                    assetHash = assetHash,
+                    isSyncInProgress = false,
+                    syncError = syncError,
+                    syncFailedCount = 1,
+                    lastSyncFailTimeUtc = lastSyncFailTimeUtc
+                )
+            )
+        }
+    }
+
+    @Query("""
+    UPDATE SyncLogEntity
+    SET isSyncInProgress = FALSE
+    WHERE isSyncInProgress = TRUE
+    """)
+    suspend fun clearInProgressSyncLogs()
 
     @Query("DELETE FROM MediaItemMetadataEntity")
     suspend fun clearAllMediaItems()

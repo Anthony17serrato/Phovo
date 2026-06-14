@@ -3,6 +3,7 @@ package com.serratocreations.phovo.data.photos.repository
 import com.serratocreations.phovo.core.database.entities.LocalMediaEntity
 import com.serratocreations.phovo.core.database.entities.LocalMediaItemWithMetadata
 import com.serratocreations.phovo.core.database.entities.MediaItemMetadataEntity
+import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.core.model.MediaType
 import com.serratocreations.phovo.core.model.network.MediaItemDto
 import com.serratocreations.phovo.data.photos.LocalMediaBackupProgress
@@ -26,6 +27,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -65,13 +68,15 @@ class LocalAndRemoteMediaRepositoryImpl(
     private val remoteMediaRepository: RemoteMediaRepository,
     private val applicationScope: CoroutineScope,
     private val ioDispatcher: CoroutineDispatcher,
-    private val defaultDispatcher: CoroutineDispatcher
+    private val defaultDispatcher: CoroutineDispatcher,
+    logger: PhovoLogger
 ): LocalAndRemoteMediaRepository {
     companion object {
         private const val SYNC_VIDEO_WORKER_COUNT = 2
         private const val SYNC_IMAGE_WORKER_COUNT = 4
         private val WORKER_IDLE_DELAY = 1.seconds
     }
+    private val log = logger.withTag("LocalAndRemoteMediaRepository")
 
     private val syncImageRequestChannel = Channel<String>(Channel.RENDEZVOUS)
     private val syncVideoRequestChannel = Channel<String>(Channel.RENDEZVOUS)
@@ -104,7 +109,7 @@ class LocalAndRemoteMediaRepositoryImpl(
             syncCandidate = localMediaRepository.getNextUnsyncedItemExcludingUuidSet(
                 mediaType = type
             ) ?: return null // No remaining items to sync
-            val isAddedToSync = localMediaRepository.addItemToSyncLog(syncCandidate.mediaItemMetadataEntity.assetHash)
+            val isAddedToSync = localMediaRepository.claimItemForSync(syncCandidate.mediaItemMetadataEntity.assetHash)
         } while (isAddedToSync.not())
         return syncCandidate
     }
@@ -123,12 +128,17 @@ class LocalAndRemoteMediaRepositoryImpl(
                     return@launch
                 }
             }
+            log.i { "claimed item hash ${nextUnsyncedItem.mediaItemMetadataEntity.assetHash}" }
+            // Do not sync if server is not connected
+            remoteMediaRepository.observeServerConnection().filter { it }.first()
             val assetHash = nextUnsyncedItem.mediaItemMetadataEntity.assetHash
+            log.i { "starting sync for item hash $assetHash" }
             // Terminate the worker if there is no remaining items to sync
             val result = sync(nextUnsyncedItem)
+            log.i { "sync complete for item hash $assetHash result $result" }
             when (result) {
                 is SyncResult.SyncError -> {
-                    localMediaRepository.addSyncError(
+                    localMediaRepository.addSyncFailure(
                         assetHash = assetHash,
                         errorMessage = result.message
                     )
@@ -162,11 +172,13 @@ class LocalAndRemoteMediaRepositoryImpl(
             media = mediaItemEntity.mediaItemMetadataEntity.toMediaItemDto(),
             mediaUri = mediaItemEntity.localLocation.localUri
         )
+        log.i { "sync complete result $result hash ${mediaItemEntity.mediaItemMetadataEntity.assetHash}" }
         if (result is SyncResult.SyncSuccessful) {
             localMediaRepository.markAsSynced(
                 assetHash = mediaItemEntity.mediaItemMetadataEntity.assetHash
             )
         }
+        log.i { "marked as synced ${mediaItemEntity.mediaItemMetadataEntity.assetHash}" }
         return result
     }
 
@@ -285,12 +297,15 @@ class LocalAndRemoteMediaRepositoryImpl(
         localMediaRepository.markAsSynced(assetHash)
     }
 
-    override suspend fun addItemToSyncLog(assetHash: String): Boolean =
-        localMediaRepository.addItemToSyncLog(assetHash)
+    override suspend fun claimItemForSync(assetHash: String): Boolean =
+        localMediaRepository.claimItemForSync(assetHash)
 
     override suspend fun removeSyncAsset(assetHash: String) =
         localMediaRepository.removeSyncAsset(assetHash)
 
-    override suspend fun addSyncError(assetHash: String, errorMessage: String?) =
-        localMediaRepository.addSyncError(assetHash, errorMessage)
+    override suspend fun addSyncFailure(assetHash: String, errorMessage: String?) =
+        localMediaRepository.addSyncFailure(assetHash, errorMessage)
+
+    override suspend fun clearNonFailedSyncLogs() =
+        localMediaRepository.clearNonFailedSyncLogs()
 }

@@ -55,7 +55,6 @@ class IosLocalMediaProcessor(
 
     override fun CoroutineScope.processLocalItems(
         processedItems: List<MediaItem>,
-        localDirectory: String?,
         processMediaChannel: SendChannel<MediaItem>
     ) = launch {
         requestPhotoLibraryPermission()

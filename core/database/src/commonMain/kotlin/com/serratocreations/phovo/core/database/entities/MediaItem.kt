@@ -55,8 +55,11 @@ data class SyncLogEntity(
     /** Sha-256 hash **/
     @PrimaryKey
     val assetHash: String,
+    val isSyncInProgress: Boolean,
     /** Only enabled on debug build variants **/
-    val syncError: String?
+    val syncError: String?,
+    val syncFailedCount: Int = 0,
+    val lastSyncFailTimeUtc: Long? = null
 )
 
 enum class ProcessingState {
