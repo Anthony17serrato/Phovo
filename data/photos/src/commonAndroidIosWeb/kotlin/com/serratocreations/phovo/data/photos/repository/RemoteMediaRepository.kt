@@ -6,15 +6,18 @@ import com.serratocreations.phovo.core.serverconfig.IosAndroidWasmServerConfigRe
 import com.serratocreations.phovo.data.photos.network.MediaNetworkDataSource
 import com.serratocreations.phovo.data.photos.repository.model.SyncResult
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.yield
 import kotlin.time.Duration.Companion.seconds
@@ -22,6 +25,7 @@ import kotlin.time.Duration.Companion.seconds
 class RemoteMediaRepositoryImpl(
     private val remotePhotosDataSource: MediaNetworkDataSource,
     private val serverConfigRepository: IosAndroidWasmServerConfigRepository,
+    applicationScope: CoroutineScope,
     logger: PhovoLogger
 ): RemoteMediaRepository {
     private val log = logger.withTag("RemoteMediaRepositoryImpl")
@@ -54,20 +58,28 @@ class RemoteMediaRepositoryImpl(
         )
     }
 
+    // TODO: Most likely there is a more sophisticated networking method to check alive
+    //  then pinging every X seconds(Investigate)
     @OptIn(ExperimentalCoroutinesApi::class)
-    override fun observeServerConnection(): Flow<Boolean> {
-        return serverConfigRepository.observeServerConfig().flatMapLatest {
-            flow {
-                if (it?.serverBaseUrlString == null) {
-                    emit(false)
-                } else {
-                    while(currentCoroutineContext().isActive) {
-                        yield()
-                        emit(remotePhotosDataSource.checkServerConnection(it.serverBaseUrlString))
-                        delay(30.seconds)
-                    }
+    private val isSeverConnected = serverConfigRepository.observeServerConfig().flatMapLatest {
+        flow {
+            if (it?.serverBaseUrlString == null) {
+                emit(false)
+            } else {
+                while(currentCoroutineContext().isActive) {
+                    yield()
+                    emit(remotePhotosDataSource.checkServerConnection(it.serverBaseUrlString))
+                    delay(15.seconds)
                 }
             }
         }
+    }.shareIn(
+        scope = applicationScope,
+        started = SharingStarted.Lazily,
+        replay = 1
+    )
+
+    override fun observeServerConnection(): Flow<Boolean> {
+        return isSeverConnected
     }
 }

@@ -117,7 +117,11 @@ class DesktopLocalMediaManager(
         val unProcessedUnknownFilesFlow: Flow<PlatformFile> = flow {
             // TODO files may become very large, investigate memory optimizations
             directoryFiles.forEach { directoryChild ->
-                if (directoryChild.isDirectory()) return@forEach
+                val fileType = directoryChild.getFileType()
+                if (fileType in setOf(FileType.Other, FileType.Directory, FileType.Partial)) {
+                    log.w { "Skipping unsupported directory child $fileType extension ${directoryChild.extension}" }
+                    return@forEach
+                }
                 yield()
                 // TODO This work can be optimized with parallel decomposition
                 val fileHash = fileHashCalculator.computeSha256(directoryChild)
@@ -151,7 +155,7 @@ class DesktopLocalMediaManager(
                 localMediaProcessor.processVideo(this, outputDirectory)
             }
 
-            FileType.Other -> null
+            FileType.Other, FileType.Partial -> null
         }?.let { mediaItem ->
             localMediaRepository.addOrUpdateMediaItem(mediaItem)
             localMediaRepository.removeProcessingClaim(mediaItem.uniqueAssetIdentifier)
@@ -165,6 +169,7 @@ class DesktopLocalMediaManager(
         val extension = this.extension.lowercase()
         // TODO this logic can be problematic if file is not actually what the extension says
         return when (extension) {
+            "part" -> FileType.Partial
             in listOf("jpg", "jpeg", "png", "heic", "webp", "gif", "bmp", "tiff") -> FileType.Photo
             in listOf("mp4", "mov", "mkv", "avi", "webm", "flv") -> FileType.Video
             else -> FileType.Other

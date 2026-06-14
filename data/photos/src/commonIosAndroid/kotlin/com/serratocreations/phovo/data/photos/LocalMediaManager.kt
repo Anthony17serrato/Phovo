@@ -2,62 +2,78 @@ package com.serratocreations.phovo.data.photos
 
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.data.photos.local.LocalMediaProcessor
-import com.serratocreations.phovo.data.photos.repository.LocalMediaRepository
+import com.serratocreations.phovo.data.photos.repository.LocalAndRemoteMediaRepository
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.consumeAsFlow
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-abstract class LocalMediaManager(
-    private val localMediaRepository: LocalMediaRepository,
+class LocalMediaManager(
+    private val localAndRemoteMediaRepository: LocalAndRemoteMediaRepository,
     private val localMediaProcessor: LocalMediaProcessor,
     private val appScope: CoroutineScope,
     logger: PhovoLogger,
 ) {
     private val log = logger.withTag("LocalMediaManager")
+    private val _localMediaState = MutableStateFlow<LocalMediaState>(Scanning)
+    val localMediaState = _localMediaState.asStateFlow()
 
     /**
      * API initializes job to process local media and synchronize to server.
      * Processing includes tasks such as extracting media metadata and generating md5 hashes and
      * deduplication logic
      */
-
-    fun initMediaProcessing(
-        // TODO It may be needed to have platform specific abstraction for media locations
-        // TODO Implement for non-desktop platforms and make not null
-        // TODO Use PlatformFile
-        localDirectory: String?
-    ) {
+    fun initMediaProcessing() {
         log.i { "initMediaProcessing" }
         appScope.launch {
+            localAndRemoteMediaRepository.clearNonFailedSyncLogs()
             // todo this approach could lead to OOM ,implement a more memory efficient way to check if media
-            //  is already processed
-            val alreadyProcessedLocalItems = localMediaRepository.phovoMediaFlow().first()
+            //  is already processed(refer to desktop media processing implementation)
+            val alreadyProcessedLocalItems = localAndRemoteMediaRepository.phovoMediaFlow().first()
             val processJob = processJob(
-                localDirectory = localDirectory,
                 localItems = alreadyProcessedLocalItems,
             )
+            // Await server configured before starting sync job
+            localAndRemoteMediaRepository.observeServerConnection().filter { it }.first()
             syncJob(processJob)
         }
     }
 
     private suspend fun handleProcessedMediaItem(mediaItem: MediaItem) {
-        localMediaRepository.addOrUpdateMediaItem(mediaItem)
+        localAndRemoteMediaRepository.addOrUpdateMediaItem(mediaItem)
     }
 
     // Syncs any local media which is still pending sync
-    protected open fun CoroutineScope.syncJob(processingJob: Job) {
-        // TODO Server may eventually support syncing to other servers, for now it is not supported
+    private fun CoroutineScope.syncJob(processingJob: Job) {
+        launch {
+            localAndRemoteMediaRepository.initiateSyncJob(processingJob)
+            localAndRemoteMediaRepository.syncProgressState.onEach { syncStatusUpdate ->
+                _localMediaState.update { currentState ->
+                    if (syncStatusUpdate.isSyncComplete) {
+                        BackupCompleteLocal(
+                            backedUpQuantity = syncStatusUpdate.syncedCount,
+                            // TODO: Implement handling of failed items
+                            failureQuantity = 0
+                        )
+                    } else {
+                        syncStatusUpdate
+                    }
+                }
+            }.launchIn(this)
+        }
     }
 
-    protected fun CoroutineScope.processJob(
-        localDirectory: String?,
+    private fun CoroutineScope.processJob(
         localItems: List<MediaItem>
     ) = launch {
         val processMediaChannel = Channel<MediaItem>()
@@ -65,7 +81,6 @@ abstract class LocalMediaManager(
         with(localMediaProcessor) {
             processLocalItems(
                 processedItems = localItems,
-                localDirectory = localDirectory,
                 processMediaChannel = processMediaChannel
             ).join()
             processMediaChannel.close()

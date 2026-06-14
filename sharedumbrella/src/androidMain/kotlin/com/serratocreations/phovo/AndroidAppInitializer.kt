@@ -18,9 +18,7 @@ class AndroidAppInitializer(
         super.initialize()
         // Android specific initialization
         applicationScope.launch {
-            localMediaManager.initMediaProcessing(
-                localDirectory = null
-            )
+            localMediaManager.initMediaProcessing()
         }
     }
 }

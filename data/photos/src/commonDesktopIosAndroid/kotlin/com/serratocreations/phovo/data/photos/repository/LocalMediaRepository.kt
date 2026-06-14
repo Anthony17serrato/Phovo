@@ -7,7 +7,6 @@ import com.serratocreations.phovo.core.database.entities.MediaItemMetadataEntity
 import com.serratocreations.phovo.core.database.entities.MediaItemWithMetadata
 import com.serratocreations.phovo.core.database.entities.ProcessingMediaEntity
 import com.serratocreations.phovo.core.database.entities.ProcessingState
-import com.serratocreations.phovo.core.database.entities.SyncLogEntity
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.core.model.MediaType
 import com.serratocreations.phovo.data.photos.mappers.toMediaItemWithMetadataEntity
@@ -15,6 +14,7 @@ import com.serratocreations.phovo.data.photos.mappers.toMediaItems
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlin.time.Clock
 
 // TODO Repository APIs should not expose DAO data models
 interface LocalMediaRepository: MediaRepository {
@@ -47,10 +47,11 @@ interface LocalMediaRepository: MediaRepository {
      * is allowed to synchronize the asset. If false another worker has
      * already claimed the asset.
      */
-    suspend fun addItemToSyncLog(assetHash: String): Boolean
+    suspend fun claimItemForSync(assetHash: String): Boolean
 
     suspend fun removeSyncAsset(assetHash: String)
-    suspend fun addSyncError(assetHash: String, errorMessage: String?)
+    suspend fun addSyncFailure(assetHash: String, errorMessage: String?)
+    suspend fun clearNonFailedSyncLogs()
 }
 
 class LocalMediaRepositoryImpl(
@@ -114,28 +115,27 @@ class LocalMediaRepositoryImpl(
     override suspend fun getNextUnsyncedItemExcludingUuidSet(
         mediaType: MediaType
     ): LocalMediaItemWithMetadata? {
+        val currentTime = Clock.System.now().toEpochMilliseconds()
         return localMediaDataSource.getNextUnsyncedLocalItemExcludingSet(
-            mediaType = mediaType
+            mediaType = mediaType,
+            currentTimeUtcMs = currentTime
         )
     }
 
-    override suspend fun addItemToSyncLog(assetHash: String): Boolean {
-        val entity = SyncLogEntity(
-            assetHash = assetHash,
-            syncError = null
-        )
-        val result = localMediaDataSource.addItemToSyncLog(entity)
-        return result != -1L
+    override suspend fun claimItemForSync(assetHash: String): Boolean {
+        return localMediaDataSource.claimItemForSync(assetHash)
     }
 
     override suspend fun removeSyncAsset(assetHash: String) =
         localMediaDataSource.removeSyncAsset(assetHash)
 
-    override suspend fun addSyncError(assetHash: String, errorMessage: String?) {
-        val syncLogEntity = SyncLogEntity(
-            assetHash = assetHash, syncError = errorMessage
-        )
-        localMediaDataSource.addSyncError(syncLogEntity)
+    override suspend fun addSyncFailure(assetHash: String, errorMessage: String?) {
+        val currentTime = Clock.System.now().toEpochMilliseconds()
+        localMediaDataSource.addSyncFailure(assetHash, errorMessage, currentTime)
+    }
+
+    override suspend fun clearNonFailedSyncLogs() {
+        localMediaDataSource.clearInProgressSyncLogs()
     }
 
     override suspend fun markAsSynced(assetHash: String) {

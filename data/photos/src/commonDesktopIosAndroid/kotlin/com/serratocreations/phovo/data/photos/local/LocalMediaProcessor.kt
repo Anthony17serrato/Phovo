@@ -29,13 +29,10 @@ interface LocalMediaProcessor {
      * metadata for.
      * @param processedItems The items which have already been processed previously by the processing
      * Job.
-     * @param localDirectory The directory where media is stored on the desktop client.
-     * (null for all other clients)
      * @return A receive channel of processed media items
      */
     fun CoroutineScope.processLocalItems(
         processedItems: List<MediaItem>,
-        localDirectory: String?,
         processMediaChannel: SendChannel<MediaItem>
     ): Job
 
