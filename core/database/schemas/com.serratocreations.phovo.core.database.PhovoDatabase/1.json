@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "116018c11406e03c7ad8cbbc5c97bc27",
+    "identityHash": "d7cd9d90ed0fbdaf67e2b0b300c4de9a",
     "entities": [
       {
         "tableName": "ServerConfigEntity",
@@ -143,7 +143,7 @@
       },
       {
         "tableName": "SyncLogEntity",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`assetHash` TEXT NOT NULL, `syncError` TEXT, PRIMARY KEY(`assetHash`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`assetHash` TEXT NOT NULL, `isSyncInProgress` INTEGER NOT NULL, `syncError` TEXT, `syncFailedCount` INTEGER NOT NULL, `lastSyncFailTimeUtc` INTEGER, PRIMARY KEY(`assetHash`))",
         "fields": [
           {
             "fieldPath": "assetHash",
@@ -152,9 +152,26 @@
             "notNull": true
           },
           {
+            "fieldPath": "isSyncInProgress",
+            "columnName": "isSyncInProgress",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
             "fieldPath": "syncError",
             "columnName": "syncError",
             "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "syncFailedCount",
+            "columnName": "syncFailedCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastSyncFailTimeUtc",
+            "columnName": "lastSyncFailTimeUtc",
+            "affinity": "INTEGER"
           }
         ],
         "primaryKey": {
@@ -167,7 +184,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '116018c11406e03c7ad8cbbc5c97bc27')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'd7cd9d90ed0fbdaf67e2b0b300c4de9a')"
     ]
   }
 }

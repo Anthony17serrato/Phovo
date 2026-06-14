@@ -3,7 +3,6 @@ package com.serratocreations.phovo.data.photos.di
 import com.serratocreations.phovo.core.common.di.APPLICATION_SCOPE
 import com.serratocreations.phovo.core.common.di.DEFAULT_DISPATCHER
 import com.serratocreations.phovo.core.common.di.IO_DISPATCHER
-import com.serratocreations.phovo.data.photos.IosAndroidLocalMediaManager
 import com.serratocreations.phovo.data.photos.LocalMediaManager
 import com.serratocreations.phovo.data.photos.network.IosAndroidMediaNetworkDataSource
 import com.serratocreations.phovo.data.photos.network.MediaNetworkDataSource
@@ -24,7 +23,8 @@ internal actual fun getAndroidDesktopIosModules(): Module = module {
             remoteMediaRepository = get(),
             applicationScope = get(APPLICATION_SCOPE),
             ioDispatcher = get(IO_DISPATCHER),
-            defaultDispatcher = get(DEFAULT_DISPATCHER)
+            defaultDispatcher = get(DEFAULT_DISPATCHER),
+            logger = get()
         )
     } binds arrayOf(
         LocalAndRemoteMediaRepository::class,
@@ -32,16 +32,14 @@ internal actual fun getAndroidDesktopIosModules(): Module = module {
     )
 
     single {
-        IosAndroidLocalMediaManager(
+        LocalMediaManager(
             localAndRemoteMediaRepository = get(),
-            localMediaRepository = get(),
             localMediaProcessor = get(),
             appScope = get(APPLICATION_SCOPE),
             logger = get()
         )
     } binds arrayOf(
-        LocalMediaManager::class,
-        IosAndroidLocalMediaManager::class
+        LocalMediaManager::class
     )
 
     single<MediaNetworkDataSource> {

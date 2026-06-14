@@ -16,7 +16,7 @@ class IosAppInitializer(
     override fun initialize() {
         super.initialize()
         applicationScope.launch {
-            localMediaManager.initMediaProcessing(null)
+            localMediaManager.initMediaProcessing()
         }
     }
 }

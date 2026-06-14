@@ -40,7 +40,7 @@ class DesktopLocalMediaProcessor(
     private val log = logger.withTag("DesktopLocalMediaProcessor")
 
     enum class FileType {
-        Directory, Photo, Video, Other
+        Directory, Photo, Video, Other, Partial
     }
 
     // TODO Migrate to Ffmpeg for metadata extraction

@@ -43,7 +43,6 @@ class AndroidLocalMediaProcessor(
 
     override fun CoroutineScope.processLocalItems(
         processedItems: List<MediaItem>,
-        localDirectory: String?,
         processMediaChannel: SendChannel<MediaItem>
     ) = launch {
         // TODO add observability of updates(Probably by registering Broadcast receiver)
