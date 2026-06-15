@@ -4,7 +4,7 @@ import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.core.model.network.MediaItemDto
 import com.serratocreations.phovo.core.serverconfig.IosAndroidWasmServerConfigRepository
 import com.serratocreations.phovo.data.photos.network.MediaNetworkDataSource
-import com.serratocreations.phovo.data.photos.repository.model.SyncResult
+import com.serratocreations.phovo.data.photos.repository.model.NetworkResult
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -43,12 +43,12 @@ class RemoteMediaRepositoryImpl(
     override suspend fun syncMedia(
         media: MediaItemDto,
         mediaUri: String
-    ): SyncResult {
+    ): NetworkResult<Unit> {
         val baseUrl = serverConfigRepository.observeServerConfig().first()?.serverBaseUrlString
         if (baseUrl == null) {
             val errorMessage = "syncMedia failed because baseUrl is null"
             log.i { errorMessage }
-            return SyncResult.SyncError(errorMessage)
+            return NetworkResult.NetworkError(errorMessage)
         }
 
         return remotePhotosDataSource.syncMedia(
