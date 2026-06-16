@@ -19,9 +19,13 @@ import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.ktor.utils.io.ByteReadChannel
 import com.serratocreations.phovo.data.photos.mappers.toMediaItem
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.io.IOException
+import kotlin.math.pow
+import kotlin.random.Random
+import kotlin.time.Duration
 
 abstract class MediaNetworkDataSource(
     private val client: HttpClient,
@@ -75,10 +79,10 @@ abstract class MediaNetworkDataSource(
 
         if (!initResponse.uploadRequired) {
             log.i { "Skipping upload: ${initResponse.message}" }
-            return NetworkResult.NetworkSuccess(Unit)
+            return@networkResultCallWrapper NetworkResult.NetworkSuccess(Unit)
         }
 
-        return chunkedUpload(mediaItemDto, mediaUri, baseUrl)
+        return@networkResultCallWrapper chunkedUpload(mediaItemDto, mediaUri, baseUrl)
     }
 
     protected abstract suspend fun chunkedUpload(
@@ -121,36 +125,65 @@ abstract class MediaNetworkDataSource(
     }
 }
 
-// TODO make improvements to Network Call Wrappers
 sealed interface NetworkCallRetryPolicy {
-    data object NONE : NetworkCallRetryPolicy
-}
+    /**
+     * The number of attempts which will be made after the first failure
+     */
+    val retryAttempts: Int
 
-private suspend inline fun networkCallWrapper(
-    retryPolicy: NetworkCallRetryPolicy = NetworkCallRetryPolicy.NONE,
-    networkCall: suspend () -> HttpResponse
-): NetworkResult<HttpResponse> {
-    return try {
-        val result = networkCall()
-        if (result.status.isSuccess()) {
-            NetworkResult.NetworkSuccess(result)
-        } else {
-            val message = "Network call failed with status: ${result.status}"
-            NetworkResult.NetworkError(message = message)
+    /**
+     * Executes the delay/suspension for the current retry attempt.
+     * @param attemptIndex The 0-based index of the current retry.
+     */
+    suspend fun executeDelay(attemptIndex: Int)
+
+    data object NONE : NetworkCallRetryPolicy {
+        override val retryAttempts: Int = 0
+        override suspend fun executeDelay(attemptIndex: Int) {}
+    }
+
+    data class RetryAfterDelay(
+        override val retryAttempts: Int = 3,
+        val delayDuration: Duration
+    ) : NetworkCallRetryPolicy {
+        override suspend fun executeDelay(attemptIndex: Int) {
+            delay(delayDuration)
         }
-    } catch (e: Exception) {
-        when (e) {
-            is IOException -> NetworkResult.NetworkError(message = "$e")
-            else -> throw e
+    }
+
+    data class RetryAfterLambda(
+        override val retryAttempts: Int = 3,
+        val lambda: suspend (attemptIndex: Int) -> Unit
+    ) : NetworkCallRetryPolicy {
+        override suspend fun executeDelay(attemptIndex: Int) {
+            lambda(attemptIndex)
+        }
+    }
+
+    class ExponentialBackoff(
+        override val retryAttempts: Int = 3,
+        val initialDelay: Duration,
+        val maxDelay: Duration,
+        val multiplier: Double = 2.0
+    ) : NetworkCallRetryPolicy {
+        override suspend fun executeDelay(attemptIndex: Int) {
+            val factor = multiplier.pow(attemptIndex.toDouble())
+            val delayMs = (initialDelay.inWholeMilliseconds * factor).toLong()
+            val finalDelayMs = minOf(delayMs, maxDelay.inWholeMilliseconds)
+
+            val jitterFactor = Random.nextDouble(-0.1, 0.1)
+            val jitter = (finalDelayMs * jitterFactor).toLong()
+
+            delay((finalDelayMs + jitter).coerceAtLeast(0))
         }
     }
 }
 
-private suspend inline fun <T> networkResultCallWrapper(
+suspend fun <T> networkResultCallWrapper(
     retryPolicy: NetworkCallRetryPolicy = NetworkCallRetryPolicy.NONE,
     networkCall: suspend () -> NetworkResult<T>
 ): NetworkResult<T> {
-    return try {
+    suspend fun getResult() = try {
         networkCall()
     } catch (e: Exception) {
         when (e) {
@@ -158,4 +191,33 @@ private suspend inline fun <T> networkResultCallWrapper(
             else -> throw e
         }
     }
+
+    var result: NetworkResult<T> = getResult()
+    if (result is NetworkResult.NetworkSuccess) return result
+
+    repeat(retryPolicy.retryAttempts) { attemptIndex ->
+        // TODO should not retry if error is network based and call is made inside of a WorkManager
+        retryPolicy.executeDelay(attemptIndex)
+
+        result = getResult()
+        if (result is NetworkResult.NetworkSuccess) return result
+    }
+
+    return result
 }
+
+suspend fun networkCallWrapper(
+    retryPolicy: NetworkCallRetryPolicy = NetworkCallRetryPolicy.NONE,
+    networkCall: suspend () -> HttpResponse
+): NetworkResult<HttpResponse> =
+    networkResultCallWrapper(
+        retryPolicy = retryPolicy
+    ) {
+        val result = networkCall()
+        if (result.status.isSuccess()) {
+            NetworkResult.NetworkSuccess(result)
+        } else {
+            val message = "Network call failed with status: ${result.status}"
+            NetworkResult.NetworkError(message = message)
+        }
+    }
