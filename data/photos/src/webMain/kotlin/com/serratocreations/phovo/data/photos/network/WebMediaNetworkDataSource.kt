@@ -3,7 +3,7 @@ package com.serratocreations.phovo.data.photos.network
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.core.model.network.BaseUrl
 import com.serratocreations.phovo.core.model.network.MediaItemDto
-import com.serratocreations.phovo.data.photos.repository.model.NetworkResult
+import com.serratocreations.phovo.core.model.network.NetworkResult
 import io.ktor.client.HttpClient
 
 class WebMediaNetworkDataSource(

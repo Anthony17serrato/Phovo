@@ -1,7 +1,7 @@
 package com.serratocreations.phovo.data.photos.repository
 
 import com.serratocreations.phovo.core.model.network.MediaItemDto
-import com.serratocreations.phovo.data.photos.repository.model.NetworkResult
+import com.serratocreations.phovo.core.model.network.NetworkResult
 import kotlinx.coroutines.flow.Flow
 
 interface RemoteMediaRepository: MediaRepository {
