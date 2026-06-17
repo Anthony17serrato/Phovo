@@ -3,7 +3,7 @@ package com.serratocreations.phovo.data.photos.network
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.core.model.network.BaseUrl
 import com.serratocreations.phovo.core.model.network.MediaItemDto
-import com.serratocreations.phovo.data.photos.repository.model.SyncResult
+import com.serratocreations.phovo.core.model.network.NetworkResult
 import com.serratocreations.phovo.data.photos.util.getPlatformFile
 import io.github.vinceglb.filekit.exists
 import io.github.vinceglb.filekit.source
@@ -25,15 +25,15 @@ class IosAndroidMediaNetworkDataSource(
         mediaItemDto: MediaItemDto,
         mediaUri: String,
         baseUrl: BaseUrl
-    ): SyncResult {
+    ): NetworkResult<Unit> {
         // TODO Clients need to be updated to use asset hash
-        val file = mediaItemDto.mediaType.getPlatformFile(mediaUri, ioDispatcher) ?: return SyncResult.SyncError(
+        val file = mediaItemDto.mediaType.getPlatformFile(mediaUri, ioDispatcher) ?: return NetworkResult.NetworkError(
             message = "${log.tag} chunkedUpload could not get platform file for $mediaItemDto"
         )
         if (!file.exists()) {
             val errorMessage = "${log.tag} chunkedUpload file not found at $mediaUri"
             log.e { errorMessage }
-            return SyncResult.SyncError(errorMessage)
+            return NetworkResult.NetworkError(errorMessage)
         }
 
         // TODO chunking has been disabled, for photographs it is mostly not needed, in the future
@@ -55,7 +55,7 @@ class IosAndroidMediaNetworkDataSource(
         } else {
             val errorMessage = "Failed upload ${mediaItemDto.assetHash}: ${response.status}"
             log.e { errorMessage }
-            SyncResult.SyncError(errorMessage)
+            NetworkResult.NetworkError(errorMessage)
         }
     }
 }

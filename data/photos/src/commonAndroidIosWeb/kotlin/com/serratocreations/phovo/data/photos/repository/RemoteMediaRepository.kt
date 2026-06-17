@@ -4,7 +4,8 @@ import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.core.model.network.MediaItemDto
 import com.serratocreations.phovo.core.serverconfig.IosAndroidWasmServerConfigRepository
 import com.serratocreations.phovo.data.photos.network.MediaNetworkDataSource
-import com.serratocreations.phovo.data.photos.repository.model.SyncResult
+import com.serratocreations.phovo.core.model.network.NetworkCallRetryPolicy
+import com.serratocreations.phovo.core.model.network.NetworkResult
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -12,6 +13,8 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
@@ -30,6 +33,10 @@ class RemoteMediaRepositoryImpl(
 ): RemoteMediaRepository {
     private val log = logger.withTag("RemoteMediaRepositoryImpl")
 
+    companion object {
+        private val CHECK_ALIVE_DELAY = 15.seconds
+    }
+
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun phovoMediaFlow(): Flow<List<MediaItem>> {
         return serverConfigRepository.observeServerConfig().flatMapLatest {
@@ -43,18 +50,22 @@ class RemoteMediaRepositoryImpl(
     override suspend fun syncMedia(
         media: MediaItemDto,
         mediaUri: String
-    ): SyncResult {
+    ): NetworkResult<Unit> {
         val baseUrl = serverConfigRepository.observeServerConfig().first()?.serverBaseUrlString
         if (baseUrl == null) {
             val errorMessage = "syncMedia failed because baseUrl is null"
             log.i { errorMessage }
-            return SyncResult.SyncError(errorMessage)
+            return NetworkResult.NetworkError(errorMessage)
         }
 
         return remotePhotosDataSource.syncMedia(
             mediaItemDto = media,
             mediaUri = mediaUri,
-            baseUrl = baseUrl
+            baseUrl = baseUrl,
+            retryPolicy = NetworkCallRetryPolicy.RetryAfterLambda {
+                // drop current state to ensure cached connection status is not used
+                isSeverConnected.drop(1).filter { it }.first()
+            }
         )
     }
 
@@ -69,7 +80,7 @@ class RemoteMediaRepositoryImpl(
                 while(currentCoroutineContext().isActive) {
                     yield()
                     emit(remotePhotosDataSource.checkServerConnection(it.serverBaseUrlString))
-                    delay(15.seconds)
+                    delay(CHECK_ALIVE_DELAY)
                 }
             }
         }

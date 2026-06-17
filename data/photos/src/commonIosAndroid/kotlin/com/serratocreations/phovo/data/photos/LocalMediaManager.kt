@@ -1,5 +1,6 @@
 package com.serratocreations.phovo.data.photos
 
+import com.serratocreations.phovo.core.common.util.logTimeToComplete
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.data.photos.local.LocalMediaProcessor
 import com.serratocreations.phovo.data.photos.repository.LocalAndRemoteMediaRepository
@@ -24,7 +25,11 @@ class LocalMediaManager(
     private val appScope: CoroutineScope,
     logger: PhovoLogger,
 ) {
-    private val log = logger.withTag("LocalMediaManager")
+    companion object {
+        private const val TAG = "LocalMediaManager"
+    }
+
+    private val log = logger.withTag(TAG)
     private val _localMediaState = MutableStateFlow<LocalMediaState>(Scanning)
     val localMediaState = _localMediaState.asStateFlow()
 
@@ -56,7 +61,13 @@ class LocalMediaManager(
     // Syncs any local media which is still pending sync
     private fun CoroutineScope.syncJob(processingJob: Job) {
         launch {
-            localAndRemoteMediaRepository.initiateSyncJob(processingJob)
+            launch {
+                val syncJob = localAndRemoteMediaRepository.initiateSyncJob(processingJob).await()
+                log.i { "syncJob $syncJob" }
+                logTimeToComplete(apiTag = "$TAG:syncJob") {
+                    syncJob.join()
+                }
+            }
             localAndRemoteMediaRepository.syncProgressState.onEach { syncStatusUpdate ->
                 _localMediaState.update { currentState ->
                     if (syncStatusUpdate.isSyncComplete) {

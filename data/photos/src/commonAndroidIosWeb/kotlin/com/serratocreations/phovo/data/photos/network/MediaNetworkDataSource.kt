@@ -4,8 +4,11 @@ import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.core.model.network.ApiEndpoints
 import com.serratocreations.phovo.core.model.network.BaseUrl
 import com.serratocreations.phovo.core.model.network.MediaItemDto
+import com.serratocreations.phovo.core.model.network.NetworkCallRetryPolicy
 import com.serratocreations.phovo.core.model.network.UploadInitResponse
-import com.serratocreations.phovo.data.photos.repository.model.SyncResult
+import com.serratocreations.phovo.data.photos.network.util.networkCallWrapper
+import com.serratocreations.phovo.data.photos.network.util.networkResultCallWrapper
+import com.serratocreations.phovo.core.model.network.NetworkResult
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -21,7 +24,6 @@ import io.ktor.utils.io.ByteReadChannel
 import com.serratocreations.phovo.data.photos.mappers.toMediaItem
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlinx.io.IOException
 
 abstract class MediaNetworkDataSource(
     private val client: HttpClient,
@@ -34,19 +36,16 @@ abstract class MediaNetworkDataSource(
     private val log = logger.withTag("MediaNetworkDataSource")
 
     fun allItemsFlow(baseUrl: BaseUrl): Flow<List<MediaItem>> = flow {
-        try {
-            val response = client.get(baseUrl / ApiEndpoints.GET_ALL_MEDIA_API)
-            if (response.status.isSuccess()) {
-                val mediaItemDtos = response.body<List<MediaItemDto>>()
-                val mediaItems = mediaItemDtos.map { dto ->
-                    dto.toMediaItem()
-                }
-                emit(mediaItems)
-            } else {
-                emit(emptyList())
+        val response = networkCallWrapper {
+            client.get(baseUrl / ApiEndpoints.GET_ALL_MEDIA_API)
+        }
+        if (response is NetworkResult.NetworkSuccess) {
+            val mediaItemDtos = response.data.body<List<MediaItemDto>>()
+            val mediaItems = mediaItemDtos.map { dto ->
+                dto.toMediaItem()
             }
-        } catch (e: Exception) {
-            log.e(e) { "Error fetching all items from server" }
+            emit(mediaItems)
+        } else {
             emit(emptyList())
         }
     }
@@ -57,46 +56,41 @@ abstract class MediaNetworkDataSource(
      * currently return a failure reason.
      */
     suspend fun checkServerConnection(baseUrl: BaseUrl): Boolean {
-        try {
-            val result = client.get(baseUrl.value)
-            return result.status.isSuccess()
-        } catch (_: IOException) {
-            return false
+        val result = networkCallWrapper {
+            client.get(baseUrl.value)
         }
+        return result is NetworkResult.NetworkSuccess
     }
 
     suspend fun syncMedia(
         mediaItemDto: MediaItemDto,
         mediaUri: String,
-        baseUrl: BaseUrl
-    ): SyncResult {
+        baseUrl: BaseUrl,
+        retryPolicy: NetworkCallRetryPolicy
+    ): NetworkResult<Unit> = networkResultCallWrapper(
+        retryPolicy = retryPolicy
+    ) {
         log.i { "syncMedia $mediaItemDto" }
 
         val uploadUrl = baseUrl / ApiEndpoints.Upload.INIT_API
-        val initResponse = try {
-            client.post(uploadUrl) {
-                contentType(ContentType.Application.Json)
-                setBody(mediaItemDto)
-            }.body<UploadInitResponse>()
-        } catch (e: IOException) {
-            val errorMessage = "error initializing upload $e"
-            log.e { errorMessage }
-            return SyncResult.SyncError(errorMessage)
-        }
+        val initResponse = client.post(uploadUrl) {
+            contentType(ContentType.Application.Json)
+            setBody(mediaItemDto)
+        }.body<UploadInitResponse>()
 
         if (!initResponse.uploadRequired) {
             log.i { "Skipping upload: ${initResponse.message}" }
-            return SyncResult.SyncSuccessful
+            return@networkResultCallWrapper NetworkResult.NetworkSuccess(Unit)
         }
 
-        return chunkedUpload(mediaItemDto, mediaUri, baseUrl)
+        return@networkResultCallWrapper chunkedUpload(mediaItemDto, mediaUri, baseUrl)
     }
 
     protected abstract suspend fun chunkedUpload(
         mediaItemDto: MediaItemDto,
         mediaUri: String,
         baseUrl: BaseUrl
-    ): SyncResult
+    ): NetworkResult<Unit>
 
     protected suspend fun syncChunk(
         chunk: ByteReadChannel,
@@ -115,26 +109,19 @@ abstract class MediaNetworkDataSource(
     protected suspend fun completeSuccessfulUpload(
         mediaItemDto: MediaItemDto,
         baseUrl: BaseUrl
-    ): SyncResult {
+    ): NetworkResult<Unit> {
         val uploadUrl = baseUrl / ApiEndpoints.Upload.COMPLETE_API
-        return try {
-            val response = client.post(uploadUrl) {
-                contentType(ContentType.Text.Plain)
-                setBody(mediaItemDto.assetHash)
-            }
-
-            if (response.status.isSuccess()) {
-                log.i { "Upload complete for ${mediaItemDto.fileName}" }
-                SyncResult.SyncSuccessful
-            } else {
-                val errorMessage = "Upload completion failed with status: ${response.status}"
-                log.e { errorMessage }
-                SyncResult.SyncError(errorMessage)
-            }
-        } catch (e: IOException) {
-            val errorMessage = "Upload completion failed: ${e.message}"
+        val response = client.post(uploadUrl) {
+            contentType(ContentType.Text.Plain)
+            setBody(mediaItemDto.assetHash)
+        }
+        return if (response.status.isSuccess()) {
+            log.i { "Upload complete for ${mediaItemDto.fileName}" }
+            NetworkResult.NetworkSuccess(Unit)
+        } else {
+            val errorMessage = "Upload completion failed with status: ${response.status}"
             log.e { errorMessage }
-            SyncResult.SyncError(errorMessage)
+            NetworkResult.NetworkError(errorMessage)
         }
     }
 }

@@ -8,7 +8,7 @@ import com.serratocreations.phovo.core.model.MediaType
 import com.serratocreations.phovo.core.model.network.MediaItemDto
 import com.serratocreations.phovo.data.photos.LocalMediaBackupProgress
 import com.serratocreations.phovo.data.photos.mappers.toMediaItemDto
-import com.serratocreations.phovo.data.photos.repository.model.SyncResult
+import com.serratocreations.phovo.core.model.network.NetworkResult
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import com.serratocreations.phovo.data.photos.repository.model.SyncImage
 import com.serratocreations.phovo.data.photos.repository.model.SyncQueueable
@@ -137,17 +137,17 @@ class LocalAndRemoteMediaRepositoryImpl(
             val result = sync(nextUnsyncedItem)
             log.i { "sync complete for item hash $assetHash result $result" }
             when (result) {
-                is SyncResult.SyncError -> {
+                is NetworkResult.NetworkError -> {
                     localMediaRepository.addSyncFailure(
                         assetHash = assetHash,
                         errorMessage = result.message
                     )
                 }
-                SyncResult.SyncSuccessful -> {
+                is NetworkResult.NetworkSuccess -> {
                     localMediaRepository.removeSyncAsset(nextUnsyncedItem.mediaItemMetadataEntity.assetHash)
                 }
             }
-            if (result is SyncResult.SyncSuccessful) {
+            if (result is NetworkResult.NetworkSuccess) {
                 _syncProgressState.update { currentState ->
                     currentState.copy(syncedCount = (currentState.syncedCount + 1))
                 }
@@ -167,13 +167,13 @@ class LocalAndRemoteMediaRepositoryImpl(
         }
     }
 
-    private suspend fun sync(mediaItemEntity: LocalMediaItemWithMetadata): SyncResult {
+    private suspend fun sync(mediaItemEntity: LocalMediaItemWithMetadata): NetworkResult<Unit> {
         val result = remoteMediaRepository.syncMedia(
             media = mediaItemEntity.mediaItemMetadataEntity.toMediaItemDto(),
             mediaUri = mediaItemEntity.localLocation.localUri
         )
         log.i { "sync complete result $result hash ${mediaItemEntity.mediaItemMetadataEntity.assetHash}" }
-        if (result is SyncResult.SyncSuccessful) {
+        if (result is NetworkResult.NetworkSuccess) {
             localMediaRepository.markAsSynced(
                 assetHash = mediaItemEntity.mediaItemMetadataEntity.assetHash
             )
