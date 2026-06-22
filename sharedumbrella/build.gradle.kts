@@ -17,11 +17,6 @@ kotlin {
         androidMain.dependencies {
 
         }
-        commonDesktopIosAndroid.dependencies {
-            if(buildFlavor == com.serratocreations.phovo.buildlogic.Flavor.Dev) {
-                implementation(projects.core.database)
-            }
-        }
         commonMain.dependencies {
             // Project dependencies
             implementation(projects.core.designsystem)
@@ -34,6 +29,9 @@ kotlin {
             implementation(projects.data.server)
             implementation(projects.data.photos)
             implementation(projects.core.navigation)
+            if(buildFlavor == com.serratocreations.phovo.buildlogic.Flavor.Dev) {
+                implementation(projects.core.database)
+            }
 
             implementation(libs.compose.resources)
             implementation(libs.serialization.json)

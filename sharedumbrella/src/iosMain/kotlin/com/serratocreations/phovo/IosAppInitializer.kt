@@ -9,10 +9,7 @@ class IosAppInitializer(
     private val applicationScope: CoroutineScope,
     serverConfigRepository: ServerConfigRepository,
     private val localMediaManager: LocalMediaManager
-): AndroidDesktopIosAppInitializer(
-    applicationScope,
-    serverConfigRepository
-) {
+): AndroidDesktopIosAppInitializer() {
     override fun initialize() {
         super.initialize()
         applicationScope.launch {

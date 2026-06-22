@@ -6,7 +6,7 @@ import com.serratocreations.phovo.core.domain.model.MediaItemWithThumbnails
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.data.photos.repository.MediaRepository
 import com.serratocreations.phovo.data.photos.repository.model.AssetLocation
-import com.serratocreations.phovo.core.serverconfig.IosAndroidWasmServerConfigRepository
+import com.serratocreations.phovo.core.serverconfig.IosAndroidServerConfigRepository
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.div
 import io.github.vinceglb.filekit.exists
@@ -19,7 +19,7 @@ import kotlinx.coroutines.flow.flowOn
 
 class ClientGetPhotosFeedWithThumbnailsUseCase(
     private val mediaRepository: MediaRepository,
-    private val serverConfigRepository: IosAndroidWasmServerConfigRepository,
+    private val serverConfigRepository: IosAndroidServerConfigRepository,
     private val ioDispatcher: CoroutineDispatcher,
     logger: PhovoLogger
 ): GetPhotosFeedWithThumbnailsUseCase {

@@ -12,7 +12,7 @@ import com.serratocreations.phovo.data.server.data.repository.ServerEventsReposi
 import org.koin.dsl.binds
 import org.koin.dsl.module
 
-internal actual fun getAndroidDesktopIosWasmModules(): org.koin.core.module.Module = module {
+internal actual fun getAndroidDesktopIosModules(): org.koin.core.module.Module = module {
     includes(getDatabaseModule())
 
     single {

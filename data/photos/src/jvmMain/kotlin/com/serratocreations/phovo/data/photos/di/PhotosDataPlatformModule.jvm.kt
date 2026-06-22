@@ -49,7 +49,3 @@ internal actual fun getAndroidDesktopIosModules(): Module = module {
         )
     }
 }
-
-internal actual fun getPlatformModulesBranch2(): Module = module {
-
-}
