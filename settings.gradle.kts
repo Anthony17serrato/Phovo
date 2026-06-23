@@ -24,7 +24,6 @@ dependencyResolutionManagement {
 
 // Application containers
 include(":applicationContainers:desktopApp")
-include(":applicationContainers:webApp")
 include(":applicationContainers:androidApp")
 
 // Umbrella module based on https://kotlinlang.org/docs/multiplatform/multiplatform-project-configuration.html#several-shared-modules

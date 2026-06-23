@@ -1,5 +1,5 @@
 plugins {
-    alias(libs.plugins.phovo.kmp.android.ios.desktop.web.library)
+    alias(libs.plugins.phovo.kmp.android.ios.desktop.library)
     alias(libs.plugins.phovo.kmp.library.koin)
     alias(libs.plugins.phovo.kmp.library.compose)
     alias(libs.plugins.serialization)
@@ -31,10 +31,6 @@ kotlin {
             implementation(libs.ktor.server.netty)
             implementation(libs.ktor.serialization)
             implementation(libs.ktor.server.content.negotiation)
-        }
-
-        webMain.dependencies {
-
         }
     }
 }

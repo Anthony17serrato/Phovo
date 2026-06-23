@@ -2,16 +2,26 @@ package com.serratocreations.phovo.data.photos.di
 
 import org.koin.core.module.Module
 import org.koin.dsl.module
+import com.serratocreations.phovo.data.photos.repository.LocalMediaRepository
+import com.serratocreations.phovo.data.photos.repository.LocalMediaRepositoryImpl
+import com.serratocreations.phovo.core.database.di.getDatabaseModule
+import org.koin.dsl.binds
 
-// TODO this configuration logic should be improved for ease of understanding
-// gets platform module for (wasm) + (android/ios/desktop)
-internal expect fun getPlatformModulesBranch1(): Module
-
-// gets platform module for (desktop) + (android/ios/wasm)
-internal expect fun getPlatformModulesBranch2(): Module
+/**
+ * In addition to common definitions for IOS, Desktop, & Android
+ * this API provides modules that are specific to each individual platform
+ */
+internal expect fun getAndroidDesktopIosModules(): Module
 
 fun getPhotosDataModule(): Module = module {
-    includes(getPlatformModulesBranch1(), getPlatformModulesBranch2())
+    includes(getAndroidDesktopIosModules(), getDatabaseModule())
 
-
+    single {
+        LocalMediaRepositoryImpl(
+            localMediaDataSource = get(),
+            logger = get()
+        )
+    } binds arrayOf(
+        LocalMediaRepository::class
+    )
 }

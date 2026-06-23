@@ -1,5 +1,5 @@
 plugins {
-    alias(libs.plugins.phovo.kmp.android.ios.desktop.web.library)
+    alias(libs.plugins.phovo.kmp.android.ios.desktop.library)
     alias(libs.plugins.phovo.kmp.library.koin)
     alias(libs.plugins.serialization)
 }
@@ -14,6 +14,7 @@ kotlin {
         }
 
         commonMain.dependencies {
+            implementation(projects.core.database)
             implementation(projects.core.common)
             implementation(projects.core.logger)
             implementation(projects.core.model)
@@ -44,14 +45,6 @@ kotlin {
 
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
-        }
-
-        webMain.dependencies {
-            implementation(libs.ktor.client.js)
-        }
-
-        commonDesktopIosAndroid.dependencies {
-            implementation(projects.core.database)
         }
     }
 }

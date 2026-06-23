@@ -2,7 +2,10 @@ package com.serratocreations.phovo.data.photos
 
 import com.serratocreations.phovo.core.common.util.logTimeToComplete
 import com.serratocreations.phovo.core.logger.PhovoLogger
+import com.serratocreations.phovo.data.photos.local.BackupCompleteLocal
 import com.serratocreations.phovo.data.photos.local.LocalMediaProcessor
+import com.serratocreations.phovo.data.photos.local.LocalMediaState
+import com.serratocreations.phovo.data.photos.local.Scanning
 import com.serratocreations.phovo.data.photos.repository.LocalAndRemoteMediaRepository
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import kotlinx.coroutines.CoroutineScope

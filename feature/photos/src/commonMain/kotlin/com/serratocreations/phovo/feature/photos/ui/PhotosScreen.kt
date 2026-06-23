@@ -29,10 +29,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.window.core.layout.WindowWidthSizeClass
 import coil3.ImageLoader
 import coil3.compose.setSingletonImageLoaderFactory
+import coil3.disk.DiskCache
 import coil3.memory.MemoryCache
 import coil3.request.CachePolicy
 import coil3.request.crossfade
 import coil3.util.DebugLogger
+import com.serratocreations.phovo.core.common.Platform
+import com.serratocreations.phovo.core.common.getPlatform
 import com.serratocreations.phovo.core.designsystem.component.CallToActionComponent
 import com.serratocreations.phovo.feature.photos.ui.components.LoadMultiResImage
 import com.serratocreations.phovo.feature.photos.ui.model.DateHeaderPhotoUiItem
@@ -42,9 +45,30 @@ import com.serratocreations.phovo.feature.photos.ui.model.VideoPhotoUiItem
 import com.serratocreations.phovo.feature.photos.util.LocalOrRemoteAssetMapper
 import com.serratocreations.phovo.feature.photos.util.getPlatformDecoderFactory
 import com.serratocreations.phovo.feature.photos.util.getPlatformFetcherFactory
+import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.absolutePath
+import io.github.vinceglb.filekit.cacheDir
 import io.github.vinceglb.filekit.coil.addPlatformFileSupport
+import io.github.vinceglb.filekit.createDirectories
+import io.github.vinceglb.filekit.div
+import okio.FileSystem
+import okio.Path.Companion.toPath
 
-expect fun ImageLoader.Builder.platformDiskCache(): ImageLoader.Builder
+fun ImageLoader.Builder.platformDiskCache(): ImageLoader.Builder =
+    this.diskCache {
+        // TODO Temporary fix ios file .absolutePath issue
+        if (getPlatform() == Platform.Ios) {
+            DiskCache.Builder().directory(FileSystem.SYSTEM_TEMPORARY_DIRECTORY / "image_cache")
+                .maxSizeBytes(512L * 1024 * 1024) // 512MB
+                .build()
+        } else {
+            val directory = (FileKit.cacheDir / "image_cache")
+            directory.createDirectories(mustCreate = false)
+            DiskCache.Builder()
+                .directory(directory.absolutePath().toPath())
+                .build()
+        }
+    }
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable

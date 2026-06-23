@@ -16,10 +16,7 @@ class DesktopAppInitializer(
     private val serverConfigRepository: DesktopServerConfigRepository,
     private val desktopServerConfigManager: DesktopServerConfigManager,
     private val localMediaManager: DesktopLocalMediaManager
-): AndroidDesktopIosAppInitializer(
-    applicationScope,
-    serverConfigRepository
-) {
+): AndroidDesktopIosAppInitializer() {
     override fun initialize() {
         super.initialize()
         // Initialize FileKit

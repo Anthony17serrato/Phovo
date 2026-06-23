@@ -1,6 +1,6 @@
 package com.serratocreations.phovo.di
 
-import com.serratocreations.phovo.AndroidDesktopIosWasmAppInitializer
+import com.serratocreations.phovo.AndroidDesktopIosAppInitializer
 import com.serratocreations.phovo.core.common.di.getCoreCommonModule
 import com.serratocreations.phovo.core.logger.KermitKoinLogger
 import com.serratocreations.phovo.core.logger.PhovoLogger
@@ -24,7 +24,7 @@ fun initApplication(config: KoinAppDeclaration? = null) = startKoin {
         getApplicationPlatformModulesFetcher().getModule()
     )
 
-    val appInitializer = KoinPlatformTools.defaultContext().get().get<AndroidDesktopIosWasmAppInitializer>()
+    val appInitializer = KoinPlatformTools.defaultContext().get().get<AndroidDesktopIosAppInitializer>()
     appInitializer.initialize()
 }
 
