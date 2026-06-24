@@ -3,6 +3,7 @@ package com.serratocreations.phovo.core.model.network
 import kotlin.jvm.JvmInline
 
 object ApiEndpoints {
+    val CHECK_ALIVE_API = Endpoint("")
     val GET_ALL_MEDIA_API = Endpoint("all_media/")
     val LOW_RES_THUMBNAIL_API = Endpoint("low_res_thumbnails/")
     val HIGH_RES_THUMBNAIL_API = Endpoint("high_res_thumbnails/")
@@ -28,6 +29,6 @@ value class Endpoint(val value: String) {
 @JvmInline
 value class BaseUrl(val value: String) {
     operator fun div(endpoint: Endpoint): String {
-        return "${this.value}${endpoint.value}"
+        return "${this.value}/${endpoint.value}"
     }
 }
