@@ -87,7 +87,7 @@ internal fun PhotoViewerScreen(
                         sourceRes = item.sourceAsset,
                         contentScale = ContentScale.Fit,
                         modifier = Modifier
-                            .sharedElement(
+                            .sharedBounds(
                                 sharedContentState = sharedElementTransition
                                     .rememberSharedContentState(key = "image-$key"),
                                 animatedVisibilityScope = animatedContentScope
