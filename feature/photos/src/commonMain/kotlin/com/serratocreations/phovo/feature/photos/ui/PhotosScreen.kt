@@ -179,7 +179,7 @@ internal fun PhotosScreen(
                                 lowRes = item.lowResThumbnail,
                                 contentScale = ContentScale.Crop,
                                 shouldLoadSequentially = true,
-                                modifier = Modifier.sharedElement(
+                                modifier = Modifier.sharedBounds(
                                     sharedContentState = sharedElementTransition
                                         .rememberSharedContentState(key = "image-$id"),
                                     animatedVisibilityScope = animatedContentScope
