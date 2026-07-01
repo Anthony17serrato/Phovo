@@ -8,16 +8,21 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.serratocreations.phovo.feature.photos.ui.components.LoadMultiResImage
 import com.serratocreations.phovo.core.domain.model.DomainAssetLocation
 import com.serratocreations.phovo.feature.photos.ui.model.ImagePhotoUiItem
@@ -42,14 +47,54 @@ internal fun PhotoViewerScreen(
     onToggleBars: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    PhotoViewerScreen(
-        item = photosViewModel.photosUiState.value.selectedPhoto,
-        sharedElementTransition = sharedElementTransition,
-        animatedContentScope = animatedContentScope,
-        areBarsVisible = areBarsVisible,
-        onToggleBars = onToggleBars,
-        modifier = modifier
-    )
+    val state by photosViewModel.photosUiState.collectAsStateWithLifecycle()
+    val photos = remember(state.photosFeed) {
+        state.photosFeed.filterIsInstance<ThumbnailPhotoUiItem>()
+    }
+    val currentSelectedPhoto = state.selectedPhoto
+
+    if (photos.isEmpty() || currentSelectedPhoto == null) return
+
+    val initialPage = remember(photos) {
+        photos.indexOf(currentSelectedPhoto).coerceAtLeast(0)
+    }
+
+    val pagerState = rememberPagerState(initialPage = initialPage) {
+        photos.size
+    }
+
+    // Sync ViewModel selectedPhoto -> Pager selection (for external changes)
+    LaunchedEffect(currentSelectedPhoto) {
+        val targetPage = photos.indexOf(currentSelectedPhoto)
+        if (targetPage >= 0 && targetPage != pagerState.currentPage) {
+            pagerState.scrollToPage(targetPage)
+        }
+    }
+
+    // Sync Pager selection -> ViewModel selectedPhoto (for swipes)
+    LaunchedEffect(pagerState.currentPage) {
+        val activePhoto = photos.getOrNull(pagerState.currentPage)
+        if (activePhoto != null && activePhoto != photosViewModel.photosUiState.value.selectedPhoto) {
+            photosViewModel.onPhotoClick(activePhoto)
+        }
+    }
+
+    HorizontalPager(
+        state = pagerState,
+        modifier = modifier.fillMaxSize(),
+        pageSpacing = 16.dp
+    ) { page ->
+        val photo = photos.getOrNull(page)
+        PhotoViewerScreen(
+            item = photo,
+            sharedElementTransition = sharedElementTransition,
+            animatedContentScope = animatedContentScope,
+            areBarsVisible = areBarsVisible,
+            onToggleBars = onToggleBars,
+            isActivePage = (page == pagerState.currentPage),
+            modifier = Modifier.fillMaxSize()
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
@@ -60,6 +105,7 @@ internal fun PhotoViewerScreen(
     animatedContentScope: AnimatedContentScope,
     areBarsVisible: Boolean,
     onToggleBars: () -> Unit,
+    isActivePage: Boolean,
     modifier: Modifier = Modifier
 ) {
     if (item == null) return
@@ -74,11 +120,10 @@ internal fun PhotoViewerScreen(
             when (item) {
                 is ImagePhotoUiItem -> {
                     val focusRequester = remember { FocusRequester() }
-                    LaunchedEffect(Unit) {
-                        // Automatically request focus when the image is displayed. This assumes there
-                        // is only one zoomable image present in the hierarchy. If you're displaying
-                        // multiple images in a pager, apply this only for the active page.
-                        focusRequester.requestFocus()
+                    LaunchedEffect(isActivePage) {
+                        if (isActivePage) {
+                            focusRequester.requestFocus()
+                        }
                     }
 
                     LoadMultiResImage(
@@ -105,23 +150,45 @@ internal fun PhotoViewerScreen(
                 is VideoPhotoUiItem -> {
                     // TODO Support both local and remote video
                     if (item.sourceAsset is DomainAssetLocation.LocalAssetLocation) {
-                        VideoPlayer(
-                            videoPlatformFile = item.sourceAsset.localAssetLocation,
-                            modifier = Modifier
-                                .sharedElement(
-                                    sharedContentState = sharedElementTransition
-                                        .rememberSharedContentState(key = "image-$key"),
-                                    animatedVisibilityScope = animatedContentScope
-                                )
-                                .clickable(
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    indication = null,
-                                    onClick = onToggleBars
-                                )
-                        )
+                        if (isActivePage) {
+                            VideoPlayer(
+                                videoPlatformFile = item.sourceAsset.localAssetLocation,
+                                modifier = Modifier
+                                    .sharedElement(
+                                        sharedContentState = sharedElementTransition
+                                            .rememberSharedContentState(key = "image-$key"),
+                                        animatedVisibilityScope = animatedContentScope
+                                    )
+                                    .clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null,
+                                        onClick = onToggleBars
+                                    )
+                            )
+                        } else {
+                            // Show static thumbnail for non-active video pages
+                            LoadMultiResImage(
+                                lowRes = item.lowResThumbnail,
+                                highRes = item.thumbnail,
+                                contentScale = ContentScale.Fit,
+                                modifier = Modifier
+                                    .sharedBounds(
+                                        sharedContentState = sharedElementTransition
+                                            .rememberSharedContentState(key = "image-$key"),
+                                        animatedVisibilityScope = animatedContentScope
+                                    )
+                                    .clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null,
+                                        onClick = onToggleBars
+                                    )
+                                    .fillMaxSize()
+                            )
+                        }
                     }
                 }
             }
         }
     }
 }
+
