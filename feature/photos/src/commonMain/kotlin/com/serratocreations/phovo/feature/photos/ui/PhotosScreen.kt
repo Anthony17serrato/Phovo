@@ -40,7 +40,7 @@ import com.serratocreations.phovo.core.designsystem.component.CallToActionCompon
 import com.serratocreations.phovo.feature.photos.ui.components.LoadMultiResImage
 import com.serratocreations.phovo.feature.photos.ui.model.DateHeaderPhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.PhotoUiItem
-import com.serratocreations.phovo.feature.photos.ui.model.ThumbnailPhotoUiItem
+import com.serratocreations.phovo.feature.photos.ui.model.MediaUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.VideoPhotoUiItem
 import com.serratocreations.phovo.feature.photos.util.LocalOrRemoteAssetMapper
 import com.serratocreations.phovo.feature.photos.util.getPlatformDecoderFactory
@@ -73,7 +73,7 @@ fun ImageLoader.Builder.platformDiskCache(): ImageLoader.Builder =
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 internal fun PhotosHomeScreen(
-    onPhotoClick: (ThumbnailPhotoUiItem) -> Unit,
+    onPhotoClick: (MediaUiItem) -> Unit,
     sharedElementTransition: SharedTransitionScope,
     animatedContentScope: AnimatedContentScope,
     photosViewModel: PhotosViewModel,
@@ -116,7 +116,7 @@ internal fun PhotosHomeScreen(
 @Composable
 internal fun PhotosScreen(
     photosItems: List<PhotoUiItem>,
-    onPhotoClick: (ThumbnailPhotoUiItem) -> Unit,
+    onPhotoClick: (MediaUiItem) -> Unit,
     sharedElementTransition: SharedTransitionScope,
     animatedContentScope: AnimatedContentScope,
     modifier: Modifier = Modifier,
@@ -155,7 +155,7 @@ internal fun PhotosScreen(
                         is DateHeaderPhotoUiItem -> {
                             GridItemSpan(maxLineSpan)
                         }
-                        is ThumbnailPhotoUiItem -> {
+                        is MediaUiItem -> {
                             GridItemSpan(1)
                         }
                     }
@@ -171,7 +171,7 @@ internal fun PhotosScreen(
                             modifier = Modifier.padding(16.dp)
                         )
                     }
-                    is ThumbnailPhotoUiItem -> with(sharedElementTransition) {
+                    is MediaUiItem -> with(sharedElementTransition) {
                         val id = item.key
                         Box(modifier = Modifier.aspectRatio(1f)) {
                             LoadMultiResImage(

@@ -7,7 +7,7 @@ data class ImagePhotoUiItem(
     override val lowResThumbnail: DomainAssetLocation?,
     override val thumbnail: DomainAssetLocation,
     override val key: String
-) : ThumbnailPhotoUiItem
+) : MediaUiItem
 
 data class VideoPhotoUiItem(
     override val sourceAsset: DomainAssetLocation,
@@ -15,9 +15,9 @@ data class VideoPhotoUiItem(
     val duration: String,
     override val thumbnail: DomainAssetLocation,
     override val key: String
-) : ThumbnailPhotoUiItem
+) : MediaUiItem
 
-sealed interface ThumbnailPhotoUiItem : PhotoUiItem {
+sealed interface MediaUiItem : PhotoUiItem {
     /** Source quality media URI */
     val sourceAsset: DomainAssetLocation
     val lowResThumbnail: DomainAssetLocation?

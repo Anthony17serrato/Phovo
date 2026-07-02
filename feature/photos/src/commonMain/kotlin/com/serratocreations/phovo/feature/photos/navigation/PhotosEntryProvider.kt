@@ -58,7 +58,7 @@ fun EntryProviderScope<NavKey>.photosEntries(
         PhotosHomeScreen(
             onPhotoClick = { uriPhotoUiItem ->
                 onShowAppBarRequested()
-                photosViewModel.onPhotoClick(uriPhotoUiItem)
+                photosViewModel.onPhotoSelected(uriPhotoUiItem)
                 navigationViewModel.navigate(PhotoDetailNavKey)
             },
             sharedElementTransition = sharedElementTransition,

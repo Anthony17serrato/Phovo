@@ -26,7 +26,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.serratocreations.phovo.feature.photos.ui.components.LoadMultiResImage
 import com.serratocreations.phovo.core.domain.model.DomainAssetLocation
 import com.serratocreations.phovo.feature.photos.ui.model.ImagePhotoUiItem
-import com.serratocreations.phovo.feature.photos.ui.model.ThumbnailPhotoUiItem
+import com.serratocreations.phovo.feature.photos.ui.model.MediaUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.VideoPhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.components.VideoPlayer
 import com.serratocreations.phovo.feature.photos.ui.components.SystemBarsController
@@ -49,7 +49,7 @@ internal fun PhotoViewerScreen(
 ) {
     val state by photosViewModel.photosUiState.collectAsStateWithLifecycle()
     val photos = remember(state.photosFeed) {
-        state.photosFeed.filterIsInstance<ThumbnailPhotoUiItem>()
+        state.photosFeed.filterIsInstance<MediaUiItem>()
     }
     val currentSelectedPhoto = state.selectedPhoto
 
@@ -75,7 +75,7 @@ internal fun PhotoViewerScreen(
     LaunchedEffect(pagerState.currentPage) {
         val activePhoto = photos.getOrNull(pagerState.currentPage)
         if (activePhoto != null && activePhoto != photosViewModel.photosUiState.value.selectedPhoto) {
-            photosViewModel.onPhotoClick(activePhoto)
+            photosViewModel.onPhotoSelected(activePhoto)
         }
     }
 
@@ -100,7 +100,7 @@ internal fun PhotoViewerScreen(
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 internal fun PhotoViewerScreen(
-    item: ThumbnailPhotoUiItem?,
+    item: MediaUiItem?,
     sharedElementTransition: SharedTransitionScope,
     animatedContentScope: AnimatedContentScope,
     areBarsVisible: Boolean,
