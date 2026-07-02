@@ -5,6 +5,7 @@ import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import com.serratocreations.phovo.core.database.PhovoDatabase
 import com.serratocreations.phovo.core.database.dao.PhovoMediaDao
 import com.serratocreations.phovo.core.database.dao.ServerConfigDao
+import com.serratocreations.phovo.core.database.dao.ClientConfigDao
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import org.koin.core.module.Module
@@ -33,5 +34,9 @@ fun getDatabaseModule(): Module = module {
 
     single<PhovoMediaDao> {
         get<PhovoDatabase>().getPhovoItemDao()
+    }
+
+    single<ClientConfigDao> {
+        get<PhovoDatabase>().getClientConfigDao()
     }
 }

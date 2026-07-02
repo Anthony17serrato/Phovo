@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "d7cd9d90ed0fbdaf67e2b0b300c4de9a",
+    "identityHash": "2bd4654bb4a03a68f9ba469551ceab41",
     "entities": [
       {
         "tableName": "ServerConfigEntity",
@@ -180,11 +180,35 @@
             "assetHash"
           ]
         }
+      },
+      {
+        "tableName": "ClientConfigEntity",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `serverUrl` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "serverUrl",
+            "columnName": "serverUrl",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
       }
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'd7cd9d90ed0fbdaf67e2b0b300c4de9a')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '2bd4654bb4a03a68f9ba469551ceab41')"
     ]
   }
 }

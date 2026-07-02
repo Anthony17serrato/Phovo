@@ -45,6 +45,7 @@ room-kmp = "2.8.4"
 serialization-json = "1.10.0"
 sqlite = "2.6.2"
 telephoto = "0.19.0"
+jmdns = "3.5.9"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -76,6 +77,7 @@ filekit-coil = { group = "io.github.vinceglb", name = "filekit-coil", version.re
 serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization-json" }
 androidx-datastore = { module = "androidx.datastore:datastore", version.ref = "androidx-datastore" }
 jetbrains-swing = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-swing", version.ref = "kmp-swing" }
+jmdns = { group = "org.jmdns", name = "jmdns", version.ref = "jmdns" }
 kermit-logging = { group = "co.touchlab", name = "kermit", version.ref = "kermit" }
 koin-android =  { group = "io.insert-koin", name = "koin-android", version.ref = "koin" }
 koin-core =     { group = "io.insert-koin", name = "koin-core", version.ref = "koin" }

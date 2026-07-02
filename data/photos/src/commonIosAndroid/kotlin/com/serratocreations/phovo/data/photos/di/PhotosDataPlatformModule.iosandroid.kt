@@ -27,6 +27,7 @@ internal actual fun getAndroidDesktopIosModules(): Module = module {
             logger = get()
         )
     } binds arrayOf(
+        RemoteMediaRepositoryImpl::class,
         RemoteMediaRepository::class
     )
 
