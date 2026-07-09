@@ -25,13 +25,11 @@ interface LocalMediaProcessor {
 
     suspend fun createLowResThumbnail(
         originalImageFile: PlatformFile,
-        assetHash: String,
-        isVideo: Boolean
+        assetHash: String
     )
 
     suspend fun createHighResThumbnail(
         originalImageFile: PlatformFile,
-        assetHash: String,
-        isVideo: Boolean
+        assetHash: String
     )
 }

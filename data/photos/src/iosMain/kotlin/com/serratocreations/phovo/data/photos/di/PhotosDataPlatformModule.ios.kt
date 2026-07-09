@@ -33,6 +33,9 @@ internal actual fun getAndroidIosModules(): Module = module {
 
     single<coil3.ImageLoader> {
         coil3.ImageLoader.Builder(coil3.PlatformContext.INSTANCE)
+            .components {
+                add(com.serratocreations.phovo.core.common.util.PhAssetFetcherFactory())
+            }
             .build()
     }
 

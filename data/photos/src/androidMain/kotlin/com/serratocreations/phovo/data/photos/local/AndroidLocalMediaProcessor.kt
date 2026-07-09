@@ -116,8 +116,8 @@ class AndroidLocalMediaProcessor(
                     //  it is needed to update
                     continue
                 }
-                createLowResThumbnail(assetPlatformFile, assetHash, isVideo = false)
-                createHighResThumbnail(assetPlatformFile, assetHash, isVideo = false)
+                createLowResThumbnail(assetPlatformFile, assetHash)
+                createHighResThumbnail(assetPlatformFile, assetHash)
                 val dateInFeed = cursor.getLongOrNull(dateTakenColumn)?.utcMsToLocalDateTime()
                     ?: resolver.parseDateTakenFromExif(androidUri)
                     ?: (cursor.getLong(dateAddedColumn) * 1000).utcMsToLocalDateTime()
@@ -181,8 +181,8 @@ class AndroidLocalMediaProcessor(
                     continue
                 }
 
-                createLowResThumbnail(assetPlatformFile, assetHash, isVideo = true)
-                createHighResThumbnail(assetPlatformFile, assetHash, isVideo = true)
+                createLowResThumbnail(assetPlatformFile, assetHash)
+                createHighResThumbnail(assetPlatformFile, assetHash)
 
                 val dateInFeed = cursor.getLongOrNull(dateTakenColumn)?.utcMsToLocalDateTime()
                     ?: (cursor.getLong(dateAddedColumn) * 1000).utcMsToLocalDateTime()
@@ -203,8 +203,7 @@ class AndroidLocalMediaProcessor(
 
     override suspend fun createLowResThumbnail(
         originalImageFile: PlatformFile,
-        assetHash: String,
-        isVideo: Boolean
+        assetHash: String
     ) {
         generateThumbnail(
             originalImageFile = originalImageFile,
@@ -217,8 +216,7 @@ class AndroidLocalMediaProcessor(
 
     override suspend fun createHighResThumbnail(
         originalImageFile: PlatformFile,
-        assetHash: String,
-        isVideo: Boolean
+        assetHash: String
     ) {
         generateThumbnail(
             originalImageFile = originalImageFile,
