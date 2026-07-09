@@ -31,13 +31,19 @@ internal actual fun getAndroidIosModules(): Module = module {
         }
     }
 
+    single<coil3.ImageLoader> {
+        coil3.ImageLoader.Builder(coil3.PlatformContext.INSTANCE)
+            .build()
+    }
+
     factory<FileHashCalculator> { IosFileHashCalculator(get(IO_DISPATCHER)) }
 
     single<LocalMediaProcessor> {
         IosLocalMediaProcessor(
             fileHashCalculator = get(),
             logger = get(),
-            ioDispatcher = get(IO_DISPATCHER)
+            ioDispatcher = get(IO_DISPATCHER),
+            imageLoader = get()
         )
     }
 }

@@ -30,11 +30,20 @@ internal actual fun getAndroidIosModules(): Module = module {
         }
     }
 
+    single<coil3.ImageLoader> {
+        coil3.ImageLoader.Builder(get<android.content.Context>())
+            .components {
+                add(coil3.video.VideoFrameDecoder.Factory())
+            }
+            .build()
+    }
+
     single<LocalMediaProcessor> {
         AndroidLocalMediaProcessor(
             ioDispatcher = get(IO_DISPATCHER),
             fileHashCalculator = get(),
             context = get(),
+            imageLoader = get(),
         )
     }
 

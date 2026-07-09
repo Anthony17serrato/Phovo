@@ -9,13 +9,26 @@ import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import androidx.core.database.getLongOrNull
+import coil3.request.ImageRequest
+import coil3.request.SuccessResult
+import coil3.toBitmap
+import com.serratocreations.phovo.core.common.HIGH_RES_THUMBNAIL_DIR
+import com.serratocreations.phovo.core.common.LOW_RES_THUMBNAIL_DIR
+import com.serratocreations.phovo.core.common.extension.androidUri
+import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.data.photos.repository.model.AssetLocation
 import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
 import com.serratocreations.phovo.data.photos.util.FileHashCalculator
 import com.serratocreations.phovo.data.photos.util.segregate
+import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.createDirectories
+import io.github.vinceglb.filekit.div
+import io.github.vinceglb.filekit.exists
+import io.github.vinceglb.filekit.filesDir
+import io.github.vinceglb.filekit.write
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.SendChannel
@@ -25,10 +38,12 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toKotlinLocalDateTime
 import kotlinx.datetime.toLocalDateTime
+import java.io.ByteArrayOutputStream
 import java.time.format.DateTimeFormatter
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.ExperimentalTime
@@ -37,7 +52,8 @@ import kotlin.time.Instant
 class AndroidLocalMediaProcessor(
     private val ioDispatcher: CoroutineDispatcher,
     private val fileHashCalculator: FileHashCalculator,
-    context: Context
+    private val context: Context,
+    private val imageLoader: coil3.ImageLoader
 ) : LocalMediaProcessor {
     private val resolver = context.contentResolver
 
@@ -51,6 +67,7 @@ class AndroidLocalMediaProcessor(
             .onEach { processedImage ->
                 processMediaChannel.send(processedImage)
             }.launchIn(this)
+
         queryVideos(processedVideos)
             .onEach { processedVideo ->
                 processMediaChannel.send(processedVideo)
@@ -70,8 +87,8 @@ class AndroidLocalMediaProcessor(
             MediaStore.Images.Media._ID,
             MediaStore.Images.Media.DISPLAY_NAME,
             MediaStore.Images.Media.SIZE,
-            MediaStore.Images.Media.DATE_TAKEN,
             MediaStore.Images.Media.DATE_ADDED,
+            MediaStore.Images.Media.DATE_TAKEN,
             MediaStore.Images.Media.RELATIVE_PATH
         )
         val selection = "${MediaStore.Images.Media.RELATIVE_PATH} LIKE ? OR ${MediaStore.Images.Media.RELATIVE_PATH} LIKE ?"
@@ -99,7 +116,8 @@ class AndroidLocalMediaProcessor(
                     //  it is needed to update
                     continue
                 }
-                createThumbnail(assetPlatformFile, assetHash, ioDispatcher)
+                createLowResThumbnail(assetPlatformFile, assetHash, isVideo = false)
+                createHighResThumbnail(assetPlatformFile, assetHash, isVideo = false)
                 val dateInFeed = cursor.getLongOrNull(dateTakenColumn)?.utcMsToLocalDateTime()
                     ?: resolver.parseDateTakenFromExif(androidUri)
                     ?: (cursor.getLong(dateAddedColumn) * 1000).utcMsToLocalDateTime()
@@ -163,6 +181,9 @@ class AndroidLocalMediaProcessor(
                     continue
                 }
 
+                createLowResThumbnail(assetPlatformFile, assetHash, isVideo = true)
+                createHighResThumbnail(assetPlatformFile, assetHash, isVideo = true)
+
                 val dateInFeed = cursor.getLongOrNull(dateTakenColumn)?.utcMsToLocalDateTime()
                     ?: (cursor.getLong(dateAddedColumn) * 1000).utcMsToLocalDateTime()
 
@@ -179,6 +200,73 @@ class AndroidLocalMediaProcessor(
             }
         }
     }.flowOn(ioDispatcher)
+
+    override suspend fun createLowResThumbnail(
+        originalImageFile: PlatformFile,
+        assetHash: String,
+        isVideo: Boolean
+    ) {
+        generateThumbnail(
+            originalImageFile = originalImageFile,
+            assetHash = assetHash,
+            size = 32,
+            quality = 60,
+            targetDirName = LOW_RES_THUMBNAIL_DIR
+        )
+    }
+
+    override suspend fun createHighResThumbnail(
+        originalImageFile: PlatformFile,
+        assetHash: String,
+        isVideo: Boolean
+    ) {
+        generateThumbnail(
+            originalImageFile = originalImageFile,
+            assetHash = assetHash,
+            size = 512,
+            quality = 60,
+            targetDirName = HIGH_RES_THUMBNAIL_DIR
+        )
+    }
+
+    private suspend fun generateThumbnail(
+        originalImageFile: PlatformFile,
+        assetHash: String,
+        size: Int,
+        quality: Int,
+        targetDirName: String
+    ): Unit = withContext(ioDispatcher) {
+        try {
+            val thumbnailDir = FileKit.filesDir / targetDirName
+            val thumbnailFile = PlatformFile(thumbnailDir, "$assetHash.jpg")
+
+            if (thumbnailFile.exists()) {
+                return@withContext
+            }
+
+            val androidUri = originalImageFile.androidFile.androidUri
+
+            val request = ImageRequest.Builder(context)
+                .data(androidUri)
+                .size(size)
+                .build()
+
+            val result = imageLoader.execute(request)
+            if (result is SuccessResult) {
+                val bitmap = result.image.toBitmap()
+                val outputStream = ByteArrayOutputStream()
+                bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, quality, outputStream)
+                val compressedBytes = outputStream.toByteArray()
+
+                thumbnailDir.createDirectories(mustCreate = false)
+                thumbnailFile write compressedBytes
+            }
+        } catch (e: Exception) {
+            PhovoLogger.withTag("AndroidLocalMediaProcessor").e(throwable = e) {
+                "generateThumbnail Failed for $originalImageFile (size=$size): ${e.message}"
+            }
+        }
+    }
 
     @OptIn(ExperimentalTime::class)
     private fun Long.utcMsToLocalDateTime(): LocalDateTime {

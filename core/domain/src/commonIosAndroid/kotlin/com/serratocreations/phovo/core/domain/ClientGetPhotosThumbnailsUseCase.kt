@@ -41,9 +41,15 @@ class ClientGetPhotosFeedWithThumbnailsUseCase(
                         null
                     }
                 }
-                // If asset is stored locally pass asset directly, if not get high-res thumb from server
+                // If asset is stored locally, check if we have a background-generated high-res thumbnail.
+                // Fallback to the original local asset file path if it hasn't been generated yet.
                 val highResThumb = if (mediaItem.assetLocation is AssetLocation.LocalAssetLocation) {
-                    mediaItem.assetLocation
+                    val cachedHighResFile = FileKit.filesDir / com.serratocreations.phovo.core.common.HIGH_RES_THUMBNAIL_DIR / "${mediaItem.uniqueAssetIdentifier}.jpg"
+                    if (cachedHighResFile.exists()) {
+                        AssetLocation.LocalAssetLocation(cachedHighResFile)
+                    } else {
+                        mediaItem.assetLocation
+                    }
                 } else {
                     AssetLocation.RemoteAssetLocation
                 }
