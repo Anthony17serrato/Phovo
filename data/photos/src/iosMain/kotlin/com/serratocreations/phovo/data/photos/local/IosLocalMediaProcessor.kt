@@ -1,5 +1,6 @@
 package com.serratocreations.phovo.data.photos.local
 
+import coil3.ImageLoader
 import com.serratocreations.phovo.core.common.util.phAssetUriFromLocalId
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.data.photos.repository.model.AssetLocation
@@ -50,7 +51,7 @@ class IosLocalMediaProcessor(
     private val fileHashCalculator: FileHashCalculator,
     private val logger: PhovoLogger,
     private val ioDispatcher: CoroutineDispatcher,
-    private val imageLoader: coil3.ImageLoader
+    private val imageLoader: ImageLoader
 ) : LocalMediaProcessor {
     private val log = PhovoLogger.withTag("IosLocalMediaProcessor")
     private val thumbnailExtractor = ThumbnailExtractor(

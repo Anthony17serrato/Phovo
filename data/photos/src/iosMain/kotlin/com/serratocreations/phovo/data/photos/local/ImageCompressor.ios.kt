@@ -2,15 +2,8 @@ package com.serratocreations.phovo.data.photos.local
 
 import coil3.Image
 import coil3.toBitmap
-import io.github.vinceglb.filekit.PlatformFile
-import io.github.vinceglb.filekit.absolutePath
-import okio.Path.Companion.toPath
 import org.jetbrains.skia.Image as SkiaImage
 import org.jetbrains.skia.EncodedImageFormat
-
-actual fun PlatformFile.toCoilData(): Any {
-    return this.absolutePath().toPath()
-}
 
 actual fun Image.compressToJpeg(quality: Int): ByteArray {
     val bitmap = this.toBitmap()

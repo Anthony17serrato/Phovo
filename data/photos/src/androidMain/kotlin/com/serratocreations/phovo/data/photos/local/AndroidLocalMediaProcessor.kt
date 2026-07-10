@@ -9,6 +9,7 @@ import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import androidx.core.database.getLongOrNull
+import coil3.ImageLoader
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.data.photos.repository.model.AssetLocation
 import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
@@ -39,7 +40,7 @@ class AndroidLocalMediaProcessor(
     private val ioDispatcher: CoroutineDispatcher,
     private val fileHashCalculator: FileHashCalculator,
     private val context: Context,
-    private val imageLoader: coil3.ImageLoader,
+    private val imageLoader: ImageLoader,
     private val logger: PhovoLogger
 ) : LocalMediaProcessor {
     private val resolver = context.contentResolver

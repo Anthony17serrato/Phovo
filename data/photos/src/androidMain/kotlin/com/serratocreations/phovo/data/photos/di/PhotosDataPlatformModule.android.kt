@@ -1,10 +1,14 @@
 package com.serratocreations.phovo.data.photos.di
 
+import android.content.Context
+import coil3.ImageLoader
+import coil3.video.VideoFrameDecoder
 import com.serratocreations.phovo.core.common.di.IO_DISPATCHER
 import com.serratocreations.phovo.data.photos.local.AndroidLocalMediaProcessor
 import com.serratocreations.phovo.data.photos.local.LocalMediaProcessor
 import com.serratocreations.phovo.data.photos.util.AndroidFileHashCalculator
 import com.serratocreations.phovo.data.photos.util.FileHashCalculator
+import io.github.vinceglb.filekit.coil.addPlatformFileSupport
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -30,10 +34,11 @@ internal actual fun getAndroidIosModules(): Module = module {
         }
     }
 
-    single<coil3.ImageLoader> {
-        coil3.ImageLoader.Builder(get<android.content.Context>())
+    single<ImageLoader> {
+        ImageLoader.Builder(get<Context>())
             .components {
-                add(coil3.video.VideoFrameDecoder.Factory())
+                add(VideoFrameDecoder.Factory())
+                addPlatformFileSupport()
             }
             .build()
     }

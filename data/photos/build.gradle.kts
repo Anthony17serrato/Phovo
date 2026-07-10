@@ -23,6 +23,7 @@ kotlin {
             implementation(libs.kotlin.datetime)
             implementation(libs.coil.compose)
             implementation(libs.coil.video)
+            implementation(libs.filekit.coil)
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.serialization)
             implementation(libs.ktor.client.content.negotiation)

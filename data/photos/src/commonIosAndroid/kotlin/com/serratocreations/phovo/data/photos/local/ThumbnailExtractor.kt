@@ -19,15 +19,13 @@ import co.touchlab.kermit.Logger
 import com.serratocreations.phovo.core.common.HIGH_RES_THUMBNAIL_DIR
 import com.serratocreations.phovo.core.common.LOW_RES_THUMBNAIL_DIR
 
-expect fun PlatformFile.toCoilData(): Any
-
 expect fun Image.compressToJpeg(quality: Int): ByteArray
 
 class ThumbnailExtractor(
     private val context: PlatformContext,
-    private val imageLoader: ImageLoader,
     private val ioDispatcher: CoroutineDispatcher,
-    private val logger: Logger
+    private val logger: Logger,
+    private val imageLoader: ImageLoader
 ) {
 
     suspend fun createLowResThumbnail(
@@ -72,7 +70,7 @@ class ThumbnailExtractor(
             }
 
             val request = ImageRequest.Builder(context)
-                .data(originalImageFile.toCoilData())
+                .data(originalImageFile)
                 .size(size)
                 .build()
 
