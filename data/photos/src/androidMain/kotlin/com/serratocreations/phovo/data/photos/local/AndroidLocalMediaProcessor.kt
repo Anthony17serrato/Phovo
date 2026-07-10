@@ -9,6 +9,8 @@ import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import androidx.core.database.getLongOrNull
+import coil3.ImageLoader
+import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.data.photos.repository.model.AssetLocation
 import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
@@ -37,9 +39,17 @@ import kotlin.time.Instant
 class AndroidLocalMediaProcessor(
     private val ioDispatcher: CoroutineDispatcher,
     private val fileHashCalculator: FileHashCalculator,
-    context: Context
+    private val context: Context,
+    private val imageLoader: ImageLoader,
+    private val logger: PhovoLogger
 ) : LocalMediaProcessor {
     private val resolver = context.contentResolver
+    private val thumbnailExtractor = ThumbnailExtractor(
+        context = context,
+        imageLoader = imageLoader,
+        ioDispatcher = ioDispatcher,
+        logger = logger
+    )
 
     override fun CoroutineScope.processLocalItems(
         processedItems: List<MediaItem>,
@@ -51,6 +61,7 @@ class AndroidLocalMediaProcessor(
             .onEach { processedImage ->
                 processMediaChannel.send(processedImage)
             }.launchIn(this)
+
         queryVideos(processedVideos)
             .onEach { processedVideo ->
                 processMediaChannel.send(processedVideo)
@@ -70,8 +81,8 @@ class AndroidLocalMediaProcessor(
             MediaStore.Images.Media._ID,
             MediaStore.Images.Media.DISPLAY_NAME,
             MediaStore.Images.Media.SIZE,
-            MediaStore.Images.Media.DATE_TAKEN,
             MediaStore.Images.Media.DATE_ADDED,
+            MediaStore.Images.Media.DATE_TAKEN,
             MediaStore.Images.Media.RELATIVE_PATH
         )
         val selection = "${MediaStore.Images.Media.RELATIVE_PATH} LIKE ? OR ${MediaStore.Images.Media.RELATIVE_PATH} LIKE ?"
@@ -99,7 +110,8 @@ class AndroidLocalMediaProcessor(
                     //  it is needed to update
                     continue
                 }
-                createThumbnail(assetPlatformFile, assetHash, ioDispatcher)
+                thumbnailExtractor.createLowResThumbnail(assetPlatformFile, assetHash)
+                thumbnailExtractor.createHighResThumbnail(assetPlatformFile, assetHash)
                 val dateInFeed = cursor.getLongOrNull(dateTakenColumn)?.utcMsToLocalDateTime()
                     ?: resolver.parseDateTakenFromExif(androidUri)
                     ?: (cursor.getLong(dateAddedColumn) * 1000).utcMsToLocalDateTime()
@@ -162,6 +174,9 @@ class AndroidLocalMediaProcessor(
                     //  it is needed to update
                     continue
                 }
+
+                thumbnailExtractor.createLowResThumbnail(assetPlatformFile, assetHash)
+                thumbnailExtractor.createHighResThumbnail(assetPlatformFile, assetHash)
 
                 val dateInFeed = cursor.getLongOrNull(dateTakenColumn)?.utcMsToLocalDateTime()
                     ?: (cursor.getLong(dateAddedColumn) * 1000).utcMsToLocalDateTime()

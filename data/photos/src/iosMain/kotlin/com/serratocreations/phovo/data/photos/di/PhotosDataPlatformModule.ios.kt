@@ -1,6 +1,7 @@
 package com.serratocreations.phovo.data.photos.di
 
 import com.serratocreations.phovo.core.common.di.IO_DISPATCHER
+import com.serratocreations.phovo.core.common.util.PhAssetFetcherFactory
 import com.serratocreations.phovo.data.photos.local.LocalMediaProcessor
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.darwin.Darwin
@@ -10,6 +11,7 @@ import io.ktor.serialization.kotlinx.json.json
 import com.serratocreations.phovo.data.photos.local.IosLocalMediaProcessor
 import com.serratocreations.phovo.data.photos.util.FileHashCalculator
 import com.serratocreations.phovo.data.photos.util.IosFileHashCalculator
+import io.github.vinceglb.filekit.coil.addPlatformFileSupport
 import org.koin.core.module.Module
 import org.koin.dsl.module
 import kotlin.time.Duration.Companion.minutes
@@ -31,13 +33,23 @@ internal actual fun getAndroidIosModules(): Module = module {
         }
     }
 
+    single<coil3.ImageLoader> {
+        coil3.ImageLoader.Builder(coil3.PlatformContext.INSTANCE)
+            .components {
+                add(PhAssetFetcherFactory())
+                addPlatformFileSupport()
+            }
+            .build()
+    }
+
     factory<FileHashCalculator> { IosFileHashCalculator(get(IO_DISPATCHER)) }
 
     single<LocalMediaProcessor> {
         IosLocalMediaProcessor(
             fileHashCalculator = get(),
             logger = get(),
-            ioDispatcher = get(IO_DISPATCHER)
+            ioDispatcher = get(IO_DISPATCHER),
+            imageLoader = get()
         )
     }
 }

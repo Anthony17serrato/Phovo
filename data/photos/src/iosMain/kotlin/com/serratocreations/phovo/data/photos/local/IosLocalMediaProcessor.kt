@@ -1,5 +1,6 @@
 package com.serratocreations.phovo.data.photos.local
 
+import coil3.ImageLoader
 import com.serratocreations.phovo.core.common.util.phAssetUriFromLocalId
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.data.photos.repository.model.AssetLocation
@@ -48,61 +49,68 @@ import kotlin.uuid.ExperimentalUuidApi
 
 class IosLocalMediaProcessor(
     private val fileHashCalculator: FileHashCalculator,
-    logger: PhovoLogger,
-    private val ioDispatcher: CoroutineDispatcher
+    private val logger: PhovoLogger,
+    private val ioDispatcher: CoroutineDispatcher,
+    private val imageLoader: ImageLoader
 ) : LocalMediaProcessor {
-    private val log = logger.withTag("IosPhovoItemDao")
+    private val log = PhovoLogger.withTag("IosLocalMediaProcessor")
+    private val thumbnailExtractor = ThumbnailExtractor(
+        context = coil3.PlatformContext.INSTANCE,
+        imageLoader = imageLoader,
+        ioDispatcher = ioDispatcher,
+        logger = logger
+    )
 
     override fun CoroutineScope.processLocalItems(
         processedItems: List<MediaItem>,
         processMediaChannel: SendChannel<MediaItem>
     ) = launch {
-        requestPhotoLibraryPermission()
-        val status = PHPhotoLibrary.authorizationStatus()
-        log.i { "Photo Library Authorization Status: $status" }
-        val (processedVideos, processedImages) = processedItems.segregate()
-        fetchImages(processedImages).onEach { processedImage ->
-            processMediaChannel.send(processedImage)
-        }.launchIn(this)
-        fetchVideos(processedVideos).onEach { processedVideo ->
-            processMediaChannel.send(processedVideo)
-        }.launchIn(this)
-    }
-
-    private suspend fun requestPhotoLibraryPermission() =
-        suspendCancellableCoroutine { continuation ->
-            PHPhotoLibrary.requestAuthorizationForAccessLevel(PHAccessLevelReadWrite) { status ->
-                when (status) {
-                    PHAuthorizationStatusAuthorized -> {
-                        log.i { "Photo Library access granted" }
-                        // Proceed with photo fetching logic
-                    }
-
-                    PHAuthorizationStatusDenied -> {
-                        log.w { "Photo Library access denied" }
-                        // Guide the user to settings if needed
-                    }
-
-                    PHAuthorizationStatusRestricted -> {
-                        log.w { "Photo Library access restricted" }
-                        // Handle the case for restricted access (e.g., parental controls)
-                    }
-
-                    PHAuthorizationStatusNotDetermined -> {
-                        log.w { "Photo Library access not determined" }
-                        // The user hasn't been asked yet, possibly retry request
-                    }
-
-                    PHAuthorizationStatusLimited -> {
-                        log.i { "Photo Library access limited" }
-                    }
-                }
-                continuation.resume(Unit)
+        val authorizationStatus = PHPhotoLibrary.authorizationStatusForAccessLevel(PHAccessLevelReadWrite)
+        when(authorizationStatus) {
+            PHAuthorizationStatusAuthorized -> {
+                log.i { "PHPhotoLibrary authorized" }
+                processAuthorizedItems(processedItems, processMediaChannel)
             }
-            continuation.invokeOnCancellation {
-                // request does not have a cancel API, do nothing
+            PHAuthorizationStatusLimited -> {
+                log.i { "PHPhotoLibrary limited" }
+                processAuthorizedItems(processedItems, processMediaChannel)
+            }
+            PHAuthorizationStatusNotDetermined -> {
+                log.w { "PHPhotoLibrary permission not determined" }
+                requestPermissions()
+                processAuthorizedItems(processedItems, processMediaChannel)
+            }
+            PHAuthorizationStatusRestricted -> {
+                log.w { "PHPhotoLibrary restricted permission" }
+            }
+            PHAuthorizationStatusDenied -> {
+                log.w { "PHPhotoLibrary permission denied" }
             }
         }
+    }
+
+    private fun CoroutineScope.processAuthorizedItems(
+        processedItems: List<MediaItem>,
+        processMediaChannel: SendChannel<MediaItem>
+    ) {
+        val (processedVideos, processedImages) = processedItems.segregate()
+        fetchImages(processedImages)
+            .onEach { processMediaChannel.send(it) }
+            .launchIn(this)
+
+        fetchVideos(processedVideos)
+            .onEach { processMediaChannel.send(it) }
+            .launchIn(this)
+    }
+
+    private suspend fun requestPermissions(): Boolean = suspendCancellableCoroutine { continuation ->
+        PHPhotoLibrary.requestAuthorizationForAccessLevel(PHAccessLevelReadWrite) { status ->
+            continuation.resume(status == PHAuthorizationStatusAuthorized || status == PHAuthorizationStatusLimited)
+        }
+        continuation.invokeOnCancellation {
+            // request does not have a cancel API, do nothing
+        }
+    }
 
     @OptIn(ExperimentalForeignApi::class, ExperimentalTime::class, ExperimentalUuidApi::class)
     private fun fetchImages(processedImages: List<MediaImageItem>): Flow<MediaImageItem> = flow {
@@ -116,17 +124,17 @@ class IosLocalMediaProcessor(
         }
         log.i { "IosPhovoItemDao images $imageItems" }
         imageItems.forEach { asset ->
-            val assetUri = AssetLocation.LocalAssetLocation(
-                PlatformFile(phAssetUriFromLocalId(asset.localIdentifier).toString())
-            )
-            val fullSizeAssetNsurl = fetchImageURL(asset = asset) ?: run {
+            val assetPlatformFile = PlatformFile(phAssetUriFromLocalId(asset.localIdentifier).toString())
+            val assetUri = AssetLocation.LocalAssetLocation(assetPlatformFile)
+            val fullSizeAssetNsurl = fetchAssetNSURL(asset = asset) ?: run {
                 log.e { "Could not get full size asset for $assetUri" }
                 return@forEach
             }
             val fullSizeAssetFile = PlatformFile(fullSizeAssetNsurl)
             val assetHash = fileHashCalculator.computeSha256(fullSizeAssetFile)
             if (assetHash in processedImageHashes) return@forEach
-            createThumbnail(fullSizeAssetFile, assetHash = assetHash, ioDispatcher)
+            thumbnailExtractor.createLowResThumbnail(assetPlatformFile, assetHash = assetHash)
+            thumbnailExtractor.createHighResThumbnail(assetPlatformFile, assetHash = assetHash)
 
             val resource = PHAssetResource.assetResourcesForAsset(asset)
                 .firstOrNull() as? PHAssetResource ?: return@forEach
@@ -161,16 +169,19 @@ class IosLocalMediaProcessor(
         }
         log.i { "IosPhovoItemDao fetchVideos $videoItems" }
         videoItems.forEach { asset ->
-            val assetUri = AssetLocation.LocalAssetLocation(
-                PlatformFile(phAssetUriFromLocalId(asset.localIdentifier).toString())
-            )
-            val fullSizeAssetNsurl = fetchImageURL(asset = asset) ?: run {
+            val assetPlatformFile = PlatformFile(phAssetUriFromLocalId(asset.localIdentifier).toString())
+            val assetUri = AssetLocation.LocalAssetLocation(assetPlatformFile)
+            val fullSizeAssetNsurl = fetchAssetNSURL(asset = asset) ?: run {
                 log.e { "Could not get full size asset for $assetUri" }
                 return@forEach
             }
             val fullSizeAssetFile = PlatformFile(fullSizeAssetNsurl)
             val assetHash = fileHashCalculator.computeSha256(fullSizeAssetFile)
             if (assetHash in processedVideoHashes) return@forEach
+
+            thumbnailExtractor.createLowResThumbnail(assetPlatformFile, assetHash = assetHash)
+            thumbnailExtractor.createHighResThumbnail(assetPlatformFile, assetHash = assetHash)
+
             val resource = PHAssetResource.assetResourcesForAsset(asset)
                 .firstOrNull() as? PHAssetResource ?: return@forEach
             val name = resource.originalFilename
@@ -193,7 +204,7 @@ class IosLocalMediaProcessor(
         }
     }.flowOn(ioDispatcher)
 
-    private suspend fun fetchImageURL(asset: PHAsset): NSURL? = suspendCancellableCoroutine { continuation ->
+    private suspend fun fetchAssetNSURL(asset: PHAsset): NSURL? = suspendCancellableCoroutine { continuation ->
         val options = PHContentEditingInputRequestOptions().apply {
             networkAccessAllowed = false
         }
