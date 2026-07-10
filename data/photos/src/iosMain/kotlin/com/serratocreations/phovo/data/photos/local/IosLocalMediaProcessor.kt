@@ -1,9 +1,5 @@
 package com.serratocreations.phovo.data.photos.local
 
-import coil3.request.ErrorResult
-import coil3.request.SuccessResult
-import com.serratocreations.phovo.core.common.HIGH_RES_THUMBNAIL_DIR
-import com.serratocreations.phovo.core.common.LOW_RES_THUMBNAIL_DIR
 import com.serratocreations.phovo.core.common.util.phAssetUriFromLocalId
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.data.photos.repository.model.AssetLocation
@@ -12,13 +8,7 @@ import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
 import com.serratocreations.phovo.data.photos.util.FileHashCalculator
 import com.serratocreations.phovo.data.photos.util.segregate
-import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.PlatformFile
-import io.github.vinceglb.filekit.createDirectories
-import io.github.vinceglb.filekit.div
-import io.github.vinceglb.filekit.exists
-import io.github.vinceglb.filekit.filesDir
-import io.github.vinceglb.filekit.write
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -30,7 +20,6 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.withContext
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toKotlinInstant
 import kotlinx.datetime.toLocalDateTime
@@ -56,10 +45,6 @@ import kotlin.coroutines.resume
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 import kotlin.uuid.ExperimentalUuidApi
-import org.jetbrains.skia.Image as SkiaImage
-import org.jetbrains.skia.EncodedImageFormat
-import coil3.toBitmap
-import kotlinx.coroutines.CancellationException
 
 class IosLocalMediaProcessor(
     private val fileHashCalculator: FileHashCalculator,
@@ -68,6 +53,12 @@ class IosLocalMediaProcessor(
     private val imageLoader: coil3.ImageLoader
 ) : LocalMediaProcessor {
     private val log = PhovoLogger.withTag("IosLocalMediaProcessor")
+    private val thumbnailExtractor = ThumbnailExtractor(
+        context = coil3.PlatformContext.INSTANCE,
+        imageLoader = imageLoader,
+        ioDispatcher = ioDispatcher,
+        logger = logger
+    )
 
     override fun CoroutineScope.processLocalItems(
         processedItems: List<MediaItem>,
@@ -141,8 +132,8 @@ class IosLocalMediaProcessor(
             val fullSizeAssetFile = PlatformFile(fullSizeAssetNsurl)
             val assetHash = fileHashCalculator.computeSha256(fullSizeAssetFile)
             if (assetHash in processedImageHashes) return@forEach
-            createLowResThumbnail(assetPlatformFile, assetHash = assetHash)
-            createHighResThumbnail(assetPlatformFile, assetHash = assetHash)
+            thumbnailExtractor.createLowResThumbnail(assetPlatformFile, assetHash = assetHash)
+            thumbnailExtractor.createHighResThumbnail(assetPlatformFile, assetHash = assetHash)
 
             val resource = PHAssetResource.assetResourcesForAsset(asset)
                 .firstOrNull() as? PHAssetResource ?: return@forEach
@@ -187,8 +178,8 @@ class IosLocalMediaProcessor(
             val assetHash = fileHashCalculator.computeSha256(fullSizeAssetFile)
             if (assetHash in processedVideoHashes) return@forEach
 
-            createLowResThumbnail(assetPlatformFile, assetHash = assetHash)
-            createHighResThumbnail(assetPlatformFile, assetHash = assetHash)
+            thumbnailExtractor.createLowResThumbnail(assetPlatformFile, assetHash = assetHash)
+            thumbnailExtractor.createHighResThumbnail(assetPlatformFile, assetHash = assetHash)
 
             val resource = PHAssetResource.assetResourcesForAsset(asset)
                 .firstOrNull() as? PHAssetResource ?: return@forEach
@@ -226,75 +217,6 @@ class IosLocalMediaProcessor(
         // Handle cancellation perfectly
         continuation.invokeOnCancellation {
             asset.cancelContentEditingInputRequest(requestID)
-        }
-    }
-
-    override suspend fun createLowResThumbnail(
-        originalImageFile: PlatformFile,
-        assetHash: String
-    ) {
-        generateThumbnail(
-            originalImageFile = originalImageFile,
-            assetHash = assetHash,
-            size = 32.0,
-            quality = 0.6,
-            targetDirName = LOW_RES_THUMBNAIL_DIR
-        )
-    }
-
-    override suspend fun createHighResThumbnail(
-        originalImageFile: PlatformFile,
-        assetHash: String
-    ) {
-        generateThumbnail(
-            originalImageFile = originalImageFile,
-            assetHash = assetHash,
-            size = 512.0,
-            quality = 0.6,
-            targetDirName = HIGH_RES_THUMBNAIL_DIR
-        )
-    }
-
-    @OptIn(ExperimentalForeignApi::class)
-    private suspend fun generateThumbnail(
-        originalImageFile: PlatformFile,
-        assetHash: String,
-        size: Double,
-        quality: Double,
-        targetDirName: String
-    ): Unit = withContext(ioDispatcher) {
-        try {
-            val thumbnailDir = FileKit.filesDir / targetDirName
-            val thumbnailFile = PlatformFile(thumbnailDir, "$assetHash.jpg")
-
-            if (thumbnailFile.exists()) {
-                return@withContext
-            }
-
-            val request = coil3.request.ImageRequest.Builder(coil3.PlatformContext.INSTANCE)
-                .data(originalImageFile)
-                .size(size.toInt())
-                .build()
-
-            when (val result = imageLoader.execute(request)) {
-                is ErrorResult -> {
-                    throw result.throwable
-                }
-                is SuccessResult -> {
-                    val bitmap = result.image.toBitmap()
-                    val skiaImage = SkiaImage.makeFromBitmap(bitmap)
-                    val data = skiaImage.encodeToData(EncodedImageFormat.JPEG, (quality * 100).toInt())
-                    val compressedBytes = data?.bytes
-
-                    if (compressedBytes != null) {
-                        thumbnailDir.createDirectories(mustCreate = false)
-                        thumbnailFile write compressedBytes
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            if (e is CancellationException) throw e
-            logger.e { "generateThumbnail Failed for $originalImageFile (size=$size): $e" }
         }
     }
 }

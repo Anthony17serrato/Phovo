@@ -1,7 +1,6 @@
 package com.serratocreations.phovo.data.photos.local
 
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
-import io.github.vinceglb.filekit.PlatformFile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.SendChannel
@@ -22,14 +21,4 @@ interface LocalMediaProcessor {
         processedItems: List<MediaItem>,
         processMediaChannel: SendChannel<MediaItem>
     ): Job
-
-    suspend fun createLowResThumbnail(
-        originalImageFile: PlatformFile,
-        assetHash: String
-    )
-
-    suspend fun createHighResThumbnail(
-        originalImageFile: PlatformFile,
-        assetHash: String
-    )
 }
