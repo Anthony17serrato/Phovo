@@ -44,6 +44,7 @@ internal actual fun getAndroidIosModules(): Module = module {
             fileHashCalculator = get(),
             context = get(),
             imageLoader = get(),
+            logger = get()
         )
     }
 
