@@ -19,7 +19,7 @@ import co.touchlab.kermit.Logger
 import com.serratocreations.phovo.core.common.HIGH_RES_THUMBNAIL_DIR
 import com.serratocreations.phovo.core.common.LOW_RES_THUMBNAIL_DIR
 
-expect fun Image.compressToJpeg(quality: Int): ByteArray
+expect fun Image.compressToWebp(quality: Int): ByteArray
 
 class ThumbnailExtractor(
     private val context: PlatformContext,
@@ -63,7 +63,7 @@ class ThumbnailExtractor(
     ): Unit = withContext(ioDispatcher) {
         try {
             val thumbnailDir = FileKit.filesDir / targetDirName
-            val thumbnailFile = PlatformFile(thumbnailDir, "$assetHash.jpg")
+            val thumbnailFile = PlatformFile(thumbnailDir, "$assetHash.webp")
 
             if (thumbnailFile.exists()) {
                 return@withContext
@@ -79,7 +79,7 @@ class ThumbnailExtractor(
                     throw result.throwable
                 }
                 is SuccessResult -> {
-                    val compressedBytes = result.image.compressToJpeg(quality)
+                    val compressedBytes = result.image.compressToWebp(quality)
                     thumbnailDir.createDirectories(mustCreate = false)
                     thumbnailFile write compressedBytes
                 }

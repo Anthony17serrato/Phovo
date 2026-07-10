@@ -5,9 +5,9 @@ import coil3.toBitmap
 import org.jetbrains.skia.Image as SkiaImage
 import org.jetbrains.skia.EncodedImageFormat
 
-actual fun Image.compressToJpeg(quality: Int): ByteArray {
+actual fun Image.compressToWebp(quality: Int): ByteArray {
     val bitmap = this.toBitmap()
     val skiaImage = SkiaImage.makeFromBitmap(bitmap)
-    val data = skiaImage.encodeToData(EncodedImageFormat.JPEG, quality)
+    val data = skiaImage.encodeToData(EncodedImageFormat.WEBP, quality)
     return data?.bytes ?: throw IllegalStateException("Failed to encode Skia image")
 }
