@@ -11,8 +11,7 @@ kotlin {
         commonMain.dependencies {
             implementation(libs.filekit.core)
             implementation(projects.core.model)
-        }
-        jvmMain.dependencies {
+            implementation(projects.core.logger)
             implementation(projects.core.database)
         }
         commonTest.dependencies {

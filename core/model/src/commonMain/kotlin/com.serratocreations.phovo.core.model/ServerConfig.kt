@@ -14,7 +14,8 @@ import io.github.vinceglb.filekit.PlatformFile
 sealed interface ServerConfig {
 
     data class ServerSpecificServerConfig(
-        val backupDirectory: PlatformFile
+        val backupDirectory: PlatformFile,
+        val serverName: String
     ): ServerConfig
 
     data class ClientSpecificServerConfig(

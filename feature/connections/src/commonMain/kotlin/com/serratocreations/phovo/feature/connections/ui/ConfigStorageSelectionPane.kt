@@ -9,5 +9,7 @@ expect fun ConfigStorageSelectionPane(
     onSelectedDirectory: (PlatformFile) -> Unit,
     selectedDirectory: PlatformFile?,
     onClickEnableServer: () -> Unit,
+    serverName: String,
+    onServerNameChange: (String) -> Unit,
     modifier: Modifier = Modifier
 )

@@ -6,34 +6,123 @@ import com.serratocreations.phovo.data.server.data.ConfigStatus
 import com.serratocreations.phovo.data.server.data.DesktopServerConfigManager
 import com.serratocreations.phovo.data.server.data.ServerConfigManager
 import com.serratocreations.phovo.core.model.ServerConfig
+import com.serratocreations.phovo.core.serverconfig.ServerConfigRepository
+import com.serratocreations.phovo.core.serverconfig.discovery.ServerDiscoveryManager
+import com.serratocreations.phovo.core.serverconfig.discovery.DiscoveredServer
+import com.serratocreations.phovo.core.designsystem.component.PhovoRoute
 import io.github.vinceglb.filekit.PlatformFile
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 class ConnectionsViewModel(
     /** Only available on desktop clients. */
-    private val serverConfigManager: ServerConfigManager
+    private val serverConfigManager: ServerConfigManager,
+    private val serverConfigRepository: ServerConfigRepository,
+    private val serverDiscoveryManager: ServerDiscoveryManager
 ): ViewModel() {
     private val initialState = ConnectionsUiState(
         doesCurrentDeviceSupportServer = serverConfigManager is DesktopServerConfigManager,
+        defaultServerName = if (serverConfigManager is DesktopServerConfigManager) {
+            serverConfigManager.getDefaultServerName()
+        } else "",
+        serverName = if (serverConfigManager is DesktopServerConfigManager) {
+            serverConfigManager.getDefaultServerName()
+        } else ""
     )
     private val _connectionsUiState = MutableStateFlow(initialState)
     val connectionsUiState = _connectionsUiState.asStateFlow()
 
+    private var discoveryJob: Job? = null
+
     init {
         observeDeviceServerConfigurationState()
+        observeClientConfigState()
+    }
+
+    private fun observeClientConfigState() {
+        if (!initialState.doesCurrentDeviceSupportServer) {
+            serverConfigRepository.observeServerConfig()
+                .onEach { serverConfig ->
+                    val clientConfig = serverConfig as? ServerConfig.ClientSpecificServerConfig
+                    val isConfigured = clientConfig != null
+                    val serverUrl = clientConfig?.serverBaseUrlString?.value
+
+                    _connectionsUiState.update {
+                        it.copy(
+                            isClientConfigured = isConfigured,
+                            configuredServerUrl = serverUrl
+                        )
+                    }
+
+                    if (isConfigured) {
+                        stopDiscovery()
+                    } else {
+                        startDiscovery()
+                    }
+                }
+                .launchIn(viewModelScope)
+        }
+    }
+
+    fun startDiscovery() {
+        if (discoveryJob == null) {
+            _connectionsUiState.update { it.copy(isSearching = true) }
+            discoveryJob = serverDiscoveryManager.discoverServers()
+                .onEach { servers ->
+                    _connectionsUiState.update { it.copy(discoveredServers = servers) }
+                }
+                .launchIn(viewModelScope)
+        }
+    }
+
+    fun stopDiscovery() {
+        discoveryJob?.cancel()
+        discoveryJob = null
+        _connectionsUiState.update { it.copy(isSearching = false, discoveredServers = emptyList()) }
+    }
+
+    fun connectToServer(server: DiscoveredServer) {
+        viewModelScope.launch {
+            serverDiscoveryManager.connectToServer(server)
+        }
+    }
+
+    fun connectManually(url: String) {
+        viewModelScope.launch {
+            serverConfigRepository.updateClientServerConfig(url)
+        }
+    }
+
+    fun disconnectFromServer() {
+        viewModelScope.launch {
+            serverConfigRepository.clearClientServerConfig()
+        }
     }
 
     fun configureAsServer() {
         if (serverConfigManager is DesktopServerConfigManager) {
             // Todo safely handle null scenario(unlikely)
             _connectionsUiState.value.selectedDirectory?.let { directory ->
-                serverConfigManager.configureDeviceAsServer(ServerConfig.ServerSpecificServerConfig(directory))
+                val name = _connectionsUiState.value.serverName.takeIf { it.isNotBlank() }
+                    ?: _connectionsUiState.value.defaultServerName.takeIf { it.isNotBlank() }
+                    ?: "Phovo Server"
+                serverConfigManager.configureDeviceAsServer(
+                    ServerConfig.ServerSpecificServerConfig(
+                        backupDirectory = directory,
+                        serverName = name
+                    )
+                )
             }
         }
+    }
+
+    fun setServerName(name: String) {
+        _connectionsUiState.update { it.copy(serverName = name) }
     }
 
     private fun observeDeviceServerConfigurationState() {
@@ -72,6 +161,43 @@ data class ConnectionsUiState(
      */
     val doesCurrentDeviceSupportServer: Boolean = false,
     val serverEventLogs: List<String> = emptyList(),
+    val currentConnectionsPane: ConnectionsPane = ConnectionsPane.Home,
     val selectedDirectory: PlatformFile? = null,
-    val hostUrl: String? = null
+    val hostUrl: String? = null,
+    val isClientConfigured: Boolean = false,
+    val discoveredServers: List<DiscoveredServer> = emptyList(),
+    val isSearching: Boolean = false,
+    val configuredServerUrl: String? = null,
+    val serverName: String = "",
+    val defaultServerName: String = ""
 )
+
+sealed class ConnectionsPane(
+    open val previousPane: ConnectionsPane? = null,
+    val paneId: PaneId
+) {
+    data object Home : ConnectionsPane(paneId = PaneId.Home)
+    // Placeholder for the default second pane
+    data object DefaultSecondPane : ConnectionsPane(paneId = PaneId.DefaultSecondPane)
+
+    data class ConfigGettingStarted(
+        override val previousPane: ConnectionsPane
+    ) : ConnectionsPane(
+        previousPane = previousPane,
+        paneId = PaneId.ConfigGettingStarted
+    )
+
+    data class ConfigStorageSelection(
+        override val previousPane: ConnectionsPane
+    ) : ConnectionsPane(
+        previousPane = previousPane,
+        paneId = PaneId.ConfigStorageSelection
+    )
+}
+
+enum class PaneId: PhovoRoute {
+    Home,
+    DefaultSecondPane,
+    ConfigGettingStarted,
+    ConfigStorageSelection
+}

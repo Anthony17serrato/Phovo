@@ -9,6 +9,8 @@ actual fun ConfigStorageSelectionPane(
     onSelectedDirectory: (PlatformFile) -> Unit,
     selectedDirectory: PlatformFile?,
     onClickEnableServer: () -> Unit,
+    serverName: String,
+    onServerNameChange: (String) -> Unit,
     modifier: Modifier
 ) {
     // TODO: this is a desktop only feature, Ideally the pane would be defined in a separate

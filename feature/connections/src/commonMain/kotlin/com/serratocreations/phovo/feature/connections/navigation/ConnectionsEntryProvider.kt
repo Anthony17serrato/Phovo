@@ -120,6 +120,8 @@ fun EntryProviderScope<NavKey>.connectionsEntries(
                 connectionsViewModel.configureAsServer()
                 navigationViewModel.popTo(ConnectionsHomeNavKey)
             },
+            serverName = connectionsUiState.serverName,
+            onServerNameChange = connectionsViewModel::setServerName,
             modifier = Modifier.padding(
                 appBarConfig.calculateAdjustedPadding(scaffoldPadding)
             )

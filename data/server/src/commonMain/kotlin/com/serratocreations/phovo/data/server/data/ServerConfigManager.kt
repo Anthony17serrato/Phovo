@@ -9,6 +9,7 @@ interface ServerConfigManager
 interface DesktopServerConfigManager: ServerConfigManager {
     fun observeDeviceServerConfigurationState(scope: CoroutineScope): Flow<ServerConfigState>
     fun configureDeviceAsServer(serverConfig: ServerConfig.ServerSpecificServerConfig)
+    fun getDefaultServerName(): String
 }
 
 /**

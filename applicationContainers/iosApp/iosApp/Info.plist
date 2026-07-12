@@ -24,13 +24,15 @@
 	<true/>
 	<key>NSAppTransportSecurity</key>
 	<dict>
-		<key>NSAllowsArbitraryLoads</key>
-		<true/>
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Phovo needs access to devices on your local network to sync media.</string>
+	<string>Phovo uses your local network to discover and connect to your Phovo Desktop server for automatic photo backup and library synchronization.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_phovo._tcp</string>
+	</array>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>This app needs access to your photo library to sync and display your photos.</string>
 	<key>UIApplicationSceneManifest</key>

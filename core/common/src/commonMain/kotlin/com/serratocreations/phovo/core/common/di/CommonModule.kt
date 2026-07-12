@@ -15,6 +15,11 @@ val MAIN_DISPATCHER = named("MainDispatcher")
 val DEFAULT_DISPATCHER = named("DefaultDispatcher")
 val APPLICATION_SCOPE = named("ApplicationScope")
 
+/**
+ * Useful for callback APIs which need to run on the main thread
+ */
+val MAIN_APPLICATION_SCOPE = named("MainApplicationScope")
+
 fun getCoreCommonModule(): Module = module {
     single<CoroutineDispatcher>(IO_DISPATCHER) { getIoDispatcher() }
     single<CoroutineDispatcher>(MAIN_DISPATCHER) { Dispatchers.Main }
@@ -22,18 +27,30 @@ fun getCoreCommonModule(): Module = module {
     single<CoroutineScope>(APPLICATION_SCOPE) {
         val logger: PhovoLogger = get()
         val defaultDispatcher: CoroutineDispatcher = get(DEFAULT_DISPATCHER)
-        val handler = CoroutineExceptionHandler { _, exception ->
-            // TODO: Add a fatalLog API to write the log to file/db in a blocking manner before
-            //  crashing the process(currently it happens in a coroutine which may or may not
-            //  complete before the process is killed)
-            logger.withTag("CoroutineExceptionHandler").e(exception) {
-                "Barnacles! @ApplicationScope CoroutineExceptionHandler caught an unhandled exception: $exception"
-            }
-            // re-throw the exception to crash the app
-            throw exception
-        }
-        CoroutineScope(SupervisorJob() + defaultDispatcher + handler)
+        createApplicationScope(defaultDispatcher, logger)
     }
+    single<CoroutineScope>(MAIN_APPLICATION_SCOPE) {
+        val logger: PhovoLogger = get()
+        val mainDispatcher: CoroutineDispatcher = get(MAIN_DISPATCHER)
+        createApplicationScope(mainDispatcher, logger)
+    }
+}
+
+private fun createApplicationScope(
+    dispatcher: CoroutineDispatcher,
+    logger: PhovoLogger
+): CoroutineScope {
+    val handler = CoroutineExceptionHandler { _, exception ->
+        // TODO: Add a fatalLog API to write the log to file/db in a blocking manner before
+        //  crashing the process(currently it happens in a coroutine which may or may not
+        //  complete before the process is killed)
+        logger.withTag("CoroutineExceptionHandler").e(exception) {
+            "Barnacles! @ApplicationScope CoroutineExceptionHandler caught an unhandled exception: $exception"
+        }
+        // re-throw the exception to crash the app
+        throw exception
+    }
+    return CoroutineScope(SupervisorJob() + dispatcher + handler)
 }
 
 expect fun getIoDispatcher(): CoroutineDispatcher
