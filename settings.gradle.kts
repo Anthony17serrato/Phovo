@@ -41,7 +41,8 @@ include(":core:serverconfig")
 
 // Features
 include(":feature:photos")
-include(":feature:connections")
+include(":feature:connections:core")
+include(":feature:connections:client")
 
 // Data
 include(":data:photos")

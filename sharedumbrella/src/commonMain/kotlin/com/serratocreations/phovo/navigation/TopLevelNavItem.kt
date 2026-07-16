@@ -13,8 +13,8 @@ import org.jetbrains.compose.resources.StringResource
 import phovo.sharedumbrella.generated.resources.app_name
 import phovo.feature.photos.generated.resources.feature_photos_title
 import phovo.feature.photos.generated.resources.Res as photosRes
-import phovo.feature.connections.generated.resources.Res as connectionsRes
-import phovo.feature.connections.generated.resources.feature_connections_title
+import phovo.feature.connections.core.generated.resources.Res as connectionsRes
+import phovo.feature.connections.core.generated.resources.feature_connections_title
 import phovo.sharedumbrella.generated.resources.phovo_icon
 
 data class TopLevelNavItem(
