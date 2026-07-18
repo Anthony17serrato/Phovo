@@ -2,6 +2,7 @@ package com.serratocreations.phovo.data.server
 
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.core.serverconfig.ServerConfigRepository
+import com.serratocreations.phovo.data.server.data.model.DiscoveredServer
 import kotlinx.cinterop.ByteVar
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.ObjCSignatureOverride
