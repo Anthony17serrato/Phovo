@@ -1,5 +1,6 @@
 package com.serratocreations.phovo.data.server
 
+import com.serratocreations.phovo.data.server.data.model.DiscoveredServer
 import kotlinx.coroutines.flow.Flow
 
 interface ServerDiscoveryManager {

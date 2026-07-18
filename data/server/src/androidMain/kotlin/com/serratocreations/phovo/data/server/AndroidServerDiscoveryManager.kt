@@ -7,6 +7,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.core.serverconfig.ServerConfigRepository
+import com.serratocreations.phovo.data.server.data.model.DiscoveredServer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow

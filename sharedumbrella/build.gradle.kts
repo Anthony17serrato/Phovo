@@ -21,7 +21,7 @@ kotlin {
             // Project dependencies
             implementation(projects.core.designsystem)
             implementation(projects.feature.photos)
-            implementation(projects.feature.connections.core)
+            implementation(projects.feature.connections)
             implementation(projects.core.common)
             implementation(projects.core.logger)
             implementation(projects.core.model)
