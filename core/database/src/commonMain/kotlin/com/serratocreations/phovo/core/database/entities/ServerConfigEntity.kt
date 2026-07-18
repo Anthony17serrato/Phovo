@@ -10,5 +10,7 @@ data class ServerConfigEntity(
     // strategy of REPLACE.
     @PrimaryKey val id: Long = 1,
     @ColumnInfo(name = "backup_directory")
-    val backupDirectory: String
+    val backupDirectory: String,
+    @ColumnInfo(name = "server_name")
+    val serverName: String
 )

@@ -4,18 +4,11 @@ import com.serratocreations.phovo.core.model.ServerConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 
-interface ServerConfigManager
-
-interface DesktopServerConfigManager: ServerConfigManager {
+interface DesktopServerConfigManager {
     fun observeDeviceServerConfigurationState(scope: CoroutineScope): Flow<ServerConfigState>
     fun configureDeviceAsServer(serverConfig: ServerConfig.ServerSpecificServerConfig)
+    fun getDefaultServerName(): String
 }
-
-/**
- * Non-operational server config manager for non-desktop environments
- * Currently only desktop clients support being configured as a server
- */
-class NoOpServerConfigManager: ServerConfigManager
 
 sealed interface ConfigStatus {
     data object Loading: ConfigStatus

@@ -1,14 +1,22 @@
 package com.serratocreations.phovo.data.server.di
 
-import com.serratocreations.phovo.data.server.data.NoOpServerConfigManager
-import com.serratocreations.phovo.data.server.data.ServerConfigManager
+import com.serratocreations.phovo.core.common.di.APPLICATION_SCOPE
 import com.serratocreations.phovo.core.serverconfig.IosAndroidServerConfigRepository
 import com.serratocreations.phovo.core.serverconfig.ServerConfigRepository
+import com.serratocreations.phovo.data.server.AndroidServerDiscoveryManager
+import com.serratocreations.phovo.data.server.ServerDiscoveryManager
 import org.koin.core.module.Module
 import org.koin.dsl.binds
 import org.koin.dsl.module
 
 internal actual fun getAndroidDesktopIosModules(): Module = module {
-    single<ServerConfigManager> { NoOpServerConfigManager() }
-    single<ServerConfigRepository> { IosAndroidServerConfigRepository() } binds arrayOf(IosAndroidServerConfigRepository::class, ServerConfigRepository::class)
+    single<ServerConfigRepository> { IosAndroidServerConfigRepository(get()) } binds arrayOf(IosAndroidServerConfigRepository::class, ServerConfigRepository::class)
+    single<ServerDiscoveryManager> {
+        AndroidServerDiscoveryManager(
+            get(),
+            get(),
+            get(APPLICATION_SCOPE),
+            get()
+        )
+    }
 }

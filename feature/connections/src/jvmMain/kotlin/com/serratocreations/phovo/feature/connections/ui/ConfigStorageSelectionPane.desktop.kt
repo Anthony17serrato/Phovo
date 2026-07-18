@@ -27,10 +27,12 @@ import io.github.vinceglb.filekit.dialogs.compose.rememberDirectoryPickerLaunche
 import io.github.vinceglb.filekit.div
 
 @Composable
-actual fun ConfigStorageSelectionPane(
+fun ConfigStorageSelectionPane(
     onSelectedDirectory: (PlatformFile) -> Unit,
     selectedDirectory: PlatformFile?,
     onClickEnableServer: () -> Unit,
+    serverName: String,
+    onServerNameChange: (String) -> Unit,
     modifier: Modifier
 ) {
     Column(
@@ -59,13 +61,20 @@ actual fun ConfigStorageSelectionPane(
         }
         Spacer(Modifier.height(20.dp))
         OutlinedTextField(
+            value = serverName,
+            onValueChange = onServerNameChange,
+            label = { Text("Server Name") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(Modifier.height(20.dp))
+        OutlinedTextField(
             value = selectedDirectory?.absolutePath() ?: "",
             onValueChange = { },
             readOnly = true,
             label = { Text("Selected directory") },
             modifier = Modifier.clickable {
                 launcher.launch()
-            }
+            }.fillMaxWidth()
         )
         Spacer(Modifier.height(20.dp))
         Button(

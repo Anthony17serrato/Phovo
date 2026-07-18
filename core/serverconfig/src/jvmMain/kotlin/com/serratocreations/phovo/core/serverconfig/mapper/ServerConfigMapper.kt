@@ -6,9 +6,11 @@ import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.absolutePath
 
 fun ServerConfig.ServerSpecificServerConfig.asEntity() = ServerConfigEntity(
-    backupDirectory = this.backupDirectory.absolutePath()
+    backupDirectory = this.backupDirectory.absolutePath(),
+    serverName = this.serverName
 )
 
 fun ServerConfigEntity.asServerSpecificServerConfig() = ServerConfig.ServerSpecificServerConfig(
-    backupDirectory = PlatformFile(this.backupDirectory)
+    backupDirectory = PlatformFile(this.backupDirectory),
+    serverName = this.serverName
 )
