@@ -23,14 +23,6 @@ internal fun Project.configureKotlinMultiplatform(
             freeCompilerArgs.add("-Xexpect-actual-classes")
         }
 
-        targets.configureEach {
-            if (this is org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget) {
-                compilerOptions {
-                    freeCompilerArgs.add("-Xklib-duplicated-unique-name-strategy=allow-first-with-warning")
-                }
-            }
-        }
-
         if (customSourceSets.isNotEmpty()) {
             // Apply the default hierarchy again. It'll create, for example, the iosMain source set:
             // https://kotlinlang.org/docs/multiplatform-hierarchy.html
