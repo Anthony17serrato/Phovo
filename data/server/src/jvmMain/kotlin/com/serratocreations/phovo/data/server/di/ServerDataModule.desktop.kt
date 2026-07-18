@@ -5,11 +5,8 @@ import com.serratocreations.phovo.core.common.di.IO_DISPATCHER
 import com.serratocreations.phovo.core.database.di.getDatabaseModule
 import com.serratocreations.phovo.data.server.data.DesktopServerConfigManager
 import com.serratocreations.phovo.data.server.data.DesktopServerConfigManagerImpl
-import com.serratocreations.phovo.data.server.data.ServerConfigManager
 import com.serratocreations.phovo.core.serverconfig.ServerConfigRepository
 import com.serratocreations.phovo.core.serverconfig.DesktopServerConfigRepository
-import com.serratocreations.phovo.core.serverconfig.discovery.ServerDiscoveryManager
-import com.serratocreations.phovo.core.serverconfig.discovery.JvmServerDiscoveryManager
 import com.serratocreations.phovo.data.server.data.repository.ServerEventsRepository
 import org.koin.dsl.binds
 import org.koin.dsl.module
@@ -23,8 +20,6 @@ internal actual fun getAndroidDesktopIosModules(): org.koin.core.module.Module =
 
     single { ServerEventsRepository() }
 
-    single<ServerDiscoveryManager> { JvmServerDiscoveryManager() }
-
     single {
         DesktopServerConfigManagerImpl(
             get(),
@@ -34,5 +29,5 @@ internal actual fun getAndroidDesktopIosModules(): org.koin.core.module.Module =
             get(APPLICATION_SCOPE),
             get(IO_DISPATCHER)
         )
-    } binds arrayOf(ServerConfigManager::class, DesktopServerConfigManager::class)
+    } binds arrayOf(DesktopServerConfigManager::class)
 }

@@ -11,6 +11,7 @@ plugins {
     alias(libs.plugins.room) apply false
     alias(libs.plugins.phovo.kmp.android.ios.desktop.web.library) apply false
     alias(libs.plugins.phovo.kmp.android.ios.desktop.library) apply false
+    alias(libs.plugins.phovo.kmp.android.ios.library) apply false
     alias(libs.plugins.phovo.kmp.umbrella.library) apply false
     alias(libs.plugins.phovo.kmp.library.koin) apply false
     alias(libs.plugins.phovo.kmp.library.compose) apply false

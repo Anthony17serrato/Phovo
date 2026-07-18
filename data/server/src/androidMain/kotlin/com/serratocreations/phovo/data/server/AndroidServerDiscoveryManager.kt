@@ -1,4 +1,4 @@
-package com.serratocreations.phovo.core.serverconfig.discovery
+package com.serratocreations.phovo.data.server
 
 import android.content.Context
 import android.net.nsd.NsdManager
@@ -7,6 +7,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.core.serverconfig.ServerConfigRepository
+import com.serratocreations.phovo.data.server.data.model.DiscoveredServer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -123,7 +124,11 @@ class AndroidServerDiscoveryManager(
                         if (activeCallbacks.containsKey(serviceInfo.serviceName).not()) {
                             val serviceInfoCallback = serviceInfo.serviceInfoCallback()
                             activeCallbacks[serviceInfo.serviceName] = serviceInfoCallback
-                            nsdManager.registerServiceInfoCallback(serviceInfo, context.mainExecutor, serviceInfoCallback)
+                            nsdManager.registerServiceInfoCallback(
+                                serviceInfo,
+                                context.mainExecutor,
+                                serviceInfoCallback
+                            )
                         }
                     } else {
                         @Suppress("DEPRECATION")
@@ -135,7 +140,8 @@ class AndroidServerDiscoveryManager(
             override fun onServiceLost(serviceInfo: NsdServiceInfo) {
                 log.i { "Service lost: ${serviceInfo.serviceName}" }
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                    val callback = activeCallbacks.remove(serviceInfo.serviceName) as? NsdManager.ServiceInfoCallback
+                    val callback =
+                        activeCallbacks.remove(serviceInfo.serviceName) as? NsdManager.ServiceInfoCallback
                     if (callback != null) {
                         nsdManager.unregisterServiceInfoCallback(callback)
                     }

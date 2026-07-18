@@ -27,7 +27,7 @@ import io.github.vinceglb.filekit.dialogs.compose.rememberDirectoryPickerLaunche
 import io.github.vinceglb.filekit.div
 
 @Composable
-actual fun ConfigStorageSelectionPane(
+fun ConfigStorageSelectionPane(
     onSelectedDirectory: (PlatformFile) -> Unit,
     selectedDirectory: PlatformFile?,
     onClickEnableServer: () -> Unit,

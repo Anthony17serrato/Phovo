@@ -1,8 +1,15 @@
-package com.serratocreations.phovo.core.serverconfig.discovery
+package com.serratocreations.phovo.data.server
 
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.core.serverconfig.ServerConfigRepository
-import kotlinx.cinterop.*
+import com.serratocreations.phovo.data.server.data.model.DiscoveredServer
+import kotlinx.cinterop.ByteVar
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.ObjCSignatureOverride
+import kotlinx.cinterop.allocArray
+import kotlinx.cinterop.memScoped
+import kotlinx.cinterop.reinterpret
+import kotlinx.cinterop.toKString
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -10,9 +17,15 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.WhileSubscribed
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.shareIn
-import platform.Foundation.*
+import platform.Foundation.NSData
+import platform.Foundation.NSLock
+import platform.Foundation.NSNetService
+import platform.Foundation.NSNetServiceBrowser
+import platform.Foundation.NSNetServiceBrowserDelegateProtocol
+import platform.Foundation.NSNetServiceDelegateProtocol
 import platform.darwin.NSObject
-import platform.posix.*
+import platform.posix.getnameinfo
+import platform.posix.sockaddr
 import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalForeignApi::class)
@@ -71,7 +84,8 @@ class IosServerDiscoveryManager(
                             nsData?.let { ipAddressFromData(it) }
                         } ?: sender.hostName ?: "localhost"
 
-                        val cleanedHost = if (ip.endsWith(".")) ip.substring(0, ip.length - 1) else ip
+                        val cleanedHost =
+                            if (ip.endsWith(".")) ip.substring(0, ip.length - 1) else ip
 
                         val server = DiscoveredServer(
                             name = sender.name,
