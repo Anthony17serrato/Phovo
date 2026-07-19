@@ -32,11 +32,17 @@ jobs:
           else
             echo "installed=false" >> $GITHUB_OUTPUT
           fi
-      
+
       - name: Install Android SDK Platform 37
         if: steps.check-sdk.outputs.installed == 'false'
         run: |
-          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-37"
+          # Find the actual cmdline-tools directory
+          CMDLINE_TOOLS_DIR=$(find /Users/anthonyserrato/Library/Android/sdk/cmdline-tools -maxdepth 1 -type d ! -name "cmdline-tools" | head -1)
+          if [ -z "$CMDLINE_TOOLS_DIR" ]; then
+            echo "Error: cmdline-tools not found"
+            exit 1
+          fi
+          "$CMDLINE_TOOLS_DIR/bin/sdkmanager" "platforms;android-37"
         env:
           ANDROID_HOME: /Users/anthonyserrato/Library/Android/sdk
       # Currently Raspberry Pi cannot build WASM due to ARM64 issues https://youtrack.jetbrains.com/issue/KT-70100/wasmJs-Target-Fails-to-Compile-on-ARM64-Linux
