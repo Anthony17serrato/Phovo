@@ -6,7 +6,11 @@ import org.gradle.kotlin.dsl.configure
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import org.jetbrains.kotlin.gradle.plugin.mpp.DisableCacheInKotlinVersion
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeCacheApi
+import java.net.URI
 
+@OptIn(KotlinNativeCacheApi::class)
 internal fun Project.configureKotlinMultiplatform(
     /**
      * To learn more about umbrella framework see:
@@ -36,7 +40,7 @@ internal fun Project.configureKotlinMultiplatform(
         if (targetList.contains(Targets.ANDROID) && isApplication.not()) {
             configure<KotlinMultiplatformAndroidLibraryTarget> {
                 // TODO: Investigate if these can be pulled from TOML file
-                compileSdk = 36
+                compileSdk = 37
                 minSdk = 23
                 androidResources.enable = true
                 withHostTestBuilder {}.configure {}
@@ -70,17 +74,22 @@ internal fun Project.configureKotlinMultiplatform(
 
         if (isUmbrella && targetList.contains(Targets.IOS)) {
             listOf(
-                iosX64(),
                 iosArm64(),
                 iosSimulatorArm64()
             ).forEach { iosTarget ->
                 iosTarget.binaries.framework {
                     baseName = "ComposeApp"
                     isStatic = true
+
+                    // Disable compilation cache for this binary
+                    disableNativeCache(
+                        version = DisableCacheInKotlinVersion.`2_4_10`,
+                        reason = "Material icons extended bug, this library is deprecated and no longer Maintained, refactor the code to remove this library then remove this piece of code",
+                        issueUrl = URI("https://slack-chats.kotlinlang.org/t/27579160/after-updating-to-1-8-0-rc01-package-androidx-compose-materi")
+                    )
                 }
             }
         } else if (targetList.contains(Targets.IOS)) {
-            iosX64()
             iosArm64()
             iosSimulatorArm64()
         }

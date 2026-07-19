@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import com.serratocreations.phovo.core.designsystem.icon.PhovoIcons
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.absolutePath
+import io.github.vinceglb.filekit.dialogs.FileKitDialogSettings
 import io.github.vinceglb.filekit.dialogs.compose.rememberDirectoryPickerLauncher
 import io.github.vinceglb.filekit.div
 
@@ -52,7 +53,7 @@ fun ConfigStorageSelectionPane(
         )
         // FileKit Compose
         val launcher = rememberDirectoryPickerLauncher(
-            title = "Select a backup directory"
+            dialogSettings = FileKitDialogSettings(title = "Select a backup directory")
         ) { directory ->
             directory?.let {
                 val finalDir = it / "DO_NOT_DELETE_PHOVO"

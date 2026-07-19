@@ -9,7 +9,7 @@ import org.gradle.api.JavaVersion
 internal fun ApplicationExtension.configureAndroidApplication() {
     namespace = "com.serratocreations.phovo"
     // TODO: Investigate if these can be pulled from TOML file
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         minSdk = 24
