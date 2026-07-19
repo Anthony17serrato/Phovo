@@ -15,7 +15,7 @@ class KmpAndroidApplicationConventionPlugin : Plugin<Project> {
             extensions.configure<ApplicationExtension> {
                 configureAndroidApplication()
                 defaultConfig {
-                    targetSdk = 36
+                    targetSdk = 37
                     applicationId = "com.serratocreations.phovo"
                     versionCode = 1
                     versionName = "1.0"
