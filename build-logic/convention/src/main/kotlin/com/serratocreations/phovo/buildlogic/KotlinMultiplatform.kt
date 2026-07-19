@@ -23,14 +23,6 @@ internal fun Project.configureKotlinMultiplatform(
             freeCompilerArgs.add("-Xexpect-actual-classes")
         }
 
-        targets.configureEach {
-            if (this is org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget) {
-                compilerOptions {
-                    freeCompilerArgs.add("-Xklib-duplicated-unique-name-strategy=allow-first-with-warning")
-                }
-            }
-        }
-
         if (customSourceSets.isNotEmpty()) {
             // Apply the default hierarchy again. It'll create, for example, the iosMain source set:
             // https://kotlinlang.org/docs/multiplatform-hierarchy.html
@@ -44,7 +36,7 @@ internal fun Project.configureKotlinMultiplatform(
         if (targetList.contains(Targets.ANDROID) && isApplication.not()) {
             configure<KotlinMultiplatformAndroidLibraryTarget> {
                 // TODO: Investigate if these can be pulled from TOML file
-                compileSdk = 36
+                compileSdk = 37
                 minSdk = 23
                 androidResources.enable = true
                 withHostTestBuilder {}.configure {}
@@ -78,7 +70,6 @@ internal fun Project.configureKotlinMultiplatform(
 
         if (isUmbrella && targetList.contains(Targets.IOS)) {
             listOf(
-                iosX64(),
                 iosArm64(),
                 iosSimulatorArm64()
             ).forEach { iosTarget ->
@@ -88,7 +79,6 @@ internal fun Project.configureKotlinMultiplatform(
                 }
             }
         } else if (targetList.contains(Targets.IOS)) {
-            iosX64()
             iosArm64()
             iosSimulatorArm64()
         }

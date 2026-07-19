@@ -53,7 +53,6 @@ internal fun Project.configureKmpKoin(isAndroidApplication: Boolean) {
 //            }
 //
 //            if (configuredTargets.contains(Targets.IOS)) {
-//                add("kspIosX64", libs.findLibrary("koin.ksp.compiler").get())
 //                add("kspIosArm64", libs.findLibrary("koin.ksp.compiler").get())
 //                add("kspIosSimulatorArm64", libs.findLibrary("koin.ksp.compiler").get())
 //            }

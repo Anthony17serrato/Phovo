@@ -19,10 +19,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.outlined.CloudDone
-import androidx.compose.material.icons.outlined.CloudOff
+import org.jetbrains.compose.resources.painterResource
+import phovo.feature.photos.generated.resources.*
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -97,7 +95,7 @@ fun ExpandableBackupBanner(
                 when (val backupState = backupState) {
                     is BackupCompleteUiModel -> {
                         Icon(
-                            imageVector = Icons.Outlined.CloudDone,
+                            painter = painterResource(Res.drawable.ic_cloud_done_outlined),
                             contentDescription = stringResource(backupState.chipText),
                             modifier = Modifier.size(ButtonDefaults.iconSizeFor(size))
                         )
@@ -124,7 +122,7 @@ fun ExpandableBackupBanner(
                     }
                     ServerOfflineUiModel -> {
                         Icon(
-                            imageVector = Icons.Outlined.CloudOff,
+                            painter = painterResource(Res.drawable.ic_cloud_off_outlined),
                             contentDescription = stringResource(backupState.chipText),
                             modifier = Modifier.size(ButtonDefaults.iconSizeFor(size))
                         )
@@ -159,7 +157,7 @@ fun ExpandableBackupBanner(
                         label = "Trailing Icon Rotation",
                     )
                     Icon(
-                        Icons.Filled.KeyboardArrowDown,
+                        painter = painterResource(Res.drawable.ic_keyboard_arrow_down_default),
                         modifier =
                             Modifier.size(ButtonDefaults.iconSizeFor(size)).graphicsLayer {
                                 this.rotationZ = rotation
@@ -239,14 +237,14 @@ fun BackupSummaryCard(
                     }
                     is BackupCompleteUiModel -> {
                         Icon(
-                            imageVector = Icons.Outlined.CloudDone,
+                            painter = painterResource(Res.drawable.ic_cloud_done_outlined),
                             contentDescription = null,
                             modifier = Modifier.size(defaultIconSize)
                         )
                     }
                     ServerOfflineUiModel -> {
                         Icon(
-                            imageVector = Icons.Outlined.CloudOff,
+                            painter = painterResource(Res.drawable.ic_cloud_off_outlined),
                             contentDescription = stringResource(status.chipText),
                             modifier = Modifier.size(defaultIconSize)
                         )

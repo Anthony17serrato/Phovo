@@ -215,7 +215,7 @@ internal fun InternalPhovoApp(
                         val listDetailStrategy = rememberListDetailSceneStrategy<NavKey>()
                         NavDisplay(
                             entries = navigationState.toDecoratedEntries(entryProvider),
-                            sceneStrategy = listDetailStrategy,
+                            sceneStrategies = listOf(listDetailStrategy),
                             onBack = {
                                 navigationViewModel.goBack()
                             }

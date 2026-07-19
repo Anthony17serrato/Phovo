@@ -13,12 +13,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Person
+import org.jetbrains.compose.resources.painterResource
+import phovo.sharedumbrella.generated.resources.*
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingToolbarDefaults
@@ -76,7 +72,7 @@ fun PhovoBottomToolBar(
                         FloatingToolbarDefaults.VibrantFloatingActionButton(
                             onClick = { /* doSomething() */ }
                         ) {
-                            Icon(Icons.Filled.Add, "Localized description")
+                            Icon(painterResource(Res.drawable.ic_add_default), "Localized description")
                         }
                     }
                 },
@@ -94,7 +90,7 @@ fun PhovoBottomToolBar(
                         state = rememberTooltipState(),
                     ) {
                         IconButton(onClick = { /* doSomething() */ }) {
-                            Icon(Icons.Filled.Person, contentDescription = "Localized description")
+                            Icon(painterResource(Res.drawable.ic_person_default), contentDescription = "Localized description")
                         }
                     }
                     TooltipBox(
@@ -106,7 +102,7 @@ fun PhovoBottomToolBar(
                         state = rememberTooltipState(),
                     ) {
                         IconButton(onClick = { /* doSomething() */ }) {
-                            Icon(Icons.Filled.Edit, contentDescription = "Localized description")
+                            Icon(painterResource(Res.drawable.ic_edit_default), contentDescription = "Localized description")
                         }
                     }
                     TooltipBox(
@@ -119,7 +115,7 @@ fun PhovoBottomToolBar(
                     ) {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(
-                                Icons.Filled.Favorite,
+                                painterResource(Res.drawable.ic_favorite_default),
                                 contentDescription = "Localized description",
                             )
                         }
@@ -134,7 +130,7 @@ fun PhovoBottomToolBar(
                     ) {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(
-                                Icons.Filled.MoreVert,
+                                painterResource(Res.drawable.ic_more_vert_default),
                                 contentDescription = "Localized description",
                             )
                         }

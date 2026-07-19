@@ -14,8 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Edit
+import org.jetbrains.compose.resources.painterResource
+import phovo.sharedumbrella.generated.resources.*
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.PlainTooltip
@@ -83,7 +83,7 @@ fun PhovoTopAppBar(
                                 },
                                 leadingIcon = {
                                     Icon(
-                                        Icons.Outlined.Edit,
+                                        painter = painterResource(Res.drawable.ic_edit_outlined),
                                         contentDescription = null
                                     )
                                 },

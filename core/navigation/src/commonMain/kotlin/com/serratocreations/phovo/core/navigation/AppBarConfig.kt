@@ -4,9 +4,9 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
+import org.jetbrains.compose.resources.painterResource
+import phovo.core.navigation.generated.resources.*
 import androidx.compose.runtime.Composable
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -70,7 +70,7 @@ data class AppBarConfig(
 fun DefaultNavigationIcon(onClick: () -> Unit) {
     IconButton(onClick = onClick) {
         Icon(
-            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+            painter = painterResource(Res.drawable.ic_arrow_back_filled),
             // TODO Extract string resource
             contentDescription = "Back",
             tint = MaterialTheme.colorScheme.onSurface

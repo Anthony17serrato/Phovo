@@ -13,7 +13,6 @@ kotlin {
             implementation(projects.core.common)
             implementation(libs.platformtools.darkmodedetector)
             api(libs.compose.ui)
-            api(libs.material.icons.extended)
             api(libs.compose.foundation)
             api(libs.material3)
             api(libs.material3.adaptive.navigation.suite)
