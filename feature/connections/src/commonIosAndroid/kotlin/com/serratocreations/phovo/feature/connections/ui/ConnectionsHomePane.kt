@@ -12,12 +12,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Dns
-import androidx.compose.material.icons.filled.Link
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Wifi
+import org.jetbrains.compose.resources.painterResource
+import phovo.feature.connections.generated.resources.*
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -115,7 +111,7 @@ private fun ClientConnectedPane(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(
-                imageVector = Icons.Default.CheckCircle,
+                painter = painterResource(Res.drawable.ic_check_circle_default),
                 contentDescription = "Connected",
                 tint = Color(0xFF4CAF50),
                 modifier = Modifier.size(64.dp)
@@ -170,7 +166,7 @@ private fun ClientOnboardingPane(
             Column(modifier = Modifier.padding(16.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        imageVector = Icons.Default.Wifi,
+                        painter = painterResource(Res.drawable.ic_wifi_default),
                         contentDescription = "Wi-Fi Requirement",
                         tint = MaterialTheme.colorScheme.primary
                     )
@@ -222,7 +218,7 @@ private fun ClientOnboardingPane(
                     contentPadding = PaddingValues(horizontal = 8.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Refresh,
+                        painter = painterResource(Res.drawable.ic_refresh_default),
                         contentDescription = "Rescan",
                         modifier = Modifier.size(16.dp)
                     )
@@ -244,7 +240,7 @@ private fun ClientOnboardingPane(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Dns,
+                        painter = painterResource(Res.drawable.ic_dns_default),
                         contentDescription = "No Servers",
                         tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
                         modifier = Modifier.size(48.dp)
@@ -322,7 +318,7 @@ private fun ClientOnboardingPane(
             modifier = Modifier.fillMaxWidth(),
             leadingIcon = {
                 Icon(
-                    imageVector = Icons.Default.Link,
+                    painter = painterResource(Res.drawable.ic_link_default),
                     contentDescription = "URL Link"
                 )
             }
