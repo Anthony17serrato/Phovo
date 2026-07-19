@@ -3,8 +3,8 @@
 # Check AGP Kotlin R8 compatability https://developer.android.com/build/kotlin-support?utm_source=android-studio-app&utm_medium=app
 #noinspection AndroidGradlePluginVersion since AGP depends on KMP support
 androidGradlePlugin = "9.0.1"
-kotlin = "2.3.10"
-ksp = "2.3.6"
+kotlin = "2.4.10"
+ksp = "2.3.10"
 
 androidx-activityCompose = "1.12.4"
 androidx-datastore = "1.2.0"

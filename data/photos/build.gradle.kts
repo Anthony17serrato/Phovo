@@ -11,6 +11,7 @@ kotlin {
     sourceSets {
         androidMain.dependencies {
             implementation(libs.ktor.client.okhttp)
+            implementation(libs.coil.video)
         }
 
         commonMain.dependencies {
@@ -22,7 +23,6 @@ kotlin {
             implementation(libs.serialization.json)
             implementation(libs.kotlin.datetime)
             implementation(libs.coil.compose)
-            implementation(libs.coil.video)
             implementation(libs.filekit.coil)
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.serialization)
