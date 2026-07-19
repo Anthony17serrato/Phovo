@@ -18,8 +18,27 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
+          
       - name: Create local.properties
         run: echo "sdk.dir=/Users/anthonyserrato/Library/Android/sdk" > local.properties
+      
+      - name: Check if Android SDK Platform is installed
+        id: check-sdk
+        run: |
+          SDK_PATH="/Users/anthonyserrato/Library/Android/sdk"
+          PLATFORM_VERSION="37"
+          if [ -d "$SDK_PATH/platforms/android-$PLATFORM_VERSION" ]; then
+            echo "installed=true" >> $GITHUB_OUTPUT
+          else
+            echo "installed=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Install Android SDK Platform 37
+        if: steps.check-sdk.outputs.installed == 'false'
+        run: |
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-37"
+        env:
+          ANDROID_HOME: /Users/anthonyserrato/Library/Android/sdk
       # Currently Raspberry Pi cannot build WASM due to ARM64 issues https://youtrack.jetbrains.com/issue/KT-70100/wasmJs-Target-Fails-to-Compile-on-ARM64-Linux
       # - name: Yarn
       #  run: ./gradlew kotlinUpgradeYarnLock
