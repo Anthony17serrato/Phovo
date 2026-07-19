@@ -18,59 +18,8 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-          
       - name: Create local.properties
         run: echo "sdk.dir=/Users/anthonyserrato/Library/Android/sdk" > local.properties
-
-      - name: Check if Android SDK Platform is installed
-        id: check-sdk
-        env:
-          ANDROID_SDK_ROOT: /Users/anthonyserrato/Library/Android/sdk
-        run: |
-          SDK_PATH="$ANDROID_SDK_ROOT"
-          PLATFORM_VERSION="37"
-          if [ -d "$SDK_PATH/platforms/android-$PLATFORM_VERSION" ]; then
-            echo "installed=true" >> $GITHUB_OUTPUT
-          else
-            echo "installed=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Install Android cmdline-tools and Platform 37
-        if: steps.check-sdk.outputs.installed == 'false'
-        env:
-          ANDROID_SDK_ROOT: /Users/anthonyserrato/Library/Android/sdk
-        run: |
-          set -e
-          SDK_ROOT="$ANDROID_SDK_ROOT"
-          mkdir -p "$SDK_ROOT"
-
-          # Download and install command-line tools if missing
-          if [ ! -d "$SDK_ROOT/cmdline-tools" ] || [ -z "$(ls -A "$SDK_ROOT/cmdline-tools" 2>/dev/null)" ]; then
-            echo "cmdline-tools not found; downloading..."
-            cd /tmp
-
-            # NOTE: the filename below uses the "latest" redirect. If Google changes URL format,
-            # replace with the precise versioned filename from https://developer.android.com/studio#command-tools
-            URL="https://dl.google.com/android/repository/commandlinetools-mac-latest.zip"
-            curl -fL -o commandlinetools.zip "$URL"
-            unzip -q commandlinetools.zip -d cmdline-temp
-
-            mkdir -p "$SDK_ROOT/cmdline-tools/latest"
-            # extracted package contains a top-level "cmdline-tools" directory
-            mv cmdline-temp/cmdline-tools/* "$SDK_ROOT/cmdline-tools/latest/"
-
-            rm -rf cmdline-temp commandlinetools.zip
-          else
-            echo "cmdline-tools already present at $SDK_ROOT/cmdline-tools"
-          fi
-
-          # Ensure sdkmanager is on PATH for this step
-          export PATH="$SDK_ROOT/cmdline-tools/latest/bin:$PATH"
-          export ANDROID_SDK_ROOT="$SDK_ROOT"
-
-          # Accept licenses and install platform-tools + android-37
-          yes | sdkmanager --sdk_root="$ANDROID_SDK_ROOT" --licenses
-          sdkmanager --sdk_root="$ANDROID_SDK_ROOT" "platform-tools" "platforms;android-37"
       # Currently Raspberry Pi cannot build WASM due to ARM64 issues https://youtrack.jetbrains.com/issue/KT-70100/wasmJs-Target-Fails-to-Compile-on-ARM64-Linux
       # - name: Yarn
       #  run: ./gradlew kotlinUpgradeYarnLock
