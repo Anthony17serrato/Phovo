@@ -27,6 +27,7 @@ import kotlinx.datetime.toLocalDateTime
 import platform.Foundation.NSNumber
 import platform.Foundation.NSURL
 import platform.Foundation.valueForKey
+import platform.AVFoundation.AVURLAsset
 import platform.Photos.PHAccessLevelReadWrite
 import platform.Photos.PHAsset
 import platform.Photos.PHAssetMediaTypeImage
@@ -39,7 +40,10 @@ import platform.Photos.PHAuthorizationStatusNotDetermined
 import platform.Photos.PHAuthorizationStatusRestricted
 import platform.Photos.PHContentEditingInputRequestOptions
 import platform.Photos.PHFetchOptions
+import platform.Photos.PHImageManager
 import platform.Photos.PHPhotoLibrary
+import platform.Photos.PHVideoRequestOptions
+import platform.Photos.PHVideoRequestOptionsVersionOriginal
 import platform.Photos.cancelContentEditingInputRequest
 import platform.Photos.requestContentEditingInputWithOptions
 import kotlin.coroutines.resume
@@ -126,7 +130,7 @@ class IosLocalMediaProcessor(
         imageItems.forEach { asset ->
             val assetPlatformFile = PlatformFile(phAssetUriFromLocalId(asset.localIdentifier).toString())
             val assetUri = AssetLocation.LocalAssetLocation(assetPlatformFile)
-            val fullSizeAssetNsurl = fetchAssetNSURL(asset = asset) ?: run {
+            val fullSizeAssetNsurl = fetchImageNSURL(asset = asset) ?: run {
                 log.e { "Could not get full size asset for $assetUri" }
                 return@forEach
             }
@@ -171,7 +175,7 @@ class IosLocalMediaProcessor(
         videoItems.forEach { asset ->
             val assetPlatformFile = PlatformFile(phAssetUriFromLocalId(asset.localIdentifier).toString())
             val assetUri = AssetLocation.LocalAssetLocation(assetPlatformFile)
-            val fullSizeAssetNsurl = fetchAssetNSURL(asset = asset) ?: run {
+            val fullSizeAssetNsurl = fetchVideoNSURL(asset = asset) ?: run {
                 log.e { "Could not get full size asset for $assetUri" }
                 return@forEach
             }
@@ -204,7 +208,7 @@ class IosLocalMediaProcessor(
         }
     }.flowOn(ioDispatcher)
 
-    private suspend fun fetchAssetNSURL(asset: PHAsset): NSURL? = suspendCancellableCoroutine { continuation ->
+    private suspend fun fetchImageNSURL(asset: PHAsset): NSURL? = suspendCancellableCoroutine { continuation ->
         val options = PHContentEditingInputRequestOptions().apply {
             networkAccessAllowed = false
         }
@@ -218,6 +222,26 @@ class IosLocalMediaProcessor(
         // Handle cancellation perfectly
         continuation.invokeOnCancellation {
             asset.cancelContentEditingInputRequest(requestID)
+        }
+    }
+
+    private suspend fun fetchVideoNSURL(asset: PHAsset): NSURL? = suspendCancellableCoroutine { continuation ->
+        val options = PHVideoRequestOptions().apply {
+            networkAccessAllowed = false
+            version = PHVideoRequestOptionsVersionOriginal
+        }
+
+        val requestID = PHImageManager.defaultManager().requestAVAssetForVideo(asset, options) { avAsset, _, _ ->
+            val url = (avAsset as? AVURLAsset)?.URL
+            continuation.resume(
+                if (url != null && url.fileURL) {
+                    url
+                } else null
+            )
+        }
+
+        continuation.invokeOnCancellation {
+            PHImageManager.defaultManager().cancelImageRequest(requestID)
         }
     }
 }
