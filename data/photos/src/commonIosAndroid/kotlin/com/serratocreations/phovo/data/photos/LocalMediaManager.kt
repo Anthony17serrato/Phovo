@@ -22,9 +22,13 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+import com.serratocreations.phovo.core.common.PermissionManager
+import com.serratocreations.phovo.core.common.PermissionState
+
 class LocalMediaManager(
     private val localAndRemoteMediaRepository: LocalAndRemoteMediaRepository,
     private val localMediaProcessor: LocalMediaProcessor,
+    private val permissionManager: PermissionManager,
     private val appScope: CoroutineScope,
     logger: PhovoLogger,
 ) {
@@ -43,6 +47,11 @@ class LocalMediaManager(
      */
     fun initMediaProcessing() {
         log.i { "initMediaProcessing" }
+        val permissionState = permissionManager.getPermissionState()
+        if (permissionState != PermissionState.Granted && permissionState != PermissionState.Limited) {
+            log.w { "Gallery permission not granted (state: $permissionState). Skipping local media processing." }
+            return
+        }
         appScope.launch {
             localAndRemoteMediaRepository.clearNonFailedSyncLogs()
             // todo this approach could lead to OOM ,implement a more memory efficient way to check if media

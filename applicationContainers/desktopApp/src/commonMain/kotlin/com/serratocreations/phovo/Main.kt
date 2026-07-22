@@ -14,7 +14,6 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.serratocreations.phovo.di.initApplication
 import com.serratocreations.phovo.ui.PhovoApp
-import org.jetbrains.compose.resources.vectorResource
 import kotlin.system.exitProcess
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.painter.Painter
@@ -23,8 +22,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import io.github.kdroidfilter.platformtools.darkmodedetector.isSystemInDarkMode
-import phovo.sharedumbrella.generated.resources.Res
-import phovo.sharedumbrella.generated.resources.phovo_icon
+import com.serratocreations.phovo.core.designsystem.icon.PhovoIcons
 
 fun main() = application {
     val windowState = rememberWindowState(
@@ -36,7 +34,7 @@ fun main() = application {
 
     Tray(
         icon = tintedVectorPainter(
-            imageVector = vectorResource(Res.drawable.phovo_icon),
+            imageVector = PhovoIcons.PhovoIcon,
             tint = if (isDark) Color.White else Color.Black
         ),
         tooltip = "Phovo"

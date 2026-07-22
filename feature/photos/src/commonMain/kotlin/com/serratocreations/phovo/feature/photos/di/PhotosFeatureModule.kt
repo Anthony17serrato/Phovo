@@ -16,8 +16,10 @@ fun getPhotosFeatureModule(): Module = module {
 
     viewModel {
         PhotosViewModel(
-            get(),
-            get(IO_DISPATCHER)
+            getPhotosFeedWithThumbnailsUseCase = get(),
+            permissionManager = get(),
+            localMediaSyncTrigger = get(),
+            ioDispatcher = get(IO_DISPATCHER)
         )
     }
 }

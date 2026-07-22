@@ -49,12 +49,22 @@ internal actual fun getAndroidDesktopIosModules(): Module = module {
         LocalMediaManager(
             localAndRemoteMediaRepository = get(),
             localMediaProcessor = get(),
+            permissionManager = get(),
             appScope = get(APPLICATION_SCOPE),
             logger = get()
         )
     } binds arrayOf(
         LocalMediaManager::class
     )
+
+    single<com.serratocreations.phovo.core.common.LocalMediaSyncTrigger> {
+        val manager = get<LocalMediaManager>()
+        object : com.serratocreations.phovo.core.common.LocalMediaSyncTrigger {
+            override fun triggerSync() {
+                manager.initMediaProcessing()
+            }
+        }
+    }
 
     single<MediaNetworkDataSource> {
         IosAndroidMediaNetworkDataSource(

@@ -76,9 +76,7 @@ class IosLocalMediaProcessor(
                 processAuthorizedItems(processedItems, processMediaChannel)
             }
             PHAuthorizationStatusNotDetermined -> {
-                log.w { "PHPhotoLibrary permission not determined" }
-                requestPermissions()
-                processAuthorizedItems(processedItems, processMediaChannel)
+                log.w { "PHPhotoLibrary permission not determined. Skipping processing." }
             }
             PHAuthorizationStatusRestricted -> {
                 log.w { "PHPhotoLibrary restricted permission" }
@@ -103,14 +101,6 @@ class IosLocalMediaProcessor(
             .launchIn(this)
     }
 
-    private suspend fun requestPermissions(): Boolean = suspendCancellableCoroutine { continuation ->
-        PHPhotoLibrary.requestAuthorizationForAccessLevel(PHAccessLevelReadWrite) { status ->
-            continuation.resume(status == PHAuthorizationStatusAuthorized || status == PHAuthorizationStatusLimited)
-        }
-        continuation.invokeOnCancellation {
-            // request does not have a cancel API, do nothing
-        }
-    }
 
     @OptIn(ExperimentalForeignApi::class, ExperimentalTime::class, ExperimentalUuidApi::class)
     private fun fetchImages(processedImages: List<MediaImageItem>): Flow<MediaImageItem> = flow {
