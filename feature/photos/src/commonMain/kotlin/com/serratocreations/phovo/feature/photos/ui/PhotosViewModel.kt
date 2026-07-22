@@ -23,9 +23,15 @@ import kotlin.time.Clock
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.ExperimentalTime
 
+import com.serratocreations.phovo.core.common.PermissionManager
+import com.serratocreations.phovo.core.common.PermissionState
+import com.serratocreations.phovo.core.common.LocalMediaSyncTrigger
+
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 class PhotosViewModel(
     getPhotosFeedWithThumbnailsUseCase: GetPhotosFeedWithThumbnailsUseCase,
+    private val permissionManager: PermissionManager,
+    private val localMediaSyncTrigger: LocalMediaSyncTrigger,
     ioDispatcher: CoroutineDispatcher
 ): ViewModel() {
     @OptIn(ExperimentalTime::class)
@@ -34,6 +40,7 @@ class PhotosViewModel(
     val photosUiState = _photosUiState.asStateFlow()
 
     init {
+        checkPermissionState()
         getPhotosFeedWithThumbnailsUseCase()
             .sample(500.milliseconds)
             .onEach { phovoItems ->
@@ -64,9 +71,29 @@ class PhotosViewModel(
             currentState.copy(selectedPhoto = mediaUiItem)
         }
     }
+
+    fun checkPermissionState(activity: Any? = null) {
+        val state = permissionManager.getPermissionState(activity)
+        _photosUiState.update { currentState ->
+            currentState.copy(permissionState = state)
+        }
+        // If permission becomes Granted or Limited, trigger background media processing
+        if (state == PermissionState.Granted || state == PermissionState.Limited) {
+            initLocalMediaSync()
+        }
+    }
+
+    fun initLocalMediaSync() {
+        localMediaSyncTrigger.triggerSync()
+    }
+
+    fun openSettings() {
+        permissionManager.openSettings()
+    }
 }
 
 data class PhotosUiState(
     val photosFeed: List<PhotoUiItem> = emptyList(),
-    val selectedPhoto: MediaUiItem? = null
+    val selectedPhoto: MediaUiItem? = null,
+    val permissionState: PermissionState = PermissionState.NotDetermined
 )

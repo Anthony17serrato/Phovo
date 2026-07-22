@@ -20,7 +20,10 @@ val APPLICATION_SCOPE = named("ApplicationScope")
  */
 val MAIN_APPLICATION_SCOPE = named("MainApplicationScope")
 
+expect fun getCoreCommonPlatformModule(): Module
+
 fun getCoreCommonModule(): Module = module {
+    includes(getCoreCommonPlatformModule())
     single<CoroutineDispatcher>(IO_DISPATCHER) { getIoDispatcher() }
     single<CoroutineDispatcher>(MAIN_DISPATCHER) { Dispatchers.Main }
     single<CoroutineDispatcher>(DEFAULT_DISPATCHER) { Dispatchers.Default }
@@ -35,6 +38,7 @@ fun getCoreCommonModule(): Module = module {
         createApplicationScope(mainDispatcher, logger)
     }
 }
+
 
 private fun createApplicationScope(
     dispatcher: CoroutineDispatcher,

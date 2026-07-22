@@ -48,4 +48,10 @@ internal actual fun getAndroidDesktopIosModules(): Module = module {
             logger = get()
         )
     }
+
+    single<com.serratocreations.phovo.core.common.LocalMediaSyncTrigger> {
+        object : com.serratocreations.phovo.core.common.LocalMediaSyncTrigger {
+            override fun triggerSync() {}
+        }
+    }
 }
