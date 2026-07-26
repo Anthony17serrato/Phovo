@@ -51,18 +51,32 @@ internal fun Project.configureKotlinMultiplatform(
 
         if (targetList.contains(Targets.WEB)) {
             js {
-                browser()
+                browser {
+                    if (isApplication) {
+                        commonWebpackConfig {
+                            outputFileName = "webLandingPage.js"
+                        }
+                    }
+                }
                 if (isApplication) {
-                    outputModuleName.set("composeApp")
+                    outputModuleName.set("webLandingPage")
                     binaries.executable()
                 }
             }
 
             @OptIn(ExperimentalWasmDsl::class)
             wasmJs {
-                browser()
+                browser {
+                    if (isApplication) {
+                        val rootDirPath = project.rootDir.path
+                        val projectDirPath = project.projectDir.path
+                        commonWebpackConfig {
+                            outputFileName = "webLandingPage.js"
+                        }
+                    }
+                }
                 if (isApplication) {
-                    outputModuleName.set("composeApp")
+                    outputModuleName.set("webLandingPage")
                     binaries.executable()
                 }
             }

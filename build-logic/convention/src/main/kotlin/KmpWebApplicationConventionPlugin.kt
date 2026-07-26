@@ -11,7 +11,7 @@ class KmpWebApplicationConventionPlugin : Plugin<Project> {
                 apply("phovo.kmp.library.compose")
             }
 
-            // Configure only the Desktop (JVM) KMP target for libraries
+            // Configure only the Web KMP target for applications
             configureKotlinMultiplatform(isApplication = true, isUmbrella = false, targetList = setOf(Targets.WEB))
         }
     }
