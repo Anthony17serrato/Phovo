@@ -5,7 +5,7 @@ import androidx.compose.ui.window.ComposeViewport
 
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
-    ComposeViewport {
+    ComposeViewport(viewportContainerId = "ComposeTarget") {
         LandingPageApp()
     }
 }

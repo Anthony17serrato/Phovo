@@ -38,7 +38,7 @@ fun HeroSection(
             verticalArrangement = Arrangement.spacedBy(24.dp),
             modifier = Modifier.widthIn(max = 840.dp)
         ) {
-            // Large Phovo Brand Logo Showcase (Doubled size: 288.dp desktop / 216.dp mobile)
+            // Highly Optimized WebP Hero Logo Showcase (68 KB)
             Image(
                 painter = painterResource(Res.drawable.phovo_transparent_icon),
                 contentDescription = "Phovo App Icon",
