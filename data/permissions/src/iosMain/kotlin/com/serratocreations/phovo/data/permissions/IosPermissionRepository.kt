@@ -12,10 +12,8 @@ import platform.Foundation.NSOperationQueue
 import platform.Foundation.NSURL
 import platform.Photos.PHAccessLevelReadWrite
 import platform.Photos.PHAuthorizationStatusAuthorized
-import platform.Photos.PHAuthorizationStatusDenied
 import platform.Photos.PHAuthorizationStatusLimited
 import platform.Photos.PHAuthorizationStatusNotDetermined
-import platform.Photos.PHAuthorizationStatusRestricted
 import platform.Photos.PHChange
 import platform.Photos.PHPhotoLibrary
 import platform.Photos.PHPhotoLibraryChangeObserverProtocol
@@ -49,7 +47,6 @@ class IosPermissionRepository : PermissionRepository {
         ) { _ ->
             refreshPermissionsState()
         }
-        PHPhotoLibrary.sharedPhotoLibrary().registerChangeObserver(photoLibraryObserver)
         refreshPermissionsState()
     }
 
@@ -61,27 +58,34 @@ class IosPermissionRepository : PermissionRepository {
     private fun fetchGalleryPermissionStatus(): GalleryPermissionsStatus {
         val status = PHPhotoLibrary.authorizationStatusForAccessLevel(PHAccessLevelReadWrite)
         return when (status) {
-            PHAuthorizationStatusAuthorized -> GalleryPermissionsStatus(
-                permissionStatus = PermissionStatus.Granted,
-                isLimited = false
-            )
-            PHAuthorizationStatusLimited -> GalleryPermissionsStatus(
-                permissionStatus = PermissionStatus.Ungranted,
-                isLimited = true
-            )
-            PHAuthorizationStatusNotDetermined -> GalleryPermissionsStatus(
-                permissionStatus = PermissionStatus.Ungranted,
-                isLimited = false
-            )
-            PHAuthorizationStatusDenied,
-            PHAuthorizationStatusRestricted -> GalleryPermissionsStatus(
-                permissionStatus = PermissionStatus.PermanentlyDenied,
-                isLimited = false
-            )
-            else -> GalleryPermissionsStatus(
-                permissionStatus = PermissionStatus.PermanentlyDenied,
-                isLimited = false
-            )
+            PHAuthorizationStatusAuthorized -> {
+                PHPhotoLibrary.sharedPhotoLibrary().registerChangeObserver(photoLibraryObserver)
+                GalleryPermissionsStatus(
+                    permissionStatus = PermissionStatus.Granted,
+                    isLimited = false
+                )
+            }
+            PHAuthorizationStatusLimited -> {
+                PHPhotoLibrary.sharedPhotoLibrary().registerChangeObserver(photoLibraryObserver)
+                GalleryPermissionsStatus(
+                    permissionStatus = PermissionStatus.Ungranted,
+                    isLimited = true
+                )
+            }
+            PHAuthorizationStatusNotDetermined -> {
+                PHPhotoLibrary.sharedPhotoLibrary().unregisterChangeObserver(photoLibraryObserver)
+                GalleryPermissionsStatus(
+                    permissionStatus = PermissionStatus.Ungranted,
+                    isLimited = false
+                )
+            }
+            else -> {
+                PHPhotoLibrary.sharedPhotoLibrary().unregisterChangeObserver(photoLibraryObserver)
+                GalleryPermissionsStatus(
+                    permissionStatus = PermissionStatus.PermanentlyDenied,
+                    isLimited = false
+                )
+            }
         }
     }
 
