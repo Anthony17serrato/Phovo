@@ -28,7 +28,6 @@ import platform.Foundation.NSNumber
 import platform.Foundation.NSURL
 import platform.Foundation.valueForKey
 import platform.AVFoundation.AVURLAsset
-import platform.Photos.PHAccessLevelReadWrite
 import platform.Photos.PHAsset
 import platform.Photos.PHAssetMediaTypeImage
 import platform.Photos.PHAssetMediaTypeVideo
@@ -36,7 +35,6 @@ import platform.Photos.PHAssetResource
 import platform.Photos.PHContentEditingInputRequestOptions
 import platform.Photos.PHFetchOptions
 import platform.Photos.PHImageManager
-import platform.Photos.PHPhotoLibrary
 import platform.Photos.PHVideoRequestOptions
 import platform.Photos.PHVideoRequestOptionsVersionOriginal
 import platform.Photos.cancelContentEditingInputRequest
