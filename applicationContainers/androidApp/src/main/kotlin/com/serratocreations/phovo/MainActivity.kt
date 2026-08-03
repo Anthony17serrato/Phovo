@@ -11,40 +11,44 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.app.ActivityCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.withResumed
+import com.serratocreations.phovo.data.permissions.AndroidPermissionRepository
+import com.serratocreations.phovo.data.permissions.PermissionRequestResult
 import com.serratocreations.phovo.ui.PhovoApp
+import kotlinx.coroutines.launch
+import org.koin.android.ext.android.inject
 
 class MainActivity : ComponentActivity() {
+    // Lazy injection - created when first accessed
+    private val permissionRepository: AndroidPermissionRepository by inject()
+    val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { isGranted: Map<String, Boolean> ->
+        val result = isGranted.map { (permission, isGranted) ->
+            PermissionRequestResult(
+                permission = permission,
+                isGranted = isGranted,
+                shouldShowRequestPermissionRationale = ActivityCompat.shouldShowRequestPermissionRationale(
+                    this@MainActivity, permission
+                )
+            )
+        }
+        permissionRepository.onPermissionResult(result)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        val splash = installSplashScreen()
         super.onCreate(savedInstanceState)
 
-        // Register the permissions callback, which handles the user's response to the
-        // system permissions dialog. Save the return value, an instance of
-        // ActivityResultLauncher. You can use either a val, as shown in this snippet,
-        // or a lateinit var in your onAttach() or onCreate() method.
-        val requestPermissionLauncher =
-            registerForActivityResult(
-                ActivityResultContracts.RequestMultiplePermissions()
-            ) { isGranted: Map<String, Boolean> ->
-//                if (isGranted) {
-//                    // Permission is granted. Continue the action or workflow in your
-//                    // app.
-//                } else {
-//                    // Explain to the user that the feature is unavailable because the
-//                    // feature requires a permission that the user has denied. At the
-//                    // same time, respect the user's decision. Don't link to system
-//                    // settings in an effort to convince the user to change their
-//                    // decision.
-//                }
-            }
-
-        requestPermissionLauncher.launch(arrayOf("android.permission.READ_MEDIA_IMAGES", "android.permission.READ_MEDIA_VIDEO"))
-
-        installSplashScreen()
+        splash.setKeepOnScreenCondition { permissionRepository.permissionsState.value == null }
         // Turn off the decor fitting system windows, which allows us to handle insets,
         // including IME animations, and go edge-to-edge
         // This also sets up the initial system bar style based on the platform theme
         enableEdgeToEdge()
+        registerPermissionsHandler()
 
         setContent {
             val darkTheme = isSystemInDarkTheme()
@@ -68,6 +72,22 @@ class MainActivity : ComponentActivity() {
 
             PhovoApp()
         }
+    }
+
+    private fun registerPermissionsHandler() {
+        lifecycleScope.launch {
+            permissionRepository.requestEventQueue.collect { event ->
+                // Suspend until safely resumed, then execute the synchronous launch
+                lifecycle.withResumed {
+                    requestPermissionLauncher.launch(event.permissions)
+                }
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        permissionRepository.updatePermissionsStateSynchronous()
     }
 }
 

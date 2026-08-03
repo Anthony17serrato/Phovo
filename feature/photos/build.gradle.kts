@@ -41,6 +41,10 @@ kotlin {
             implementation(libs.kotlin.test)
         }
 
+        commonIosAndroid.dependencies {
+            implementation(projects.data.permissions)
+        }
+
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
         }

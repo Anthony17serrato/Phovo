@@ -5,6 +5,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.SupervisorJob
 import org.koin.core.module.Module
 import org.koin.core.qualifier.named
@@ -20,8 +21,15 @@ val APPLICATION_SCOPE = named("ApplicationScope")
  */
 val MAIN_APPLICATION_SCOPE = named("MainApplicationScope")
 
+/**
+ * In addition to common definitions for IOS, Desktop, & Android
+ * this API provides modules that are specific to each individual platform
+ */
+internal expect fun getAndroidDesktopIosModules(): Module
+
 fun getCoreCommonModule(): Module = module {
-    single<CoroutineDispatcher>(IO_DISPATCHER) { getIoDispatcher() }
+    includes(getAndroidDesktopIosModules())
+    single<CoroutineDispatcher>(IO_DISPATCHER) { Dispatchers.IO }
     single<CoroutineDispatcher>(MAIN_DISPATCHER) { Dispatchers.Main }
     single<CoroutineDispatcher>(DEFAULT_DISPATCHER) { Dispatchers.Default }
     single<CoroutineScope>(APPLICATION_SCOPE) {
@@ -52,5 +60,3 @@ private fun createApplicationScope(
     }
     return CoroutineScope(SupervisorJob() + dispatcher + handler)
 }
-
-expect fun getIoDispatcher(): CoroutineDispatcher

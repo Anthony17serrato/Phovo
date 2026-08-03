@@ -6,6 +6,7 @@ import com.serratocreations.phovo.core.database.PhovoDatabase
 import com.serratocreations.phovo.core.database.dao.PhovoMediaDao
 import com.serratocreations.phovo.core.database.dao.ServerConfigDao
 import com.serratocreations.phovo.core.database.dao.ClientConfigDao
+import com.serratocreations.phovo.core.database.dao.PermissionsDao
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import org.koin.core.module.Module
@@ -38,5 +39,9 @@ fun getDatabaseModule(): Module = module {
 
     single<ClientConfigDao> {
         get<PhovoDatabase>().getClientConfigDao()
+    }
+
+    single<PermissionsDao> {
+        get<PhovoDatabase>().getPermissionsDao()
     }
 }

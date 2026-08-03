@@ -12,6 +12,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(projects.sharedumbrella)
+            implementation(projects.core.designsystem)
             implementation(libs.compose.resources)
             implementation(libs.platformtools.darkmodedetector)
         }

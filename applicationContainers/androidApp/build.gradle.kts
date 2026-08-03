@@ -10,6 +10,7 @@ plugins {
 
 dependencies {
     implementation(projects.core.designsystem)
+    implementation(projects.data.permissions)
     implementation(projects.sharedumbrella)
     implementation(libs.compose.resources)
     implementation(libs.platformtools.darkmodedetector)

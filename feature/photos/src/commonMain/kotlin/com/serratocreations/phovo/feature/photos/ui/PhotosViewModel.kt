@@ -24,13 +24,15 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
-class PhotosViewModel(
+open class PhotosViewModel(
     getPhotosFeedWithThumbnailsUseCase: GetPhotosFeedWithThumbnailsUseCase,
     ioDispatcher: CoroutineDispatcher
 ): ViewModel() {
+
+    protected open val defaultUiState = PhotosUiState(shouldShowWelcomeBottomSheet = false)
     @OptIn(ExperimentalTime::class)
     private val currentYear = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).year
-    private val _photosUiState = MutableStateFlow(PhotosUiState())
+    protected val _photosUiState = MutableStateFlow(PhotosUiState(shouldShowWelcomeBottomSheet = false))
     val photosUiState = _photosUiState.asStateFlow()
 
     init {
@@ -59,6 +61,10 @@ class PhotosViewModel(
         super.onCleared()
     }
 
+    open fun onProceedWelcomeBottomSheet() {
+
+    }
+
     fun onPhotoSelected(mediaUiItem: MediaUiItem) {
         _photosUiState.update { currentState ->
             currentState.copy(selectedPhoto = mediaUiItem)
@@ -68,5 +74,19 @@ class PhotosViewModel(
 
 data class PhotosUiState(
     val photosFeed: List<PhotoUiItem> = emptyList(),
-    val selectedPhoto: MediaUiItem? = null
+    val selectedPhoto: MediaUiItem? = null,
+    val shouldShowWelcomeBottomSheet: Boolean,
+    // TODO UI State should support displaying multiple call to action components
+    //  in a carousel manner.
+    val callToAction: CallToAction? = CallToAction(
+        actionTitle = "Finish setup",
+        actionDescription = "Get more from your gallery",
+        action = { /* TODO */ }
+    )
+)
+
+data class CallToAction(
+    val actionTitle: String,
+    val actionDescription: String,
+    val action: () -> Unit
 )

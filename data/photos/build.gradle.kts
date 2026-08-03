@@ -33,6 +33,10 @@ kotlin {
             implementation("com.ashampoo:kim:0.20")
         }
 
+        commonIosAndroid.dependencies {
+            implementation(projects.data.permissions)
+        }
+
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }

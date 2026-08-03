@@ -23,8 +23,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import io.github.kdroidfilter.platformtools.darkmodedetector.isSystemInDarkMode
-import phovo.sharedumbrella.generated.resources.Res
-import phovo.sharedumbrella.generated.resources.phovo_icon
+import phovo.core.designsystem.generated.resources.Res
+import phovo.core.designsystem.generated.resources.phovo_icon
 
 fun main() = application {
     val windowState = rememberWindowState(
