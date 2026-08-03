@@ -18,7 +18,7 @@ import phovo.feature.connections.generated.resources.Res as connectionsRes
 import phovo.feature.connections.generated.resources.feature_connections_title
 import phovo.feature.connections.generated.resources.ic_dns_rounded
 import phovo.feature.connections.generated.resources.ic_dns_outlined
-import phovo.sharedumbrella.generated.resources.phovo_icon
+import phovo.core.designsystem.generated.resources.phovo_icon
 
 data class TopLevelNavItem(
     val selectedIcon: IconAsset,
@@ -28,8 +28,8 @@ data class TopLevelNavItem(
 )
 
 val PHOTOS = TopLevelNavItem(
-    selectedIcon = PainterVectorIcon(Res.drawable.phovo_icon),
-    unselectedIcon = PainterVectorIcon(Res.drawable.phovo_icon),
+    selectedIcon = PainterVectorIcon(designRes.drawable.phovo_icon),
+    unselectedIcon = PainterVectorIcon(designRes.drawable.phovo_icon),
     iconTextId = photosRes.string.feature_photos_title,
     titleTextId = Res.string.app_name
 )

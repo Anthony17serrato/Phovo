@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
@@ -38,6 +39,7 @@ import com.serratocreations.phovo.core.common.Platform
 import com.serratocreations.phovo.core.common.getPlatform
 import com.serratocreations.phovo.core.designsystem.component.CallToActionComponent
 import com.serratocreations.phovo.feature.photos.ui.components.LoadMultiResImage
+import com.serratocreations.phovo.feature.photos.ui.components.WelcomeBottomSheet
 import com.serratocreations.phovo.feature.photos.ui.model.DateHeaderPhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.PhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.MediaUiItem
@@ -70,7 +72,7 @@ fun ImageLoader.Builder.platformDiskCache(): ImageLoader.Builder =
         }
     }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
+@OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3Api::class)
 @Composable
 internal fun PhotosHomeScreen(
     onPhotoClick: (MediaUiItem) -> Unit,
@@ -102,8 +104,15 @@ internal fun PhotosHomeScreen(
             .build()
     }
     val photosState by photosViewModel.photosUiState.collectAsStateWithLifecycle()
+
+    WelcomeBottomSheet(
+        onProceedWelcomeBottomSheet = photosViewModel::onProceedWelcomeBottomSheet,
+        shouldShowBottomSheet = photosState.shouldShowWelcomeBottomSheet
+    )
+
     PhotosScreen(
         photosItems = photosState.photosFeed,
+        callToAction = photosState.callToAction,
         onPhotoClick = onPhotoClick,
         sharedElementTransition = sharedElementTransition,
         animatedContentScope = animatedContentScope,
@@ -116,6 +125,7 @@ internal fun PhotosHomeScreen(
 @Composable
 internal fun PhotosScreen(
     photosItems: List<PhotoUiItem>,
+    callToAction: CallToAction?,
     onPhotoClick: (MediaUiItem) -> Unit,
     sharedElementTransition: SharedTransitionScope,
     animatedContentScope: AnimatedContentScope,
@@ -136,15 +146,18 @@ internal fun PhotosScreen(
             verticalArrangement = Arrangement.spacedBy(4.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            item(
-                span = { GridItemSpan(maxLineSpan) }
-            ) {
-                CallToActionComponent(
-                    actionTitle = "Finish setup",
-                    actionDescription = "Get more from your gallery",
-                    onClick = { /* TODO */ }
-                )
+            if (callToAction != null) {
+                item(
+                    span = { GridItemSpan(maxLineSpan) }
+                ) {
+                    CallToActionComponent(
+                        actionTitle = callToAction.actionTitle,
+                        actionDescription = callToAction.actionDescription,
+                        onClick = callToAction.action
+                    )
+                }
             }
+
             itemsIndexed(
                 items = photosItems,
                 key = { _, item ->

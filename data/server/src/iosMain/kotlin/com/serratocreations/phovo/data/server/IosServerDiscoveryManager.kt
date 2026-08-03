@@ -23,6 +23,8 @@ import platform.Foundation.NSNetService
 import platform.Foundation.NSNetServiceBrowser
 import platform.Foundation.NSNetServiceBrowserDelegateProtocol
 import platform.Foundation.NSNetServiceDelegateProtocol
+import platform.Foundation.NSRunLoop
+import platform.Foundation.NSRunLoopCommonModes
 import platform.darwin.NSObject
 import platform.posix.getnameinfo
 import platform.posix.sockaddr
@@ -113,6 +115,7 @@ class IosServerDiscoveryManager(
                     lock.unlock()
                 }
                 didFindService.setDelegate(serviceDelegate)
+                didFindService.scheduleInRunLoop(NSRunLoop.mainRunLoop, NSRunLoopCommonModes)
                 didFindService.resolveWithTimeout(5.0)
             }
 
@@ -140,11 +143,14 @@ class IosServerDiscoveryManager(
             lock.unlock()
         }
         browser.setDelegate(browserDelegate)
+        browser.scheduleInRunLoop(NSRunLoop.mainRunLoop, NSRunLoopCommonModes)
         browser.searchForServicesOfType("_phovo._tcp", inDomain = "local.")
 
         awaitClose {
+            browser.removeFromRunLoop(NSRunLoop.mainRunLoop, NSRunLoopCommonModes)
             browser.stop()
             servicesToResolve.forEach {
+                it.removeFromRunLoop(NSRunLoop.mainRunLoop, NSRunLoopCommonModes)
                 it.setDelegate(null)
                 it.stop()
             }

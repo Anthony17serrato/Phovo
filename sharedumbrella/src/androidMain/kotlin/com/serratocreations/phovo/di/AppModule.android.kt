@@ -9,7 +9,7 @@ import org.koin.dsl.module
 actual fun getApplicationPlatformModulesFetcher(): ApplicationPlatformModuleFetcher =
     AndroidApplicationPlatformModuleFetcher()
 
-class AndroidApplicationPlatformModuleFetcher: ApplicationPlatformModuleFetcher() {
+class AndroidApplicationPlatformModuleFetcher: IosAndroidApplicationPlatformModuleFetcher() {
     override fun getModule(): Module = module {
         includes(super.getModule())
 

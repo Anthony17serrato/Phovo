@@ -69,4 +69,8 @@ object PhovoIcons {
     val ChevronRight: ImageVector
         @Composable
         get() = vectorResource(Res.drawable.ic_chevron_right_rounded)
+
+    val PhovoIcon: ImageVector
+        @Composable
+        get() = vectorResource(Res.drawable.phovo_icon)
 }

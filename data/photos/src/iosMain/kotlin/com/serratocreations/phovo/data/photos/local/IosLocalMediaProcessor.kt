@@ -28,20 +28,13 @@ import platform.Foundation.NSNumber
 import platform.Foundation.NSURL
 import platform.Foundation.valueForKey
 import platform.AVFoundation.AVURLAsset
-import platform.Photos.PHAccessLevelReadWrite
 import platform.Photos.PHAsset
 import platform.Photos.PHAssetMediaTypeImage
 import platform.Photos.PHAssetMediaTypeVideo
 import platform.Photos.PHAssetResource
-import platform.Photos.PHAuthorizationStatusAuthorized
-import platform.Photos.PHAuthorizationStatusDenied
-import platform.Photos.PHAuthorizationStatusLimited
-import platform.Photos.PHAuthorizationStatusNotDetermined
-import platform.Photos.PHAuthorizationStatusRestricted
 import platform.Photos.PHContentEditingInputRequestOptions
 import platform.Photos.PHFetchOptions
 import platform.Photos.PHImageManager
-import platform.Photos.PHPhotoLibrary
 import platform.Photos.PHVideoRequestOptions
 import platform.Photos.PHVideoRequestOptionsVersionOriginal
 import platform.Photos.cancelContentEditingInputRequest
@@ -69,34 +62,6 @@ class IosLocalMediaProcessor(
         processedItems: List<MediaItem>,
         processMediaChannel: SendChannel<MediaItem>
     ) = launch {
-        val authorizationStatus = PHPhotoLibrary.authorizationStatusForAccessLevel(PHAccessLevelReadWrite)
-        when(authorizationStatus) {
-            PHAuthorizationStatusAuthorized -> {
-                log.i { "PHPhotoLibrary authorized" }
-                processAuthorizedItems(processedItems, processMediaChannel)
-            }
-            PHAuthorizationStatusLimited -> {
-                log.i { "PHPhotoLibrary limited" }
-                processAuthorizedItems(processedItems, processMediaChannel)
-            }
-            PHAuthorizationStatusNotDetermined -> {
-                log.w { "PHPhotoLibrary permission not determined" }
-                requestPermissions()
-                processAuthorizedItems(processedItems, processMediaChannel)
-            }
-            PHAuthorizationStatusRestricted -> {
-                log.w { "PHPhotoLibrary restricted permission" }
-            }
-            PHAuthorizationStatusDenied -> {
-                log.w { "PHPhotoLibrary permission denied" }
-            }
-        }
-    }
-
-    private fun CoroutineScope.processAuthorizedItems(
-        processedItems: List<MediaItem>,
-        processMediaChannel: SendChannel<MediaItem>
-    ) {
         val (processedVideos, processedImages) = processedItems.segregate()
         fetchImages(processedImages)
             .onEach { processMediaChannel.send(it) }
@@ -107,14 +72,6 @@ class IosLocalMediaProcessor(
             .launchIn(this)
     }
 
-    private suspend fun requestPermissions(): Boolean = suspendCancellableCoroutine { continuation ->
-        PHPhotoLibrary.requestAuthorizationForAccessLevel(PHAccessLevelReadWrite) { status ->
-            continuation.resume(status == PHAuthorizationStatusAuthorized || status == PHAuthorizationStatusLimited)
-        }
-        continuation.invokeOnCancellation {
-            // request does not have a cancel API, do nothing
-        }
-    }
 
     @OptIn(ExperimentalForeignApi::class, ExperimentalTime::class, ExperimentalUuidApi::class)
     private fun fetchImages(processedImages: List<MediaImageItem>): Flow<MediaImageItem> = flow {

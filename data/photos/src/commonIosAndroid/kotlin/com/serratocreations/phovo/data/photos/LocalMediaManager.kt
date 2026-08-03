@@ -2,6 +2,8 @@ package com.serratocreations.phovo.data.photos
 
 import com.serratocreations.phovo.core.common.util.logTimeToComplete
 import com.serratocreations.phovo.core.logger.PhovoLogger
+import com.serratocreations.phovo.data.permissions.PermissionRepository
+import com.serratocreations.phovo.data.permissions.PermissionStatus
 import com.serratocreations.phovo.data.photos.local.BackupCompleteLocal
 import com.serratocreations.phovo.data.photos.local.LocalMediaProcessor
 import com.serratocreations.phovo.data.photos.local.LocalMediaState
@@ -14,8 +16,8 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.consumeAsFlow
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -25,6 +27,7 @@ import kotlinx.coroutines.launch
 class LocalMediaManager(
     private val localAndRemoteMediaRepository: LocalAndRemoteMediaRepository,
     private val localMediaProcessor: LocalMediaProcessor,
+    private val permissionRepository: PermissionRepository,
     private val appScope: CoroutineScope,
     logger: PhovoLogger,
 ) {
@@ -36,6 +39,8 @@ class LocalMediaManager(
     private val _localMediaState = MutableStateFlow<LocalMediaState>(Scanning)
     val localMediaState = _localMediaState.asStateFlow()
 
+    // TODO this logic needs to be improved once periodic sync is being implemented
+    //  https://github.com/Anthony17serrato/Phovo/issues/124
     /**
      * API initializes job to process local media and synchronize to server.
      * Processing includes tasks such as extracting media metadata and generating md5 hashes and
@@ -45,15 +50,20 @@ class LocalMediaManager(
         log.i { "initMediaProcessing" }
         appScope.launch {
             localAndRemoteMediaRepository.clearNonFailedSyncLogs()
-            // todo this approach could lead to OOM ,implement a more memory efficient way to check if media
-            //  is already processed(refer to desktop media processing implementation)
-            val alreadyProcessedLocalItems = localAndRemoteMediaRepository.phovoMediaFlow().first()
-            val processJob = processJob(
-                localItems = alreadyProcessedLocalItems,
-            )
-            // Await server configured before starting sync job
-            localAndRemoteMediaRepository.observeServerConnection().filter { it }.first()
-            syncJob(processJob)
+            permissionRepository.observeGalleryPermissionStatus()
+                .collectLatest { status ->
+                    if(status.permissionStatus == PermissionStatus.Granted || status.isLimited) {
+                        // todo this approach could lead to OOM ,implement a more memory efficient way to check if media
+                        //  is already processed(refer to desktop media processing implementation)
+                        val alreadyProcessedLocalItems = localAndRemoteMediaRepository.phovoMediaFlow().first()
+                        val processingJob = processJob(
+                            localItems = alreadyProcessedLocalItems,
+                        )
+                        // Await server configured before starting sync job
+                        localAndRemoteMediaRepository.observeServerConnection().first { it }
+                        syncJob(processingJob)
+                    }
+                }
         }
     }
 

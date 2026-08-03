@@ -9,7 +9,7 @@ import org.koin.dsl.module
 actual fun getApplicationPlatformModulesFetcher(): ApplicationPlatformModuleFetcher =
     IosApplicationPlatformModuleFetcher()
 
-class IosApplicationPlatformModuleFetcher: ApplicationPlatformModuleFetcher() {
+class IosApplicationPlatformModuleFetcher: IosAndroidApplicationPlatformModuleFetcher() {
     override fun getModule(): Module = module {
         includes(super.getModule())
         factory<AndroidDesktopIosAppInitializer> {

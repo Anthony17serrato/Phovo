@@ -39,6 +39,9 @@ kotlin {
             implementation(libs.bundles.navigation3)
             implementation(libs.filekit.core)
         }
+        commonIosAndroid.dependencies {
+            implementation(projects.data.permissions)
+        }
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.jetbrains.swing)
