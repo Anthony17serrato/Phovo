@@ -1,12 +1,11 @@
 package com.serratocreations.phovo.core.designsystem.component
 
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
@@ -22,8 +21,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.PermanentNavigationDrawer
 import androidx.compose.material3.PermanentDrawerSheet
 import androidx.compose.material3.NavigationDrawerItem
@@ -47,36 +46,43 @@ import com.serratocreations.phovo.core.common.ui.MEDIUM_WIDTH
  * @param enabled controls the enabled state of this item. When `false`, this item will not be
  * clickable and will appear disabled to accessibility services.
  * @param label The item text label content.
- * @param alwaysShowLabel Whether to always show the label for this item. If false, the label will
  * only be shown when this item is selected.
  */
 @Composable
-fun RowScope.PhovoNavigationBarItem(
+fun PhovoNavigationBarItem(
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    alwaysShowLabel: Boolean = true,
     icon: @Composable () -> Unit,
     selectedIcon: @Composable () -> Unit = icon,
     label: @Composable (() -> Unit)? = null,
 ) {
-    NavigationBarItem(
-        selected = selected,
+    val backgroundColor = if (selected) PhovoNavigationDefaults.navigationIndicatorColor() else Color.Transparent
+    val contentColor = if (selected) PhovoNavigationDefaults.navigationSelectedItemColor() else PhovoNavigationDefaults.navigationContentColor()
+
+    androidx.compose.material3.Surface(
         onClick = onClick,
-        icon = if (selected) selectedIcon else icon,
-        modifier = modifier,
+        modifier = modifier.height(48.dp),
+        shape = androidx.compose.foundation.shape.CircleShape,
+        color = backgroundColor,
+        contentColor = contentColor,
         enabled = enabled,
-        label = label,
-        alwaysShowLabel = alwaysShowLabel,
-        colors = NavigationBarItemDefaults.colors(
-            selectedIconColor = PhovoNavigationDefaults.navigationSelectedItemColor(),
-            unselectedIconColor = PhovoNavigationDefaults.navigationContentColor(),
-            selectedTextColor = PhovoNavigationDefaults.navigationSelectedItemColor(),
-            unselectedTextColor = PhovoNavigationDefaults.navigationContentColor(),
-            indicatorColor = PhovoNavigationDefaults.navigationIndicatorColor(),
-        ),
-    )
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp),
+            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (selected) {
+                selectedIcon()
+                Spacer(Modifier.width(8.dp))
+            }
+            if (label != null) {
+                label()
+            }
+        }
+    }
 }
 
 /**
@@ -86,16 +92,24 @@ fun RowScope.PhovoNavigationBarItem(
  * @param content Destinations inside the navigation bar. This should contain multiple
  * [NavigationBarItem]s.
  */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun PhovoNavigationBar(
     modifier: Modifier = Modifier,
-    content: @Composable RowScope.() -> Unit,
+    content: @Composable () -> Unit,
 ) {
-    NavigationBar(
+    androidx.compose.material3.HorizontalFloatingToolbar(
+        expanded = true,
         modifier = modifier,
-        contentColor = PhovoNavigationDefaults.navigationContentColor(),
-        tonalElevation = 0.dp,
-        content = content,
+        colors = androidx.compose.material3.FloatingToolbarDefaults.standardFloatingToolbarColors(),
+        content = {
+            Row(
+                modifier = Modifier.padding(horizontal = 8.dp),
+                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                content = { content() }
+            )
+        }
     )
 }
 
@@ -166,12 +180,6 @@ fun PhovoNavigationRail(
     )
 }
 
-/**
- *
- * @param modifier Modifier to be applied to the navigation suite scaffold.
- * @param windowAdaptiveInfo The window adaptive info.
- * @param content The app content inside the scaffold.
- */
 class PhovoNavigationSuiteItem(
     val selected: Boolean,
     val onClick: () -> Unit,
@@ -279,9 +287,9 @@ fun PhovoNavigationSuiteScaffold(
                     visible = shouldShowNavBarOnCompactScreens,
                     enter = slideInVertically(initialOffsetY = { it }),
                     exit = slideOutVertically(targetOffsetY = { it }),
-                    modifier = Modifier.align(Alignment.BottomCenter)
+                    modifier = Modifier.align(Alignment.BottomCenter).navigationBarsPadding()
                 ) {
-                    PhovoNavigationBar(modifier = Modifier.fillMaxWidth()) {
+                    PhovoNavigationBar(modifier = Modifier) {
                         scope.items.forEach { item ->
                             PhovoNavigationBarItem(
                                 selected = item.selected,
@@ -316,5 +324,3 @@ object PhovoNavigationDefaults {
 sealed interface PhovoNavOptions {
     data object NavigateToBackstack : PhovoNavOptions
 }
-
-interface PhovoRoute
