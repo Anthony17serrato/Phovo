@@ -242,14 +242,11 @@ private fun Modifier.notificationDot(statusColor: ServerStatusColor): Modifier =
         drawWithContent {
             drawContent()
             drawCircle(
-                color,
-                radius = 5.dp.toPx(),
-                // This is based on the dimensions of the NavigationBar's "indicator pill";
-                // however, its parameters are private, so we must depend on them implicitly
-                // (NavigationBarTokens.ActiveIndicatorWidth = 64.dp)
-                center = center + Offset(
-                    64.dp.toPx() * .45f,
-                    32.dp.toPx() * -.45f - 6.dp.toPx(),
+                color = color,
+                radius = 4.dp.toPx(),
+                center = Offset(
+                    x = size.width - 12.dp.toPx(),
+                    y = 10.dp.toPx(),
                 ),
             )
         }
