@@ -9,6 +9,8 @@
     <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
     <!--Todo investigate https for desktop server-->
     <!--TODO The attribute android:allowBackup is deprecated from Android 12 and higher and may be removed in future versions. Consider adding the attribute android:dataExtractionRules specifying an @xml resource which configures cloud backups and device transfers on Android 12 and higher.-->
     <!--TODO @deprecated This API will be deprecated in the future and will have no effect. Specify a Network Security Config file in addition to this API to prevent future breakage. @FlaggedApi(android.security.Flags.-->

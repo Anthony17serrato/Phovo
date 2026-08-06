@@ -73,6 +73,17 @@ class AndroidPermissionRepository(
         return observeGalleryPermissionStatus().first()
     }
 
+    override suspend fun requestLocalNetworkPermissions(): PermissionStatus {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+            firePermissionRequestAndHandleResult(
+                PermissionRequest(
+                    permissions = arrayOf(Manifest.permission.ACCESS_LOCAL_NETWORK)
+                )
+            )
+        }
+        return observeLocalNetworkPermissionStatus().first()
+    }
+
     fun onPermissionResult(result: List<PermissionRequestResult>) {
         resultChannel.trySend(result)
     }
@@ -152,6 +163,24 @@ class AndroidPermissionRepository(
         )
     }
 
+    @DelicatePermissionsApi
+    override fun localNetworkPermissionStatus(): PermissionStatus {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.CINNAMON_BUN) {
+            return PermissionStatus.Granted
+        }
+        val permissionsState = _permissionsState.value ?: return PermissionStatus.Ungranted
+        return permissionsState[Manifest.permission.ACCESS_LOCAL_NETWORK] ?: PermissionStatus.Ungranted
+    }
+
+    override fun observeLocalNetworkPermissionStatus(): Flow<PermissionStatus> =
+        _permissionsState.filterNotNull().map { permissionsState ->
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.CINNAMON_BUN) {
+                PermissionStatus.Granted
+            } else {
+                permissionsState[Manifest.permission.ACCESS_LOCAL_NETWORK] ?: PermissionStatus.Ungranted
+            }
+        }
+
     override fun openSystemPermissionSettings() {
         val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
             data = Uri.fromParts("package", context.packageName, null)
@@ -202,7 +231,9 @@ enum class PermissionDeclaration(val permissionId: String) {
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     Video(Manifest.permission.READ_MEDIA_VIDEO),
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-    UserSelectedMedia(Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED)
+    UserSelectedMedia(Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED),
+    @RequiresApi(Build.VERSION_CODES.CINNAMON_BUN)
+    AccessLocalNetwork(Manifest.permission.ACCESS_LOCAL_NETWORK)
 }
 
 class PermissionRequest(

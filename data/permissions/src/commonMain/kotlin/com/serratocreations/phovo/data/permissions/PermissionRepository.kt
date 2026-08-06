@@ -11,6 +11,13 @@ interface PermissionRepository {
 
     suspend fun requestGalleryPermissions(): GalleryPermissionsStatus
 
+    @DelicatePermissionsApi
+    fun localNetworkPermissionStatus(): PermissionStatus
+
+    fun observeLocalNetworkPermissionStatus(): Flow<PermissionStatus>
+
+    suspend fun requestLocalNetworkPermissions(): PermissionStatus
+
     fun openSystemPermissionSettings()
 }
 
