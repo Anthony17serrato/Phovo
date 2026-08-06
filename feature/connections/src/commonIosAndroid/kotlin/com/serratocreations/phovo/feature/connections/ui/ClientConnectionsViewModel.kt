@@ -3,6 +3,8 @@ package com.serratocreations.phovo.feature.connections.ui
 import androidx.lifecycle.viewModelScope
 import com.serratocreations.phovo.core.model.ServerConfig
 import com.serratocreations.phovo.core.serverconfig.ServerConfigRepository
+import com.serratocreations.phovo.data.permissions.PermissionRepository
+import com.serratocreations.phovo.data.permissions.PermissionStatus
 import com.serratocreations.phovo.data.server.ServerDiscoveryManager
 import com.serratocreations.phovo.data.server.data.model.DiscoveredServer
 import kotlinx.coroutines.Job
@@ -13,9 +15,16 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+enum class OnboardingStep {
+    Welcome,
+    PermissionPrimer,
+    ServerDiscovery
+}
+
 class ClientConnectionsViewModel(
     private val serverConfigRepository: ServerConfigRepository,
-    private val serverDiscoveryManager: ServerDiscoveryManager
+    private val serverDiscoveryManager: ServerDiscoveryManager,
+    private val permissionRepository: PermissionRepository
 ): ConnectionsViewModel(
     serverConfigRepository = serverConfigRepository
 ) {
@@ -27,6 +36,7 @@ class ClientConnectionsViewModel(
 
     init {
         observeClientConfigState()
+        observePermissionStatus()
     }
 
     private fun observeClientConfigState() {
@@ -45,11 +55,94 @@ class ClientConnectionsViewModel(
 
                 if (isConfigured) {
                     stopDiscovery()
-                } else {
+                } else if (_connectionsUiState.value.currentStep == OnboardingStep.ServerDiscovery) {
                     startDiscovery()
                 }
             }
             .launchIn(viewModelScope)
+    }
+
+    private fun observePermissionStatus() {
+        permissionRepository.observeLocalNetworkPermissionStatus()
+            .onEach { status ->
+                val isGranted = status == PermissionStatus.Granted
+                val isPermanentlyDenied = status == PermissionStatus.PermanentlyDenied
+                _connectionsUiState.update { currentState ->
+                    val nextStep = if (isGranted && currentState.currentStep != OnboardingStep.Welcome) {
+                        OnboardingStep.ServerDiscovery
+                    } else {
+                        currentState.currentStep
+                    }
+                    currentState.copy(
+                        localNetworkPermissionStatus = status,
+                        isLocalNetworkPermissionGranted = isGranted,
+                        isLocalNetworkPermissionPermanentlyDenied = isPermanentlyDenied,
+                        currentStep = nextStep
+                    )
+                }
+                if (isGranted && !_connectionsUiState.value.isClientConfigured) {
+                    startDiscovery()
+                }
+            }
+            .launchIn(viewModelScope)
+    }
+
+    fun nextStep() {
+        _connectionsUiState.update { current ->
+            val nextStep = when (current.currentStep) {
+                OnboardingStep.Welcome -> {
+                    if (current.isLocalNetworkPermissionGranted) {
+                        OnboardingStep.ServerDiscovery
+                    } else {
+                        OnboardingStep.PermissionPrimer
+                    }
+                }
+                OnboardingStep.PermissionPrimer -> OnboardingStep.ServerDiscovery
+                OnboardingStep.ServerDiscovery -> OnboardingStep.ServerDiscovery
+            }
+            current.copy(currentStep = nextStep)
+        }
+        if (_connectionsUiState.value.currentStep == OnboardingStep.ServerDiscovery) {
+            startDiscovery()
+        }
+    }
+
+    fun previousStep() {
+        _connectionsUiState.update { current ->
+            val prevStep = when (current.currentStep) {
+                OnboardingStep.Welcome -> OnboardingStep.Welcome
+                OnboardingStep.PermissionPrimer -> OnboardingStep.Welcome
+                OnboardingStep.ServerDiscovery -> OnboardingStep.PermissionPrimer
+            }
+            current.copy(currentStep = prevStep)
+        }
+    }
+
+    fun requestLocalNetworkPermission() {
+        viewModelScope.launch {
+            val result = permissionRepository.requestLocalNetworkPermissions()
+            val isGranted = result == PermissionStatus.Granted
+            _connectionsUiState.update {
+                it.copy(
+                    localNetworkPermissionStatus = result,
+                    isLocalNetworkPermissionGranted = isGranted,
+                    currentStep = OnboardingStep.ServerDiscovery
+                )
+            }
+            if (isGranted && !_connectionsUiState.value.isClientConfigured) {
+                startDiscovery()
+            }
+        }
+    }
+
+    fun toggleManualUrlExpanded() {
+        _connectionsUiState.update {
+            it.copy(isManualUrlExpanded = !it.isManualUrlExpanded)
+        }
+    }
+
+    fun openPermissionSettings() {
+        permissionRepository.openSystemPermissionSettings()
     }
 
     fun startDiscovery() {
@@ -92,5 +185,10 @@ data class ClientConnectionsUiState(
     val isClientConfigured: Boolean = false,
     val configuredServerUrl: String? = null,
     val isSearching: Boolean = false,
-    val discoveredServers: List<DiscoveredServer> = emptyList()
+    val discoveredServers: List<DiscoveredServer> = emptyList(),
+    val currentStep: OnboardingStep = OnboardingStep.Welcome,
+    val localNetworkPermissionStatus: PermissionStatus = PermissionStatus.Ungranted,
+    val isLocalNetworkPermissionGranted: Boolean = false,
+    val isLocalNetworkPermissionPermanentlyDenied: Boolean = false,
+    val isManualUrlExpanded: Boolean = false
 ): ConnectionsUiState

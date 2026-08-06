@@ -22,6 +22,8 @@ import org.koin.compose.viewmodel.koinViewModel
 import phovo.feature.connections.generated.resources.Res
 import phovo.feature.connections.generated.resources.feature_connections_title
 
+import androidx.compose.material3.TopAppBarDefaults
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3AdaptiveApi::class)
 fun EntryProviderScope<NavKey>.connectionsEntries(
     navigationViewModel: NavigationViewModel,
@@ -38,7 +40,14 @@ fun EntryProviderScope<NavKey>.connectionsEntries(
         val connectionsViewModel: ConnectionsViewModel = koinViewModel()
         val appBarConfig = remember {
             AppBarConfig(
-                title = { Text(stringResource(Res.string.feature_connections_title)) }
+                title = { Text(stringResource(Res.string.feature_connections_title)) },
+                topAppBarColors = {
+                    val defaultColors = TopAppBarDefaults.topAppBarColors()
+                    defaultColors.copy(
+                        containerColor = defaultColors.containerColor.copy(alpha = 0f),
+                        scrolledContainerColor = defaultColors.containerColor.copy(alpha = 0f)
+                    )
+                }
             )
         }
         LaunchedEffect(navigationViewModel.state.currentKey) {
@@ -49,7 +58,7 @@ fun EntryProviderScope<NavKey>.connectionsEntries(
 
         ConnectionsHomePane(
             onConfigClick = {
-                navigationViewModel.navigate(ConfigGettingStartedNavKey)
+                handleHomeNextStep(navigationViewModel, connectionsViewModel)
             },
             connectionsViewModel = connectionsViewModel,
             modifier = Modifier.padding(
@@ -62,4 +71,9 @@ fun EntryProviderScope<NavKey>.connectionsEntries(
 expect fun EntryProviderScope<NavKey>.flavorConnectionsEntries(
     navigationViewModel: NavigationViewModel,
     scaffoldPadding: PaddingValues
+)
+
+expect fun handleHomeNextStep(
+    navigationViewModel: NavigationViewModel,
+    connectionsViewModel: ConnectionsViewModel
 )

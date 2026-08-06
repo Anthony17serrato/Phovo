@@ -119,6 +119,27 @@ class IosPermissionRepository : PermissionRepository {
         return updatedStatus
     }
 
+    private var localNetworkStatus: PermissionStatus = PermissionStatus.Ungranted
+
+    @DelicatePermissionsApi
+    override fun localNetworkPermissionStatus(): PermissionStatus {
+        return localNetworkStatus
+    }
+
+    override fun observeLocalNetworkPermissionStatus(): Flow<PermissionStatus> {
+        return _permissionEvents.map { localNetworkStatus }
+    }
+
+    override suspend fun requestLocalNetworkPermissions(): PermissionStatus {
+        val browser = platform.Foundation.NSNetServiceBrowser()
+        browser.searchForServicesOfType("_phovo._tcp", inDomain = "local.")
+        kotlinx.coroutines.delay(500)
+        browser.stop()
+        localNetworkStatus = PermissionStatus.Granted
+        refreshPermissionsState()
+        return localNetworkStatus
+    }
+
     override fun openSystemPermissionSettings() {
         val url = NSURL(string = UIApplicationOpenSettingsURLString)
         if (UIApplication.sharedApplication.canOpenURL(url)) {
