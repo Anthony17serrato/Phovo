@@ -9,21 +9,18 @@ import com.serratocreations.phovo.feature.photos.ui.model.MediaUiItem
 import com.serratocreations.phovo.feature.photos.mappers.toPhotoUiItem
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.flow.update
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
-import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.ExperimentalTime
 
-@OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
+@OptIn(ExperimentalCoroutinesApi::class)
 open class PhotosViewModel(
     getPhotosFeedWithThumbnailsUseCase: GetPhotosFeedWithThumbnailsUseCase,
     ioDispatcher: CoroutineDispatcher
@@ -37,7 +34,6 @@ open class PhotosViewModel(
 
     init {
         getPhotosFeedWithThumbnailsUseCase()
-            .sample(500.milliseconds)
             .onEach { phovoItems ->
                 val uiItemList = mutableListOf<PhotoUiItem>()
                 phovoItems.groupBy { Pair(it.dateInFeed.month, it.dateInFeed.year) }.forEach { entry ->

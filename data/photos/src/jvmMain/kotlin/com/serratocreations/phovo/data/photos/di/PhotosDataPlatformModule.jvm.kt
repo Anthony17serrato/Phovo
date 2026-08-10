@@ -27,6 +27,7 @@ internal actual fun getAndroidDesktopIosModules(): Module = module {
             ioDispatcher = get(IO_DISPATCHER),
             fileHashCalculator = get(),
             appScope = get(APPLICATION_SCOPE),
+            cpuBudget = get(),
             logger = get()
         )
     }

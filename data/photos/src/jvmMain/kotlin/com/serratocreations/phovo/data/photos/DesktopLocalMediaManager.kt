@@ -1,5 +1,6 @@
 package com.serratocreations.phovo.data.photos
 
+import com.serratocreations.phovo.core.common.performance.ProcessingCpuBudget
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.data.photos.local.DesktopLocalMediaProcessor
 import com.serratocreations.phovo.data.photos.local.DesktopLocalMediaProcessor.FileType
@@ -27,13 +28,16 @@ class DesktopLocalMediaManager(
     private val ioDispatcher: CoroutineDispatcher,
     private val fileHashCalculator: FileHashCalculator,
     private val appScope: CoroutineScope,
+    cpuBudget: ProcessingCpuBudget,
     logger: PhovoLogger,
 ) {
     private val log = logger.withTag("LocalMediaManager")
-    companion object {
-        // We need at least one worker
-        private val WORKER_COUNT = maxOf(1, Runtime.getRuntime().availableProcessors() - 1)
-    }
+
+    /**
+     * Sized from the shared [ProcessingCpuBudget] so that the worker pool and the FFmpeg
+     * subprocesses each worker spawns are budgeted together, leaving headroom for the UI.
+     */
+    private val workerCount = cpuBudget.workerCount
 
     /**
      * API initializes job to process local media and synchronize to server.
@@ -56,7 +60,7 @@ class DesktopLocalMediaManager(
     ) = launch {
         val processMediaChannel = Channel<PlatformFile>()
 
-        repeat(WORKER_COUNT) {
+        repeat(workerCount) {
             processMediaWorker(processMediaChannel, outputDirectory)
         }
 

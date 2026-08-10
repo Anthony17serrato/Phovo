@@ -16,6 +16,7 @@ val thumbnailsModule = module {
         FfmpegThumbnailGenerator(
             ioDispatcher = get(IO_DISPATCHER),
             appScope = get(APPLICATION_SCOPE),
+            cpuBudget = get(),
             logger = get()
         )
     }
