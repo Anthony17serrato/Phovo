@@ -8,8 +8,8 @@ class PhovoApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        initApplication {
+        initApplication(config = {
             androidContext(this@PhovoApplication)
-        }
+        })
     }
 }

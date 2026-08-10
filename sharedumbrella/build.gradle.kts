@@ -40,7 +40,7 @@ kotlin {
             implementation(libs.filekit.core)
         }
         commonIosAndroid.dependencies {
-            implementation(projects.data.permissions)
+            api(projects.data.permissions)
         }
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)

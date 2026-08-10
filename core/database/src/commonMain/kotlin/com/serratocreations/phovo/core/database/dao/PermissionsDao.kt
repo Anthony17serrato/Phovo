@@ -13,7 +13,7 @@ interface PermissionsDao {
     suspend fun insert(item: PermissionsEntity)
 
     @Query("SELECT * FROM PermissionsEntity")
-    fun deniedPermissionFlow(): Flow<List<PermissionsEntity>>
+    fun permissionFlow(): Flow<List<PermissionsEntity>>
 
     @Query("DELETE FROM PermissionsEntity WHERE permissionId = :permissionId")
     suspend fun remove(permissionId: String)

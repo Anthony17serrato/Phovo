@@ -90,6 +90,7 @@ internal fun Project.configureKotlinMultiplatform(
                 iosTarget.binaries.framework {
                     baseName = "ComposeApp"
                     isStatic = true
+                    export(project.project(":data:permissions"))
                 }
             }
         } else if (targetList.contains(Targets.IOS)) {

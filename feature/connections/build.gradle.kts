@@ -34,5 +34,9 @@ kotlin {
         jvmMain.dependencies {
 
         }
+
+        commonIosAndroid.dependencies {
+            implementation(projects.data.permissions)
+        }
     }
 }

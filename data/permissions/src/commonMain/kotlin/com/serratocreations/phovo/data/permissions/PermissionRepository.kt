@@ -3,6 +3,8 @@ package com.serratocreations.phovo.data.permissions
 import com.serratocreations.phovo.data.permissions.annotations.DelicatePermissionsApi
 import kotlinx.coroutines.flow.Flow
 
+typealias Permission = String
+
 interface PermissionRepository {
     @DelicatePermissionsApi
     fun galleryPermissionStatus(): GalleryPermissionsStatus
@@ -10,6 +12,13 @@ interface PermissionRepository {
     fun observeGalleryPermissionStatus(): Flow<GalleryPermissionsStatus>
 
     suspend fun requestGalleryPermissions(): GalleryPermissionsStatus
+
+    @DelicatePermissionsApi
+    fun localNetworkPermissionStatus(): PermissionStatus
+
+    fun observeLocalNetworkPermissionStatus(): Flow<PermissionStatus>
+
+    suspend fun requestLocalNetworkPermissions(): PermissionStatus
 
     fun openSystemPermissionSettings()
 }

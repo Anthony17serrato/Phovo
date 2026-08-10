@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import com.serratocreations.phovo.core.database.dao.PermissionsDao
 import com.serratocreations.phovo.core.database.entities.PermissionsEntity
+import com.serratocreations.phovo.core.database.entities.PermissionStateEntity
 import com.serratocreations.phovo.data.permissions.annotations.DelicatePermissionsApi
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
@@ -28,8 +29,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-
-typealias Permission = String
 
 class AndroidPermissionRepository(
     private val permissionsDataSource: PermissionsDao,
@@ -87,8 +86,8 @@ class AndroidPermissionRepository(
         withContext(defaultDispatcher) {
             _permissionsState.update { current ->
                 val permanentlyDeniedPermissions =
-                    permissionsDataSource.deniedPermissionFlow().first()
-                        .filter { it.isPermanentlyDenied }
+                    permissionsDataSource.permissionFlow().first()
+                        .filter { it.state == PermissionStateEntity.PermanentlyDenied }
                         .map { it.permissionId }
                 val updateState = current?.toMutableMap() ?: mutableMapOf()
                 PermissionDeclaration.entries.toSet()
@@ -152,6 +151,35 @@ class AndroidPermissionRepository(
         )
     }
 
+    override suspend fun requestLocalNetworkPermissions(): PermissionStatus {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN) {
+            firePermissionRequestAndHandleResult(
+                PermissionRequest(
+                    permissions = arrayOf(Manifest.permission.ACCESS_LOCAL_NETWORK)
+                )
+            )
+        }
+        return observeLocalNetworkPermissionStatus().first()
+    }
+
+    @DelicatePermissionsApi
+    override fun localNetworkPermissionStatus(): PermissionStatus {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.CINNAMON_BUN) {
+            return PermissionStatus.Granted
+        }
+        val permissionsState = _permissionsState.value ?: return PermissionStatus.Ungranted
+        return permissionsState[Manifest.permission.ACCESS_LOCAL_NETWORK] ?: PermissionStatus.Ungranted
+    }
+
+    override fun observeLocalNetworkPermissionStatus(): Flow<PermissionStatus> =
+        _permissionsState.filterNotNull().map { permissionsState ->
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.CINNAMON_BUN) {
+                PermissionStatus.Granted
+            } else {
+                permissionsState[Manifest.permission.ACCESS_LOCAL_NETWORK] ?: PermissionStatus.Ungranted
+            }
+        }
+
     override fun openSystemPermissionSettings() {
         val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
             data = Uri.fromParts("package", context.packageName, null)
@@ -173,9 +201,9 @@ class AndroidPermissionRepository(
                 if (result.isGranted.not() && result.shouldShowRequestPermissionRationale.not()) {
                     // Permission has been perma denied, notify data source
                     permissionsDataSource.insert(
-                        PermissionsEntity(
-                            result.permission,
-                            isPermanentlyDenied = true
+                        item = PermissionsEntity(
+                            permissionId = result.permission,
+                            state = PermissionStateEntity.PermanentlyDenied
                         )
                     )
                 }
@@ -202,7 +230,9 @@ enum class PermissionDeclaration(val permissionId: String) {
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     Video(Manifest.permission.READ_MEDIA_VIDEO),
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-    UserSelectedMedia(Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED)
+    UserSelectedMedia(Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED),
+    @RequiresApi(Build.VERSION_CODES.CINNAMON_BUN)
+    AccessLocalNetwork(Manifest.permission.ACCESS_LOCAL_NETWORK)
 }
 
 class PermissionRequest(
