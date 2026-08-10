@@ -10,18 +10,22 @@ import com.serratocreations.phovo.data.photos.repository.MediaRepository
 import com.serratocreations.phovo.data.photos.repository.model.AssetLocation
 import io.github.vinceglb.filekit.div
 import io.github.vinceglb.filekit.exists
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.sample
 
 class ServerGetPhotosFeedWithThumbnailsUseCase(
     private val mediaRepository: MediaRepository,
     private val serverConfigRepository: DesktopServerConfigRepository,
     logger: PhovoLogger
 ): GetPhotosFeedWithThumbnailsUseCase {
+    @OptIn(FlowPreview::class)
     override fun invoke(): Flow<List<MediaItemWithThumbnails>> {
         return combine(
-            mediaRepository.phovoMediaFlow(),
+            // Sampled upstream of the mapping below, see PHOTOS_FEED_SAMPLE_PERIOD
+            mediaRepository.phovoMediaFlow().sample(PHOTOS_FEED_SAMPLE_PERIOD),
             serverConfigRepository.observeServerConfig().distinctUntilChanged()
         ) { mediaList, serverConfig ->
             // Because the server is the remote data source assets should always be local, if a remote

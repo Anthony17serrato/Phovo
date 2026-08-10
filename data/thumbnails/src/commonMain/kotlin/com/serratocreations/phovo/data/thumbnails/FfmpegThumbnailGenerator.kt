@@ -1,5 +1,6 @@
 package com.serratocreations.phovo.data.thumbnails
 
+import com.serratocreations.phovo.core.common.performance.ProcessingCpuBudget
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.absolutePath
@@ -11,6 +12,8 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import phovo.data.thumbnails.generated.resources.Res
 import java.io.File
@@ -20,9 +23,44 @@ import java.net.URI
 class FfmpegThumbnailGenerator(
     private val ioDispatcher: CoroutineDispatcher,
     private val appScope: CoroutineScope,
+    cpuBudget: ProcessingCpuBudget,
     logger: PhovoLogger
 ) {
     private val log = logger.withTag("FfmpegThumbnailGenerator")
+
+    /**
+     * Caps how many FFmpeg subprocesses may run at once. FFmpeg runs as an OS subprocess, so its
+     * threads are scheduled outside of the JVM's control and compete directly with the AWT event
+     * thread and the Skiko render thread, which is why the ceiling comes from the shared
+     * [ProcessingCpuBudget] rather than from the dispatcher. Callers suspend(rather than block)
+     * while waiting for a permit.
+     */
+    private val ffmpegProcessSemaphore =
+        Semaphore(permits = cpuBudget.maxConcurrentThumbnailProcesses)
+
+    /**
+     * Global FFmpeg options that cap the thread count of the decoder and of the filter graph, the
+     * two threaded stages of thumbnail generation(the libwebp encoder is single threaded). Must be
+     * passed before the input file to apply to decoding.
+     */
+    private val threadLimitArgs: List<String> = listOf(
+        "-threads", "${cpuBudget.threadsPerThumbnailProcess}",
+        "-filter_threads", "${cpuBudget.threadsPerThumbnailProcess}",
+        "-filter_complex_threads", "${cpuBudget.threadsPerThumbnailProcess}"
+    )
+
+    /**
+     * Runs FFmpeg within the budgeted process ceiling and returns the process exit code.
+     */
+    private suspend fun runFfmpeg(command: List<String>): Int =
+        ffmpegProcessSemaphore.withPermit {
+            val process = ProcessBuilder(command)
+                .redirectError(ProcessBuilder.Redirect.INHERIT)
+                .redirectOutput(ProcessBuilder.Redirect.INHERIT)
+                .start()
+
+            process.waitFor()
+        }
 
     // TODO Can move to constructor DI if other classes need it
     val deferredFfmpegFile: Deferred<PlatformFile> by lazy {
@@ -67,6 +105,7 @@ class FfmpegThumbnailGenerator(
             val command = listOf(
                 ffmpegFile.absolutePath(),
                 "-y",
+                *threadLimitArgs.toTypedArray(),
                 "-i", videoFile.absolutePath(),
                 "-filter_complex", filter,
 
@@ -89,13 +128,7 @@ class FfmpegThumbnailGenerator(
                 highResThumbnail.absolutePath()
             )
 
-            // Run FFmpeg process
-            val process = ProcessBuilder(command)
-                .redirectError(ProcessBuilder.Redirect.INHERIT)
-                .redirectOutput(ProcessBuilder.Redirect.INHERIT)
-                .start()
-
-            val exitCode = process.waitFor()
+            val exitCode = runFfmpeg(command)
             if (
                 exitCode != 0 ||
                 !lowResThumbnail.exists() ||
@@ -140,6 +173,7 @@ class FfmpegThumbnailGenerator(
             val command = listOf(
                 ffmpegFile.absolutePath(),
                 "-y",
+                *threadLimitArgs.toTypedArray(),
                 "-i", imageFile.absolutePath(),
                 "-filter_complex", filter,
 
@@ -162,12 +196,7 @@ class FfmpegThumbnailGenerator(
                 highResThumbnail.absolutePath()
             )
 
-            val process = ProcessBuilder(command)
-                .redirectError(ProcessBuilder.Redirect.INHERIT)
-                .redirectOutput(ProcessBuilder.Redirect.INHERIT)
-                .start()
-
-            val exitCode = process.waitFor()
+            val exitCode = runFfmpeg(command)
 
             if (
                 exitCode != 0 ||
