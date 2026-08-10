@@ -16,20 +16,17 @@ import org.koin.dsl.KoinAppDeclaration
 import org.koin.dsl.module
 import org.koin.mp.KoinPlatformTools
 
-fun initApplication(config: KoinAppDeclaration? = null) = startKoin {
+fun initApplication(config: KoinAppDeclaration? = null, platformModule: Module = getApplicationPlatformModulesFetcher().getModule()) = startKoin {
     config?.invoke(this)
 
     logger(KermitKoinLogger(PhovoLogger.withTag("koin")))
     modules(
-        getApplicationPlatformModulesFetcher().getModule()
+        platformModule
     )
 
     val appInitializer = KoinPlatformTools.defaultContext().get().get<AndroidDesktopIosAppInitializer>()
     appInitializer.initialize()
 }
-
-// called by IOS in iOSApp.swift
-fun initApplication() = initApplication {}
 
 expect fun getApplicationPlatformModulesFetcher(): ApplicationPlatformModuleFetcher
 

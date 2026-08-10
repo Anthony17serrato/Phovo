@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "500f9dac93100cda908c483b139fe21d",
+    "identityHash": "a745bb980c93461d9529a1712c1d3ed4",
     "entities": [
       {
         "tableName": "ServerConfigEntity",
@@ -213,7 +213,7 @@
       },
       {
         "tableName": "PermissionsEntity",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`permissionId` TEXT NOT NULL, `isPermanentlyDenied` INTEGER NOT NULL, PRIMARY KEY(`permissionId`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`permissionId` TEXT NOT NULL, `state` TEXT NOT NULL, PRIMARY KEY(`permissionId`))",
         "fields": [
           {
             "fieldPath": "permissionId",
@@ -222,9 +222,9 @@
             "notNull": true
           },
           {
-            "fieldPath": "isPermanentlyDenied",
-            "columnName": "isPermanentlyDenied",
-            "affinity": "INTEGER",
+            "fieldPath": "state",
+            "columnName": "state",
+            "affinity": "TEXT",
             "notNull": true
           }
         ],
@@ -238,7 +238,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '500f9dac93100cda908c483b139fe21d')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'a745bb980c93461d9529a1712c1d3ed4')"
     ]
   }
 }

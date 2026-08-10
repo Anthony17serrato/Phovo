@@ -30,21 +30,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.serratocreations.phovo.core.designsystem.component.CallToActionComponent
 
 @Composable
-internal actual fun ConnectionsHomePane(
-    onConfigClick: () -> Unit,
-    connectionsViewModel: ConnectionsViewModel,
-    modifier: Modifier
-) {
-    connectionsViewModel as ServerConnectionsViewModel
-    val connectionsUiState by connectionsViewModel.connectionsUiState.collectAsStateWithLifecycle()
-    ConnectionsHomePane(
-        uiState = connectionsUiState,
-        onConfigClick = onConfigClick,
-        modifier = modifier
-    )
-}
-
-@Composable
 internal fun ConnectionsHomePane(
     uiState: ServerConnectionsUiState,
     onConfigClick: () -> Unit,

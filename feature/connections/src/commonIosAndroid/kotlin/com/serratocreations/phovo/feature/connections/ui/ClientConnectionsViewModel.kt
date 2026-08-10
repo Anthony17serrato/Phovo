@@ -1,8 +1,9 @@
 package com.serratocreations.phovo.feature.connections.ui
 
 import androidx.lifecycle.viewModelScope
-import com.serratocreations.phovo.core.model.ServerConfig
-import com.serratocreations.phovo.core.serverconfig.ServerConfigRepository
+import com.serratocreations.phovo.core.serverconfig.IosAndroidServerConfigRepository
+import com.serratocreations.phovo.data.permissions.PermissionRepository
+import com.serratocreations.phovo.data.permissions.PermissionStatus
 import com.serratocreations.phovo.data.server.ServerDiscoveryManager
 import com.serratocreations.phovo.data.server.data.model.DiscoveredServer
 import kotlinx.coroutines.Job
@@ -14,8 +15,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class ClientConnectionsViewModel(
-    private val serverConfigRepository: ServerConfigRepository,
-    private val serverDiscoveryManager: ServerDiscoveryManager
+    private val serverConfigRepository: IosAndroidServerConfigRepository,
+    private val serverDiscoveryManager: ServerDiscoveryManager,
+    private val permissionRepository: PermissionRepository
 ): ConnectionsViewModel(
     serverConfigRepository = serverConfigRepository
 ) {
@@ -27,14 +29,14 @@ class ClientConnectionsViewModel(
 
     init {
         observeClientConfigState()
+        observePermissionStatus()
     }
 
     private fun observeClientConfigState() {
         serverConfigRepository.observeServerConfig()
             .onEach { serverConfig ->
-                val clientConfig = serverConfig as? ServerConfig.ClientSpecificServerConfig
-                val isConfigured = clientConfig != null
-                val serverUrl = clientConfig?.serverBaseUrlString?.value
+                val isConfigured = serverConfig != null
+                val serverUrl = serverConfig?.serverBaseUrlString?.value
 
                 _connectionsUiState.update {
                     it.copy(
@@ -45,11 +47,46 @@ class ClientConnectionsViewModel(
 
                 if (isConfigured) {
                     stopDiscovery()
-                } else {
+                }
+            }
+            .launchIn(viewModelScope)
+    }
+
+    private fun observePermissionStatus() {
+        permissionRepository.observeLocalNetworkPermissionStatus()
+            .onEach { status ->
+                val isGranted = status == PermissionStatus.Granted
+                _connectionsUiState.update { currentState ->
+                    currentState.copy(localNetworkPermissionStatus = status)
+                }
+                if (isGranted && _connectionsUiState.value.isClientConfigured.not()) {
                     startDiscovery()
                 }
             }
             .launchIn(viewModelScope)
+    }
+
+    fun requestLocalNetworkPermission() {
+        viewModelScope.launch {
+            val result = permissionRepository.requestLocalNetworkPermissions()
+            val isGranted = result == PermissionStatus.Granted
+            _connectionsUiState.update {
+                it.copy(localNetworkPermissionStatus = result)
+            }
+            if (isGranted && !_connectionsUiState.value.isClientConfigured) {
+                startDiscovery()
+            }
+        }
+    }
+
+    fun toggleManualUrlExpanded() {
+        _connectionsUiState.update { currentState ->
+            currentState.copy(isManualUrlExpanded = !currentState.isManualUrlExpanded)
+        }
+    }
+
+    fun openPermissionSettings() {
+        permissionRepository.openSystemPermissionSettings()
     }
 
     fun startDiscovery() {
@@ -92,5 +129,7 @@ data class ClientConnectionsUiState(
     val isClientConfigured: Boolean = false,
     val configuredServerUrl: String? = null,
     val isSearching: Boolean = false,
-    val discoveredServers: List<DiscoveredServer> = emptyList()
+    val discoveredServers: List<DiscoveredServer> = emptyList(),
+    val localNetworkPermissionStatus: PermissionStatus = PermissionStatus.Ungranted,
+    val isManualUrlExpanded: Boolean = false
 ): ConnectionsUiState

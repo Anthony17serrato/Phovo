@@ -12,7 +12,7 @@ import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.NavigationRailItemDefaults
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.WindowAdaptiveInfo
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
@@ -27,12 +27,31 @@ import androidx.compose.material3.PermanentNavigationDrawer
 import androidx.compose.material3.PermanentDrawerSheet
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.serratocreations.phovo.core.common.ui.EXPANDED_WIDTH
 import com.serratocreations.phovo.core.common.ui.MEDIUM_WIDTH
+
+/**
+ * Height of the floating navigation bar that [PhovoNavigationSuiteScaffold] overlays on top of its
+ * content on compact screens, or `0.dp` when no floating bar is shown (bar hidden, or medium and
+ * expanded layouts that use a rail or drawer instead).
+ *
+ * The floating bar is drawn as an overlay and therefore consumes no layout space, so screens whose
+ * content reaches the bottom edge should add this to their bottom padding to stay clear of it. It
+ * covers the bar itself only — apply [navigationBarsPadding] separately for the system inset.
+ */
+val LocalFloatingNavBarHeight = compositionLocalOf { 0.dp }
 
 /**
  * Phovo navigation bar item with icon and label content slots. Wraps Material 3
@@ -219,7 +238,7 @@ fun PhovoNavigationSuiteScaffold(
     navigationSuiteItems: PhovoNavigationSuiteScope.() -> Unit,
     modifier: Modifier = Modifier,
     shouldShowNavBarOnCompactScreens: Boolean,
-    windowAdaptiveInfo: WindowAdaptiveInfo = currentWindowAdaptiveInfo(supportLargeAndXLargeWidth = true),
+    windowAdaptiveInfo: WindowAdaptiveInfo = currentWindowAdaptiveInfoV2(),
     content: @Composable () -> Unit,
 ) {
     val isExpanded = windowAdaptiveInfo.windowSizeClass.isWidthAtLeastBreakpoint(EXPANDED_WIDTH)
@@ -280,8 +299,16 @@ fun PhovoNavigationSuiteScaffold(
             }
         }
         else -> {
+            val density = LocalDensity.current
+            var navBarHeight by remember { mutableStateOf(0.dp) }
+
             Box(modifier = modifier.fillMaxSize()) {
-                content()
+                CompositionLocalProvider(
+                    LocalFloatingNavBarHeight provides
+                        if (shouldShowNavBarOnCompactScreens) navBarHeight else 0.dp
+                ) {
+                    content()
+                }
 
                 AnimatedVisibility(
                     visible = shouldShowNavBarOnCompactScreens,
@@ -289,7 +316,11 @@ fun PhovoNavigationSuiteScaffold(
                     exit = slideOutVertically(targetOffsetY = { it }),
                     modifier = Modifier.align(Alignment.BottomCenter).navigationBarsPadding()
                 ) {
-                    PhovoNavigationBar(modifier = Modifier) {
+                    PhovoNavigationBar(
+                        modifier = Modifier.onSizeChanged { size ->
+                            navBarHeight = with(density) { size.height.toDp() }
+                        }
+                    ) {
                         scope.items.forEach { item ->
                             PhovoNavigationBarItem(
                                 selected = item.selected,
@@ -319,8 +350,4 @@ object PhovoNavigationDefaults {
 
     @Composable
     fun navigationIndicatorColor() = MaterialTheme.colorScheme.primaryContainer
-}
-
-sealed interface PhovoNavOptions {
-    data object NavigateToBackstack : PhovoNavOptions
 }
