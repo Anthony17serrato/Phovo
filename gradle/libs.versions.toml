@@ -19,6 +19,16 @@ filekit = "0.14.2"
 
 # KMP Compose Start(All of these dependencies should be checked to be compatable on upgrade)
 # https://youtrack.jetbrains.com/projects/CMP/issues/CMP-6654/Provide-BOM-for-Compose-Multiplatform
+# Compose builds emit "w: KLIB loader: The same 'unique_name=<x>_commonMain' found in more than one
+# library" warnings(annotation, collection, runtime, lifecycle-*, savedstate-*). These are expected
+# and harmless. Compose Multiplatform now delegates to the real androidx artifacts but keeps
+# publishing the old org.jetbrains.* coordinates as empty ~1.2 KB redirect klibs, so klibs compiled
+# against those coordinates still resolve. The empty shim keeps the original unique_name, so both it
+# and the androidx artifact land on the metadata classpath and the loader warns. Nothing is lost, the
+# shims hold no code. Tracked upstream in CMP-8498, which has no fix version yet, and the shims will
+# only stop being published once JetBrains drops that backward compatibility. Do NOT expect a Compose
+# version bump to clear this, 1.11.1 still ships the shims.
+# https://youtrack.jetbrains.com/issue/CMP-8498/KLIB-name-conflict-with-AndroidX-libraries
 compose-plugin = "1.11.1"
 compose-runtime = "1.11.1"
 compose-resources = "1.11.1"

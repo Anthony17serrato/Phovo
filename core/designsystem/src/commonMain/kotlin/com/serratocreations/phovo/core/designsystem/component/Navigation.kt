@@ -1,6 +1,7 @@
 package com.serratocreations.phovo.core.designsystem.component
 
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material3.MaterialTheme
@@ -16,6 +17,7 @@ import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -26,6 +28,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.PermanentNavigationDrawer
 import androidx.compose.material3.PermanentDrawerSheet
 import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.compositionLocalOf
@@ -65,7 +68,6 @@ val LocalFloatingNavBarHeight = compositionLocalOf { 0.dp }
  * @param enabled controls the enabled state of this item. When `false`, this item will not be
  * clickable and will appear disabled to accessibility services.
  * @param label The item text label content.
- * only be shown when this item is selected.
  */
 @Composable
 fun PhovoNavigationBarItem(
@@ -75,12 +77,12 @@ fun PhovoNavigationBarItem(
     enabled: Boolean = true,
     icon: @Composable () -> Unit,
     selectedIcon: @Composable () -> Unit = icon,
-    label: @Composable (() -> Unit)? = null,
+    label: @Composable () -> Unit,
 ) {
     val backgroundColor = if (selected) PhovoNavigationDefaults.navigationIndicatorColor() else Color.Transparent
     val contentColor = if (selected) PhovoNavigationDefaults.navigationSelectedItemColor() else PhovoNavigationDefaults.navigationContentColor()
 
-    androidx.compose.material3.Surface(
+    Surface(
         onClick = onClick,
         modifier = modifier.height(48.dp),
         shape = androidx.compose.foundation.shape.CircleShape,
@@ -89,17 +91,15 @@ fun PhovoNavigationBarItem(
         enabled = enabled,
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 16.dp),
-            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
+            modifier = Modifier.padding(horizontal = 10.dp),
+            horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (selected) {
                 selectedIcon()
-                Spacer(Modifier.width(8.dp))
+                Spacer(Modifier.width(6.dp))
             }
-            if (label != null) {
-                label()
-            }
+            label()
         }
     }
 }
@@ -121,10 +121,12 @@ fun PhovoNavigationBar(
         expanded = true,
         modifier = modifier,
         colors = androidx.compose.material3.FloatingToolbarDefaults.standardFloatingToolbarColors(),
+        // Tighter than FloatingToolbarDefaults.ContentPadding, which is 8.dp on every side.
+        contentPadding = PaddingValues(6.dp),
         content = {
             Row(
-                modifier = Modifier.padding(horizontal = 8.dp),
-                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(horizontal = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 content = { content() }
             )
@@ -156,7 +158,7 @@ fun PhovoNavigationRailItem(
     alwaysShowLabel: Boolean = true,
     icon: @Composable () -> Unit,
     selectedIcon: @Composable () -> Unit = icon,
-    label: @Composable (() -> Unit)? = null,
+    label: @Composable () -> Unit,
 ) {
     NavigationRailItem(
         selected = selected,
@@ -205,7 +207,7 @@ class PhovoNavigationSuiteItem(
     val modifier: Modifier,
     val icon: @Composable () -> Unit,
     val selectedIcon: @Composable () -> Unit,
-    val label: @Composable (() -> Unit)?
+    val label: @Composable () -> Unit
 )
 
 class PhovoNavigationSuiteScope {
@@ -217,7 +219,7 @@ class PhovoNavigationSuiteScope {
         modifier: Modifier = Modifier,
         icon: @Composable () -> Unit,
         selectedIcon: @Composable () -> Unit = icon,
-        label: @Composable (() -> Unit)? = null,
+        label: @Composable () -> Unit,
     ) {
         items.add(
             PhovoNavigationSuiteItem(
@@ -265,7 +267,7 @@ fun PhovoNavigationSuiteScaffold(
                                 icon = {
                                     if (item.selected) item.selectedIcon() else item.icon()
                                 },
-                                label = item.label ?: {},
+                                label = item.label,
                                 selected = item.selected,
                                 onClick = item.onClick,
                                 modifier = item.modifier.padding(horizontal = 12.dp),

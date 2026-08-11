@@ -22,7 +22,9 @@ import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.material3.adaptive.WindowAdaptiveInfo
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -31,7 +33,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.window.core.layout.WindowWidthSizeClass
 import coil3.ImageLoader
 import coil3.compose.setSingletonImageLoaderFactory
 import coil3.disk.DiskCache
@@ -41,6 +42,8 @@ import coil3.request.crossfade
 import coil3.util.DebugLogger
 import com.serratocreations.phovo.core.common.Platform
 import com.serratocreations.phovo.core.common.getPlatform
+import com.serratocreations.phovo.core.common.ui.EXPANDED_WIDTH
+import com.serratocreations.phovo.core.common.ui.MEDIUM_WIDTH
 import com.serratocreations.phovo.core.designsystem.component.CallToActionComponent
 import com.serratocreations.phovo.feature.photos.ui.components.LoadMultiResImage
 import com.serratocreations.phovo.feature.photos.ui.components.WelcomeBottomSheet
@@ -124,7 +127,7 @@ internal fun PhotosHomeScreen(
     )
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
+@OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3AdaptiveApi::class)
 @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
 @Composable
 internal fun PhotosScreen(
@@ -134,19 +137,21 @@ internal fun PhotosScreen(
     sharedElementTransition: SharedTransitionScope,
     animatedContentScope: AnimatedContentScope,
     modifier: Modifier = Modifier,
-    // TODO Refactor based on already implemented code in Navigation.kt
-    width: WindowWidthSizeClass = currentWindowAdaptiveInfo().windowSizeClass.windowWidthSizeClass
+    windowAdaptiveInfo: WindowAdaptiveInfo = currentWindowAdaptiveInfoV2()
 ) {
+    // Grid density follows the same breakpoints PhovoNavigationSuiteScaffold uses to pick between a
+    // navigation bar, rail and drawer, so cell size steps up in step with the navigation layout.
+    val minCellSize = with(windowAdaptiveInfo.windowSizeClass) {
+        when {
+            isWidthAtLeastBreakpoint(EXPANDED_WIDTH) -> 160.dp
+            isWidthAtLeastBreakpoint(MEDIUM_WIDTH) -> 120.dp
+            else -> 80.dp
+        }
+    }
+
     Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
         LazyVerticalGrid(
-            columns = GridCells.Adaptive(
-                minSize = when (width) {
-                    WindowWidthSizeClass.COMPACT -> 80.dp
-                    WindowWidthSizeClass.MEDIUM -> 120.dp
-                    WindowWidthSizeClass.EXPANDED -> 160.dp
-                    else -> 80.dp
-                }
-            ),
+            columns = GridCells.Adaptive(minSize = minCellSize),
             contentPadding = PaddingValues(
                 bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 96.dp
             ),
