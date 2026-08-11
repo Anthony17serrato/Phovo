@@ -90,6 +90,13 @@ internal fun Project.configureKotlinMultiplatform(
                 iosTarget.binaries.framework {
                     baseName = "ComposeApp"
                     isStatic = true
+                    // Kotlin/Native derives the framework's CFBundleIdentifier from the common
+                    // package prefix of its sources and exported dependencies. Phovo's source
+                    // packages do not share a single prefix, so without this the compiler falls back
+                    // to the bare base name "ComposeApp" and warns. Kept distinct from the iOS app's
+                    // own BUNDLE_ID(see iosApp/Configuration/Config.xcconfig) since the framework is
+                    // a separate bundle.
+                    binaryOption("bundleId", "com.serratocreations.phovo.ComposeApp")
                     export(project.project(":data:permissions"))
                 }
             }
