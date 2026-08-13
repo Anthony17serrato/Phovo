@@ -1,12 +1,6 @@
-import org.gradle.api.DefaultTask
-import org.gradle.api.tasks.TaskAction
-import org.gradle.api.tasks.OutputDirectory
-import org.gradle.api.tasks.InputFile
-import org.gradle.api.file.RegularFileProperty
-import org.gradle.api.file.DirectoryProperty
+import com.serratocreations.phovo.buildlogic.ffmpeg.FfmpegBinaries
+import com.serratocreations.phovo.buildlogic.ffmpeg.ProvisionFfmpegTask
 import org.gradle.kotlin.dsl.sourceSets
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption
 
 plugins {
     alias(libs.plugins.phovo.kmp.desktop.library)
@@ -26,49 +20,27 @@ kotlin {
     }
 }
 
+// FFmpeg is downloaded and checksum verified at build time rather than committed through Git LFS,
+// which has quota limits. See FfmpegBinaries for the pinned builds and how to update them.
 compose.resources {
     publicResClass = true
     generateResClass = always
     customDirectory(
         sourceSetName = "jvmMain",
-        directoryProvider = tasks.register<CopyPlatformFFmpeg>("copyPlatformFFmpeg") {
-            val osName = System.getProperty("os.name").lowercase()
-            val arch = System.getProperty("os.arch").lowercase()
-            val isArm = arch.contains("aarch64") || arch.contains("arm")
+        directoryProvider = tasks.register<ProvisionFfmpegTask>("provisionFfmpeg") {
+            val distribution = FfmpegBinaries.forHost()
 
-            // For binary updates check https://ffmpeg.org/download.html
-            val ffmpegSourceFile = when {
-                osName.contains("mac") && isArm -> project.file("ffmpeg-binaries/mac-arm/ffmpeg")
-                osName.contains("mac") -> project.file("ffmpeg-binaries/mac-x64/ffmpeg")
-                // Win32 support is possible by manually building the binary https://github.com/BtbN/FFmpeg-Builds/tree/latest
-                osName.contains("win") && isArm -> project.file("ffmpeg-binaries/win-arm/ffmpeg.exe")
-                osName.contains("win") -> project.file("ffmpeg-binaries/win-x64/ffmpeg.exe")
+            platform.set(distribution.platform)
+            downloadUrl.set(distribution.url)
+            sha256.set(distribution.sha256)
+            archiveFormat.set(distribution.format)
+            executableName.set(distribution.executableName)
 
-                osName.contains("linux") && isArm -> project.file("ffmpeg-binaries/linux-arm/ffmpeg")
-                osName.contains("linux") -> project.file("ffmpeg-binaries/linux-x64/ffmpeg")
+            // Outside the build directory so `clean` does not force another download.
+            archiveCacheDirectory.set(gradle.gradleUserHomeDir.resolve("caches/phovo-ffmpeg"))
+            offline.set(gradle.startParameter.isOffline)
 
-                else -> error("Unsupported OS: $osName $arch")
-            }
-            ffmpegSource.set(ffmpegSourceFile)
-            outputDir.set(project.layout.buildDirectory.dir("generatedFfmpegResources"))
-        }.flatMap { it.outputDir }
+            outputDirectory.set(project.layout.buildDirectory.dir("generatedFfmpegResources"))
+        }.flatMap { it.outputDirectory }
     )
-}
-
-abstract class CopyPlatformFFmpeg : DefaultTask() {
-
-    @get:InputFile
-    abstract val ffmpegSource: RegularFileProperty
-
-    @get:OutputDirectory
-    abstract val outputDir: DirectoryProperty
-
-    @TaskAction
-    fun run() {
-        val sourceFile = ffmpegSource.get().asFile
-        val targetDir = outputDir.get().asFile.resolve("files")
-        targetDir.mkdirs()
-        Files.copy(sourceFile.toPath(), targetDir.resolve(sourceFile.name).toPath(), StandardCopyOption.REPLACE_EXISTING)
-        println("Copied FFmpeg to $targetDir")
-    }
 }

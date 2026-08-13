@@ -52,6 +52,12 @@ Phovo is currently undergoing active development. Core logic, architecture, and 
 The project can be assembled in an environment which has been configured for Kotlin Multiplatform development, please follow the official guide:
 https://kotlinlang.org/docs/multiplatform/quickstart.html#set-up-the-environment
 
+The desktop build embeds an FFmpeg binary, used for thumbnail generation. It is downloaded and
+verified against a pinned SHA-256 on the first build, so that build needs network access. The
+archive is cached under `~/.gradle/caches/phovo-ffmpeg`, which survives `clean`, so later builds
+work offline. Only the binary for the platform running the build is fetched. The pinned builds, and
+notes on updating them, live in `build-logic`'s `FfmpegDistribution.kt`.
+
 ## Source Sets
 The Phovo project makes use of custom source sets to maximize code re-usability when certain features
 are supported only by a subset of platforms. To learn more about custom source sets visit:
