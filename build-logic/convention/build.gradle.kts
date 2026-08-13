@@ -42,6 +42,9 @@ dependencies {
     compileOnly(libs.ksp.gradlePlugin)
     compileOnly(libs.compose.gradlePlugin)
     compileOnly(libs.room.gradlePlugin)
+    // Needed at execution time by ProvisionFfmpegTask, so these cannot be compileOnly.
+    implementation(libs.commons.compress)
+    runtimeOnly(libs.tukaani.xz)
     //implementation(libs.truth)
 }
 

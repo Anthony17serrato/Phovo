@@ -59,6 +59,10 @@ serialization-json = "1.11.0"
 sqlite = "2.7.0"
 telephoto = "0.19.0"
 jmdns = "3.6.3"
+# Used by build-logic only, to unpack the FFmpeg archives downloaded at build time. The BtbN Linux
+# builds ship as .tar.xz, which neither the JDK nor Gradle's archive operations can read.
+commons-compress = "1.28.0"
+tukaani-xz = "1.12"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -135,6 +139,8 @@ compose-gradlePlugin = { module = "org.jetbrains.compose:compose-gradle-plugin",
 kotlin-gradlePlugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
 ksp-gradlePlugin = { group = "com.google.devtools.ksp", name = "com.google.devtools.ksp.gradle.plugin", version.ref = "ksp" }
 room-gradlePlugin = { group = "androidx.room", name = "room-gradle-plugin", version.ref = "room-kmp" }
+commons-compress = { group = "org.apache.commons", name = "commons-compress", version.ref = "commons-compress" }
+tukaani-xz = { group = "org.tukaani", name = "xz", version.ref = "tukaani-xz" }
 
 [bundles]
 navigation3 = ["navigation3-runtime", "navigation3-ui", "androidx-lifecycle-viewmodel-navigation3", "androidx-material3-adaptive-navigation3"]
