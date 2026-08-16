@@ -253,6 +253,8 @@ class LocalAndRemoteMediaRepositoryImpl(
         mediaUri: String
     ) = remoteMediaRepository.syncMedia(media, mediaUri)
 
+    override fun observeConnectionState() = remoteMediaRepository.observeConnectionState()
+
     override fun observeServerConnection() = remoteMediaRepository.observeServerConnection()
 
     override suspend fun getMediaItemByAssetHash(assetHash: String) = localMediaRepository.getMediaItemByAssetHash(assetHash)

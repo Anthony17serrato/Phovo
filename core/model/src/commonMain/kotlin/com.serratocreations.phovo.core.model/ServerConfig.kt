@@ -18,7 +18,17 @@ sealed interface ServerConfig {
         val serverName: String
     ): ServerConfig
 
+    /**
+     * Identifies which server this client is paired with. Deliberately carries no address: an
+     * address is a lease that changes, and everything downstream of the config flow uses
+     * `flatMapLatest`, so including it here would tear down and restart the health poll and the
+     * media flow every time the server moved — blanking the photo feed on exactly the event this
+     * design exists to absorb. The current address is owned by the endpoint resolver instead.
+     *
+     * @param serverId null until a manually entered pairing completes its first health probe.
+     */
     data class ClientSpecificServerConfig(
-        val serverBaseUrlString: BaseUrl
+        val serverId: String?,
+        val serviceName: String?
     ): ServerConfig
 }

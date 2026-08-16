@@ -6,7 +6,8 @@ import com.serratocreations.phovo.core.domain.model.MediaItemWithThumbnails
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.data.photos.repository.MediaRepository
 import com.serratocreations.phovo.data.photos.repository.model.AssetLocation
-import com.serratocreations.phovo.core.serverconfig.IosAndroidServerConfigRepository
+import com.serratocreations.phovo.core.model.network.ServerConnectionState
+import com.serratocreations.phovo.core.serverconfig.ServerEndpointResolver
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.div
 import io.github.vinceglb.filekit.exists
@@ -21,7 +22,7 @@ import kotlinx.coroutines.flow.sample
 
 class ClientGetPhotosFeedWithThumbnailsUseCase(
     private val mediaRepository: MediaRepository,
-    private val serverConfigRepository: IosAndroidServerConfigRepository,
+    private val endpointResolver: ServerEndpointResolver,
     private val ioDispatcher: CoroutineDispatcher,
     logger: PhovoLogger
 ): GetPhotosFeedWithThumbnailsUseCase {
@@ -32,8 +33,10 @@ class ClientGetPhotosFeedWithThumbnailsUseCase(
         return combine(
             // Sampled upstream of the mapping below, see PHOTOS_FEED_SAMPLE_PERIOD
             mediaRepository.phovoMediaFlow().sample(PHOTOS_FEED_SAMPLE_PERIOD),
-            serverConfigRepository.observeServerConfig().distinctUntilChanged()
-        ) { mediaList, serverConfig ->
+            // Thumbnail URLs must point at wherever the server is *now*, so this tracks the
+            // resolved address rather than the stored config, which no longer carries one.
+            endpointResolver.state
+        ) { mediaList, connectionState ->
             return@combine mediaList.mapNotNull { mediaItem ->
                 // Prefer file thumb if exists, fallback to network thumb, no thumb if no base url
                 val lowResThumb = (FileKit.filesDir / LOW_RES_THUMBNAIL_DIR / "${mediaItem.uniqueAssetIdentifier}.webp").let {
@@ -62,7 +65,7 @@ class ClientGetPhotosFeedWithThumbnailsUseCase(
                     lowResThumbnailLocation = lowResThumb,
                     highResThumbnailLocation = highResThumb,
                     assetHash = mediaItem.uniqueAssetIdentifier,
-                    baseUrl = serverConfig?.serverBaseUrlString
+                    baseUrl = (connectionState as? ServerConnectionState.Connected)?.baseUrl
                 )
             }
         }.flowOn(ioDispatcher)

@@ -1,7 +1,10 @@
 package com.serratocreations.phovo.feature.connections.ui
 
 import androidx.lifecycle.viewModelScope
+import com.serratocreations.phovo.core.model.network.ServerConnectionState
+import com.serratocreations.phovo.core.model.network.normalizeServerUrl
 import com.serratocreations.phovo.core.serverconfig.IosAndroidServerConfigRepository
+import com.serratocreations.phovo.core.serverconfig.ServerEndpointResolver
 import com.serratocreations.phovo.data.permissions.PermissionRepository
 import com.serratocreations.phovo.data.permissions.PermissionStatus
 import com.serratocreations.phovo.data.server.ServerDiscoveryManager
@@ -17,6 +20,7 @@ import kotlinx.coroutines.launch
 class ClientConnectionsViewModel(
     private val serverConfigRepository: IosAndroidServerConfigRepository,
     private val serverDiscoveryManager: ServerDiscoveryManager,
+    private val endpointResolver: ServerEndpointResolver,
     private val permissionRepository: PermissionRepository
 ): ConnectionsViewModel(
     serverConfigRepository = serverConfigRepository
@@ -29,6 +33,7 @@ class ClientConnectionsViewModel(
 
     init {
         observeClientConfigState()
+        observeConnectionState()
         observePermissionStatus()
     }
 
@@ -36,17 +41,31 @@ class ClientConnectionsViewModel(
         serverConfigRepository.observeServerConfig()
             .onEach { serverConfig ->
                 val isConfigured = serverConfig != null
-                val serverUrl = serverConfig?.serverBaseUrlString?.value
 
                 _connectionsUiState.update {
-                    it.copy(
-                        isClientConfigured = isConfigured,
-                        configuredServerUrl = serverUrl
-                    )
+                    it.copy(isClientConfigured = isConfigured)
                 }
 
                 if (isConfigured) {
                     stopDiscovery()
+                }
+            }
+            .launchIn(viewModelScope)
+    }
+
+    /**
+     * The config only records which server we are paired with, so the address shown to the user
+     * comes from the resolver — that is the one actually in use, and it survives the server moving.
+     */
+    private fun observeConnectionState() {
+        endpointResolver.state
+            .onEach { connectionState ->
+                _connectionsUiState.update {
+                    it.copy(
+                        connectionState = connectionState,
+                        configuredServerUrl =
+                            (connectionState as? ServerConnectionState.Connected)?.baseUrl?.value
+                    )
                 }
             }
             .launchIn(viewModelScope)
@@ -112,9 +131,22 @@ class ClientConnectionsViewModel(
         }
     }
 
+    /**
+     * Pairs with a manually entered address. The address is normalised first — it is free text, and
+     * a missing scheme or a trailing slash would otherwise surface later as an unexplained
+     * "server unreachable". Identity is left null here; the resolver adopts whatever the server
+     * reports on the first successful health probe.
+     */
     fun connectManually(url: String) {
         viewModelScope.launch {
-            serverConfigRepository.updateClientServerConfig(url)
+            val normalizedUrl = normalizeServerUrl(url)
+            if (normalizedUrl == null) {
+                _connectionsUiState.update { it.copy(manualUrlError = true) }
+                return@launch
+            }
+            _connectionsUiState.update { it.copy(manualUrlError = false) }
+            serverConfigRepository.updateClientServerConfig(serverUrl = normalizedUrl)
+            endpointResolver.invalidate()
         }
     }
 
@@ -131,5 +163,8 @@ data class ClientConnectionsUiState(
     val isSearching: Boolean = false,
     val discoveredServers: List<DiscoveredServer> = emptyList(),
     val localNetworkPermissionStatus: PermissionStatus = PermissionStatus.Ungranted,
-    val isManualUrlExpanded: Boolean = false
+    val isManualUrlExpanded: Boolean = false,
+    /** Live connection status. Distinct from [isClientConfigured], which only means a pairing exists. */
+    val connectionState: ServerConnectionState = ServerConnectionState.Unknown,
+    val manualUrlError: Boolean = false
 ): ConnectionsUiState

@@ -1,7 +1,12 @@
 package com.serratocreations.phovo.core.domain.model
 
+import com.serratocreations.phovo.core.model.network.NetworkFailure
+
 sealed interface BackupStatus {
-    data object ServerOffline: BackupStatus
+    /**
+     * @param reason why the server could not be reached, or null when no server is configured yet.
+     */
+    data class ServerOffline(val reason: NetworkFailure?): BackupStatus
 
     data object Scanning: BackupStatus
 

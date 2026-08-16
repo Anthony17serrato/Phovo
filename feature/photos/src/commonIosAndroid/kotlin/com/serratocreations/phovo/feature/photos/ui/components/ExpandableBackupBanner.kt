@@ -120,7 +120,7 @@ fun ExpandableBackupBanner(
                             trackStroke = thinStroke
                         )
                     }
-                    ServerOfflineUiModel -> {
+                    is ServerOfflineUiModel -> {
                         Icon(
                             painter = painterResource(Res.drawable.ic_cloud_off_outlined),
                             contentDescription = stringResource(backupState.chipText),
@@ -242,7 +242,7 @@ fun BackupSummaryCard(
                             modifier = Modifier.size(defaultIconSize)
                         )
                     }
-                    ServerOfflineUiModel -> {
+                    is ServerOfflineUiModel -> {
                         Icon(
                             painter = painterResource(Res.drawable.ic_cloud_off_outlined),
                             contentDescription = stringResource(status.chipText),

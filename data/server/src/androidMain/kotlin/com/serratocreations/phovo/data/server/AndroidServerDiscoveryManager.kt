@@ -6,6 +6,7 @@ import android.net.nsd.NsdServiceInfo
 import android.os.Build
 import androidx.annotation.RequiresApi
 import com.serratocreations.phovo.core.logger.PhovoLogger
+import com.serratocreations.phovo.core.model.network.ServerTxtRecord
 import com.serratocreations.phovo.core.serverconfig.ServerConfigRepository
 import com.serratocreations.phovo.data.server.data.model.DiscoveredServer
 import kotlinx.coroutines.CoroutineScope
@@ -45,11 +46,7 @@ class AndroidServerDiscoveryManager(
                 val sanitizedHost = hostAddress.sanitizeHost()
                 log.i { "Service resolved: ${serviceInfo.serviceName} at $sanitizedHost:${serviceInfo.port}" }
 
-                val server = DiscoveredServer(
-                    name = serviceInfo.serviceName,
-                    ipAddress = sanitizedHost,
-                    port = serviceInfo.port
-                )
+                val server = serviceInfo.toDiscoveredServer(sanitizedHost)
 
                 launch {
                     discoveredServersMutex.withLock {
@@ -67,15 +64,15 @@ class AndroidServerDiscoveryManager(
             }
 
             override fun onServiceUpdated(resolvedInfo: NsdServiceInfo) {
-                val hostAddress = resolvedInfo.hostAddresses.firstOrNull()?.hostAddress ?: return
+                // Prefer IPv4: a bare IPv6 literal needs bracketing in a URL and is more likely to
+                // be unroutable on a home LAN.
+                val hostAddress = resolvedInfo.hostAddresses
+                    .sortedBy { it is java.net.Inet6Address }
+                    .firstOrNull()?.hostAddress ?: return
                 val sanitizedHost = hostAddress.sanitizeHost()
                 log.i { "Service updated: ${resolvedInfo.serviceName} at $sanitizedHost:${resolvedInfo.port}" }
 
-                val server = DiscoveredServer(
-                    name = resolvedInfo.serviceName,
-                    ipAddress = sanitizedHost,
-                    port = resolvedInfo.port
-                )
+                val server = resolvedInfo.toDiscoveredServer(sanitizedHost)
                 launch {
                     discoveredServersMutex.withLock {
                         discoveredServers[resolvedInfo.serviceName] = server
@@ -186,13 +183,36 @@ class AndroidServerDiscoveryManager(
     override fun discoverServers(): Flow<List<DiscoveredServer>> = serverDiscoverySharedFlow
 
     override suspend fun connectToServer(server: DiscoveredServer) {
-        log.i { "Connecting to discovered server: ${server.url}" }
-        serverConfigRepository.updateClientServerConfig(server.url)
+        log.i { "Connecting to discovered server: ${server.url} id: ${server.serverId}" }
+        serverConfigRepository.updateClientServerConfig(
+            serverUrl = server.url,
+            serverId = server.serverId,
+            serviceName = server.name
+        )
     }
 
     private fun String.sanitizeHost(): String {
         val result = if (this.startsWith("/")) this.substring(1) else this
         log.i { "sanitizeHost input $this output $result" }
         return result
+    }
+
+    /**
+     * NsdManager exposes TXT records as raw bytes; decode them so the identity the server
+     * advertises is available without an HTTP round trip.
+     */
+    private fun NsdServiceInfo.toDiscoveredServer(host: String): DiscoveredServer {
+        val properties = attributes.mapValues { (_, value) ->
+            value?.toString(Charsets.UTF_8)
+        }
+        val advertisement = ServerTxtRecord.decode(properties)
+        return DiscoveredServer(
+            name = serviceName,
+            ipAddress = host,
+            port = port,
+            serverId = advertisement?.serverId,
+            scheme = advertisement?.scheme ?: ServerTxtRecord.SCHEME_HTTP,
+            alternateAddresses = advertisement?.addresses.orEmpty().filterNot { it == host }
+        )
     }
 }

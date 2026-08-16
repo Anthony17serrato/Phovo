@@ -9,6 +9,9 @@ import com.serratocreations.phovo.core.model.network.MediaItemDto
 import com.serratocreations.phovo.core.model.network.UploadInitResponse
 import com.serratocreations.phovo.data.photos.repository.LocalMediaRepository
 import com.serratocreations.phovo.core.model.ServerConfig
+import com.serratocreations.phovo.core.model.network.ApiEndpoints
+import com.serratocreations.phovo.core.model.network.ServerHealth
+import com.serratocreations.phovo.core.model.network.ServerTxtRecord
 import com.serratocreations.phovo.core.model.network.ApiEndpoints.GET_ALL_MEDIA_API
 import com.serratocreations.phovo.core.model.network.ApiEndpoints.HIGH_RES_THUMBNAIL_API
 import com.serratocreations.phovo.core.model.network.ApiEndpoints.LOW_RES_THUMBNAIL_API
@@ -25,6 +28,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
+import io.ktor.server.engine.EmbeddedServer
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import io.ktor.server.application.*
@@ -78,6 +82,38 @@ class DesktopServerConfigManagerImpl(
     private val log = logger.withTag("DesktopServerConfigManagerImpl")
     private var jmdns: JmDNS? = null
 
+    /**
+     * Held so the engine can be released before rebinding on reconfigure, and shut down cleanly on
+     * exit. Only touched from the ioDispatcher launch in [configureDeviceAsServer].
+     */
+    private var server: EmbeddedServer<*, *>? = null
+
+    private companion object {
+        const val SERVER_PORT = 8080
+        const val SERVER_STOP_GRACE_MILLIS = 1_000L
+        const val SERVER_STOP_TIMEOUT_MILLIS = 5_000L
+
+        // Only one instance is ever advertised, so the DNS-SD tie breakers are not meaningful.
+        const val SERVICE_WEIGHT = 0
+        const val SERVICE_PRIORITY = 0
+
+        /**
+         * Interface name prefixes used by hypervisors and container runtimes for host-only
+         * networks. Addresses on these are reachable from this machine only.
+         */
+        val HYPERVISOR_INTERFACE_PREFIXES = listOf(
+            "bridge",   // Parallels Desktop on macOS
+            "vmnet",    // VMware
+            "vboxnet",  // VirtualBox
+            "docker",   // Docker
+            "br-",      // Docker user defined bridges
+            "virbr",    // libvirt
+            "utun",     // macOS tunnels/VPNs
+            "tun",
+            "tap"
+        )
+    }
+
     init {
         Runtime.getRuntime().addShutdownHook(Thread {
             try {
@@ -86,23 +122,83 @@ class DesktopServerConfigManagerImpl(
             } catch (e: Exception) {
                 System.err.println("Error shutting down JmDNS: ${e.message}")
             }
+            try {
+                server?.stop(
+                    gracePeriodMillis = SERVER_STOP_GRACE_MILLIS,
+                    timeoutMillis = SERVER_STOP_TIMEOUT_MILLIS
+                )
+            } catch (e: Exception) {
+                System.err.println("Error shutting down Ktor server: ${e.message}")
+            }
         })
     }
 
+    /**
+     * Returns the IPv4 address clients on the LAN can actually reach this machine at.
+     *
+     * Interface enumeration order is not meaningful, and hypervisor bridges (Parallels, VMware,
+     * Docker, VirtualBox) hand out private addresses that look identical to a real LAN address
+     * while being reachable only from this host. [NetworkInterface.isVirtual] does not identify
+     * them — it only reports subinterfaces such as `en0:1`. Picking one of those silently
+     * configures every client with an unroutable server URL.
+     *
+     * The address the OS would use to leave this machine is the one clients share a network with,
+     * so that is preferred. Opening an unconnected UDP socket resolves the route without sending
+     * any packets. The interface scan is the fallback for when there is no default route, or when
+     * the route leaves through a tunnel that LAN clients are not on.
+     */
     private fun getHostIPv4(): String {
-        return try {
-            val interfaces = java.util.Collections.list(NetworkInterface.getNetworkInterfaces())
-            val candidates = interfaces
-                .filter { it.isUp && !it.isLoopback && !it.isVirtual }
-                .flatMap { ni -> java.util.Collections.list(ni.inetAddresses) }
-                .filterIsInstance<Inet4Address>()
-                .map { it.hostAddress }
-            candidates.firstOrNull { address ->
-                address.startsWith("192.") || address.startsWith("10.") || address.startsWith("172.")
-            } ?: candidates.firstOrNull() ?: "127.0.0.1"
-        } catch (e: Exception) {
-            "127.0.0.1"
+        val candidates = lanCandidateAddresses()
+        val defaultRouteAddress = defaultRouteIPv4()
+
+        log.i {
+            "Host IPv4 candidates: ${candidates.map { it.hostAddress }}, " +
+                "default route: ${defaultRouteAddress?.hostAddress}"
         }
+
+        // The routed address is authoritative when it also survived the interface scan.
+        if (defaultRouteAddress != null && defaultRouteAddress in candidates) {
+            return defaultRouteAddress.hostAddress
+        }
+
+        // Otherwise the route leaves through an excluded interface — a VPN tunnel, say — so fall
+        // back to a private address a client on the same LAN can route to.
+        return candidates.firstOrNull { it.isSiteLocalAddress }?.hostAddress
+            ?: defaultRouteAddress?.hostAddress
+            ?: candidates.firstOrNull()?.hostAddress
+            ?: "127.0.0.1"
+    }
+
+    private fun defaultRouteIPv4(): Inet4Address? = try {
+        java.net.DatagramSocket().use { socket ->
+            // Connecting a UDP socket only selects a route, no traffic is sent.
+            socket.connect(InetAddress.getByName("1.1.1.1"), 53)
+            (socket.localAddress as? Inet4Address)?.takeIf { it.isUsableHostAddress() }
+        }
+    } catch (e: Exception) {
+        log.e(e) { "Unable to resolve default route address" }
+        null
+    }
+
+    private fun lanCandidateAddresses(): List<Inet4Address> = try {
+        java.util.Collections.list(NetworkInterface.getNetworkInterfaces())
+            .filter { it.isUp && !it.isLoopback && !it.isVirtual && !it.isPointToPoint && it.supportsMulticast() }
+            .filterNot { it.name.isHypervisorInterfaceName() }
+            .flatMap { ni -> java.util.Collections.list(ni.inetAddresses) }
+            .filterIsInstance<Inet4Address>()
+            .filter { it.isUsableHostAddress() }
+    } catch (e: Exception) {
+        log.e(e) { "Unable to enumerate network interfaces" }
+        emptyList()
+    }
+
+    /** Excludes the wildcard, loopback and self-assigned (169.254.0.0/16) addresses. */
+    private fun Inet4Address.isUsableHostAddress(): Boolean =
+        !isAnyLocalAddress && !isLoopbackAddress && !isLinkLocalAddress
+
+    private fun String.isHypervisorInterfaceName(): Boolean {
+        val name = lowercase()
+        return HYPERVISOR_INTERFACE_PREFIXES.any { name.startsWith(it) }
     }
 
     override fun getDefaultServerName(): String {
@@ -136,6 +232,21 @@ class DesktopServerConfigManagerImpl(
             get("/") {
                 serverEventsRepository.addServerEventLog("get ${LocalDateTime.now()}")
                 call.respond(HttpStatusCode.OK, "Phovo server is running")
+            }
+
+            // Liveness plus identity. Clients use serverId to confirm they are still talking to
+            // the server they paired with, rather than to whoever now holds that address.
+            get("/${ApiEndpoints.HEALTH_API.value}") {
+                val config = serverConfigRepository.observeServerConfig().first()
+                val serverId = serverConfigRepository.serverId()
+                if (config == null || serverId == null) {
+                    call.respond(HttpStatusCode.ServiceUnavailable, "Server is not configured")
+                    return@get
+                }
+                call.respond(
+                    HttpStatusCode.OK,
+                    ServerHealth(serverId = serverId, serverName = config.serverName)
+                )
             }
 
             get("/${GET_ALL_MEDIA_API.value}") {
@@ -323,31 +434,78 @@ class DesktopServerConfigManagerImpl(
                 }
                 jmdns = null
 
-                embeddedServer(factory = Netty, port = 8080, host = "0.0.0.0", module = routingConfig)
-                    .start(wait = false)
+                // Reconfiguring is a supported action (this is called from both DesktopAppInitializer
+                // on startup and the connections UI), so the previous engine has to be released
+                // before rebinding the port — otherwise the second call fails with a BindException.
+                try {
+                    server?.stop(
+                        gracePeriodMillis = SERVER_STOP_GRACE_MILLIS,
+                        timeoutMillis = SERVER_STOP_TIMEOUT_MILLIS
+                    )
+                } catch (e: Exception) {
+                    log.e(e) { "Error stopping existing Ktor server" }
+                }
+                server = null
+
+                server = try {
+                    embeddedServer(
+                        factory = Netty,
+                        port = SERVER_PORT,
+                        host = "0.0.0.0",
+                        module = routingConfig
+                    ).also { it.start(wait = false) }
+                } catch (e: Exception) {
+                    log.e(e) { "Failed to start Ktor server on port $SERVER_PORT" }
+                    serverConfigState.update { it.copy(configStatus = ConfigStatus.NotConfigured) }
+                    return@launch
+                }
 
                 val hostIp = getHostIPv4()
-                log.i { "Starting JmDNS advertisement for server IP: $hostIp" }
+                // Written by updateServerConfig above, so this is only null if that failed.
+                val serverId = serverConfigRepository.serverId()
+                if (serverId == null) {
+                    log.e { "Server id missing after configuration, skipping mDNS advertisement" }
+                    serverConfigState.update {
+                        it.copy(configStatus = ConfigStatus.Configured("http://$hostIp:$SERVER_PORT"))
+                    }
+                    return@launch
+                }
+                log.i { "Starting JmDNS advertisement for server IP: $hostIp id: $serverId" }
                 try {
                     val inetAddress = InetAddress.getByName(hostIp)
                     val sanitizedName = serverConfig.serverName.replace(".", " ")
+                    // Advertise every address this host believes it is reachable on, with the
+                    // routable one first, so a client that cannot reach the primary has somewhere
+                    // else to try. A single JmDNS instance is used deliberately: one instance per
+                    // interface makes jmdns rename the service ("name (2)"), and both clients key
+                    // their discovery map on the service name.
+                    val advertisedAddresses = (listOf(hostIp) + lanCandidateAddresses()
+                        .map { it.hostAddress })
+                        .distinct()
+                    val txtRecord = ServerTxtRecord.encode(
+                        serverId = serverId,
+                        serverName = sanitizedName,
+                        addresses = advertisedAddresses
+                    )
                     jmdns = JmDNS.create(inetAddress, "PhovoServer").apply {
                         val serviceInfo = ServiceInfo.create(
                             "_phovo._tcp.local.",
                             sanitizedName,
-                            8080,
-                            "Phovo Photo Backup Server"
+                            SERVER_PORT,
+                            SERVICE_WEIGHT,
+                            SERVICE_PRIORITY,
+                            txtRecord
                         )
                         registerService(serviceInfo)
                     }
-                    log.i { "JmDNS service registered successfully" }
+                    log.i { "JmDNS service registered successfully with TXT $txtRecord" }
                 } catch (e: Exception) {
                     log.e(e) { "Failed to start JmDNS service advertising" }
                 }
 
                 serverConfigState.update {
                     it.copy(configStatus = ConfigStatus.Configured(
-                        serverUrl = "http://$hostIp:8080"
+                        serverUrl = "http://$hostIp:$SERVER_PORT"
                     ))
                 }
             }

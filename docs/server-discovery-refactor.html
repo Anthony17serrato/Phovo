@@ -1,0 +1,358 @@
+<title>Server Discovery Refactor</title>
+<style>
+  :root {
+    --bg: #F4F7F5;
+    --surface: #FFFFFF;
+    --surface-2: #EDF2EF;
+    --border: #D5E0DA;
+    --text: #10201B;
+    --text-muted: #5A6B64;
+    --accent: #0B7A5E;
+    --accent-soft: #E1F1EA;
+    --danger: #B3372A;
+    --danger-soft: #F7E5E2;
+    --shadow: 0 1px 2px rgba(16, 32, 27, .06), 0 8px 24px rgba(16, 32, 27, .05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0C1512;
+      --surface: #131F1B;
+      --surface-2: #182823;
+      --border: #26372F;
+      --text: #E8F0EC;
+      --text-muted: #94A89F;
+      --accent: #3FD3A3;
+      --accent-soft: #133129;
+      --danger: #F08375;
+      --danger-soft: #33201D;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .3);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0C1512;
+    --surface: #131F1B;
+    --surface-2: #182823;
+    --border: #26372F;
+    --text: #E8F0EC;
+    --text-muted: #94A89F;
+    --accent: #3FD3A3;
+    --accent-soft: #133129;
+    --danger: #F08375;
+    --danger-soft: #33201D;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .3);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    margin: 0;
+    padding: 56px 24px 96px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 44px; }
+  .measure { max-width: 68ch; }
+
+  h1, h2, h3 {
+    font-family: ui-serif, "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    text-wrap: balance;
+    margin: 0;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  h1 { font-size: clamp(2rem, 4.5vw, 2.9rem); line-height: 1.12; }
+  h2 { font-size: 1.5rem; line-height: 1.25; }
+  h3 { font-size: 1.06rem; }
+  p { margin: 0; }
+  code, .mono { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace; font-size: .88em; }
+  code { background: var(--surface-2); padding: .1em .36em; border-radius: 4px; }
+  a { color: var(--accent); }
+
+  .eyebrow {
+    font-size: .74rem; text-transform: uppercase; letter-spacing: .13em;
+    color: var(--text-muted); font-weight: 600;
+  }
+  .lede { font-size: 1.13rem; color: var(--text-muted); }
+
+  header { display: flex; flex-direction: column; gap: 14px; }
+
+  .stats {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(122px, 1fr));
+    gap: 1px; background: var(--border); border: 1px solid var(--border);
+    border-radius: 10px; overflow: hidden;
+  }
+  .stat { background: var(--surface); padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; }
+  .stat .n {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 1.4rem; font-variant-numeric: tabular-nums; letter-spacing: -.02em;
+  }
+  .stat .k { font-size: .74rem; text-transform: uppercase; letter-spacing: .08em; color: var(--text-muted); }
+  .add { color: var(--accent); }
+  .del { color: var(--danger); }
+
+  section { display: flex; flex-direction: column; gap: 16px; }
+
+  figure {
+    margin: 0; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 22px 20px 16px; box-shadow: var(--shadow);
+    overflow-x: auto;
+  }
+  figure svg { display: block; width: 100%; min-width: 640px; height: auto; }
+  figcaption { margin-top: 14px; font-size: .87rem; color: var(--text-muted); }
+
+  .phase {
+    display: grid; grid-template-columns: 2.1rem 1fr; gap: 4px 14px;
+    padding: 18px 20px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 10px;
+  }
+  .phase .num {
+    grid-row: span 2;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: .95rem; color: var(--accent); font-variant-numeric: tabular-nums;
+    padding-top: .16rem;
+  }
+  .phase p { color: var(--text-muted); font-size: .95rem; }
+  .phases { display: flex; flex-direction: column; gap: 10px; }
+
+  .note {
+    border: 1px solid var(--border); background: var(--surface);
+    border-radius: 8px; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px;
+  }
+  .note p { font-size: .95rem; color: var(--text-muted); }
+
+  table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); }
+  th { font-size: .72rem; text-transform: uppercase; letter-spacing: .09em; color: var(--text-muted); font-weight: 600; }
+  td.num { text-align: right; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; }
+  .tablewrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+  tbody tr:last-child td { border-bottom: none; }
+
+  ul { margin: 0; padding-left: 1.15rem; display: flex; flex-direction: column; gap: 7px; }
+  li { color: var(--text-muted); font-size: .95rem; }
+  li strong { color: var(--text); font-weight: 600; }
+</style>
+
+<div class="wrap">
+
+  <header>
+    <span class="eyebrow">Phovo &middot; working tree, uncommitted</span>
+    <h1>Persist who the server is, resolve where it is</h1>
+    <p class="lede measure">Issue #133 was filed as an Android permission bug. It wasn&rsquo;t &mdash; the grant was present the whole time. The real fault was #131: the desktop advertised a Parallels host-only address, and the client stored that unroutable URL as the permanent identity of the connection.</p>
+  </header>
+
+  <div class="stats">
+    <div class="stat"><span class="n">43</span><span class="k">files</span></div>
+    <div class="stat"><span class="n add">+1245</span><span class="k">insertions</span></div>
+    <div class="stat"><span class="n del">&minus;165</span><span class="k">deletions</span></div>
+    <div class="stat"><span class="n">8</span><span class="k">new files</span></div>
+    <div class="stat"><span class="n">3</span><span class="k">platforms</span></div>
+    <div class="stat"><span class="n">6</span><span class="k">issues filed</span></div>
+  </div>
+
+  <section>
+    <h2>What actually changed</h2>
+    <p class="measure">An IP address is a DHCP lease, not an identity. Storing one as the connection&rsquo;s primary key meant any address change bricked the client with no recovery path &mdash; discovery couldn&rsquo;t help, because the client stops browsing the moment a config row exists.</p>
+
+    <figure>
+      <svg viewBox="0 0 860 430" role="img" aria-label="Before, the client stored an IP address as the server's identity and an address change was a dead end. After, the client stores a stable server id and re-resolves the address when a probe fails.">
+        <defs>
+          <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>
+          </marker>
+          <marker id="ar-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--accent)"/>
+          </marker>
+          <marker id="ar-d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--danger)"/>
+          </marker>
+        </defs>
+
+        <text x="0" y="18" font-size="12" font-weight="700" fill="currentColor" letter-spacing="1.4">BEFORE</text>
+        <line x1="72" y1="13" x2="860" y2="13" stroke="currentColor" stroke-opacity=".18"/>
+
+        <rect x="0" y="46" width="168" height="58" rx="7" fill="none" stroke="currentColor" stroke-opacity=".45"/>
+        <text x="84" y="72" font-size="13" text-anchor="middle" fill="currentColor">Desktop server</text>
+        <text x="84" y="90" font-size="11" text-anchor="middle" fill="currentColor" fill-opacity=".6">picks one address</text>
+
+        <line x1="168" y1="75" x2="286" y2="75" stroke="currentColor" stroke-opacity=".5" marker-end="url(#ar)"/>
+        <text x="227" y="66" font-size="11" text-anchor="middle" fill="currentColor" fill-opacity=".65">advertises</text>
+
+        <rect x="292" y="46" width="230" height="58" rx="7" fill="none" stroke="currentColor" stroke-opacity=".45"/>
+        <text x="407" y="70" font-size="13" text-anchor="middle" fill="currentColor">Client database</text>
+        <text x="407" y="89" font-size="11.5" text-anchor="middle" fill="currentColor" fill-opacity=".75" font-family="ui-monospace, Menlo, monospace">http://10.37.129.2:8080</text>
+
+        <line x1="522" y1="75" x2="660" y2="75" stroke="var(--danger)" marker-end="url(#ar-d)"/>
+        <text x="591" y="66" font-size="11" text-anchor="middle" fill="var(--danger)">address changes</text>
+
+        <rect x="666" y="46" width="194" height="58" rx="7" fill="none" stroke="var(--danger)"/>
+        <text x="763" y="70" font-size="13" text-anchor="middle" fill="var(--danger)">Dead end</text>
+        <text x="763" y="89" font-size="11" text-anchor="middle" fill="var(--danger)" fill-opacity=".8">user must re-pair</text>
+
+        <text x="0" y="182" font-size="12" font-weight="700" fill="var(--accent)" letter-spacing="1.4">AFTER</text>
+        <line x1="62" y1="177" x2="860" y2="177" stroke="var(--accent)" stroke-opacity=".3"/>
+
+        <rect x="0" y="212" width="168" height="58" rx="7" fill="none" stroke="currentColor" stroke-opacity=".45"/>
+        <text x="84" y="236" font-size="13" text-anchor="middle" fill="currentColor">Desktop server</text>
+        <text x="84" y="255" font-size="11" text-anchor="middle" fill="currentColor" fill-opacity=".6">stable serverId</text>
+
+        <line x1="168" y1="241" x2="286" y2="241" stroke="currentColor" stroke-opacity=".5" marker-end="url(#ar)"/>
+        <text x="227" y="226" font-size="11" text-anchor="middle" fill="currentColor" fill-opacity=".65">mDNS TXT:</text>
+        <text x="227" y="238" font-size="10.5" text-anchor="middle" fill="currentColor" fill-opacity=".65" font-family="ui-monospace, Menlo, monospace">id, addrs</text>
+
+        <rect x="292" y="212" width="230" height="58" rx="7" fill="var(--accent-soft)" stroke="var(--accent)"/>
+        <text x="407" y="236" font-size="13" text-anchor="middle" fill="currentColor">Client database</text>
+        <text x="407" y="255" font-size="11.5" text-anchor="middle" fill="currentColor" fill-opacity=".75" font-family="ui-monospace, Menlo, monospace">serverId (identity)</text>
+
+        <line x1="522" y1="241" x2="660" y2="241" stroke="var(--accent)" marker-end="url(#ar-a)"/>
+        <text x="591" y="232" font-size="11" text-anchor="middle" fill="var(--accent)">resolves to</text>
+
+        <rect x="666" y="212" width="194" height="58" rx="7" fill="none" stroke="currentColor" stroke-opacity=".45"/>
+        <text x="763" y="236" font-size="13" text-anchor="middle" fill="currentColor">Address in use</text>
+        <text x="763" y="255" font-size="11" text-anchor="middle" fill="currentColor" fill-opacity=".6">a cache, not a key</text>
+
+        <path d="M 763 270 L 763 348 Q 763 362 749 362 L 421 362 Q 407 362 407 348 L 407 272"
+              fill="none" stroke="var(--accent)" stroke-dasharray="5 4" marker-end="url(#ar-a)"/>
+        <text x="585" y="381" font-size="11.5" text-anchor="middle" fill="var(--accent)">probe fails &rarr; re-browse by id &rarr; write new address</text>
+        <text x="585" y="399" font-size="11" text-anchor="middle" fill="currentColor" fill-opacity=".55">no user action required</text>
+      </svg>
+      <figcaption>The address moved from being the connection&rsquo;s identity to being a cache of it. That single change is what makes the dashed recovery path possible.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>How resolution works</h2>
+    <p class="measure">The cached address is tried first because it is almost always right. Identity is what makes the failure case recoverable, and what stops the client uploading to a stranger&rsquo;s machine after a DHCP reshuffle.</p>
+
+    <figure>
+      <svg viewBox="0 0 860 330" role="img" aria-label="Resolution starts from the cached address and probes the health endpoint. A matching identity means connected; a different identity means identity mismatch and uploads are blocked; no answer triggers an mDNS browse for the server id, which either verifies and updates the cache or reports unreachable.">
+        <defs>
+          <marker id="br" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>
+          </marker>
+          <marker id="br-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--accent)"/>
+          </marker>
+          <marker id="br-d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--danger)"/>
+          </marker>
+        </defs>
+        <rect x="0" y="128" width="150" height="54" rx="7" fill="none" stroke="currentColor" stroke-opacity=".45"/>
+        <text x="75" y="150" font-size="12.5" text-anchor="middle" fill="currentColor">Cached address</text>
+        <text x="75" y="168" font-size="11" text-anchor="middle" fill="currentColor" fill-opacity=".6">fast path</text>
+
+        <line x1="150" y1="155" x2="212" y2="155" stroke="currentColor" stroke-opacity=".5" marker-end="url(#br)"/>
+
+        <rect x="218" y="128" width="146" height="54" rx="7" fill="var(--surface-2)" stroke="currentColor" stroke-opacity=".45"/>
+        <text x="291" y="150" font-size="12.5" text-anchor="middle" fill="currentColor" font-family="ui-monospace, Menlo, monospace">GET /health</text>
+        <text x="291" y="168" font-size="11" text-anchor="middle" fill="currentColor" fill-opacity=".6">2s timeout</text>
+
+        <path d="M 364 143 Q 470 143 470 74 L 646 74" fill="none" stroke="var(--accent)" marker-end="url(#br-a)"/>
+        <text x="556" y="64" font-size="11" text-anchor="middle" fill="var(--accent)">id matches</text>
+
+        <rect x="652" y="48" width="208" height="52" rx="7" fill="var(--accent-soft)" stroke="var(--accent)"/>
+        <text x="756" y="79" font-size="12.5" text-anchor="middle" fill="currentColor">Connected</text>
+
+        <line x1="364" y1="155" x2="646" y2="155" stroke="var(--danger)" marker-end="url(#br-d)"/>
+        <text x="505" y="146" font-size="11" text-anchor="middle" fill="var(--danger)">different server answered</text>
+
+        <rect x="652" y="129" width="208" height="52" rx="7" fill="var(--danger-soft)" stroke="var(--danger)"/>
+        <text x="756" y="150" font-size="12.5" text-anchor="middle" fill="var(--danger)">Identity mismatch</text>
+        <text x="756" y="168" font-size="11" text-anchor="middle" fill="var(--danger)" fill-opacity=".85">uploads blocked, polling stops</text>
+
+        <path d="M 291 182 L 291 250 L 374 250" fill="none" stroke="currentColor" stroke-opacity=".5" marker-end="url(#br)"/>
+        <text x="300" y="222" font-size="11" fill="currentColor" fill-opacity=".65">no answer</text>
+
+        <rect x="380" y="224" width="180" height="54" rx="7" fill="none" stroke="currentColor" stroke-opacity=".45"/>
+        <text x="470" y="246" font-size="12.5" text-anchor="middle" fill="currentColor">Browse mDNS by id</text>
+        <text x="470" y="264" font-size="11" text-anchor="middle" fill="currentColor" fill-opacity=".6">10s window, 30s throttle</text>
+
+        <path d="M 560 240 Q 610 240 610 105 L 610 100" fill="none" stroke="var(--accent)" marker-end="url(#br-a)"/>
+        <path d="M 610 100 L 646 100" fill="none" stroke="var(--accent)" marker-end="url(#br-a)"/>
+        <text x="628" y="200" font-size="11" text-anchor="middle" fill="var(--accent)" transform="rotate(-90 628 200)">found &rarr; verify &rarr; cache updated</text>
+
+        <line x1="560" y1="266" x2="646" y2="266" stroke="currentColor" stroke-opacity=".5" marker-end="url(#br)"/>
+        <rect x="652" y="240" width="208" height="52" rx="7" fill="none" stroke="currentColor" stroke-opacity=".45"/>
+        <text x="756" y="271" font-size="12.5" text-anchor="middle" fill="currentColor">Unreachable</text>
+      </svg>
+      <figcaption>Every caller shares one in-flight resolution, so six sync workers failing together trigger one browse rather than six.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>Delivered in three dependent phases</h2>
+    <div class="phases">
+      <div class="phase">
+        <span class="num">01</span>
+        <h3>A connection state that can express uncertainty</h3>
+        <p><code>ServerConnectionState</code> replaces a bare boolean with Unknown, Checking, Resolving, Connected, Unreachable and IdentityMismatch. A boolean shim keeps every existing caller&rsquo;s semantics unchanged. Side effect: an unconfigured client no longer shows a red status dot for a problem it doesn&rsquo;t have.</p>
+      </div>
+      <div class="phase">
+        <span class="num">02</span>
+        <h3>The server publishes an identity</h3>
+        <p>A UUID minted once and preserved across reconfiguration, served from <code>GET /health</code> and advertised in structured mDNS TXT records (<code>id</code>, <code>v</code>, <code>name</code>, <code>scheme</code>, <code>addrs</code>). Keys and codec live in shared code so the two ends can&rsquo;t drift. A newer client falls back to the old liveness route on a 404, so a phone updated ahead of its desktop still connects.</p>
+      </div>
+      <div class="phase">
+        <span class="num">03</span>
+        <h3>The client resolves by identity</h3>
+        <p>Config now carries identity only, so re-resolving no longer restarts the health poll or blanks the photo feed. Both discovery implementations read TXT records; iOS additionally gained IPv4 preference and IPv6 bracketing, which it never had.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Two defects found while reviewing my own work</h2>
+    <ul class="measure">
+      <li><strong>Identity could be minted twice.</strong> <code>getOrCreateServerId()</code> generated a UUID but never persisted it, so the name lied and any caller before configuration would get a different id each time. Minting now happens in exactly one place.</li>
+      <li><strong>Manual pairings could never recover.</strong> A typed-in address stores no identity, and the resolver bailed straight to Unreachable &mdash; making the most common pairing path the one that could never self-heal. The client now adopts the identity the server reports on first successful probe, guarded in SQL so it can never repoint an already-identified client.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Sync is untouched</h2>
+    <div class="note">
+      <p>An earlier attempt to bound three unbounded waits broke sync on Android and was fully reverted. The wait in <code>LocalMediaManager</code> turned out to be load-bearing: it is how a client launched before it has a server starts syncing once one is connected. Bounding it meant connecting afterwards did nothing.</p>
+      <p>Those files are now byte-identical to <code>HEAD</code> apart from one two-line delegating override that the interface change requires. The concerns are recorded in <strong>#139</strong>, including that constraint, so the same wrong fix isn&rsquo;t attempted again.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Where the code moved</h2>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th>Module</th><th>Role in the refactor</th><th class="num">Files</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="mono">data/server</td><td>Advertisement, discovery, endpoint resolver</td><td class="num">10</td></tr>
+          <tr><td class="mono">core/model</td><td>Shared protocol: state, health, TXT codec, URL rules</td><td class="num">7</td></tr>
+          <tr><td class="mono">data/photos</td><td>Connection state plumbing, error classification</td><td class="num">6</td></tr>
+          <tr><td class="mono">core/serverconfig</td><td>Identity persistence, resolver contract</td><td class="num">5</td></tr>
+          <tr><td class="mono">core/domain</td><td>Backup status carries a failure reason</td><td class="num">4</td></tr>
+          <tr><td class="mono">core/database</td><td>Identity columns and schema</td><td class="num">4</td></tr>
+          <tr><td class="mono">feature/photos</td><td>Offline state carries a reason</td><td class="num">4</td></tr>
+          <tr><td class="mono">feature/connections</td><td>Manual entry validation, live connection state</td><td class="num">1</td></tr>
+          <tr><td class="mono">sharedumbrella</td><td>Status dot distinguishes unknown from down</td><td class="num">1</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="measure" style="font-size:.92rem;color:var(--text-muted)">Compiles clean on Android, desktop JVM and iOS simulator; <code>:androidApp:assembleDebug</code> builds. Nothing has been run &mdash; end-to-end verification is yours.</p>
+  </section>
+
+  <section>
+    <h2>Issues filed</h2>
+    <ul class="measure">
+      <li><strong>#134</strong> &mdash; No authentication or transport security, plus an unauthenticated path traversal in the chunk upload route</li>
+      <li><strong>#135</strong> &mdash; Server identity stored only in the desktop database</li>
+      <li><strong>#136</strong> &mdash; Address and port mutability follow-ups</li>
+      <li><strong>#137</strong> &mdash; Coil never registers a Ktor network fetcher</li>
+      <li><strong>#138</strong> &mdash; No automated test coverage</li>
+      <li><strong>#139</strong> &mdash; Sync stalls on connection loss instead of ending the pass</li>
+    </ul>
+  </section>
+
+</div>

@@ -21,6 +21,13 @@ kotlin {
             implementation(libs.filekit.core)
         }
 
+        commonIosAndroid.dependencies {
+            // The endpoint resolver probes the server's health endpoint while resolving.
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.serialization)
+        }
+
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }

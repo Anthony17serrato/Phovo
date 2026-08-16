@@ -1,6 +1,7 @@
 package com.serratocreations.phovo.data.server
 
 import com.serratocreations.phovo.core.logger.PhovoLogger
+import com.serratocreations.phovo.core.model.network.ServerTxtRecord
 import com.serratocreations.phovo.core.serverconfig.ServerConfigRepository
 import com.serratocreations.phovo.data.server.data.model.DiscoveredServer
 import kotlinx.cinterop.ByteVar
@@ -25,6 +26,9 @@ import platform.Foundation.NSNetServiceBrowserDelegateProtocol
 import platform.Foundation.NSNetServiceDelegateProtocol
 import platform.Foundation.NSRunLoop
 import platform.Foundation.NSRunLoopCommonModes
+import platform.Foundation.NSString
+import platform.Foundation.NSUTF8StringEncoding
+import platform.Foundation.create
 import platform.darwin.NSObject
 import platform.posix.getnameinfo
 import platform.posix.sockaddr
@@ -80,20 +84,7 @@ class IosServerDiscoveryManager(
                 val serviceDelegate = object : NSObject(), NSNetServiceDelegateProtocol {
                     override fun netServiceDidResolveAddress(sender: NSNetService) {
                         log.i { "netServiceDidResolveAddress: ${sender.name}" }
-                        val addresses = sender.addresses
-                        val ip = addresses?.firstNotNullOfOrNull { data ->
-                            val nsData = data as? NSData
-                            nsData?.let { ipAddressFromData(it) }
-                        } ?: sender.hostName ?: "localhost"
-
-                        val cleanedHost =
-                            if (ip.endsWith(".")) ip.substring(0, ip.length - 1) else ip
-
-                        val server = DiscoveredServer(
-                            name = sender.name,
-                            ipAddress = cleanedHost,
-                            port = sender.port.toInt()
-                        )
+                        val server = sender.toDiscoveredServer()
                         lock.lock()
                         try {
                             discoveredServers[sender.name] = server
@@ -170,7 +161,48 @@ class IosServerDiscoveryManager(
     override fun discoverServers(): Flow<List<DiscoveredServer>> = serverDiscoverySharedFlow
 
     override suspend fun connectToServer(server: DiscoveredServer) {
-        log.i { "Connecting to discovered server: ${server.url}" }
-        serverConfigRepository.updateClientServerConfig(server.url)
+        log.i { "Connecting to discovered server: ${server.url} id: ${server.serverId}" }
+        serverConfigRepository.updateClientServerConfig(
+            serverUrl = server.url,
+            serverId = server.serverId,
+            serviceName = server.name
+        )
+    }
+
+    private fun NSNetService.toDiscoveredServer(): DiscoveredServer {
+        // Prefer IPv4. The list is ordered by the resolver, not by usefulness, and an IPv6 literal
+        // needs bracketing before it can go in a URL — previously the first entry was taken as-is.
+        val resolvedAddresses = addresses
+            ?.mapNotNull { (it as? NSData)?.let(::ipAddressFromData) }
+            .orEmpty()
+            .map { it.removeSuffix(".") }
+        val host = resolvedAddresses.firstOrNull { !it.contains(':') }
+            ?: resolvedAddresses.firstOrNull()
+            ?: hostName?.removeSuffix(".")
+            ?: "localhost"
+
+        val advertisement = TXTRecordData()
+            ?.let { NSNetService.dictionaryFromTXTRecordData(it) }
+            ?.let { txtDictionary ->
+                val properties = txtDictionary.entries.associate { entry ->
+                    val key = entry.key as? String ?: ""
+                    val value = (entry.value as? NSData)?.let { data ->
+                        NSString.create(data, NSUTF8StringEncoding) as String?
+                    }
+                    key to value
+                }
+                ServerTxtRecord.decode(properties)
+            }
+
+        return DiscoveredServer(
+            name = name,
+            ipAddress = host,
+            port = port.toInt(),
+            serverId = advertisement?.serverId,
+            scheme = advertisement?.scheme ?: ServerTxtRecord.SCHEME_HTTP,
+            alternateAddresses = (advertisement?.addresses.orEmpty() + resolvedAddresses)
+                .distinct()
+                .filterNot { it == host }
+        )
     }
 }

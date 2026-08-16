@@ -18,7 +18,7 @@ internal actual val platformModule: Module = module {
     factory<GetPhotosFeedWithThumbnailsUseCase> {
         ClientGetPhotosFeedWithThumbnailsUseCase(
             mediaRepository = get(),
-            serverConfigRepository = get(),
+            endpointResolver = get(),
             ioDispatcher = get(IO_DISPATCHER),
             logger = get()
         )

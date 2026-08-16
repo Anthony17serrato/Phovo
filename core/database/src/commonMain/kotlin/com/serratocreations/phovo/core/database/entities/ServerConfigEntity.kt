@@ -12,5 +12,11 @@ data class ServerConfigEntity(
     @ColumnInfo(name = "backup_directory")
     val backupDirectory: String,
     @ColumnInfo(name = "server_name")
-    val serverName: String
+    val serverName: String,
+    /**
+     * Stable identity for this server, generated once and preserved across reconfiguration.
+     * Clients persist it and use it to re-find this server after its address changes.
+     */
+    @ColumnInfo(name = "server_id")
+    val serverId: String
 )

@@ -49,6 +49,6 @@ fun BackupStatus.toBackupStatus(
             totalCount = this.totalSyncJobQuantity
         )
         BackupStatus.Scanning -> PreparingBackupUiModel
-        BackupStatus.ServerOffline -> ServerOfflineUiModel
+        is BackupStatus.ServerOffline -> ServerOfflineUiModel(reason = this.reason)
     }
 }

@@ -4,6 +4,7 @@ import com.serratocreations.phovo.core.common.util.localize
 import com.serratocreations.phovo.core.designsystem.PhovoPlural
 import com.serratocreations.phovo.core.designsystem.PhovoString
 import com.serratocreations.phovo.core.designsystem.UiStringBuilder
+import com.serratocreations.phovo.core.model.network.NetworkFailure
 import org.jetbrains.compose.resources.StringResource
 import phovo.feature.photos.generated.resources.Res
 import phovo.feature.photos.generated.resources.chip_backup_complete
@@ -38,7 +39,15 @@ sealed interface BackupStatusUiModel {
     val actionButton: BackupActionButton?
 }
 
-data object ServerOfflineUiModel: BackupStatusUiModel {
+/**
+ * @param reason why the server is unreachable, or null when no server is configured yet. Carried so
+ * the copy can be specialised per failure without another change to this hierarchy; the strings are
+ * still generic today.
+ */
+data class ServerOfflineUiModel(
+    val reason: NetworkFailure? = null,
+    override val actionButton: BackupActionButton? = null
+): BackupStatusUiModel {
     override val chipText: StringResource = Res.string.chip_server_offline
     override val header: UiStringBuilder = UiStringBuilder(
         PhovoString(Res.string.header_server_offline))
@@ -46,7 +55,6 @@ data object ServerOfflineUiModel: BackupStatusUiModel {
         PhovoString(Res.string.main_status_server_offline))
     override val statusDescription: UiStringBuilder = UiStringBuilder(
         PhovoString(Res.string.description_server_offline))
-    override val actionButton: BackupActionButton? = null
 }
 
 data object PreparingBackupUiModel: BackupStatusUiModel {

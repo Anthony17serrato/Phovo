@@ -23,6 +23,7 @@ internal actual fun getAndroidDesktopIosModules(): Module = module {
         RemoteMediaRepositoryImpl(
             remotePhotosDataSource = get(),
             serverConfigRepository = get(),
+            endpointResolver = get(),
             applicationScope = get(APPLICATION_SCOPE),
             logger = get()
         )
