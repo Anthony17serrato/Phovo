@@ -7,6 +7,7 @@ import com.serratocreations.phovo.data.server.data.DesktopServerConfigManager
 import com.serratocreations.phovo.data.server.data.DesktopServerConfigManagerImpl
 import com.serratocreations.phovo.core.serverconfig.ServerConfigRepository
 import com.serratocreations.phovo.core.serverconfig.DesktopServerConfigRepository
+import com.serratocreations.phovo.data.server.data.network.HostAddressDataSource
 import com.serratocreations.phovo.data.server.data.repository.ServerEventsRepository
 import org.koin.dsl.binds
 import org.koin.dsl.module
@@ -20,14 +21,17 @@ internal actual fun getAndroidDesktopIosModules(): org.koin.core.module.Module =
 
     single { ServerEventsRepository() }
 
+    single { HostAddressDataSource(get()) }
+
     single {
         DesktopServerConfigManagerImpl(
-            get(),
-            get(),
-            get(),
-            get(),
-            get(APPLICATION_SCOPE),
-            get(IO_DISPATCHER)
+            logger = get(),
+            serverConfigRepository = get(),
+            serverEventsRepository = get(),
+            localMediaRepository = get(),
+            hostAddressDataSource = get(),
+            appScope = get(APPLICATION_SCOPE),
+            ioDispatcher = get(IO_DISPATCHER)
         )
     } binds arrayOf(DesktopServerConfigManager::class)
 }

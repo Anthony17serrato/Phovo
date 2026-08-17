@@ -15,6 +15,7 @@ import com.serratocreations.phovo.core.model.network.ApiEndpoints.LOW_RES_THUMBN
 import com.serratocreations.phovo.core.model.network.ApiEndpoints.SOURCE_FILE_API
 import com.serratocreations.phovo.data.photos.mappers.toMediaItemDto
 import com.serratocreations.phovo.core.serverconfig.DesktopServerConfigRepository
+import com.serratocreations.phovo.data.server.data.network.HostAddressDataSource
 import com.serratocreations.phovo.data.server.data.repository.ServerEventsRepository
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.absolutePath
@@ -56,8 +57,6 @@ import java.io.File
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.LocalDateTime
-import java.net.NetworkInterface
-import java.net.Inet4Address
 import java.net.InetAddress
 import javax.jmdns.JmDNS
 import javax.jmdns.ServiceInfo
@@ -70,6 +69,7 @@ class DesktopServerConfigManagerImpl(
     private val serverConfigRepository: DesktopServerConfigRepository,
     private val serverEventsRepository: ServerEventsRepository,
     private val localMediaRepository: LocalMediaRepository,
+    private val hostAddressDataSource: HostAddressDataSource,
     private val appScope: CoroutineScope,
     private val ioDispatcher: CoroutineDispatcher
 ): DesktopServerConfigManager {
@@ -87,22 +87,6 @@ class DesktopServerConfigManagerImpl(
                 System.err.println("Error shutting down JmDNS: ${e.message}")
             }
         })
-    }
-
-    private fun getHostIPv4(): String {
-        return try {
-            val interfaces = java.util.Collections.list(NetworkInterface.getNetworkInterfaces())
-            val candidates = interfaces
-                .filter { it.isUp && !it.isLoopback && !it.isVirtual }
-                .flatMap { ni -> java.util.Collections.list(ni.inetAddresses) }
-                .filterIsInstance<Inet4Address>()
-                .map { it.hostAddress }
-            candidates.firstOrNull { address ->
-                address.startsWith("192.") || address.startsWith("10.") || address.startsWith("172.")
-            } ?: candidates.firstOrNull() ?: "127.0.0.1"
-        } catch (e: Exception) {
-            "127.0.0.1"
-        }
     }
 
     override fun getDefaultServerName(): String {
@@ -326,7 +310,7 @@ class DesktopServerConfigManagerImpl(
                 embeddedServer(factory = Netty, port = 8080, host = "0.0.0.0", module = routingConfig)
                     .start(wait = false)
 
-                val hostIp = getHostIPv4()
+                val hostIp = hostAddressDataSource.hostIPv4()
                 log.i { "Starting JmDNS advertisement for server IP: $hostIp" }
                 try {
                     val inetAddress = InetAddress.getByName(hostIp)
