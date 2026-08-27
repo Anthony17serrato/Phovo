@@ -22,3 +22,6 @@ captures
 
 # GitHub App credentials
 gha-creds-*.json
+
+# Firebase local deploy cache
+.firebase/
