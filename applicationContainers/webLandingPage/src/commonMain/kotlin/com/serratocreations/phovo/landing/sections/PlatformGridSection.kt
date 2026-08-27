@@ -28,35 +28,35 @@ fun PlatformGridSection() {
             tag = "macOS",
             name = "macOS",
             osDetails = "Apple Silicon & Intel (macOS 12+)",
-            status = "Alpha Aug 31",
+            status = "Alpha Sep 30",
             features = listOf("Native Desktop UI", "Background Server Sync", "Multi-Window Support")
         ),
         PlatformInfo(
             tag = "Windows",
             name = "Windows",
             osDetails = "Windows 10 / 11 (64-bit)",
-            status = "Alpha Aug 31",
+            status = "Alpha Sep 30",
             features = listOf("Tray Notifications", "Automatic Backup Engine", "High-DPI Display")
         ),
         PlatformInfo(
             tag = "Linux",
             name = "Linux",
             osDetails = "Ubuntu, Debian, Fedora & Arch",
-            status = "Alpha Aug 31",
-            features = listOf("Low Memory Footprint", "Headless Daemon Support", "Systemd Integration")
+            status = "Alpha Sep 30",
+            features = listOf("Low Memory Footprint", ".deb Package Install", "Systemd Integration")
         ),
         PlatformInfo(
             tag = "Android",
             name = "Android",
             osDetails = "Android 7.0+ (API 24+)",
-            status = "Alpha Aug 31",
+            status = "Alpha Sep 30",
             features = listOf("Auto Camera Roll Sync", "Background Uploads", "Material 3 Adaptive UI")
         ),
         PlatformInfo(
             tag = "iOS",
             name = "iOS",
             osDetails = "iOS 15.0+ (iPhone & iPad)",
-            status = "Alpha Aug 31",
+            status = "Alpha Sep 30",
             features = listOf("Photos Library Integration", "Background App Refresh", "Native iOS Feel")
         )
     )

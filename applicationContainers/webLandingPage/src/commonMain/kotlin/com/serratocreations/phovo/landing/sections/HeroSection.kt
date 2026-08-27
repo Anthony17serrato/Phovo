@@ -66,7 +66,7 @@ fun HeroSection(
                             .background(Color(0xFF83D5C6))
                     )
                     Text(
-                        text = "COMING SOON - Alpha builds starting August 31, 2026",
+                        text = "COMING SOON - Alpha builds starting September 30, 2026",
                         color = Color(0xFF9FF2E2),
                         fontSize = if (isMobile) 11.sp else 13.sp,
                         fontWeight = FontWeight.SemiBold,
