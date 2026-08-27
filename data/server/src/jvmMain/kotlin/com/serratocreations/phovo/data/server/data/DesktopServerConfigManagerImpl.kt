@@ -15,6 +15,7 @@ import com.serratocreations.phovo.core.model.network.ApiEndpoints.LOW_RES_THUMBN
 import com.serratocreations.phovo.core.model.network.ApiEndpoints.SOURCE_FILE_API
 import com.serratocreations.phovo.data.photos.mappers.toMediaItemDto
 import com.serratocreations.phovo.core.serverconfig.DesktopServerConfigRepository
+import com.serratocreations.phovo.data.server.data.http.PhovoHttpServer
 import com.serratocreations.phovo.data.server.data.network.HostAddressDataSource
 import com.serratocreations.phovo.data.server.data.repository.ServerEventsRepository
 import io.github.vinceglb.filekit.PlatformFile
@@ -26,8 +27,6 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
-import io.ktor.server.engine.embeddedServer
-import io.ktor.server.netty.Netty
 import io.ktor.server.application.*
 import io.ktor.server.http.content.staticResources
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
@@ -70,6 +69,7 @@ class DesktopServerConfigManagerImpl(
     private val serverEventsRepository: ServerEventsRepository,
     private val localMediaRepository: LocalMediaRepository,
     private val hostAddressDataSource: HostAddressDataSource,
+    private val httpServer: PhovoHttpServer,
     private val appScope: CoroutineScope,
     private val ioDispatcher: CoroutineDispatcher
 ): DesktopServerConfigManager {
@@ -86,6 +86,7 @@ class DesktopServerConfigManagerImpl(
             } catch (e: Exception) {
                 System.err.println("Error shutting down JmDNS: ${e.message}")
             }
+            httpServer.stop()
         })
     }
 
@@ -307,8 +308,14 @@ class DesktopServerConfigManagerImpl(
                 }
                 jmdns = null
 
-                embeddedServer(factory = Netty, port = 8080, host = "0.0.0.0", module = routingConfig)
-                    .start(wait = false)
+                val boundPort = httpServer.start(routingConfig)
+                if (boundPort == null) {
+                    // No port could be bound at all. Nothing the user can act on, so return to the
+                    // unconfigured state they can retry from rather than hanging on "Starting".
+                    log.e { "Server could not be started, no port could be bound" }
+                    serverConfigState.update { it.copy(configStatus = ConfigStatus.NotConfigured) }
+                    return@launch
+                }
 
                 val hostIp = hostAddressDataSource.hostIPv4()
                 log.i { "Starting JmDNS advertisement for server IP: $hostIp" }
@@ -319,7 +326,7 @@ class DesktopServerConfigManagerImpl(
                         val serviceInfo = ServiceInfo.create(
                             "_phovo._tcp.local.",
                             sanitizedName,
-                            8080,
+                            boundPort,
                             "Phovo Photo Backup Server"
                         )
                         registerService(serviceInfo)
@@ -331,7 +338,7 @@ class DesktopServerConfigManagerImpl(
 
                 serverConfigState.update {
                     it.copy(configStatus = ConfigStatus.Configured(
-                        serverUrl = "http://$hostIp:8080"
+                        serverUrl = "http://$hostIp:$boundPort"
                     ))
                 }
             }
