@@ -64,7 +64,7 @@ fun Header(
                         shape = RoundedCornerShape(20.dp)
                     ) {
                         Text(
-                            text = "Alpha Aug 31",
+                            text = "Alpha Sep 30",
                             color = Color(0xFF9FF2E2),
                             fontSize = 10.sp,
                             fontWeight = FontWeight.SemiBold,
@@ -159,7 +159,7 @@ fun Header(
                         modifier = Modifier.padding(start = 4.dp)
                     ) {
                         Text(
-                            text = "Alpha Aug 31",
+                            text = "Alpha Sep 30",
                             color = Color(0xFF9FF2E2),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold,
