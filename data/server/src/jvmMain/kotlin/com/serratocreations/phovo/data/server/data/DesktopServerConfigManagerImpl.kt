@@ -11,6 +11,7 @@ import com.serratocreations.phovo.data.photos.repository.LocalMediaRepository
 import com.serratocreations.phovo.core.model.ServerConfig
 import com.serratocreations.phovo.core.model.network.ApiEndpoints
 import com.serratocreations.phovo.core.model.network.ServerHealth
+import com.serratocreations.phovo.core.model.network.ServerTxtRecord
 import com.serratocreations.phovo.core.model.network.ApiEndpoints.GET_ALL_MEDIA_API
 import com.serratocreations.phovo.core.model.network.ApiEndpoints.HEALTH_API
 import com.serratocreations.phovo.core.model.network.ApiEndpoints.HIGH_RES_THUMBNAIL_API
@@ -80,6 +81,12 @@ class DesktopServerConfigManagerImpl(
     private val serverConfigState = MutableStateFlow(ServerConfigState())
     private val log = logger.withTag("DesktopServerConfigManagerImpl")
     private var jmdns: JmDNS? = null
+
+    private companion object {
+        // Only one instance is ever advertised, so the DNS-SD tie breakers carry no information.
+        const val SERVICE_WEIGHT = 0
+        const val SERVICE_PRIORITY = 0
+    }
 
     init {
         Runtime.getRuntime().addShutdownHook(Thread {
@@ -336,20 +343,32 @@ class DesktopServerConfigManagerImpl(
                 }
 
                 val hostIp = hostAddressDataSource.hostIPv4()
-                log.i { "Starting JmDNS advertisement for server IP: $hostIp" }
+                val serverId = serverConfigRepository.serverId()
+                if (serverId == null) {
+                    // Written by updateServerConfig above, so this is only reachable if that failed.
+                    log.e { "Server id missing after configuration, skipping mDNS advertisement" }
+                    serverConfigState.update {
+                        it.copy(configStatus = ConfigStatus.Configured("http://$hostIp:$boundPort"))
+                    }
+                    return@launch
+                }
+                log.i { "Starting JmDNS advertisement for server IP: $hostIp id: $serverId" }
                 try {
                     val inetAddress = InetAddress.getByName(hostIp)
                     val sanitizedName = serverConfig.serverName.replace(".", " ")
+                    val txtRecord = ServerTxtRecord.encode(serverId = serverId)
                     jmdns = JmDNS.create(inetAddress, "PhovoServer").apply {
                         val serviceInfo = ServiceInfo.create(
                             "_phovo._tcp.local.",
                             sanitizedName,
                             boundPort,
-                            "Phovo Photo Backup Server"
+                            SERVICE_WEIGHT,
+                            SERVICE_PRIORITY,
+                            txtRecord
                         )
                         registerService(serviceInfo)
                     }
-                    log.i { "JmDNS service registered successfully" }
+                    log.i { "JmDNS service registered with TXT $txtRecord" }
                 } catch (e: Exception) {
                     log.e(e) { "Failed to start JmDNS service advertising" }
                 }
