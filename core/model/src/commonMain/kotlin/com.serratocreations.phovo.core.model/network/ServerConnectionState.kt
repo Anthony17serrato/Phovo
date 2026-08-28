@@ -23,6 +23,15 @@ sealed interface ServerConnectionState {
 
     /** The server is configured but could not be reached. */
     data class Unreachable(val reason: NetworkFailure) : ServerConnectionState
+
+    /**
+     * Something answered at the stored address, but it is not the server this client paired with.
+     * Typically, a DHCP lease handing that address to a different machine.
+     *
+     * Unlike [Unreachable] this will not heal by waiting, and it has to block uploads: checking
+     * identity exists so photos are never sent to a stranger's machine.
+     */
+    data object IdentityMismatch : ServerConnectionState
 }
 
 /** True when requests to the server can currently succeed. */

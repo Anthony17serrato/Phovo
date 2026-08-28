@@ -16,6 +16,7 @@ class IosAndroidServerConfigRepository(
             entity?.serverUrl?.let { url ->
                 ServerConfig.ClientSpecificServerConfig(
                     serverBaseUrlString = BaseUrl(url),
+                    serverId = entity.serverId,
                     serverName = entity.serverName
                 )
             }
@@ -50,7 +51,7 @@ class IosAndroidServerConfigRepository(
      * calls itself: the name pairing started with came from mDNS, which renames services on
      * collision, and the user can rename the server at any time.
      */
-    suspend fun updateCachedServerName(serverName: String) =
+    suspend fun updateCachedServerNameIfNew(serverName: String) =
         clientConfigDao.updateServerName(serverName)
 
     suspend fun clearClientServerConfig() = clientConfigDao.deleteConfig()

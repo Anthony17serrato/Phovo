@@ -22,6 +22,12 @@ sealed interface ServerConfig {
         val serverBaseUrlString: BaseUrl,
         // Todo make not nullable
         /**
+         * Identity of the paired server. Null when pairing came from a manually entered address,
+         * where nothing has yet told us who answers there.
+         */
+        val serverId: String? = null,
+        // Todo make not nullable
+        /**
          * Cached display name of the paired server, refreshed from its health responses. Null until
          * the server has told us its name — show the address in the meantime.
          */

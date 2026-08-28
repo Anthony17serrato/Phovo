@@ -19,11 +19,13 @@ class GetBackupStatusUseCase(
         ) { connectionState, localMediaState ->
             when (connectionState) {
                 is ServerConnectionState.Connected -> localMediaState.toBackupStatus()
-                // Unreachable, not yet configured, and mid-check are all "no backup happening"
-                // as far as the user is concerned; none of them imply a different action.
+                // Unreachable, not yet configured, mid-check, and answered-by-the-wrong-server
+                // are all "no backup happening" as far as the user is concerned; none of them imply
+                // a different action here.
                 is ServerConnectionState.Unreachable,
                 ServerConnectionState.Unknown,
-                ServerConnectionState.Checking -> BackupStatus.ServerOffline
+                ServerConnectionState.Checking,
+                ServerConnectionState.IdentityMismatch -> BackupStatus.ServerOffline
             }
         }
     }

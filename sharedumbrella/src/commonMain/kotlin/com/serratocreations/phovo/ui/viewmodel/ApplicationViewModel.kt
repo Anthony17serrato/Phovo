@@ -32,7 +32,10 @@ class ApplicationViewModel(
             .onEach { connectionState ->
                 val statusColor = when (connectionState) {
                     is ServerConnectionState.Connected -> ServerStatusColor.Green
-                    is ServerConnectionState.Unreachable -> ServerStatusColor.Red
+                    // A mismatch needs attention as much as an outage: the server the user paired
+                    // with is not the one answering.
+                    is ServerConnectionState.Unreachable,
+                    ServerConnectionState.IdentityMismatch -> ServerStatusColor.Red
                     // No server configured, or the first check has not landed. Red here would
                     // report a problem the user does not have.
                     ServerConnectionState.Unknown,
