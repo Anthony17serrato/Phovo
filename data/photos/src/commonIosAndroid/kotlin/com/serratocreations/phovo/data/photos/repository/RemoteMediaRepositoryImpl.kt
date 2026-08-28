@@ -1,11 +1,14 @@
 package com.serratocreations.phovo.data.photos.repository
 
 import com.serratocreations.phovo.core.logger.PhovoLogger
+import com.serratocreations.phovo.core.model.network.BaseUrl
 import com.serratocreations.phovo.core.model.network.MediaItemDto
 import com.serratocreations.phovo.core.serverconfig.IosAndroidServerConfigRepository
 import com.serratocreations.phovo.data.photos.network.MediaNetworkDataSource
 import com.serratocreations.phovo.core.model.network.NetworkCallRetryPolicy
 import com.serratocreations.phovo.core.model.network.NetworkResult
+import com.serratocreations.phovo.core.model.network.ServerConnectionState
+import com.serratocreations.phovo.core.model.network.isConnected
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -18,6 +21,8 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.shareIn
@@ -31,9 +36,10 @@ class RemoteMediaRepositoryImpl(
     applicationScope: CoroutineScope,
     logger: PhovoLogger
 ): RemoteMediaRepository {
-    private val log = logger.withTag("RemoteMediaRepositoryImpl")
+    private val log = logger.withTag(TAG)
 
     companion object {
+        private const val TAG = "RemoteMediaRepository"
         private val CHECK_ALIVE_DELAY = 15.seconds
     }
 
@@ -64,7 +70,7 @@ class RemoteMediaRepositoryImpl(
             baseUrl = baseUrl,
             retryPolicy = NetworkCallRetryPolicy.RetryAfterLambda {
                 // drop current state to ensure cached connection status is not used
-                isSeverConnected.drop(1).filter { it }.first()
+                connectionState.drop(1).first { it.isConnected }
             }
         )
     }
@@ -72,25 +78,40 @@ class RemoteMediaRepositoryImpl(
     // TODO: Most likely there is a more sophisticated networking method to check alive
     //  then pinging every X seconds(Investigate)
     @OptIn(ExperimentalCoroutinesApi::class)
-    private val isSeverConnected = serverConfigRepository.observeServerConfig().flatMapLatest {
-        flow {
-            if (it?.serverBaseUrlString == null) {
-                emit(false)
+    private val connectionState: Flow<ServerConnectionState> =
+        serverConfigRepository.observeServerConfig().flatMapLatest { serverConfig ->
+            val baseUrl = serverConfig?.serverBaseUrlString
+            if (baseUrl == null) {
+                // Not configured is distinct from unreachable: a client that has never been paired
+                // does not have a problem to report.
+                flowOf<ServerConnectionState>(ServerConnectionState.Unknown)
             } else {
-                while(currentCoroutineContext().isActive) {
-                    yield()
-                    emit(remotePhotosDataSource.checkServerConnection(it.serverBaseUrlString))
-                    delay(CHECK_ALIVE_DELAY)
+                flow<ServerConnectionState> {
+                    emit(ServerConnectionState.Checking)
+                    while (currentCoroutineContext().isActive) {
+                        yield()
+                        emit(checkConnection(baseUrl))
+                        delay(CHECK_ALIVE_DELAY)
+                    }
                 }
             }
-        }
-    }.shareIn(
-        scope = applicationScope,
-        started = SharingStarted.Lazily,
-        replay = 1
-    )
+        // The poll re-emits the same state every CHECK_ALIVE_DELAY; only changes are interesting.
+        }.distinctUntilChanged().shareIn(
+            scope = applicationScope,
+            started = SharingStarted.Lazily,
+            replay = 1
+        )
 
-    override fun observeServerConnection(): Flow<Boolean> {
-        return isSeverConnected
-    }
+    private suspend fun checkConnection(baseUrl: BaseUrl): ServerConnectionState =
+        when (val result = remotePhotosDataSource.checkServerConnection(baseUrl)) {
+            is NetworkResult.NetworkSuccess -> ServerConnectionState.Connected
+            is NetworkResult.NetworkError -> {
+                // The classified reason is a diagnostic, not something to show: to the user this is
+                // just "the server is offline" whether it timed out, refused, or failed to resolve.
+                log.i { "Server unreachable at ${baseUrl.value}: ${result.failure} (${result.message})" }
+                ServerConnectionState.Unreachable(result.failure)
+            }
+        }
+
+    override fun observeConnectionState(): Flow<ServerConnectionState> = connectionState
 }

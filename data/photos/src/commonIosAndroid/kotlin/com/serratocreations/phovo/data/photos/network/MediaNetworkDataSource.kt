@@ -51,16 +51,11 @@ abstract class MediaNetworkDataSource(
     }
 
     /**
-     * Returns true if a connection to the server is successfully established,
-     * otherwise returns false. Connection can fail for a variety of reasons and this API does not
-     * currently return a failure reason.
+     * Probes the server for reachability. Success means the server answered; an error carries the
+     * classified reason it did not. The response body is empty and callers should ignore it.
      */
-    suspend fun checkServerConnection(baseUrl: BaseUrl): Boolean {
-        val result = networkCallWrapper {
-            client.get(baseUrl / ApiEndpoints.CHECK_ALIVE_API)
-        }
-        return result is NetworkResult.NetworkSuccess
-    }
+    suspend fun checkServerConnection(baseUrl: BaseUrl): NetworkResult<HttpResponse> =
+        networkCallWrapper { client.get(baseUrl / ApiEndpoints.CHECK_ALIVE_API) }
 
     suspend fun syncMedia(
         mediaItemDto: MediaItemDto,

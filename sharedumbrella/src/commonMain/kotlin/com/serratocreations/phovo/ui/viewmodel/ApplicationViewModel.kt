@@ -2,6 +2,7 @@ package com.serratocreations.phovo.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.serratocreations.phovo.core.model.network.ServerConnectionState
 import com.serratocreations.phovo.data.photos.repository.MediaRepository
 import com.serratocreations.phovo.data.photos.repository.RemoteMediaRepository
 import com.serratocreations.phovo.ui.model.OverflowMenuOption
@@ -12,7 +13,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 
 class ApplicationViewModel(
     private val mediaRepository: MediaRepository
@@ -26,21 +26,23 @@ class ApplicationViewModel(
         viewModelScope.observeServerStatus()
     }
 
-    private fun CoroutineScope.observeServerStatus() = launch {
-        if(mediaRepository is RemoteMediaRepository) {
-            mediaRepository.observeServerConnection()
-                .onEach { isServerConnectionSuccess ->
-                    _applicationUiState.update { uiState ->
-                        uiState.copy(serverStatusColor = if (isServerConnectionSuccess) {
-                                ServerStatusColor.Green
-                            } else {
-                                ServerStatusColor.Red
-                            }
-                        )
-                    }
+    private fun CoroutineScope.observeServerStatus() {
+        if (mediaRepository !is RemoteMediaRepository) return
+        mediaRepository.observeConnectionState()
+            .onEach { connectionState ->
+                val statusColor = when (connectionState) {
+                    is ServerConnectionState.Connected -> ServerStatusColor.Green
+                    is ServerConnectionState.Unreachable -> ServerStatusColor.Red
+                    // No server configured, or the first check has not landed. Red here would
+                    // report a problem the user does not have.
+                    ServerConnectionState.Unknown,
+                    ServerConnectionState.Checking -> ServerStatusColor.Unavailable
                 }
-                .launchIn(this)
-        }
+                _applicationUiState.update { uiState ->
+                    uiState.copy(serverStatusColor = statusColor)
+                }
+            }
+            .launchIn(this)
     }
 
     private fun getOverflowMenuOptions(): Set<OverflowMenuOption> {

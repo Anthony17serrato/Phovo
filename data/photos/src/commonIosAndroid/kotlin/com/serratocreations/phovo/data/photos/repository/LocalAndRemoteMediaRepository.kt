@@ -9,6 +9,7 @@ import com.serratocreations.phovo.core.model.network.MediaItemDto
 import com.serratocreations.phovo.data.photos.local.LocalMediaBackupProgress
 import com.serratocreations.phovo.data.photos.mappers.toMediaItemDto
 import com.serratocreations.phovo.core.model.network.NetworkResult
+import com.serratocreations.phovo.core.model.network.isConnected
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import com.serratocreations.phovo.data.photos.repository.model.SyncImage
 import com.serratocreations.phovo.data.photos.repository.model.SyncQueueable
@@ -130,7 +131,7 @@ class LocalAndRemoteMediaRepositoryImpl(
             }
             log.i { "claimed item hash ${nextUnsyncedItem.mediaItemMetadataEntity.assetHash}" }
             // Do not sync if server is not connected
-            remoteMediaRepository.observeServerConnection().filter { it }.first()
+            remoteMediaRepository.observeConnectionState().filter { it.isConnected }.first()
             val assetHash = nextUnsyncedItem.mediaItemMetadataEntity.assetHash
             log.i { "starting sync for item hash $assetHash" }
             // Terminate the worker if there is no remaining items to sync
@@ -253,7 +254,7 @@ class LocalAndRemoteMediaRepositoryImpl(
         mediaUri: String
     ) = remoteMediaRepository.syncMedia(media, mediaUri)
 
-    override fun observeServerConnection() = remoteMediaRepository.observeServerConnection()
+    override fun observeConnectionState() = remoteMediaRepository.observeConnectionState()
 
     override suspend fun getMediaItemByAssetHash(assetHash: String) = localMediaRepository.getMediaItemByAssetHash(assetHash)
 
