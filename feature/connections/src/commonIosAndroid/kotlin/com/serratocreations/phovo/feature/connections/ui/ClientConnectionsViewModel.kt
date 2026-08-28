@@ -41,7 +41,8 @@ class ClientConnectionsViewModel(
                 _connectionsUiState.update {
                     it.copy(
                         isClientConfigured = isConfigured,
-                        configuredServerUrl = serverUrl
+                        configuredServerUrl = serverUrl,
+                        configuredServerName = serverConfig?.serverName
                     )
                 }
 
@@ -128,6 +129,8 @@ class ClientConnectionsViewModel(
 data class ClientConnectionsUiState(
     val isClientConfigured: Boolean = false,
     val configuredServerUrl: String? = null,
+    /** Null until the server has reported its name; show [configuredServerUrl] instead. */
+    val configuredServerName: String? = null,
     val isSearching: Boolean = false,
     val discoveredServers: List<DiscoveredServer> = emptyList(),
     val localNetworkPermissionStatus: PermissionStatus = PermissionStatus.Ungranted,

@@ -6,7 +6,8 @@ import android.net.nsd.NsdServiceInfo
 import android.os.Build
 import androidx.annotation.RequiresApi
 import com.serratocreations.phovo.core.logger.PhovoLogger
-import com.serratocreations.phovo.core.serverconfig.ServerConfigRepository
+import com.serratocreations.phovo.core.model.network.ServerTxtRecord
+import com.serratocreations.phovo.core.serverconfig.IosAndroidServerConfigRepository
 import com.serratocreations.phovo.data.server.data.model.DiscoveredServer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.awaitClose
@@ -22,7 +23,7 @@ import kotlin.time.Duration.Companion.seconds
 
 class AndroidServerDiscoveryManager(
     private val context: Context,
-    private val serverConfigRepository: ServerConfigRepository,
+    private val serverConfigRepository: IosAndroidServerConfigRepository,
     applicationScope: CoroutineScope,
     logger: PhovoLogger
 ) : ServerDiscoveryManager {
@@ -45,11 +46,7 @@ class AndroidServerDiscoveryManager(
                 val sanitizedHost = hostAddress.sanitizeHost()
                 log.i { "Service resolved: ${serviceInfo.serviceName} at $sanitizedHost:${serviceInfo.port}" }
 
-                val server = DiscoveredServer(
-                    name = serviceInfo.serviceName,
-                    ipAddress = sanitizedHost,
-                    port = serviceInfo.port
-                )
+                val server = serviceInfo.toDiscoveredServer(sanitizedHost) ?: return
 
                 launch {
                     discoveredServersMutex.withLock {
@@ -71,11 +68,7 @@ class AndroidServerDiscoveryManager(
                 val sanitizedHost = hostAddress.sanitizeHost()
                 log.i { "Service updated: ${resolvedInfo.serviceName} at $sanitizedHost:${resolvedInfo.port}" }
 
-                val server = DiscoveredServer(
-                    name = resolvedInfo.serviceName,
-                    ipAddress = sanitizedHost,
-                    port = resolvedInfo.port
-                )
+                val server = resolvedInfo.toDiscoveredServer(sanitizedHost) ?: return
                 launch {
                     discoveredServersMutex.withLock {
                         discoveredServers[resolvedInfo.serviceName] = server
@@ -186,8 +179,43 @@ class AndroidServerDiscoveryManager(
     override fun discoverServers(): Flow<List<DiscoveredServer>> = serverDiscoverySharedFlow
 
     override suspend fun connectToServer(server: DiscoveredServer) {
-        log.i { "Connecting to discovered server: ${server.url}" }
-        serverConfigRepository.updateClientServerConfig(server.url)
+        log.i { "Connecting to discovered server: ${server.url} id: ${server.serverId}" }
+        serverConfigRepository.updateClientServerConfig(
+            serverUrl = server.url,
+            serverId = server.serverId,
+            // Only a placeholder label: the first health probe replaces it with whatever the server
+            // calls itself, which mDNS may have renamed to avoid a collision on the network.
+            serverName = server.name
+        )
+    }
+
+    /**
+     * NsdManager hands TXT records back as raw bytes, so decode them here rather than making every
+     * caller do it.
+     *
+     * @return null when the record carries no identity. Anything on the network can answer to
+     * `_phovo._tcp`, so this is not an error to raise — the service simply is not something this
+     * client can pair with, and offering it would produce a connection that cannot be re-found once
+     * its address changes.
+     */
+    private fun NsdServiceInfo.toDiscoveredServer(host: String): DiscoveredServer? {
+        val properties = attributes.mapValues { (_, value) -> value?.toString(Charsets.UTF_8) }
+        val serverId = ServerTxtRecord.decode(properties)?.serverId
+        if (serverId == null) {
+            // The keys separate the cases worth telling apart: no record at all, a record from
+            // something that is not Phovo, or ours with a blank id.
+            log.e {
+                "Ignoring $serviceName at $host: TXT record carries no server id " +
+                    "(keys: ${properties.keys})"
+            }
+            return null
+        }
+        return DiscoveredServer(
+            name = serviceName,
+            ipAddress = host,
+            port = port,
+            serverId = serverId
+        )
     }
 
     private fun String.sanitizeHost(): String {

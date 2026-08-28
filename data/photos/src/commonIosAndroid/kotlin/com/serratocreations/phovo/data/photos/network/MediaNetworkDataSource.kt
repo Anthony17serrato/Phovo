@@ -5,7 +5,9 @@ import com.serratocreations.phovo.core.model.network.ApiEndpoints
 import com.serratocreations.phovo.core.model.network.BaseUrl
 import com.serratocreations.phovo.core.model.network.MediaItemDto
 import com.serratocreations.phovo.core.model.network.NetworkCallRetryPolicy
+import com.serratocreations.phovo.core.model.network.NetworkFailure
 import com.serratocreations.phovo.core.model.network.NetworkResult
+import com.serratocreations.phovo.core.model.network.ServerHealth
 import com.serratocreations.phovo.core.model.network.UploadInitResponse
 import com.serratocreations.phovo.data.photos.mappers.toMediaItem
 import com.serratocreations.phovo.data.photos.network.util.networkCallWrapper
@@ -51,11 +53,21 @@ abstract class MediaNetworkDataSource(
     }
 
     /**
-     * Probes the server for reachability. Success means the server answered; an error carries the
-     * classified reason it did not. The response body is empty and callers should ignore it.
+     * Probes the server for reachability and identity in one call. Success carries what the server
+     * reports about itself; an error carries the classified reason it did not answer.
      */
-    suspend fun checkServerConnection(baseUrl: BaseUrl): NetworkResult<HttpResponse> =
-        networkCallWrapper { client.get(baseUrl / ApiEndpoints.CHECK_ALIVE_API) }
+    suspend fun fetchServerHealth(baseUrl: BaseUrl): NetworkResult<ServerHealth> =
+        networkResultCallWrapper {
+            val response = client.get(baseUrl / ApiEndpoints.HEALTH_API)
+            if (response.status.isSuccess()) {
+                NetworkResult.NetworkSuccess(response.body<ServerHealth>())
+            } else {
+                NetworkResult.NetworkError(
+                    message = "Health probe failed with status: ${response.status}",
+                    failure = NetworkFailure.HttpStatus
+                )
+            }
+        }
 
     suspend fun syncMedia(
         mediaItemDto: MediaItemDto,

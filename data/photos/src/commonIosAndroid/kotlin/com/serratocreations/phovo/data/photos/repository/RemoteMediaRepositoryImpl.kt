@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.isActive
@@ -79,32 +80,41 @@ class RemoteMediaRepositoryImpl(
     //  then pinging every X seconds(Investigate)
     @OptIn(ExperimentalCoroutinesApi::class)
     private val connectionState: Flow<ServerConnectionState> =
-        serverConfigRepository.observeServerConfig().flatMapLatest { serverConfig ->
-            val baseUrl = serverConfig?.serverBaseUrlString
-            if (baseUrl == null) {
-                // Not configured is distinct from unreachable: a client that has never been paired
-                // does not have a problem to report.
-                flowOf<ServerConnectionState>(ServerConnectionState.Unknown)
-            } else {
-                flow<ServerConnectionState> {
-                    emit(ServerConnectionState.Checking)
-                    while (currentCoroutineContext().isActive) {
-                        yield()
-                        emit(checkConnection(baseUrl))
-                        delay(CHECK_ALIVE_DELAY)
+        serverConfigRepository.observeServerConfig()
+            // Keyed on the address alone. The probe writes the server's name back into the config,
+            // and restarting on every config change would let the poll cancel itself.
+            .map { it?.serverBaseUrlString }
+            .distinctUntilChanged()
+            .flatMapLatest { baseUrl ->
+                if (baseUrl == null) {
+                    // Not configured is distinct from unreachable: a client that has never been
+                    // paired does not have a problem to report.
+                    flowOf<ServerConnectionState>(ServerConnectionState.Unknown)
+                } else {
+                    flow<ServerConnectionState> {
+                        emit(ServerConnectionState.Checking)
+                        while (currentCoroutineContext().isActive) {
+                            yield()
+                            emit(checkConnection(baseUrl))
+                            delay(CHECK_ALIVE_DELAY)
+                        }
                     }
                 }
             }
-        // The poll re-emits the same state every CHECK_ALIVE_DELAY; only changes are interesting.
-        }.distinctUntilChanged().shareIn(
-            scope = applicationScope,
-            started = SharingStarted.Lazily,
-            replay = 1
-        )
+            // The poll re-emits the same state every CHECK_ALIVE_DELAY; only changes are interesting.
+            .distinctUntilChanged()
+            .shareIn(
+                scope = applicationScope,
+                started = SharingStarted.Lazily,
+                replay = 1
+            )
 
     private suspend fun checkConnection(baseUrl: BaseUrl): ServerConnectionState =
-        when (val result = remotePhotosDataSource.checkServerConnection(baseUrl)) {
-            is NetworkResult.NetworkSuccess -> ServerConnectionState.Connected
+        when (val result = remotePhotosDataSource.fetchServerHealth(baseUrl)) {
+            is NetworkResult.NetworkSuccess -> {
+                cacheServerName(result.data.serverName)
+                ServerConnectionState.Connected
+            }
             is NetworkResult.NetworkError -> {
                 // The classified reason is a diagnostic, not something to show: to the user this is
                 // just "the server is offline" whether it timed out, refused, or failed to resolve.
@@ -112,6 +122,21 @@ class RemoteMediaRepositoryImpl(
                 ServerConnectionState.Unreachable(result.failure)
             }
         }
+
+    /**
+     * Keeps the stored name in step with what the server calls itself. The name the client paired
+     * with came from mDNS, which renames services on collision, and the user can rename the server
+     * at any time — so the health response is the only authority, and the poll is what keeps it
+     * fresh. Written only on a change, since an unconditional write would wake every observer of
+     * the config every [CHECK_ALIVE_DELAY].
+     */
+    private suspend fun cacheServerName(serverName: String) {
+        val cachedName = serverConfigRepository.observeServerConfig().first()?.serverName
+        if (cachedName != serverName) {
+            log.i { "Caching server name: $cachedName -> $serverName" }
+            serverConfigRepository.updateCachedServerName(serverName)
+        }
+    }
 
     override fun observeConnectionState(): Flow<ServerConnectionState> = connectionState
 }

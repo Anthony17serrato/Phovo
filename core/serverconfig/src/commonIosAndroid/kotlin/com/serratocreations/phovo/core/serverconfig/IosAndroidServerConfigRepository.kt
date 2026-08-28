@@ -15,17 +15,43 @@ class IosAndroidServerConfigRepository(
         return clientConfigDao.clientConfigFlow().map { entity ->
             entity?.serverUrl?.let { url ->
                 ServerConfig.ClientSpecificServerConfig(
-                    serverBaseUrlString = BaseUrl(url)
+                    serverBaseUrlString = BaseUrl(url),
+                    serverName = entity.serverName
                 )
             }
         }
     }
 
-    override suspend fun updateClientServerConfig(serverUrl: String) {
-        clientConfigDao.insert(ClientConfigEntity(serverUrl = serverUrl))
+    /**
+     * Pairs this client with a server.
+     *
+     * @param serverUrl the address the server answered on when pairing.
+     * @param serverId identity from the server's TXT record, null when pairing from a manually
+     * entered address.
+     * @param serverName the name advertised over mDNS, kept only as a first label to show until the
+     * server reports its own name. Null when pairing from a manually entered address.
+     */
+    suspend fun updateClientServerConfig(
+        serverUrl: String,
+        serverId: String? = null,
+        serverName: String? = null
+    ) {
+        clientConfigDao.insert(
+            ClientConfigEntity(
+                serverUrl = serverUrl,
+                serverId = serverId,
+                serverName = serverName
+            )
+        )
     }
 
-    override suspend fun clearClientServerConfig() {
-        clientConfigDao.deleteConfig()
-    }
+    /**
+     * Refreshes the cached name from a health response. The server is the only authority on what it
+     * calls itself: the name pairing started with came from mDNS, which renames services on
+     * collision, and the user can rename the server at any time.
+     */
+    suspend fun updateCachedServerName(serverName: String) =
+        clientConfigDao.updateServerName(serverName)
+
+    suspend fun clearClientServerConfig() = clientConfigDao.deleteConfig()
 }

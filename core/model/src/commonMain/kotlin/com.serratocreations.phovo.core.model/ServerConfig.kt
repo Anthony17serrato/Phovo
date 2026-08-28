@@ -19,6 +19,12 @@ sealed interface ServerConfig {
     ): ServerConfig
 
     data class ClientSpecificServerConfig(
-        val serverBaseUrlString: BaseUrl
+        val serverBaseUrlString: BaseUrl,
+        // Todo make not nullable
+        /**
+         * Cached display name of the paired server, refreshed from its health responses. Null until
+         * the server has told us its name — show the address in the meantime.
+         */
+        val serverName: String? = null
     ): ServerConfig
 }

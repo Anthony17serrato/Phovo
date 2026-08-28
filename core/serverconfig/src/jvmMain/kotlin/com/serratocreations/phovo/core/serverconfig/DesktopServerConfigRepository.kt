@@ -33,12 +33,4 @@ class DesktopServerConfigRepository(
         .map { serverConfigEntity ->
             serverConfigEntity?.asServerSpecificServerConfig()
         }
-
-    override suspend fun updateClientServerConfig(serverUrl: String) {
-        // No-op for desktop server target
-    }
-
-    override suspend fun clearClientServerConfig() {
-        // No-op for desktop server target
-    }
 }
