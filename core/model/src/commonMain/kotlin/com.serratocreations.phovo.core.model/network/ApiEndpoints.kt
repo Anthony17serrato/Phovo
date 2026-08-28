@@ -4,6 +4,9 @@ import kotlin.jvm.JvmInline
 
 object ApiEndpoints {
     val CHECK_ALIVE_API = Endpoint("")
+
+    /** Returns [ServerHealth]: liveness plus the identity a client verifies the server against. */
+    val HEALTH_API = Endpoint("health")
     val GET_ALL_MEDIA_API = Endpoint("all_media/")
     val LOW_RES_THUMBNAIL_API = Endpoint("low_res_thumbnails/")
     val HIGH_RES_THUMBNAIL_API = Endpoint("high_res_thumbnails/")

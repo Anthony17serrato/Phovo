@@ -9,7 +9,10 @@ import com.serratocreations.phovo.core.model.network.MediaItemDto
 import com.serratocreations.phovo.core.model.network.UploadInitResponse
 import com.serratocreations.phovo.data.photos.repository.LocalMediaRepository
 import com.serratocreations.phovo.core.model.ServerConfig
+import com.serratocreations.phovo.core.model.network.ApiEndpoints
+import com.serratocreations.phovo.core.model.network.ServerHealth
 import com.serratocreations.phovo.core.model.network.ApiEndpoints.GET_ALL_MEDIA_API
+import com.serratocreations.phovo.core.model.network.ApiEndpoints.HEALTH_API
 import com.serratocreations.phovo.core.model.network.ApiEndpoints.HIGH_RES_THUMBNAIL_API
 import com.serratocreations.phovo.core.model.network.ApiEndpoints.LOW_RES_THUMBNAIL_API
 import com.serratocreations.phovo.core.model.network.ApiEndpoints.SOURCE_FILE_API
@@ -121,6 +124,21 @@ class DesktopServerConfigManagerImpl(
             get("/") {
                 serverEventsRepository.addServerEventLog("get ${LocalDateTime.now()}")
                 call.respond(HttpStatusCode.OK, "Phovo server is running")
+            }
+
+            // Liveness plus identity. Clients use serverId to confirm they are still talking to
+            // the server they paired with, rather than to whoever now holds that address.
+            get("/${HEALTH_API.value}") {
+                val config = serverConfigRepository.observeServerConfig().first()
+                val serverId = serverConfigRepository.serverId()
+                if (config == null || serverId == null) {
+                    call.respond(HttpStatusCode.ServiceUnavailable, "Server is not configured")
+                    return@get
+                }
+                call.respond(
+                    HttpStatusCode.OK,
+                    ServerHealth(serverId = serverId, serverName = config.serverName)
+                )
             }
 
             get("/${GET_ALL_MEDIA_API.value}") {
