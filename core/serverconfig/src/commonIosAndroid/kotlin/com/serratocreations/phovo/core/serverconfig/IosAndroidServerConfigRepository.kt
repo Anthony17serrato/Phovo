@@ -54,5 +54,12 @@ class IosAndroidServerConfigRepository(
     suspend fun updateCachedServerNameIfNew(serverName: String) =
         clientConfigDao.updateServerName(serverName)
 
+    /**
+     * Records where the paired server was found after it moved. Identity is untouched: this is the
+     * same server at a new address, which is the case the whole pairing design exists to survive.
+     */
+    suspend fun updateCachedServerUrl(serverUrl: String) =
+        clientConfigDao.updateServerUrl(serverUrl)
+
     suspend fun clearClientServerConfig() = clientConfigDao.deleteConfig()
 }

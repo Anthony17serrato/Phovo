@@ -4,6 +4,7 @@ import com.serratocreations.phovo.core.common.di.APPLICATION_SCOPE
 import com.serratocreations.phovo.core.serverconfig.IosAndroidServerConfigRepository
 import com.serratocreations.phovo.core.serverconfig.ServerConfigRepository
 import com.serratocreations.phovo.data.server.AndroidServerDiscoveryManager
+import com.serratocreations.phovo.data.server.ServerAddressResolver
 import com.serratocreations.phovo.data.server.ServerDiscoveryManager
 import org.koin.core.module.Module
 import org.koin.dsl.binds
@@ -17,6 +18,16 @@ internal actual fun getAndroidDesktopIosModules(): Module = module {
             get(),
             get(APPLICATION_SCOPE),
             get()
+        )
+    }
+
+    single {
+        ServerAddressResolver(
+            serverConfigRepository = get(),
+            remoteMediaRepository = get(),
+            serverDiscoveryManager = get(),
+            applicationScope = get(APPLICATION_SCOPE),
+            logger = get()
         )
     }
 }

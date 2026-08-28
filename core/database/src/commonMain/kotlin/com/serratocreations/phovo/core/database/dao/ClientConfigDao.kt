@@ -33,6 +33,20 @@ interface ClientConfigDao {
     )
     suspend fun updateServerName(serverName: String)
 
+    /**
+     * Points the pairing at a new address after the server has been found somewhere else. Narrow
+     * for the same reason as [updateServerName]: identity is what the pairing is keyed on and must
+     * survive a move, and the guard keeps a rewrite to the same address from waking observers.
+     */
+    @Query(
+        """
+        UPDATE ClientConfigEntity
+        SET serverUrl = :serverUrl
+        WHERE id = 1 AND serverUrl IS NOT :serverUrl
+        """
+    )
+    suspend fun updateServerUrl(serverUrl: String)
+
     @Query("SELECT * FROM ClientConfigEntity LIMIT 1")
     fun clientConfigFlow(): Flow<ClientConfigEntity?>
 
