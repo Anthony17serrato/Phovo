@@ -27,6 +27,22 @@ class HostAddressDataSource(
         //  advertised and stored but can never work. Make hostIPv4() nullable and surface a
         //  "no network connection" state instead, alongside the server-failed-to-start error.
         const val LOOPBACK_ADDRESS = "127.0.0.1"
+
+        /**
+         * Names hypervisors and container runtimes use for host-only bridges. Used to order rather
+         * than to exclude: macOS Internet Sharing runs a real LAN over `bridge100`, so one of these
+         * can legitimately be the only interface a client could reach.
+         *
+         * Tunnels are absent because the capability filters already drop them.
+         */
+        val VIRTUAL_BRIDGE_PREFIXES = listOf(
+            "bridge",   // Parallels Desktop, and macOS Internet Sharing
+            "vmnet",    // VMware
+            "vboxnet",  // VirtualBox
+            "docker",
+            "br-",      // Docker user defined bridges
+            "virbr"     // libvirt
+        )
     }
 
     /**
@@ -37,9 +53,11 @@ class HostAddressDataSource(
      * reachable only from this host. [NetworkInterface.isVirtual] does not identify them — it only
      * reports subinterfaces such as `en0:1`.
      *
-     * Rather than guessing from interface names, this prefers the address the OS itself routes
-     * outbound traffic through: that interface is by definition one this machine shares with
-     * others. [candidateAddresses] is only a fallback for when no default route exists.
+     * First choice is the address the OS itself routes outbound traffic through, since that
+     * interface is by definition one this machine shares with others. That fails whenever a VPN
+     * holds the default route, because a tunnel cannot carry mDNS and so is not a candidate. The
+     * fallback then relies on [candidateAddresses] being ordered, which is where the name heuristic
+     * earns its place.
      */
     fun hostIPv4(): String {
         val candidates = candidateAddresses()
@@ -66,14 +84,16 @@ class HostAddressDataSource(
     /**
      * Every IPv4 address on an interface that could plausibly carry LAN traffic.
      *
-     * Filters on interface capabilities rather than names: a point-to-point or non-multicast
-     * interface cannot serve mDNS discovery, whereas a name-based denylist would both miss new
-     * virtualization tools and wrongly exclude real interfaces — macOS Internet Sharing runs the
-     * LAN over `bridge100`.
+     * Membership is decided by interface capability, since a point-to-point or non-multicast
+     * interface cannot carry mDNS. Order is decided by name, with hypervisor bridges last, because
+     * enumeration order is arbitrary and would otherwise hand a Parallels or Docker bridge to
+     * callers ahead of the real LAN. Ordering rather than excluding keeps such a bridge usable when
+     * it is the only interface there is.
      */
     fun candidateAddresses(): List<Inet4Address> = try {
         NetworkInterface.getNetworkInterfaces().asSequence()
             .filter { it.isUp && !it.isLoopback && !it.isVirtual && !it.isPointToPoint && it.supportsMulticast() }
+            .sortedBy { it.isProbablyVirtualBridge() }
             .flatMap { it.inetAddresses.asSequence() }
             .filterIsInstance<Inet4Address>()
             .filter { it.isUsableHostAddress() }
@@ -103,6 +123,11 @@ class HostAddressDataSource(
     } catch (e: Exception) {
         log.e(e) { "Unable to resolve default route address" }
         null
+    }
+
+    private fun NetworkInterface.isProbablyVirtualBridge(): Boolean {
+        val lowercaseName = name.lowercase()
+        return VIRTUAL_BRIDGE_PREFIXES.any { lowercaseName.startsWith(it) }
     }
 
     /** Excludes the wildcard, loopback and self-assigned (169.254.0.0/16) addresses. */
