@@ -1,22 +1,47 @@
 package com.serratocreations.phovo.data.photos.network.util
 
 import com.serratocreations.phovo.core.model.network.NetworkCallRetryPolicy
+import com.serratocreations.phovo.core.model.network.NetworkFailure
 import com.serratocreations.phovo.core.model.network.NetworkResult
+import io.ktor.client.network.sockets.ConnectTimeoutException
+import io.ktor.client.network.sockets.SocketTimeoutException
+import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.isSuccess
+import kotlinx.coroutines.CancellationException
 import kotlinx.io.IOException
+import kotlinx.serialization.SerializationException
+
+/**
+ * Classifies a failed network call.
+ *
+ * Ktor's timeout exceptions all extend [IOException], so they are matched first to tell a slow
+ * server apart from an absent one. [SerializationException] is an `IllegalArgumentException`, as is
+ * `UnresolvedAddressException` on JVM targets — neither is an [IOException], which is why the catch
+ * below cannot be narrowed to that type.
+ */
+private fun classifyNetworkFailure(e: Throwable): NetworkFailure = when (e) {
+    is HttpRequestTimeoutException,
+    is ConnectTimeoutException,
+    is SocketTimeoutException -> NetworkFailure.Timeout
+    is SerializationException -> NetworkFailure.Malformed
+    is IOException -> NetworkFailure.Unreachable
+    else -> NetworkFailure.Unknown
+}
 
 suspend fun <T> networkResultCallWrapper(
     retryPolicy: NetworkCallRetryPolicy = NetworkCallRetryPolicy.NONE,
     networkCall: suspend () -> NetworkResult<T>
 ): NetworkResult<T> {
-    suspend fun getResult() = try {
+    suspend fun getResult(): NetworkResult<T> = try {
         networkCall()
+    } catch (e: CancellationException) {
+        // Cancellation must reach the caller; converting it into a failure result would leave the
+        // coroutine running work its owner has already abandoned.
+        throw e
     } catch (e: Exception) {
-        when (e) {
-            is IOException -> NetworkResult.NetworkError(message = "$e")
-            else -> throw e
-        }
+        // "$e" retains the exception type, which is the only diagnostic for NetworkFailure.Unknown.
+        NetworkResult.NetworkError(message = "$e", failure = classifyNetworkFailure(e))
     }
 
     var result: NetworkResult<T> = getResult()
@@ -44,7 +69,9 @@ suspend fun networkCallWrapper(
         if (result.status.isSuccess()) {
             NetworkResult.NetworkSuccess(result)
         } else {
-            val message = "Network call failed with status: ${result.status}"
-            NetworkResult.NetworkError(message = message)
+            NetworkResult.NetworkError(
+                message = "Network call failed with status: ${result.status}",
+                failure = NetworkFailure.HttpStatus
+            )
         }
     }

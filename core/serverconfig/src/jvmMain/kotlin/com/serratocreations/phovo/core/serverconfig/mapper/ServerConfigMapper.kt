@@ -5,9 +5,10 @@ import com.serratocreations.phovo.core.model.ServerConfig
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.absolutePath
 
-fun ServerConfig.ServerSpecificServerConfig.asEntity() = ServerConfigEntity(
+fun ServerConfig.ServerSpecificServerConfig.asEntity(serverId: String) = ServerConfigEntity(
     backupDirectory = this.backupDirectory.absolutePath(),
-    serverName = this.serverName
+    serverName = this.serverName,
+    serverId = serverId
 )
 
 fun ServerConfigEntity.asServerSpecificServerConfig() = ServerConfig.ServerSpecificServerConfig(

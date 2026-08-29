@@ -2,6 +2,7 @@ package com.serratocreations.phovo.core.domain
 
 import com.serratocreations.phovo.core.domain.mapper.toBackupStatus
 import com.serratocreations.phovo.core.domain.model.BackupStatus
+import com.serratocreations.phovo.core.model.network.ServerConnectionState
 import com.serratocreations.phovo.data.photos.LocalMediaManager
 import com.serratocreations.phovo.data.photos.repository.RemoteMediaRepositoryImpl
 import kotlinx.coroutines.flow.Flow
@@ -13,13 +14,18 @@ class GetBackupStatusUseCase(
 ) {
     operator fun invoke(): Flow<BackupStatus> {
         return combine(
-            remoteMediaRepository.observeServerConnection(),
+            remoteMediaRepository.observeConnectionState(),
             localMediaManager.localMediaState
-        ) { isServerConnected, localMediaState ->
-            if (isServerConnected.not()) {
-                BackupStatus.ServerOffline
-            } else {
-                localMediaState.toBackupStatus()
+        ) { connectionState, localMediaState ->
+            when (connectionState) {
+                is ServerConnectionState.Connected -> localMediaState.toBackupStatus()
+                // Unreachable, not yet configured, mid-check, and answered-by-the-wrong-server
+                // are all "no backup happening" as far as the user is concerned; none of them imply
+                // a different action here.
+                is ServerConnectionState.Unreachable,
+                ServerConnectionState.Unknown,
+                ServerConnectionState.Checking,
+                ServerConnectionState.IdentityMismatch -> BackupStatus.ServerOffline
             }
         }
     }

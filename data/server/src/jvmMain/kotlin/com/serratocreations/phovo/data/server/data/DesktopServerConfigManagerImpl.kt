@@ -9,12 +9,18 @@ import com.serratocreations.phovo.core.model.network.MediaItemDto
 import com.serratocreations.phovo.core.model.network.UploadInitResponse
 import com.serratocreations.phovo.data.photos.repository.LocalMediaRepository
 import com.serratocreations.phovo.core.model.ServerConfig
+import com.serratocreations.phovo.core.model.network.ApiEndpoints
+import com.serratocreations.phovo.core.model.network.ServerHealth
+import com.serratocreations.phovo.core.model.network.ServerTxtRecord
 import com.serratocreations.phovo.core.model.network.ApiEndpoints.GET_ALL_MEDIA_API
+import com.serratocreations.phovo.core.model.network.ApiEndpoints.HEALTH_API
 import com.serratocreations.phovo.core.model.network.ApiEndpoints.HIGH_RES_THUMBNAIL_API
 import com.serratocreations.phovo.core.model.network.ApiEndpoints.LOW_RES_THUMBNAIL_API
 import com.serratocreations.phovo.core.model.network.ApiEndpoints.SOURCE_FILE_API
 import com.serratocreations.phovo.data.photos.mappers.toMediaItemDto
 import com.serratocreations.phovo.core.serverconfig.DesktopServerConfigRepository
+import com.serratocreations.phovo.data.server.data.http.PhovoHttpServer
+import com.serratocreations.phovo.data.server.data.network.HostAddressDataSource
 import com.serratocreations.phovo.data.server.data.repository.ServerEventsRepository
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.absolutePath
@@ -25,8 +31,6 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
-import io.ktor.server.engine.embeddedServer
-import io.ktor.server.netty.Netty
 import io.ktor.server.application.*
 import io.ktor.server.http.content.staticResources
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
@@ -56,8 +60,6 @@ import java.io.File
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.LocalDateTime
-import java.net.NetworkInterface
-import java.net.Inet4Address
 import java.net.InetAddress
 import javax.jmdns.JmDNS
 import javax.jmdns.ServiceInfo
@@ -70,6 +72,8 @@ class DesktopServerConfigManagerImpl(
     private val serverConfigRepository: DesktopServerConfigRepository,
     private val serverEventsRepository: ServerEventsRepository,
     private val localMediaRepository: LocalMediaRepository,
+    private val hostAddressDataSource: HostAddressDataSource,
+    private val httpServer: PhovoHttpServer,
     private val appScope: CoroutineScope,
     private val ioDispatcher: CoroutineDispatcher
 ): DesktopServerConfigManager {
@@ -77,6 +81,12 @@ class DesktopServerConfigManagerImpl(
     private val serverConfigState = MutableStateFlow(ServerConfigState())
     private val log = logger.withTag("DesktopServerConfigManagerImpl")
     private var jmdns: JmDNS? = null
+
+    private companion object {
+        // Only one instance is ever advertised, so the DNS-SD tie breakers carry no information.
+        const val SERVICE_WEIGHT = 0
+        const val SERVICE_PRIORITY = 0
+    }
 
     init {
         Runtime.getRuntime().addShutdownHook(Thread {
@@ -86,23 +96,8 @@ class DesktopServerConfigManagerImpl(
             } catch (e: Exception) {
                 System.err.println("Error shutting down JmDNS: ${e.message}")
             }
+            httpServer.stop()
         })
-    }
-
-    private fun getHostIPv4(): String {
-        return try {
-            val interfaces = java.util.Collections.list(NetworkInterface.getNetworkInterfaces())
-            val candidates = interfaces
-                .filter { it.isUp && !it.isLoopback && !it.isVirtual }
-                .flatMap { ni -> java.util.Collections.list(ni.inetAddresses) }
-                .filterIsInstance<Inet4Address>()
-                .map { it.hostAddress }
-            candidates.firstOrNull { address ->
-                address.startsWith("192.") || address.startsWith("10.") || address.startsWith("172.")
-            } ?: candidates.firstOrNull() ?: "127.0.0.1"
-        } catch (e: Exception) {
-            "127.0.0.1"
-        }
     }
 
     override fun getDefaultServerName(): String {
@@ -136,6 +131,21 @@ class DesktopServerConfigManagerImpl(
             get("/") {
                 serverEventsRepository.addServerEventLog("get ${LocalDateTime.now()}")
                 call.respond(HttpStatusCode.OK, "Phovo server is running")
+            }
+
+            // Liveness plus identity. Clients use serverId to confirm they are still talking to
+            // the server they paired with, rather than to whoever now holds that address.
+            get("/${HEALTH_API.value}") {
+                val config = serverConfigRepository.observeServerConfig().first()
+                val serverId = serverConfigRepository.serverId()
+                if (config == null || serverId == null) {
+                    call.respond(HttpStatusCode.ServiceUnavailable, "Server is not configured")
+                    return@get
+                }
+                call.respond(
+                    HttpStatusCode.OK,
+                    ServerHealth(serverId = serverId, serverName = config.serverName)
+                )
             }
 
             get("/${GET_ALL_MEDIA_API.value}") {
@@ -323,31 +333,49 @@ class DesktopServerConfigManagerImpl(
                 }
                 jmdns = null
 
-                embeddedServer(factory = Netty, port = 8080, host = "0.0.0.0", module = routingConfig)
-                    .start(wait = false)
+                val boundPort = httpServer.start(routingConfig)
+                if (boundPort == null) {
+                    // No port could be bound at all. Nothing the user can act on, so return to the
+                    // unconfigured state they can retry from rather than hanging on "Starting".
+                    log.e { "Server could not be started, no port could be bound" }
+                    serverConfigState.update { it.copy(configStatus = ConfigStatus.NotConfigured) }
+                    return@launch
+                }
 
-                val hostIp = getHostIPv4()
-                log.i { "Starting JmDNS advertisement for server IP: $hostIp" }
+                val hostIp = hostAddressDataSource.hostIPv4()
+                val serverId = serverConfigRepository.serverId()
+                if (serverId == null) {
+                    // Written by updateServerConfig above, so this is only reachable if that failed.
+                    log.e { "Server id missing after configuration, skipping mDNS advertisement" }
+                    serverConfigState.update {
+                        it.copy(configStatus = ConfigStatus.Configured("http://$hostIp:$boundPort"))
+                    }
+                    return@launch
+                }
+                log.i { "Starting JmDNS advertisement for server IP: $hostIp id: $serverId" }
                 try {
                     val inetAddress = InetAddress.getByName(hostIp)
                     val sanitizedName = serverConfig.serverName.replace(".", " ")
+                    val txtRecord = ServerTxtRecord.encode(serverId = serverId)
                     jmdns = JmDNS.create(inetAddress, "PhovoServer").apply {
                         val serviceInfo = ServiceInfo.create(
                             "_phovo._tcp.local.",
                             sanitizedName,
-                            8080,
-                            "Phovo Photo Backup Server"
+                            boundPort,
+                            SERVICE_WEIGHT,
+                            SERVICE_PRIORITY,
+                            txtRecord
                         )
                         registerService(serviceInfo)
                     }
-                    log.i { "JmDNS service registered successfully" }
+                    log.i { "JmDNS service registered with TXT $txtRecord" }
                 } catch (e: Exception) {
                     log.e(e) { "Failed to start JmDNS service advertising" }
                 }
 
                 serverConfigState.update {
                     it.copy(configStatus = ConfigStatus.Configured(
-                        serverUrl = "http://$hostIp:8080"
+                        serverUrl = "http://$hostIp:$boundPort"
                     ))
                 }
             }

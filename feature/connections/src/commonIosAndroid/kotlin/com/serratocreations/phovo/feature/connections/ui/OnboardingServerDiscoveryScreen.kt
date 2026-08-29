@@ -30,7 +30,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -120,6 +119,8 @@ internal fun OnboardingServerDiscoveryScreen(
             ManualConnectionCard(
                 manualUrl = manualUrl,
                 onUrlChange = { manualUrl = it },
+                isPairing = uiState.isPairing,
+                pairingError = uiState.manualPairingError,
                 onConnectManually = onConnectManually
             )
         } else {
@@ -259,112 +260,11 @@ internal fun OnboardingServerDiscoveryScreen(
                     ManualConnectionCard(
                         manualUrl = manualUrl,
                         onUrlChange = { manualUrl = it },
+                        isPairing = uiState.isPairing,
+                        pairingError = uiState.manualPairingError,
                         onConnectManually = onConnectManually
                     )
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun DesktopRequirementBanner(
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
-        )
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                painter = painterResource(Res.drawable.ic_dns_default),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(32.dp)
-            )
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "Requires Phovo Desktop",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = "Download and open Phovo Desktop on your computer from phovo.app to start hosting backups.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ManualConnectionCard(
-    manualUrl: String,
-    onUrlChange: (String) -> Unit,
-    onConnectManually: (String) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f)
-        )
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "Manual Server Address",
-                fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.titleMedium
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "1. Download & install Phovo Desktop from phovo.app\n2. Open Phovo Desktop on your Mac or PC\n3. Enter the server address displayed in the desktop app",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            OutlinedTextField(
-                value = manualUrl,
-                onValueChange = onUrlChange,
-                label = { Text("Server URL (http://ip:port)") },
-                placeholder = { Text("http://192.168.1.100:8080") },
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth(),
-                leadingIcon = {
-                    Icon(
-                        painter = painterResource(Res.drawable.ic_link_default),
-                        contentDescription = "URL Link"
-                    )
-                }
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Button(
-                onClick = {
-                    if (manualUrl.isNotBlank()) {
-                        onConnectManually(manualUrl.trim())
-                    }
-                },
-                enabled = manualUrl.isNotBlank(),
-                modifier = Modifier.fillMaxWidth().height(48.dp),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text(text = "Connect Manually")
             }
         }
     }

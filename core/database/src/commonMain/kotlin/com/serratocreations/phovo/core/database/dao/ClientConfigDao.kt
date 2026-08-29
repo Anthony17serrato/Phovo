@@ -12,6 +12,41 @@ interface ClientConfigDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(item: ClientConfigEntity)
 
+    /**
+     * Refreshes only the cached name. A full insert would have to carry the url and identity along
+     * with it, so a health probe landing next to a pairing write could put back an address the user
+     * has already moved away from.
+     *
+     * The `IS NOT` guard makes an unchanged name update zero rows. Room's invalidation runs on
+     * per-row triggers, so a statement that matches nothing produces no emission, and the health
+     * poll that issued to write is not restarted by it. Without the guard every probe would
+     * re-emit the config, cancel the poll and start a new one, which re-probes immediately because
+     * the delay sits at the end of the loop — a tight loop rather than a 15 second cadence.
+     * `IS NOT` rather than `!=` so the first write, over a null, still lands.
+     */
+    @Query(
+        """
+        UPDATE ClientConfigEntity
+        SET server_name = :serverName
+        WHERE id = 1 AND server_name IS NOT :serverName
+        """
+    )
+    suspend fun updateServerName(serverName: String)
+
+    /**
+     * Points the pairing at a new address after the server has been found somewhere else. Narrow
+     * for the same reason as [updateServerName]: identity is what the pairing is keyed on and must
+     * survive a move, and the guard keeps a rewrite to the same address from waking observers.
+     */
+    @Query(
+        """
+        UPDATE ClientConfigEntity
+        SET serverUrl = :serverUrl
+        WHERE id = 1 AND serverUrl IS NOT :serverUrl
+        """
+    )
+    suspend fun updateServerUrl(serverUrl: String)
+
     @Query("SELECT * FROM ClientConfigEntity LIMIT 1")
     fun clientConfigFlow(): Flow<ClientConfigEntity?>
 

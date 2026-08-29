@@ -26,6 +26,7 @@ import phovo.feature.connections.generated.resources.*
 @Composable
 internal fun ClientConnectedPane(
     serverUrl: String,
+    serverName: String?,
     onDisconnect: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -48,7 +49,8 @@ internal fun ClientConnectedPane(
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "Connected to Server",
+                // The address is all there is to go on until the server reports its name.
+                text = serverName?.let { "Connected to $it" } ?: "Connected to Server",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onPrimaryContainer
