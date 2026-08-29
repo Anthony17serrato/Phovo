@@ -102,19 +102,14 @@ class RemoteMediaRepositoryImpl(
                 replay = 1
             )
 
-    /**
-     * @param expectedServerId identity this client paired with, or null for a manual pairing that
-     * never learned one. Nothing can be checked against a null, so such a pairing trusts whatever
-     * answers until manually entered addresses are validated at entry.
-     */
     private suspend fun checkConnection(
         baseUrl: BaseUrl,
-        expectedServerId: String?
+        expectedServerId: String
     ): ServerConnectionState =
         when (val result = remotePhotosDataSource.fetchServerHealth(baseUrl)) {
             is NetworkResult.NetworkSuccess -> {
                 val health = result.data
-                if (expectedServerId != null && expectedServerId != health.serverId) {
+                if (expectedServerId != health.serverId) {
                     log.e {
                         "Identity mismatch at ${baseUrl.value}: paired with $expectedServerId " +
                             "but ${health.serverId} answered"

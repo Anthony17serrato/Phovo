@@ -20,17 +20,9 @@ sealed interface ServerConfig {
 
     data class ClientSpecificServerConfig(
         val serverBaseUrlString: BaseUrl,
-        // Todo make not nullable
-        /**
-         * Identity of the paired server. Null when pairing came from a manually entered address,
-         * where nothing has yet told us who answers there.
-         */
-        val serverId: String? = null,
-        // Todo make not nullable
-        /**
-         * Cached display name of the paired server, refreshed from its health responses. Null until
-         * the server has told us its name — show the address in the meantime.
-         */
-        val serverName: String? = null
+        /** Identity of the paired server, established by whichever route paired with it. */
+        val serverId: String,
+        /** Display name of the paired server, refreshed from its health responses. */
+        val serverName: String
     ): ServerConfig
 }

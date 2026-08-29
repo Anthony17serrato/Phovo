@@ -16,6 +16,7 @@ kotlin {
             implementation(projects.core.model)
             implementation(projects.core.serverconfig)
             implementation(projects.data.server)
+            implementation(projects.core.domain)
             implementation(projects.core.navigation)
 
             implementation(libs.compose.resources)

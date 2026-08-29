@@ -4,6 +4,8 @@ import androidx.lifecycle.viewModelScope
 import com.serratocreations.phovo.core.serverconfig.IosAndroidServerConfigRepository
 import com.serratocreations.phovo.data.permissions.PermissionRepository
 import com.serratocreations.phovo.data.permissions.PermissionStatus
+import com.serratocreations.phovo.core.domain.PairingResult
+import com.serratocreations.phovo.core.domain.PairServerUseCase
 import com.serratocreations.phovo.data.server.ServerDiscoveryManager
 import com.serratocreations.phovo.data.server.data.model.DiscoveredServer
 import kotlinx.coroutines.Job
@@ -17,6 +19,7 @@ import kotlinx.coroutines.launch
 class ClientConnectionsViewModel(
     private val serverConfigRepository: IosAndroidServerConfigRepository,
     private val serverDiscoveryManager: ServerDiscoveryManager,
+    private val pairServerUseCase: PairServerUseCase,
     private val permissionRepository: PermissionRepository
 ): ConnectionsViewModel(
     serverConfigRepository = serverConfigRepository
@@ -109,13 +112,31 @@ class ClientConnectionsViewModel(
 
     fun connectToServer(server: DiscoveredServer) {
         viewModelScope.launch {
-            serverDiscoveryManager.connectToServer(server)
+            pairServerUseCase(server)
         }
     }
 
+    /**
+     * A typed address has nothing vouching for it, so the server is asked who it is before the
+     * pairing is stored. Discovery gets that from the TXT record for free.
+     */
     fun connectManually(url: String) {
         viewModelScope.launch {
-            serverConfigRepository.updateClientServerConfig(url)
+            _connectionsUiState.update { it.copy(isPairing = true, manualPairingError = null) }
+            val result = pairServerUseCase(url)
+            _connectionsUiState.update {
+                it.copy(
+                    isPairing = false,
+                    manualPairingError = when (result) {
+                        PairingResult.Paired -> null
+                        // TODO String resources do not belong in the viewmodel
+                        PairingResult.NotAPhovoServer ->
+                            "Something answered at that address, but it is not a Phovo server."
+                        PairingResult.Unreachable ->
+                            "Nothing answered at that address. Check the server is running and on this network."
+                    }
+                )
+            }
         }
     }
 
@@ -134,5 +155,9 @@ data class ClientConnectionsUiState(
     val isSearching: Boolean = false,
     val discoveredServers: List<DiscoveredServer> = emptyList(),
     val localNetworkPermissionStatus: PermissionStatus = PermissionStatus.Ungranted,
-    val isManualUrlExpanded: Boolean = false
+    val isManualUrlExpanded: Boolean = false,
+    /** True while a typed address is being probed. */
+    val isPairing: Boolean = false,
+    /** Why the last manual pairing attempt was rejected, or null if none was. */
+    val manualPairingError: String? = null
 ): ConnectionsUiState

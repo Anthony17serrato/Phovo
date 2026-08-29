@@ -16,7 +16,6 @@ internal actual fun getAndroidDesktopIosModules(): Module = module {
     single<ServerConfigRepository> { IosAndroidServerConfigRepository(get()) } binds arrayOf(IosAndroidServerConfigRepository::class, ServerConfigRepository::class)
     single<ServerDiscoveryManager> {
         IosServerDiscoveryManager(
-            get(),
             get(MAIN_APPLICATION_SCOPE),
             get()
         )

@@ -27,15 +27,14 @@ class IosAndroidServerConfigRepository(
      * Pairs this client with a server.
      *
      * @param serverUrl the address the server answered on when pairing.
-     * @param serverId identity from the server's TXT record, null when pairing from a manually
-     * entered address.
-     * @param serverName the name advertised over mDNS, kept only as a first label to show until the
-     * server reports its own name. Null when pairing from a manually entered address.
+     * @param serverId identity of the server, from its TXT record or from probing it directly.
+     * @param serverName a first label to show; the health poll replaces it with whatever the server
+     * reports.
      */
     suspend fun updateClientServerConfig(
         serverUrl: String,
-        serverId: String? = null,
-        serverName: String? = null
+        serverId: String,
+        serverName: String
     ) {
         clientConfigDao.insert(
             ClientConfigEntity(

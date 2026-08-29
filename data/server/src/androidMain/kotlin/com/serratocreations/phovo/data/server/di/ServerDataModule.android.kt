@@ -15,7 +15,6 @@ internal actual fun getAndroidDesktopIosModules(): Module = module {
     single<ServerDiscoveryManager> {
         AndroidServerDiscoveryManager(
             get(),
-            get(),
             get(APPLICATION_SCOPE),
             get()
         )

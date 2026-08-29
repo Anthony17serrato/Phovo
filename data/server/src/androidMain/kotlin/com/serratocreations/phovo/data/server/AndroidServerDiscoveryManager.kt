@@ -7,7 +7,6 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.core.model.network.ServerTxtRecord
-import com.serratocreations.phovo.core.serverconfig.IosAndroidServerConfigRepository
 import com.serratocreations.phovo.data.server.data.model.DiscoveredServer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.awaitClose
@@ -23,7 +22,6 @@ import kotlin.time.Duration.Companion.seconds
 
 class AndroidServerDiscoveryManager(
     private val context: Context,
-    private val serverConfigRepository: IosAndroidServerConfigRepository,
     applicationScope: CoroutineScope,
     logger: PhovoLogger
 ) : ServerDiscoveryManager {
@@ -178,16 +176,6 @@ class AndroidServerDiscoveryManager(
 
     override fun discoverServers(): Flow<List<DiscoveredServer>> = serverDiscoverySharedFlow
 
-    override suspend fun connectToServer(server: DiscoveredServer) {
-        log.i { "Connecting to discovered server: ${server.url} id: ${server.serverId}" }
-        serverConfigRepository.updateClientServerConfig(
-            serverUrl = server.url,
-            serverId = server.serverId,
-            // Only a placeholder label: the first health probe replaces it with whatever the server
-            // calls itself, which mDNS may have renamed to avoid a collision on the network.
-            serverName = server.name
-        )
-    }
 
     /**
      * NsdManager hands TXT records back as raw bytes, so decode them here rather than making every

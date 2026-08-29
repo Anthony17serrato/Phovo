@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "3d9cb7eb4c8a43ad041420d0943e25ca",
+    "identityHash": "edf755d30a69f7ad40e6d9023e374792",
     "entities": [
       {
         "tableName": "ServerConfigEntity",
@@ -195,7 +195,7 @@
       },
       {
         "tableName": "ClientConfigEntity",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `serverUrl` TEXT NOT NULL, `server_id` TEXT, `server_name` TEXT, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `serverUrl` TEXT NOT NULL, `server_id` TEXT NOT NULL, `server_name` TEXT NOT NULL, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -212,12 +212,14 @@
           {
             "fieldPath": "serverId",
             "columnName": "server_id",
-            "affinity": "TEXT"
+            "affinity": "TEXT",
+            "notNull": true
           },
           {
             "fieldPath": "serverName",
             "columnName": "server_name",
-            "affinity": "TEXT"
+            "affinity": "TEXT",
+            "notNull": true
           }
         ],
         "primaryKey": {
@@ -254,7 +256,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '3d9cb7eb4c8a43ad041420d0943e25ca')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'edf755d30a69f7ad40e6d9023e374792')"
     ]
   }
 }

@@ -2,7 +2,6 @@ package com.serratocreations.phovo.data.server
 
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.core.model.network.ServerTxtRecord
-import com.serratocreations.phovo.core.serverconfig.IosAndroidServerConfigRepository
 import com.serratocreations.phovo.data.server.data.model.DiscoveredServer
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ByteVar
@@ -37,7 +36,6 @@ import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalForeignApi::class)
 class IosServerDiscoveryManager(
-    private val serverConfigRepository: IosAndroidServerConfigRepository,
     mainApplicationScope: CoroutineScope,
     logger: PhovoLogger
 ) : ServerDiscoveryManager {
@@ -190,16 +188,6 @@ class IosServerDiscoveryManager(
 
     override fun discoverServers(): Flow<List<DiscoveredServer>> = serverDiscoverySharedFlow
 
-    override suspend fun connectToServer(server: DiscoveredServer) {
-        log.i { "Connecting to discovered server: ${server.url} id: ${server.serverId}" }
-        serverConfigRepository.updateClientServerConfig(
-            serverUrl = server.url,
-            serverId = server.serverId,
-            // Only a placeholder label: the first health probe replaces it with whatever the server
-            // calls itself, which mDNS may have renamed to avoid a collision on the network.
-            serverName = server.name
-        )
-    }
 
     /**
      * TXT values arrive as NSData, so decode each to a string before handing them to the codec.
