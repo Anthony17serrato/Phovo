@@ -120,7 +120,10 @@ class ClientConnectionsViewModel(
      * A typed address has nothing vouching for it, so the server is asked who it is before the
      * pairing is stored. Discovery gets that from the TXT record for free.
      */
-    fun connectManually(url: String) {
+    suspend fun connectManually(
+        url: String
+    ): Boolean {
+        var isSuccess = false
         viewModelScope.launch {
             _connectionsUiState.update { it.copy(isPairing = true, manualPairingError = null) }
             val result = pairServerUseCase(url)
@@ -128,7 +131,10 @@ class ClientConnectionsViewModel(
                 it.copy(
                     isPairing = false,
                     manualPairingError = when (result) {
-                        PairingResult.Paired -> null
+                        PairingResult.Paired -> {
+                            isSuccess = true
+                            null
+                        }
                         // TODO String resources do not belong in the viewmodel
                         PairingResult.NotAPhovoServer ->
                             "Something answered at that address, but it is not a Phovo server."
@@ -137,7 +143,8 @@ class ClientConnectionsViewModel(
                     }
                 )
             }
-        }
+        }.join()
+        return isSuccess
     }
 
     fun disconnectFromServer() {

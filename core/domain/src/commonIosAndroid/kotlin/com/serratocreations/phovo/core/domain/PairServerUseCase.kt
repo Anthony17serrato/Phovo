@@ -7,6 +7,7 @@ import com.serratocreations.phovo.core.model.network.NetworkResult
 import com.serratocreations.phovo.core.serverconfig.IosAndroidServerConfigRepository
 import com.serratocreations.phovo.data.photos.network.MediaNetworkDataSource
 import com.serratocreations.phovo.data.server.data.model.DiscoveredServer
+import kotlin.time.Duration.Companion.seconds
 
 sealed interface PairingResult {
     data object Paired : PairingResult
@@ -63,7 +64,12 @@ class PairServerUseCase(
         val baseUrl = normalize(address)
         log.i { "Probing ${baseUrl.value} before pairing" }
 
-        return when (val result = remotePhotosDataSource.fetchServerHealth(baseUrl)) {
+        return when (
+            val result = remotePhotosDataSource.fetchServerHealth(
+                baseUrl = baseUrl,
+                timeout = 15.seconds
+            )
+        ) {
             is NetworkResult.NetworkSuccess -> {
                 val health = result.data
                 log.i { "Pairing with ${baseUrl.value} id: ${health.serverId}" }

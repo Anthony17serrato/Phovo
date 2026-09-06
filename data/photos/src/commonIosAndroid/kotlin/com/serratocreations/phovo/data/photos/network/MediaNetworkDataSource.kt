@@ -15,6 +15,7 @@ import com.serratocreations.phovo.data.photos.network.util.networkResultCallWrap
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.plugins.timeout
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
@@ -26,6 +27,7 @@ import io.ktor.http.isSuccess
 import io.ktor.utils.io.ByteReadChannel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlin.time.Duration
 
 abstract class MediaNetworkDataSource(
     private val client: HttpClient,
@@ -56,9 +58,18 @@ abstract class MediaNetworkDataSource(
      * Probes the server for reachability and identity in one call. Success carries what the server
      * reports about itself; an error carries the classified reason it did not answer.
      */
-    suspend fun fetchServerHealth(baseUrl: BaseUrl): NetworkResult<ServerHealth> =
+    suspend fun fetchServerHealth(
+        baseUrl: BaseUrl,
+        timeout: Duration? = null
+    ): NetworkResult<ServerHealth> =
         networkResultCallWrapper {
-            val response = client.get(baseUrl / ApiEndpoints.HEALTH_API)
+            val response = client.get(baseUrl / ApiEndpoints.HEALTH_API) {
+                timeout {
+                    if (timeout != null) {
+                        requestTimeoutMillis = timeout.inWholeMilliseconds
+                    }
+                }
+            }
             if (response.status.isSuccess()) {
                 NetworkResult.NetworkSuccess(response.body<ServerHealth>())
             } else {
