@@ -59,7 +59,7 @@ internal fun OnboardingServerDiscoveryScreen(
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var manualUrl by remember { mutableStateOf("") }
+    var manualUrl by remember { mutableStateOf(MANUAL_URL_SCHEME_PREFILL) }
 
     Column(
         modifier = modifier

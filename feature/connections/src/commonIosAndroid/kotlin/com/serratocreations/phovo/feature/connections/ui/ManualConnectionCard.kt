@@ -37,6 +37,20 @@ import org.jetbrains.compose.resources.painterResource
 import phovo.feature.connections.generated.resources.Res
 import phovo.feature.connections.generated.resources.ic_link_default
 
+/**
+ * What the address field starts with, so the scheme is one less thing to type on a phone keyboard.
+ * `PairServerUseCase` still supplies a scheme for an address that arrives without one — this is an
+ * affordance, not the guarantee.
+ */
+internal const val MANUAL_URL_SCHEME_PREFILL = "http://"
+
+/**
+ * True once the field holds more than a bare scheme. The prefill means [String.isNotBlank] is true
+ * from the start, which would otherwise offer a Connect button that can only fail.
+ */
+private fun String.hasAddressBeyondScheme(): Boolean =
+    substringAfter("://", missingDelimiterValue = this).isNotBlank()
+
 @Composable
 internal fun ManualConnectionCard(
     manualUrl: String,
@@ -62,8 +76,10 @@ internal fun ManualConnectionCard(
         }
     }
 
+    // Dropping focus dismisses the keyboard, which is what uncovers the progress and error text
+    // the submit is about to produce.
     fun submit() {
-        if (manualUrl.isNotBlank() && !isPairing) {
+        if (manualUrl.hasAddressBeyondScheme() && !isPairing) {
             focusManager.clearFocus()
             onConnectManually(manualUrl.trim())
         }
@@ -130,7 +146,7 @@ internal fun ManualConnectionCard(
 
                 Button(
                     onClick = ::submit,
-                    enabled = manualUrl.isNotBlank() && !isPairing,
+                    enabled = manualUrl.hasAddressBeyondScheme() && !isPairing,
                     modifier = Modifier.fillMaxWidth().height(48.dp),
                     shape = RoundedCornerShape(12.dp)
                 ) {
