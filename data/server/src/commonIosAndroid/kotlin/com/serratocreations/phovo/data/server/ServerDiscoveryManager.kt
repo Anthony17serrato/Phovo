@@ -9,5 +9,4 @@ interface ServerDiscoveryManager {
      * there is consumers of this API the flow will continue to scan for servers.
      */
     fun discoverServers(): Flow<List<DiscoveredServer>>
-    suspend fun connectToServer(server: DiscoveredServer)
 }

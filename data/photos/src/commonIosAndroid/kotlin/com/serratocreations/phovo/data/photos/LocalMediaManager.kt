@@ -2,6 +2,7 @@ package com.serratocreations.phovo.data.photos
 
 import com.serratocreations.phovo.core.common.util.logTimeToComplete
 import com.serratocreations.phovo.core.logger.PhovoLogger
+import com.serratocreations.phovo.core.model.network.isConnected
 import com.serratocreations.phovo.data.permissions.PermissionRepository
 import com.serratocreations.phovo.data.permissions.PermissionStatus
 import com.serratocreations.phovo.data.photos.local.BackupCompleteLocal
@@ -60,7 +61,7 @@ class LocalMediaManager(
                             localItems = alreadyProcessedLocalItems,
                         )
                         // Await server configured before starting sync job
-                        localAndRemoteMediaRepository.observeServerConnection().first { it }
+                        localAndRemoteMediaRepository.observeConnectionState().first { it.isConnected }
                         syncJob(processingJob)
                     }
                 }

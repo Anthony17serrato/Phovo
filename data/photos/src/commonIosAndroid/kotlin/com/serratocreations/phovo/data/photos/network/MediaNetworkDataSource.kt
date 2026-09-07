@@ -5,7 +5,9 @@ import com.serratocreations.phovo.core.model.network.ApiEndpoints
 import com.serratocreations.phovo.core.model.network.BaseUrl
 import com.serratocreations.phovo.core.model.network.MediaItemDto
 import com.serratocreations.phovo.core.model.network.NetworkCallRetryPolicy
+import com.serratocreations.phovo.core.model.network.NetworkFailure
 import com.serratocreations.phovo.core.model.network.NetworkResult
+import com.serratocreations.phovo.core.model.network.ServerHealth
 import com.serratocreations.phovo.core.model.network.UploadInitResponse
 import com.serratocreations.phovo.data.photos.mappers.toMediaItem
 import com.serratocreations.phovo.data.photos.network.util.networkCallWrapper
@@ -13,6 +15,7 @@ import com.serratocreations.phovo.data.photos.network.util.networkResultCallWrap
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.plugins.timeout
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
@@ -24,6 +27,7 @@ import io.ktor.http.isSuccess
 import io.ktor.utils.io.ByteReadChannel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlin.time.Duration
 
 abstract class MediaNetworkDataSource(
     private val client: HttpClient,
@@ -51,16 +55,30 @@ abstract class MediaNetworkDataSource(
     }
 
     /**
-     * Returns true if a connection to the server is successfully established,
-     * otherwise returns false. Connection can fail for a variety of reasons and this API does not
-     * currently return a failure reason.
+     * Probes the server for reachability and identity in one call. Success carries what the server
+     * reports about itself; an error carries the classified reason it did not answer.
      */
-    suspend fun checkServerConnection(baseUrl: BaseUrl): Boolean {
-        val result = networkCallWrapper {
-            client.get(baseUrl / ApiEndpoints.CHECK_ALIVE_API)
+    suspend fun fetchServerHealth(
+        baseUrl: BaseUrl,
+        timeout: Duration? = null
+    ): NetworkResult<ServerHealth> =
+        networkResultCallWrapper {
+            val response = client.get(baseUrl / ApiEndpoints.HEALTH_API) {
+                timeout {
+                    if (timeout != null) {
+                        requestTimeoutMillis = timeout.inWholeMilliseconds
+                    }
+                }
+            }
+            if (response.status.isSuccess()) {
+                NetworkResult.NetworkSuccess(response.body<ServerHealth>())
+            } else {
+                NetworkResult.NetworkError(
+                    message = "Health probe failed with status: ${response.status}",
+                    failure = NetworkFailure.HttpStatus
+                )
+            }
         }
-        return result is NetworkResult.NetworkSuccess
-    }
 
     suspend fun syncMedia(
         mediaItemDto: MediaItemDto,

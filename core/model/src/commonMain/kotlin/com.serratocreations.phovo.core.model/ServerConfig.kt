@@ -19,6 +19,10 @@ sealed interface ServerConfig {
     ): ServerConfig
 
     data class ClientSpecificServerConfig(
-        val serverBaseUrlString: BaseUrl
+        val serverBaseUrlString: BaseUrl,
+        /** Identity of the paired server, established by whichever route paired with it. */
+        val serverId: String,
+        /** Display name of the paired server, refreshed from its health responses. */
+        val serverName: String
     ): ServerConfig
 }

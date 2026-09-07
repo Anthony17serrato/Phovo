@@ -29,6 +29,8 @@ import phovo.feature.connections.generated.resources.Res
 import phovo.feature.connections.generated.resources.feature_connections_title
 
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 actual fun EntryProviderScope<NavKey>.flavorConnectionsEntries(
@@ -145,6 +147,7 @@ actual fun EntryProviderScope<NavKey>.flavorConnectionsEntries(
                 navigationViewModel.setAppBarConfig(appBarConfig)
             }
         }
+        val localScope = rememberCoroutineScope()
 
         OnboardingServerDiscoveryScreen(
             uiState = uiState,
@@ -153,8 +156,12 @@ actual fun EntryProviderScope<NavKey>.flavorConnectionsEntries(
                 navigationViewModel.popTo(ConnectionsHomeNavKey)
             },
             onConnectManually = { url ->
-                connectionsViewModel.connectManually(url)
-                navigationViewModel.popTo(ConnectionsHomeNavKey)
+                localScope.launch {
+                    val isSuccess = connectionsViewModel.connectManually(url)
+                    if (isSuccess) {
+                        navigationViewModel.popTo(ConnectionsHomeNavKey)
+                    }
+                }
             },
             onStartScan = connectionsViewModel::startDiscovery,
             onToggleManualUrlExpanded = connectionsViewModel::toggleManualUrlExpanded,

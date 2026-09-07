@@ -33,6 +33,7 @@ internal fun ConnectionsHomePane(
             item {
                 ClientConnectedPane(
                     serverUrl = uiState.configuredServerUrl ?: "",
+                    serverName = uiState.configuredServerName,
                     onDisconnect = onDisconnectFromServer
                 )
             }
