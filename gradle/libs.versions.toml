@@ -58,7 +58,12 @@ room-kmp = "2.8.4"
 serialization-json = "1.11.0"
 sqlite = "2.7.0"
 telephoto = "0.19.0"
-jmdns = "3.6.3"
+# TODO Revert to org.jmdns:jmdns once a release carrying jmdns/jmdns#365 is out, expected in
+# 3.6.4. This points at a fork of 3.6.3 with that one fix, which binds the host address when
+# opening the multicast socket. Without it a VPN on the desktop takes the route for 224.0.0.251,
+# outgoing announcements carry a source address from the tunnel, and phones drop them, so the
+# server is never discovered on macOS or Linux (jmdns/jmdns#203).
+jmdns = "79c63e0"
 # Used by build-logic only, to unpack the FFmpeg archives downloaded at build time. The BtbN Linux
 # builds ship as .tar.xz, which neither the JDK nor Gradle's archive operations can read.
 commons-compress = "1.28.0"
@@ -94,7 +99,7 @@ filekit-coil = { group = "io.github.vinceglb", name = "filekit-coil", version.re
 serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization-json" }
 androidx-datastore = { module = "androidx.datastore:datastore", version.ref = "androidx-datastore" }
 jetbrains-swing = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-swing", version.ref = "kmp-swing" }
-jmdns = { group = "org.jmdns", name = "jmdns", version.ref = "jmdns" }
+jmdns = { group = "com.github.Anthony17serrato", name = "jmdns", version.ref = "jmdns" }
 kermit-logging = { group = "co.touchlab", name = "kermit", version.ref = "kermit" }
 koin-android =  { group = "io.insert-koin", name = "koin-android", version.ref = "koin" }
 koin-core =     { group = "io.insert-koin", name = "koin-core", version.ref = "koin" }
