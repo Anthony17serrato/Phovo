@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- primaryLight from core/designsystem/theme/Color.kt. Theme.SplashScreen is DayNight on
+         API 31+, so the splash ground follows the system setting and values-night carries the
+         dark counterpart. -->
+    <color name="phovo_wordmark_tint">#006B5F</color>
+</resources>

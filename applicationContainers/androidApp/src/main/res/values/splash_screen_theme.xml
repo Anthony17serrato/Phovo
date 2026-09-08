@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.App.Splash" parent="Theme.SplashScreen">
+    <!-- Split so the API 31+ variant can add the branding image without repeating these items.
+         The manifest points at Theme.App.Splash, never at the base. -->
+    <style name="Theme.App.Splash.Base" parent="Theme.SplashScreen">
         <item name="windowSplashScreenAnimatedIcon">
             @drawable/phovo_splash
         </item>
@@ -8,4 +10,6 @@
             @android:style/Theme.Material.Light.NoActionBar
         </item>
     </style>
+
+    <style name="Theme.App.Splash" parent="Theme.App.Splash.Base" />
 </resources>

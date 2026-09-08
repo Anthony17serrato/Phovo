@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.App.Splash" parent="Theme.App.Splash.Base">
+        <!-- The only place the platform will render the wordmark. It pins the branding image to
+             the bottom of the screen; there is no system splash slot beneath the icon, because
+             windowSplashScreenAnimatedIcon is masked to a circle (verified on a Pixel 9 emulator,
+             API 36: a lockup composed into that drawable has its lower half clipped away).
+
+             Platform attribute, not one of androidx's compat attributes, so it only exists from
+             API 31 - below that the splash shows the icon alone. -->
+        <item name="android:windowSplashScreenBrandingImage">
+            @drawable/phovo_wordmark
+        </item>
+    </style>
+</resources>
