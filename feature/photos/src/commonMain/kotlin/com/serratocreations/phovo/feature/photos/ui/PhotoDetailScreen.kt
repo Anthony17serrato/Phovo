@@ -126,16 +126,30 @@ internal fun PhotoViewerScreen(
                         }
                     }
 
+                    val sharedContentState = sharedElementTransition
+                        .rememberSharedContentState(key = "image-$key")
+
                     LoadMultiResImage(
                         lowRes = item.lowResThumbnail,
                         highRes = item.thumbnail,
                         sourceRes = item.sourceAsset,
                         contentScale = ContentScale.Fit,
                         modifier = Modifier
-                            .sharedBounds(
-                                sharedContentState = sharedElementTransition
-                                    .rememberSharedContentState(key = "image-$key"),
-                                animatedVisibilityScope = animatedContentScope
+                            // Only the active page takes part in the transition. Pages the pager
+                            // has composed either side of it match the same grid thumbnail keys,
+                            // and shared elements render in an overlay that the pager viewport does
+                            // not clip, so a neighbour would fly across the screen alongside the
+                            // photo the user actually opened. An edge swipe is enough to compose
+                            // one, because it nudges the pager while starting predictive back.
+                            .then(
+                                if (isActivePage) {
+                                    Modifier.sharedBounds(
+                                        sharedContentState = sharedContentState,
+                                        animatedVisibilityScope = animatedContentScope
+                                    )
+                                } else {
+                                    Modifier
+                                }
                             )
                             .focusRequester(focusRequester)
                             .zoomable(
@@ -166,17 +180,14 @@ internal fun PhotoViewerScreen(
                                     )
                             )
                         } else {
-                            // Show static thumbnail for non-active video pages
+                            // Show static thumbnail for non-active video pages. No shared
+                            // bounds here for the same reason as above: this page is not the one
+                            // the transition is for.
                             LoadMultiResImage(
                                 lowRes = item.lowResThumbnail,
                                 highRes = item.thumbnail,
                                 contentScale = ContentScale.Fit,
                                 modifier = Modifier
-                                    .sharedBounds(
-                                        sharedContentState = sharedElementTransition
-                                            .rememberSharedContentState(key = "image-$key"),
-                                        animatedVisibilityScope = animatedContentScope
-                                    )
                                     .clickable(
                                         interactionSource = remember { MutableInteractionSource() },
                                         indication = null,
