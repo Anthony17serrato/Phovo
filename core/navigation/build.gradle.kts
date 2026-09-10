@@ -13,6 +13,7 @@ kotlin {
         commonMain.dependencies {
             implementation(libs.compose.resources)
             implementation(projects.core.common)
+            implementation(projects.core.designsystem)
             implementation(libs.bundles.navigation3)
             implementation(libs.material3)
             //implementation(libs.androidx.savedstate.compose)

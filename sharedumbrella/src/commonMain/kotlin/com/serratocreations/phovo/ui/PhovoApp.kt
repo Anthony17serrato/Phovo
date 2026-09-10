@@ -1,6 +1,11 @@
 package com.serratocreations.phovo.ui
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
@@ -33,7 +38,11 @@ import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.scene.Scene
 import androidx.navigation3.ui.NavDisplay
+import androidx.navigation3.ui.defaultPopTransitionSpec
+import androidx.navigation3.ui.defaultPredictivePopTransitionSpec
+import androidx.navigation3.ui.defaultTransitionSpec
 import com.serratocreations.phovo.core.designsystem.component.PhovoBackground
 import com.serratocreations.phovo.core.designsystem.component.PhovoNavigationSuiteScaffold
 import com.serratocreations.phovo.core.designsystem.constants.CommonDimensions.defaultIconSize
@@ -43,7 +52,9 @@ import com.serratocreations.phovo.core.designsystem.model.ImageVectorIcon
 import com.serratocreations.phovo.core.designsystem.model.PainterVectorIcon
 import com.serratocreations.phovo.core.designsystem.theme.PhovoTheme
 import com.serratocreations.phovo.core.navigation.NavigationState
+import com.serratocreations.phovo.core.navigation.toContentKey
 import com.serratocreations.phovo.core.navigation.NavigationViewModel
+import com.serratocreations.phovo.feature.photos.navigation.PhotoDetailNavKey
 import com.serratocreations.phovo.feature.photos.navigation.PhotosHomeNavKey
 import com.serratocreations.phovo.core.navigation.rememberNavigationState
 import com.serratocreations.phovo.feature.connections.navigation.ConnectionsHomeNavKey
@@ -213,9 +224,39 @@ internal fun InternalPhovoApp(
                             )
                         }
                         val listDetailStrategy = rememberListDetailSceneStrategy<NavKey>()
+                        // Two kinds of navigation cross fade instead of using the platform push:
+                        // a lateral move between top level destinations, and a move where a shared
+                        // element already carries the motion. Everything else keeps the platform
+                        // default.
+                        val tabFade = remember { crossFade(TAB_SWITCH_FADE_MILLIS) }
+                        val sharedElementFade = remember { crossFade(SHARED_ELEMENT_FADE_MILLIS) }
+                        val pushSpec = remember { defaultTransitionSpec<NavKey>() }
+                        val popSpec = remember { defaultPopTransitionSpec<NavKey>() }
+                        val predictivePopSpec = remember { defaultPredictivePopTransitionSpec<NavKey>() }
                         NavDisplay(
                             entries = navigationState.toDecoratedEntries(entryProvider),
                             sceneStrategies = listOf(listDetailStrategy),
+                            transitionSpec = {
+                                when {
+                                    isSharedElementMove() -> sharedElementFade
+                                    isTopLevelSwitch() -> tabFade
+                                    else -> pushSpec(this)
+                                }
+                            },
+                            popTransitionSpec = {
+                                when {
+                                    isSharedElementMove() -> sharedElementFade
+                                    isTopLevelSwitch() -> tabFade
+                                    else -> popSpec(this)
+                                }
+                            },
+                            predictivePopTransitionSpec = { edge ->
+                                when {
+                                    isSharedElementMove() -> sharedElementFade
+                                    isTopLevelSwitch() -> tabFade
+                                    else -> predictivePopSpec(this, edge)
+                                }
+                            },
                             onBack = {
                                 navigationViewModel.goBack()
                             }
@@ -226,6 +267,39 @@ internal fun InternalPhovoApp(
         }
     }
 }
+
+private const val TAB_SWITCH_FADE_MILLIS = 200
+
+/**
+ * Longer than [TAB_SWITCH_FADE_MILLIS] so that the outgoing screen is still on its way out while
+ * the shared element travels, rather than vanishing out from under it.
+ */
+private const val SHARED_ELEMENT_FADE_MILLIS = 300
+
+private fun crossFade(durationMillis: Int) =
+    ContentTransform(fadeIn(tween(durationMillis)), fadeOut(tween(durationMillis)))
+
+/**
+ * True when both the outgoing and incoming destinations are top level routes, i.e. the user tapped
+ * a different item in the navigation bar.
+ */
+private fun AnimatedContentTransitionScope<Scene<NavKey>>.isTopLevelSwitch(): Boolean =
+    initialState.entries.last().contentKey in TOP_LEVEL_CONTENT_KEYS &&
+        targetState.entries.last().contentKey in TOP_LEVEL_CONTENT_KEYS
+
+/**
+ * True when either side of the transition is a destination that draws a shared element. The shared
+ * element is what should read as the movement, so sliding the container as well fights it.
+ */
+private fun AnimatedContentTransitionScope<Scene<NavKey>>.isSharedElementMove(): Boolean =
+    initialState.entries.last().contentKey in SHARED_ELEMENT_CONTENT_KEYS ||
+        targetState.entries.last().contentKey in SHARED_ELEMENT_CONTENT_KEYS
+
+private val TOP_LEVEL_CONTENT_KEYS: Set<Any> =
+    TOP_LEVEL_NAV_ITEMS.keys.mapTo(mutableSetOf()) { it.toContentKey() }
+
+private val SHARED_ELEMENT_CONTENT_KEYS: Set<Any> =
+    setOf(PhotoDetailNavKey.toContentKey())
 
 private fun NavKey?.isTopLevel() =
     TOP_LEVEL_NAV_ITEMS.keys.any { key ->

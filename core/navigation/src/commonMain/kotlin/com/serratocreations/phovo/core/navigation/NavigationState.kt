@@ -117,6 +117,8 @@ class NavigationState(
             val decorators = listOf(
                 rememberSaveableStateHolderNavEntryDecorator<NavKey>(),
                 rememberSharedViewModelStoreNavEntryDecorator(),
+                // Keep last so that it is the innermost decorator, closest to the entry content.
+                rememberBackgroundNavEntryDecorator(),
             )
             rememberDecoratedNavEntries(
                 backStack = stack,
