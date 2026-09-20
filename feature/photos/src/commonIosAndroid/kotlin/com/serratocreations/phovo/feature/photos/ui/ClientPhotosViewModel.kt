@@ -51,6 +51,16 @@ class ClientPhotosViewModel(
         }.launchIn(viewModelScope)
     }
 
+    override fun onCallToActionClicked(action: CallToActionAction) {
+        when (action) {
+            CallToActionAction.RequestGalleryPermission -> requestGalleryPermissions()
+            CallToActionAction.OpenPermissionSettings ->
+                permissionRepository.openSystemPermissionSettings()
+            // Navigation, handled by the UI layer.
+            CallToActionAction.FinishServerSetup -> Unit
+        }
+    }
+
     override fun onProceedWelcomeBottomSheet() {
         super.onProceedWelcomeBottomSheet()
 
@@ -74,7 +84,7 @@ class ClientPhotosViewModel(
                     actionDescription = "Phovo needs access to all of your photos and videos to back them up automatically. Tap to open Settings and allow full access.",
                     priority = CallToActionPriority.High,
                     // Investigate if permission can be upgraded to non-limited outside of system settings
-                    action = permissionRepository::openSystemPermissionSettings
+                    action = CallToActionAction.OpenPermissionSettings
                 )
             }
             galleryPermissionStatus.isLimited && galleryPermissionStatus.permissionStatus == PermissionStatus.Ungranted -> {
@@ -83,7 +93,7 @@ class ClientPhotosViewModel(
                     actionDescription = "Phovo needs access to all of your photos and videos to back them up automatically. Tap to grant permissions.",
                     priority = CallToActionPriority.High,
                     // Investigate if permission can be upgraded to non-limited outside of system settings
-                    action = permissionRepository::openSystemPermissionSettings
+                    action = CallToActionAction.OpenPermissionSettings
                 )
             }
             galleryPermissionStatus.permissionStatus == PermissionStatus.Ungranted -> {
@@ -91,7 +101,7 @@ class ClientPhotosViewModel(
                     actionTitle = "Backups are disabled",
                     actionDescription = "Your device images are not backed up. Phovo is operating as a server-dashboard only. Tap to grant permissions.",
                     priority = CallToActionPriority.High,
-                    action = ::requestGalleryPermissions
+                    action = CallToActionAction.RequestGalleryPermission
                 )
             }
             galleryPermissionStatus.permissionStatus == PermissionStatus.PermanentlyDenied -> {
@@ -99,7 +109,7 @@ class ClientPhotosViewModel(
                     actionTitle = "Backups are disabled",
                     actionDescription = "Your device images are not backed up. Phovo is operating as a server-dashboard only. Tap to open Settings and allow access.",
                     priority = CallToActionPriority.High,
-                    action = permissionRepository::openSystemPermissionSettings
+                    action = CallToActionAction.OpenPermissionSettings
                 )
             }
             else -> {
@@ -113,7 +123,7 @@ class ClientPhotosViewModel(
             actionTitle = "Finish setup",
             actionDescription = "Get more from your gallery",
             priority = CallToActionPriority.Low,
-            action = { /* TODO */ }
+            action = CallToActionAction.FinishServerSetup
         )
     }
 }

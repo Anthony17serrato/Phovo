@@ -21,6 +21,7 @@ import com.serratocreations.phovo.core.designsystem.component.CallToActionCompon
 @Composable
 internal fun CallToActionsScreen(
     photosViewModel: PhotosViewModel,
+    onCallToActionClick: (CallToActionAction) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val photosState by photosViewModel.photosUiState.collectAsStateWithLifecycle()
@@ -36,7 +37,7 @@ internal fun CallToActionsScreen(
             CallToActionComponent(
                 actionTitle = callToAction.actionTitle,
                 actionDescription = callToAction.actionDescription,
-                onClick = callToAction.action,
+                onClick = { onCallToActionClick(callToAction.action) },
                 modifier = Modifier.fillMaxWidth()
             )
         }

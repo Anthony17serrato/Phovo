@@ -85,6 +85,7 @@ fun ImageLoader.Builder.platformDiskCache(): ImageLoader.Builder =
 internal fun PhotosHomeScreen(
     onPhotoClick: (MediaUiItem) -> Unit,
     onSeeAllCallToActions: () -> Unit,
+    onCallToActionClick: (CallToActionAction) -> Unit,
     sharedElementTransition: SharedTransitionScope,
     animatedContentScope: AnimatedContentScope,
     photosViewModel: PhotosViewModel,
@@ -129,6 +130,7 @@ internal fun PhotosHomeScreen(
         callToActions = photosState.callToActions,
         onPhotoClick = onPhotoClick,
         onSeeAllCallToActions = onSeeAllCallToActions,
+        onCallToActionClick = onCallToActionClick,
         sharedElementTransition = sharedElementTransition,
         animatedContentScope = animatedContentScope,
         modifier = modifier
@@ -143,6 +145,7 @@ internal fun PhotosScreen(
     callToActions: Set<CallToAction>,
     onPhotoClick: (MediaUiItem) -> Unit,
     onSeeAllCallToActions: () -> Unit,
+    onCallToActionClick: (CallToActionAction) -> Unit,
     sharedElementTransition: SharedTransitionScope,
     animatedContentScope: AnimatedContentScope,
     modifier: Modifier = Modifier,
@@ -173,7 +176,8 @@ internal fun PhotosScreen(
                 ) {
                     CallToActionSummary(
                         callToActions = callToActions,
-                        onSeeAll = onSeeAllCallToActions
+                        onSeeAll = onSeeAllCallToActions,
+                        onCallToActionClick = onCallToActionClick
                     )
                 }
             }
@@ -243,6 +247,7 @@ internal fun PhotosScreen(
 private fun CallToActionSummary(
     callToActions: Set<CallToAction>,
     onSeeAll: () -> Unit,
+    onCallToActionClick: (CallToActionAction) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val ordered = remember(callToActions) { callToActions.sortedBy { it.priority } }
@@ -256,7 +261,7 @@ private fun CallToActionSummary(
             CallToActionComponent(
                 actionTitle = single.actionTitle,
                 actionDescription = single.actionDescription,
-                onClick = single.action,
+                onClick = { onCallToActionClick(single.action) },
                 modifier = Modifier.fillMaxWidth()
             )
         } else {
