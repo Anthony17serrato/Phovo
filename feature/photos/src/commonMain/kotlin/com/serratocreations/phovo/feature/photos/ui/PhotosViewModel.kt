@@ -72,17 +72,26 @@ data class PhotosUiState(
     val photosFeed: List<PhotoUiItem> = emptyList(),
     val selectedPhoto: MediaUiItem? = null,
     val shouldShowWelcomeBottomSheet: Boolean,
-    // TODO UI State should support displaying multiple call to action components
-    //  in a carousel manner.
-    val callToAction: CallToAction? = CallToAction(
-        actionTitle = "Finish setup",
-        actionDescription = "Get more from your gallery",
-        action = { /* TODO */ }
-    )
+    // The feed only ever shows one row of this, however many there are: a single call to action,
+    // or a summary that opens the dedicated call to actions screen.
+    val callToActions: Set<CallToAction> = emptySet()
 )
 
 data class CallToAction(
     val actionTitle: String,
     val actionDescription: String,
+    val priority: CallToActionPriority,
     val action: () -> Unit
 )
+
+/** Decides which call to action leads when the feed only has room to name one. */
+enum class CallToActionPriority {
+    /** Phovo is not doing the job the user installed it for, e.g. nothing is being backed up. */
+    High,
+
+    /** Phovo works, but something is missing or degraded. */
+    Medium,
+
+    /** Nice to have, e.g. an optional setup step. */
+    Low
+}

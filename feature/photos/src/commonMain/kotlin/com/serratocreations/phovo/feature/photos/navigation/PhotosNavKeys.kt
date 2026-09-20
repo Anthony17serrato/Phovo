@@ -8,3 +8,6 @@ object PhotosHomeNavKey: NavKey
 
 @Serializable
 data object PhotoDetailNavKey: NavKey
+
+@Serializable
+data object CallToActionsNavKey: NavKey

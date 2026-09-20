@@ -46,7 +46,8 @@ internal fun ConnectionsHomePane(
                 CallToActionComponent(
                     actionTitle = "Configure as server",
                     actionDescription = "Configure this device as a Phovo backup server. Your photos and media will be securely backed up to this device.",
-                    onClick = onConfigClick
+                    onClick = onConfigClick,
+                    modifier = Modifier.fillMaxWidth().padding(16.dp)
                 )
             }
         }

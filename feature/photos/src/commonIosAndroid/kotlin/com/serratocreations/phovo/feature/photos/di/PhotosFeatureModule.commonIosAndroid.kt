@@ -16,6 +16,7 @@ internal actual fun getPhotosFeaturePlatformModules(): Module = module {
     viewModel {
         ClientPhotosViewModel(
             getPhotosFeedWithThumbnailsUseCase = get(),
+            serverConfigRepository = get(),
             permissionRepository = get(),
             ioDispatcher = get(IO_DISPATCHER)
         )

@@ -20,6 +20,7 @@ import com.serratocreations.phovo.core.navigation.DefaultNavigationIcon
 import com.serratocreations.phovo.core.navigation.NavigationViewModel
 import com.serratocreations.phovo.core.navigation.SharedViewModelStoreNavEntryDecorator
 import com.serratocreations.phovo.core.navigation.toContentKey
+import com.serratocreations.phovo.feature.photos.ui.CallToActionsScreen
 import com.serratocreations.phovo.feature.photos.ui.PhotoViewerScreen
 import com.serratocreations.phovo.feature.photos.ui.PhotosHomeScreen
 import com.serratocreations.phovo.feature.photos.ui.PhotosViewModel
@@ -61,9 +62,14 @@ fun EntryProviderScope<NavKey>.photosEntries(
                 photosViewModel.onPhotoSelected(uriPhotoUiItem)
                 navigationViewModel.navigate(PhotoDetailNavKey)
             },
+            onSeeAllCallToActions = {
+                onShowAppBarRequested()
+                navigationViewModel.navigate(CallToActionsNavKey)
+            },
             sharedElementTransition = sharedElementTransition,
             animatedContentScope = LocalNavAnimatedContentScope.current,
             photosViewModel = photosViewModel,
+            isCurrentDestination = navigationViewModel.state.currentKey == PhotosHomeNavKey,
             modifier = Modifier.padding(
                 appBarConfig.calculateAdjustedPadding(scaffoldPadding)
             )
@@ -107,6 +113,32 @@ fun EntryProviderScope<NavKey>.photosEntries(
             photosViewModel = photosViewModel,
             areBarsVisible = areBarsVisible,
             onToggleBars = { areBarsVisible = !areBarsVisible },
+            modifier = Modifier.padding(
+                appBarConfig.calculateAdjustedPadding(scaffoldPadding)
+            )
+        )
+    }
+    entry<CallToActionsNavKey>(
+        metadata = SharedViewModelStoreNavEntryDecorator.parent(
+            contentKey = PhotosHomeNavKey.toContentKey()
+        )
+    ) {
+        val photosViewModel: PhotosViewModel = koinViewModel()
+        val appBarConfig: AppBarConfig = remember {
+            AppBarConfig(
+                title = { Text("Needs attention") },
+                navigationIcon = {
+                    DefaultNavigationIcon(navigationViewModel::goBack)
+                }
+            )
+        }
+        LaunchedEffect(navigationViewModel.state.currentKey) {
+            if (navigationViewModel.state.currentKey == CallToActionsNavKey) {
+                navigationViewModel.setAppBarConfig(appBarConfig)
+            }
+        }
+        CallToActionsScreen(
+            photosViewModel = photosViewModel,
             modifier = Modifier.padding(
                 appBarConfig.calculateAdjustedPadding(scaffoldPadding)
             )

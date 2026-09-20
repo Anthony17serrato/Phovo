@@ -196,6 +196,7 @@ fun BackupSummaryCard(
     Column(
         modifier = Modifier
             .animateContentSize()
+            .padding(bottom = 8.dp)
             .fillMaxWidth()
     ) {
         Text(

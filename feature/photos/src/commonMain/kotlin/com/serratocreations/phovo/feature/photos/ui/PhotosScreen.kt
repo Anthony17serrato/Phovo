@@ -27,6 +27,7 @@ import androidx.compose.material3.adaptive.WindowAdaptiveInfo
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -83,9 +84,11 @@ fun ImageLoader.Builder.platformDiskCache(): ImageLoader.Builder =
 @Composable
 internal fun PhotosHomeScreen(
     onPhotoClick: (MediaUiItem) -> Unit,
+    onSeeAllCallToActions: () -> Unit,
     sharedElementTransition: SharedTransitionScope,
     animatedContentScope: AnimatedContentScope,
     photosViewModel: PhotosViewModel,
+    isCurrentDestination: Boolean,
     modifier: Modifier = Modifier
 ) {
     // TODO move to root composable https://coil-kt.github.io/coil/image_loaders/
@@ -114,13 +117,18 @@ internal fun PhotosHomeScreen(
 
     WelcomeBottomSheet(
         onProceedWelcomeBottomSheet = photosViewModel::onProceedWelcomeBottomSheet,
-        shouldShowBottomSheet = photosState.shouldShowWelcomeBottomSheet
+        // Only while this is the destination the user is on. A modal sheet registers its own back
+        // handler, and composing one while another destination is on top - which happens as soon
+        // as a predictive back gesture starts animating this screen back in - hands it the
+        // in flight gesture and the navigation pop never commits.
+        shouldShowBottomSheet = photosState.shouldShowWelcomeBottomSheet && isCurrentDestination
     )
 
     PhotosScreen(
         photosItems = photosState.photosFeed,
-        callToAction = photosState.callToAction,
+        callToActions = photosState.callToActions,
         onPhotoClick = onPhotoClick,
+        onSeeAllCallToActions = onSeeAllCallToActions,
         sharedElementTransition = sharedElementTransition,
         animatedContentScope = animatedContentScope,
         modifier = modifier
@@ -132,8 +140,9 @@ internal fun PhotosHomeScreen(
 @Composable
 internal fun PhotosScreen(
     photosItems: List<PhotoUiItem>,
-    callToAction: CallToAction?,
+    callToActions: Set<CallToAction>,
     onPhotoClick: (MediaUiItem) -> Unit,
+    onSeeAllCallToActions: () -> Unit,
     sharedElementTransition: SharedTransitionScope,
     animatedContentScope: AnimatedContentScope,
     modifier: Modifier = Modifier,
@@ -158,14 +167,13 @@ internal fun PhotosScreen(
             verticalArrangement = Arrangement.spacedBy(4.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            if (callToAction != null) {
+            if (callToActions.isNotEmpty()) {
                 item(
                     span = { GridItemSpan(maxLineSpan) }
                 ) {
-                    CallToActionComponent(
-                        actionTitle = callToAction.actionTitle,
-                        actionDescription = callToAction.actionDescription,
-                        onClick = callToAction.action
+                    CallToActionSummary(
+                        callToActions = callToActions,
+                        onSeeAll = onSeeAllCallToActions
                     )
                 }
             }
@@ -226,3 +234,43 @@ internal fun PhotosScreen(
         }
     }
 }
+
+/**
+ * However many call to actions there are, the feed gives them a single row: photos are what the
+ * user came for, so more than one notice collapses into a summary that opens the full list.
+ */
+@Composable
+private fun CallToActionSummary(
+    callToActions: Set<CallToAction>,
+    onSeeAll: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val ordered = remember(callToActions) { callToActions.sortedBy { it.priority } }
+    val single = ordered.singleOrNull()
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = CallToActionHorizontalPadding, vertical = CallToActionVerticalPadding)
+    ) {
+        if (single != null) {
+            CallToActionComponent(
+                actionTitle = single.actionTitle,
+                actionDescription = single.actionDescription,
+                onClick = single.action,
+                modifier = Modifier.fillMaxWidth()
+            )
+        } else {
+            CallToActionComponent(
+                actionTitle = "${ordered.size} things need attention",
+                // Naming them beats a bare count, and the full copy is one tap away.
+                actionDescription = ordered.joinToString(separator = " · ") { it.actionTitle },
+                onClick = onSeeAll,
+                descriptionMaxLines = 1,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+    }
+}
+
+private val CallToActionHorizontalPadding = 16.dp
+private val CallToActionVerticalPadding = 8.dp
