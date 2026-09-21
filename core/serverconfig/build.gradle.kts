@@ -10,7 +10,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(libs.filekit.core)
-            implementation(projects.core.model)
+            api(projects.core.model)
             implementation(projects.core.logger)
             implementation(projects.core.database)
         }

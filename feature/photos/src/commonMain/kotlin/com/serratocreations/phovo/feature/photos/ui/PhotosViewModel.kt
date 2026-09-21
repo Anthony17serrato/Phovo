@@ -61,6 +61,14 @@ open class PhotosViewModel(
 
     }
 
+    /**
+     * Handle a call to action the view model owns. Actions that move the user somewhere else in
+     * the app are not handled here - navigation is the caller's to perform.
+     */
+    open fun onCallToActionClicked(action: CallToActionAction) {
+
+    }
+
     fun onPhotoSelected(mediaUiItem: MediaUiItem) {
         _photosUiState.update { currentState ->
             currentState.copy(selectedPhoto = mediaUiItem)
@@ -72,17 +80,41 @@ data class PhotosUiState(
     val photosFeed: List<PhotoUiItem> = emptyList(),
     val selectedPhoto: MediaUiItem? = null,
     val shouldShowWelcomeBottomSheet: Boolean,
-    // TODO UI State should support displaying multiple call to action components
-    //  in a carousel manner.
-    val callToAction: CallToAction? = CallToAction(
-        actionTitle = "Finish setup",
-        actionDescription = "Get more from your gallery",
-        action = { /* TODO */ }
-    )
+    // The feed only ever shows one row of this, however many there are: a single call to action,
+    // or a summary that opens the dedicated call to actions screen.
+    val callToActions: Set<CallToAction> = emptySet()
 )
 
 data class CallToAction(
     val actionTitle: String,
     val actionDescription: String,
-    val action: () -> Unit
+    val priority: CallToActionPriority,
+    val action: CallToActionAction
 )
+
+/**
+ * What tapping a call to action does, as data rather than a lambda. The view model cannot navigate
+ * and the UI cannot request permissions, so each side reads this and handles the cases it owns.
+ */
+sealed interface CallToActionAction {
+    /** Ask for gallery access from inside the app. */
+    data object RequestGalleryPermission : CallToActionAction
+
+    /** Open Phovo's page in the system settings, for permissions the app can no longer request. */
+    data object OpenPermissionSettings : CallToActionAction
+
+    /** Take the user to where a server is set up. Navigation, so the UI layer handles it. */
+    data object FinishServerSetup : CallToActionAction
+}
+
+/** Decides which call to action leads when the feed only has room to name one. */
+enum class CallToActionPriority {
+    /** Phovo is not doing the job the user installed it for, e.g. nothing is being backed up. */
+    High,
+
+    /** Phovo works, but something is missing or degraded. */
+    Medium,
+
+    /** Nice to have, e.g. an optional setup step. */
+    Low
+}

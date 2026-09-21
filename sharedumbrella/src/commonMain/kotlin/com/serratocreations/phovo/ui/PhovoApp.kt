@@ -208,6 +208,12 @@ internal fun InternalPhovoApp(
                                 sharedElementTransition = this@SharedTransitionLayout,
                                 navigationViewModel = navigationViewModel,
                                 onShowAppBarRequested = { scrollBehavior.showAppBar() },
+                                onFinishServerSetup = {
+                                    // Leave the photos stack on its feed, so coming back to the
+                                    // tab later does not land on the call to actions list.
+                                    navigationViewModel.popTo(PhotosHomeNavKey)
+                                    navigationViewModel.navigate(ConnectionsHomeNavKey)
+                                },
                                 scaffoldPadding = padding
                             )
                             searchEntries(

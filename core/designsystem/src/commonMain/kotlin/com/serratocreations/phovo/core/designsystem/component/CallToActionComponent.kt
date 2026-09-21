@@ -4,9 +4,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -15,16 +17,23 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.serratocreations.phovo.core.designsystem.icon.PhovoIcons
 
+/**
+ * A row summarising something the user should act on. Tapping anywhere on the row runs [onClick].
+ *
+ * @param descriptionMaxLines lines of [actionDescription] to show before truncating. Only cap it
+ *   where the full copy is reachable some other way.
+ */
 @Composable
 fun CallToActionComponent(
     actionTitle: String,
     actionDescription: String,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    descriptionMaxLines: Int = Int.MAX_VALUE
 ) {
     Card(
         colors = CardDefaults.cardColors(
@@ -32,38 +41,38 @@ fun CallToActionComponent(
         ),
         onClick = onClick,
         modifier = modifier
-            .fillMaxWidth()
-            .padding(16.dp)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxSize().padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Start
         ) {
             Icon(
                 imageVector = PhovoIcons.Info,
                 contentDescription = null,
-                modifier = Modifier.padding(start = 16.dp)
+                modifier = Modifier.size(24.dp)
             )
-            Column(Modifier.padding(start = 16.dp).weight(1f)) {
+            Spacer(Modifier.width(16.dp))
+            Column(Modifier.weight(1f)) {
                 Text(
                     text = actionTitle,
-                    modifier = Modifier.padding(top = 16.dp),
-                    textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.bodyLarge
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(4.dp))
                 Text(
                     text = actionDescription,
-                    modifier = Modifier.padding(bottom = 16.dp),
-                    textAlign = TextAlign.Start,
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+            Spacer(Modifier.width(8.dp))
+            // The card is tappable as a whole, so it needs to look like it goes somewhere.
             Icon(
                 imageVector = PhovoIcons.ChevronRight,
                 contentDescription = null,
-                modifier = Modifier.padding(end = 16.dp)
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(24.dp)
             )
         }
     }

@@ -6,4 +6,5 @@ import kotlinx.serialization.modules.PolymorphicModuleBuilder
 fun PolymorphicModuleBuilder<NavKey>.photoRoutes() {
     subclass(PhotosHomeNavKey::class, PhotosHomeNavKey.serializer())
     subclass(PhotoDetailNavKey::class, PhotoDetailNavKey.serializer())
+    subclass(CallToActionsNavKey::class, CallToActionsNavKey.serializer())
 }
