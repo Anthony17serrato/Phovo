@@ -39,6 +39,7 @@ include(":core:model")
 include(":core:navigation")
 include(":core:domain")
 include(":core:serverconfig")
+include(":core:workmanager")
 
 // Features
 include(":feature:photos")

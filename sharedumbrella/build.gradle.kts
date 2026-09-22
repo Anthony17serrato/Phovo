@@ -41,6 +41,7 @@ kotlin {
         }
         commonIosAndroid.dependencies {
             api(projects.data.permissions)
+            implementation(projects.core.workmanager)
         }
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)

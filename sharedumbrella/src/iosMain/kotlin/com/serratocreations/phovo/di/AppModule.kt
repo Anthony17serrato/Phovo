@@ -19,6 +19,7 @@ class IosApplicationPlatformModuleFetcher: IosAndroidApplicationPlatformModuleFe
             IosAppInitializer(
                 get(APPLICATION_SCOPE),
                 get(),
+                get(),
                 get()
             )
         }
