@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Long-running work (OneTimeWorkRequest.longRunning) promotes the worker to a foreground
+         service so the ten minute JobScheduler deadline stops applying. FOREGROUND_SERVICE is
+         already contributed by work-runtime's own manifest; the DATA_SYNC variant is required from
+         API 34 and is not. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <!-- The ongoing notification is only visible once the user grants this. The service runs
+         either way, so the app should request it, but nothing here depends on it. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <application>
+        <!-- work-runtime declares this service without a foregroundServiceType, which API 34 and
+             above reject for a data sync service. Merge the type onto its existing declaration. -->
+        <service
+            android:name="androidx.work.impl.foreground.SystemForegroundService"
+            android:foregroundServiceType="dataSync"
+            tools:node="merge" />
+    </application>
+
+</manifest>
