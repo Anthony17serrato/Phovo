@@ -60,6 +60,11 @@ const val MEDIA_SYNC_WORKER_ID = "media-sync"
 Every registration in the graph is collected into a single `WorkerRegistry` by `getWorkManagerModule()`,
 so you add one `single { ... }` and nothing else.
 
+Ids are plain strings, so nothing stops two modules reaching for the same one. `WorkerRegistry`
+rejects that at construction, which means at app startup, naming the offending id. Letting it pass
+would have two workers silently sharing queue entries with the winner decided by whatever order
+Koin collected the registrations in.
+
 > **Worker ids are a persisted format.** Renaming one orphans any work already on disk. The orphaned
 > record fails with a logged error rather than retrying forever, but the work it represented is lost.
 
