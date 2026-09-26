@@ -17,10 +17,11 @@ class IosApplicationPlatformModuleFetcher: IosAndroidApplicationPlatformModuleFe
         includes(super.getModule())
         factory<AndroidDesktopIosAppInitializer> {
             IosAppInitializer(
-                get(APPLICATION_SCOPE),
-                get(),
-                get(),
-                get()
+                workManager = get(),
+                applicationScope = get(APPLICATION_SCOPE),
+                serverAddressResolver = get(),
+                localAndRemoteMediaRepository = get(),
+                permissionRepository = get()
             )
         }
     }

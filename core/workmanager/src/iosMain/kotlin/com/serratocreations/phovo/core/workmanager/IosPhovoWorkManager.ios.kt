@@ -84,6 +84,15 @@ class IosPhovoWorkManager internal constructor(
     private val continuedSubmissions = MutableStateFlow<Set<String>>(emptySet())
 
     /**
+     * Concrete continued processing identifiers this process has already registered a handler for.
+     *
+     * Registering the same identifier twice is documented to kill the app, and identifiers are
+     * derived deterministically from the unique work name, so re-enqueuing the same work would do
+     * exactly that without this.
+     */
+    private val registeredContinuedIds = MutableStateFlow<Set<String>>(emptySet())
+
+    /**
      * BGContinuedProcessingTask is iOS 26+. The deployment target is well below that, and
      * Kotlin/Native does not model @available, so this is checked at run time and everything
      * below falls back to the BGProcessingTask queue.
@@ -107,28 +116,11 @@ class IosPhovoWorkManager internal constructor(
 
         registerHandler(PROCESSING_TASK_IDENTIFIER)
         registerHandler(REFRESH_TASK_IDENTIFIER)
-        if (supportsContinuedProcessing) {
-            // Registered against the wildcard identifier from Info.plist; submissions use concrete
-            // ids beneath it. Unlike every other BGTask, these registrations are explicitly exempt
-            // from the "before the app finishes launching" rule.
-            val registered = BGTaskScheduler.sharedScheduler.registerForTaskWithIdentifier(
-                identifier = CONTINUED_TASK_IDENTIFIER_WILDCARD,
-                usingQueue = null
-            ) { task ->
-                val continued = task as? BGContinuedProcessingTask
-                if (continued == null) {
-                    task?.setTaskCompletedWithSuccess(false)
-                } else {
-                    handleContinuedProcessingTask(continued)
-                }
-            }
-            if (!registered) {
-                logger.e {
-                    "BGTaskScheduler refused '$CONTINUED_TASK_IDENTIFIER_WILDCARD'. Long-running " +
-                        "work will fall back to the ordinary queue."
-                }
-            }
-        }
+        // Continued processing handlers are deliberately not registered here. The wildcard in
+        // Info.plist is a permission to use identifiers beneath it, not an identifier itself, and
+        // registering the literal wildcard is rejected. Each concrete identifier is registered
+        // just before its request is submitted, which is exactly why Apple exempts these
+        // registrations from the "before the app finishes launching" rule.
 
         NSNotificationCenter.defaultCenter.addObserverForName(
             name = UIApplicationDidBecomeActiveNotification,
@@ -432,8 +424,16 @@ class IosPhovoWorkManager internal constructor(
         }
 
         pending.forEach { record ->
+            val identifier = continuedIdentifier(record.uniqueWorkName)
+
+            // Registering has to happen first. submitTaskRequest raises an Objective-C
+            // NSInternalInconsistencyException when no handler exists for the identifier, and a
+            // raised ObjC exception is not catchable from Kotlin, so it takes the app down. If we
+            // cannot register, leave the record on the ordinary queue.
+            if (!ensureContinuedHandler(identifier)) return@forEach
+
             val request = BGContinuedProcessingTaskRequest(
-                identifier = continuedIdentifier(record.uniqueWorkName),
+                identifier = identifier,
                 title = record.longRunningTitle.orEmpty(),
                 subtitle = record.longRunningSubtitle.orEmpty()
             ).apply {
@@ -453,6 +453,40 @@ class IosPhovoWorkManager internal constructor(
                 }
             }
         }
+    }
+
+    /**
+     * Registers a launch handler for one concrete continued processing identifier, once per
+     * process. Returns whether a handler is in place.
+     *
+     * A false result means the identifier is not covered by the app's
+     * BGTaskSchedulerPermittedIdentifiers, so long-running work falls back to the ordinary queue.
+     */
+    private fun ensureContinuedHandler(identifier: String): Boolean {
+        if (identifier in registeredContinuedIds.value) return true
+
+        val registered = BGTaskScheduler.sharedScheduler.registerForTaskWithIdentifier(
+            identifier = identifier,
+            usingQueue = null
+        ) { task ->
+            val continued = task as? BGContinuedProcessingTask
+            if (continued == null) {
+                task?.setTaskCompletedWithSuccess(false)
+            } else {
+                handleContinuedProcessingTask(continued)
+            }
+        }
+
+        if (registered) {
+            registeredContinuedIds.update { it + identifier }
+        } else {
+            logger.e {
+                "BGTaskScheduler refused to register '$identifier'. Check that " +
+                    "'$CONTINUED_TASK_IDENTIFIER_WILDCARD' is in BGTaskSchedulerPermittedIdentifiers. " +
+                    "Long-running work will fall back to the ordinary queue."
+            }
+        }
+        return registered
     }
 
     private fun handleContinuedProcessingTask(task: BGContinuedProcessingTask) {
@@ -584,6 +618,11 @@ class IosPhovoWorkManager internal constructor(
          * Continued processing requires the permitted identifier to be a wildcard whose prefix
          * starts with the app's bundle id, which is why this one is shaped differently from the
          * two above.
+         *
+         * This string belongs in Info.plist and nowhere else. It grants permission to use
+         * identifiers beneath it; it is not itself registerable, and passing it to
+         * registerForTaskWithIdentifier is rejected with "is not advertised in the application's
+         * Info.plist". Handlers go on the concrete ids built by [continuedIdentifier].
          */
         const val CONTINUED_TASK_IDENTIFIER_PREFIX = "com.serratocreations.phovo.Phovo.work.continued."
         const val CONTINUED_TASK_IDENTIFIER_WILDCARD = CONTINUED_TASK_IDENTIFIER_PREFIX + "*"

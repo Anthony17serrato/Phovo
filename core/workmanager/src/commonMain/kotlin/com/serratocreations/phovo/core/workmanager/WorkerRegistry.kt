@@ -19,8 +19,20 @@ class WorkerRegistration(
 
 /** Resolves a [workerId] read back from persisted work into a runnable [PhovoWorker]. */
 class WorkerRegistry(registrations: List<WorkerRegistration>) {
-    private val factories: Map<String, () -> PhovoWorker> =
-        registrations.associate { it.workerId to it.factory }
+
+    private val factories: Map<String, () -> PhovoWorker>
+
+    init {
+        // Ids are strings, so two modules can reach for the same one without the compiler
+        // objecting. Left alone they would silently share queue entries, with the winner decided by
+        // whatever order Koin happened to collect the registrations in. Fail at startup instead.
+        val duplicates = registrations.groupBy { it.workerId }.filter { it.value.size > 1 }.keys
+        require(duplicates.isEmpty()) {
+            "More than one WorkerRegistration for ${duplicates.joinToString { "'$it'" }}. " +
+                "Each worker id may be registered once."
+        }
+        factories = registrations.associate { it.workerId to it.factory }
+    }
 
     /** Returns null when no worker is registered for [workerId], e.g. after a worker was removed. */
     fun create(workerId: String): PhovoWorker? = factories[workerId]?.invoke()

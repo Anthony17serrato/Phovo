@@ -60,6 +60,11 @@ const val MEDIA_SYNC_WORKER_ID = "media-sync"
 Every registration in the graph is collected into a single `WorkerRegistry` by `getWorkManagerModule()`,
 so you add one `single { ... }` and nothing else.
 
+Ids are plain strings, so nothing stops two modules reaching for the same one. `WorkerRegistry`
+rejects that at construction, which means at app startup, naming the offending id. Letting it pass
+would have two workers silently sharing queue entries with the winner decided by whatever order
+Koin collected the registrations in.
+
 > **Worker ids are a persisted format.** Renaming one orphans any work already on disk. The orphaned
 > record fails with a logged error rather than retrying forever, but the work it represented is lost.
 
@@ -218,11 +223,25 @@ practice: the scheduler may kill a continued processing task that appears to hav
 
 Rules, enforced in `OneTimeWorkRequest`'s `init`:
 
-- Long-running work cannot also be `expedited`. It already starts promptly.
 - It cannot have an `initialDelay`, because iOS ignores `earliestBeginDate` on a continued
   processing task and honouring the delay on Android alone would make the platforms disagree
   silently.
 - Unlike expedited work, it may use power constraints.
+
+### Combining it with `expedited`
+
+Allowed, because the two ask for different things. `expedited` is about **when** the work starts,
+`longRunning` about **how long** it may run once started.
+
+| | With both set |
+| --- | --- |
+| Android | Schedules an expedited job that then promotes itself to a foreground service. Both apply. |
+| iOS 26+ | Ignores `expedited`. A continued processing task already starts immediately and outranks the ordinary queue. |
+| iOS < 26 | Honours both. Long-running work falls back to the ordinary queue, where expedited still moves it to the front. |
+
+Legal does not mean advisable on Android. Expedited quota is finite and meant for short urgent
+work, so spending it on something about to become a foreground service anyway is usually the wrong
+trade. Work enqueued with no delay while the app is foregrounded starts within seconds regardless.
 
 There is no long-running periodic work. `BGContinuedProcessingTaskRequest` must be submitted on
 behalf of a foregrounded app, so this serves "the user tapped Back Up Now" rather than anything on a
@@ -246,6 +265,19 @@ com.serratocreations.phovo.Phovo.work.continued.*
 
 Each submission uses a concrete identifier beneath it, derived from the unique work name so the
 launch handler can find its record without keeping any mapping around.
+
+The wildcard belongs in `Info.plist` and nowhere else. It grants permission to use identifiers
+beneath it and is not itself registerable: passing it to `registerForTaskWithIdentifier` is rejected
+with *"is not advertised in the application's Info.plist"*. Handlers are registered against the
+concrete identifier, lazily, immediately before that request is submitted. That ordering is not
+optional, because `submitTaskRequest` raises an Objective-C `NSInternalInconsistencyException` when
+no handler exists, and a raised ObjC exception cannot be caught from Kotlin, so it terminates the
+app. It also explains why Apple exempts these registrations from the "before the app finishes
+launching" rule that every other `BGTask` follows.
+
+Each identifier is registered once per process, tracked in `registeredContinuedIds`. Registering the
+same identifier twice is documented to kill the app, and identifiers are deterministic, so
+re-enqueuing the same unique work would otherwise do exactly that.
 
 ## Observing
 

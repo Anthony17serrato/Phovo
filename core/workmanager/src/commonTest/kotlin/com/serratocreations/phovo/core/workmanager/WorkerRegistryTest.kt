@@ -1,9 +1,10 @@
 package com.serratocreations.phovo.core.workmanager
 
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
-import kotlin.test.assertSame
+import kotlin.test.assertTrue
 
 class WorkerRegistryTest {
 
@@ -35,14 +36,29 @@ class WorkerRegistryTest {
     }
 
     @Test
-    fun `later registration of a duplicate id wins`() {
-        val expected = NoopWorker()
+    fun `registering an id twice fails at construction`() {
+        // Ids are strings, so nothing stops two modules reaching for the same one. Silently letting
+        // one shadow the other would make the winner depend on Koin's collection order.
+        val error = assertFailsWith<IllegalArgumentException> {
+            WorkerRegistry(
+                listOf(
+                    WorkerRegistration("media-sync") { NoopWorker() },
+                    WorkerRegistration("media-sync") { NoopWorker() }
+                )
+            )
+        }
+        assertTrue("media-sync" in error.message.orEmpty(), error.message.orEmpty())
+    }
+
+    @Test
+    fun `distinct ids coexist`() {
         val registry = WorkerRegistry(
             listOf(
                 WorkerRegistration("media-sync") { NoopWorker() },
-                WorkerRegistration("media-sync") { expected }
+                WorkerRegistration("thumbnails") { NoopWorker() }
             )
         )
-        assertSame(expected, registry.create("media-sync"))
+        assertNotNull(registry.create("media-sync"))
+        assertNotNull(registry.create("thumbnails"))
     }
 }
