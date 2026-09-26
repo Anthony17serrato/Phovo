@@ -3,6 +3,7 @@ package com.serratocreations.phovo
 import com.serratocreations.phovo.core.workmanager.BackoffPolicy
 import com.serratocreations.phovo.core.workmanager.Constraints
 import com.serratocreations.phovo.core.workmanager.ExistingWorkPolicy
+import com.serratocreations.phovo.core.workmanager.LongRunningInfo
 import com.serratocreations.phovo.core.workmanager.NetworkType
 import com.serratocreations.phovo.core.workmanager.OneTimeWorkRequest
 import com.serratocreations.phovo.core.workmanager.PhovoWorkManager
@@ -48,6 +49,11 @@ abstract class AndroidIosAppInitializer(
                         request = OneTimeWorkRequest(
                             workerId = MEDIA_SYNC_WORKER_ID,
                             expedited = true,
+                            longRunning = LongRunningInfo(
+                                // TODO extract string resource
+                                title = "Backing up photos",
+                                subtitle = "Uploading to Phovo Desktop"
+                            ),
                             constraints = Constraints(requiredNetworkType = NetworkType.UNMETERED),
                             backoffPolicy = BackoffPolicy.EXPONENTIAL,
                             backoffDelay = BackoffPolicy.MIN_BACKOFF_DELAY,

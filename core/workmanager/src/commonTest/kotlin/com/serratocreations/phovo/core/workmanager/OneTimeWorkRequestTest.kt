@@ -70,15 +70,17 @@ class OneTimeWorkRequestTest {
     }
 
     @Test
-    fun `long-running work cannot also be expedited`() {
-        val error = assertFailsWith<IllegalArgumentException> {
-            OneTimeWorkRequest(
-                workerId = "media-sync",
-                expedited = true,
-                longRunning = LongRunningInfo("Backing up photos", "0 of 340")
-            )
-        }
-        assertTrue("should not also be" in error.message.orEmpty(), error.message.orEmpty())
+    fun `long-running work may also be expedited`() {
+        // They ask for different things: expedited is about when the work starts, longRunning is
+        // about how long it may run. Android honours both, iOS 26+ has nothing left to do with the
+        // first, and iOS below 26 honours both on the fallback queue.
+        val request = OneTimeWorkRequest(
+            workerId = "media-sync",
+            expedited = true,
+            longRunning = LongRunningInfo("Backing up photos", "Uploading to Phovo Desktop")
+        )
+        assertTrue(request.expedited)
+        assertEquals("Backing up photos", request.longRunning?.title)
     }
 
     @Test
