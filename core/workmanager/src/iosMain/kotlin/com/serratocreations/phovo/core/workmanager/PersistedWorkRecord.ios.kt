@@ -30,7 +30,13 @@ internal data class PersistedWorkRecord(
     val tags: Set<String> = emptySet(),
     val earliestRunAtEpochMillis: Long,
     val runAttemptCount: Int = 0,
-    val state: WorkState = WorkState.ENQUEUED
+    val state: WorkState = WorkState.ENQUEUED,
+    /**
+     * Identifies this particular request under its unique work name. REPLACE writes a new
+     * generation, so a run still finishing for the old request can tell it has been superseded and
+     * must not write its result over the new one.
+     */
+    val generation: Long = 0L
 ) {
     val constraints: Constraints
         get() = Constraints(requiredNetworkType, requiresCharging, requiresBatteryNotLow)

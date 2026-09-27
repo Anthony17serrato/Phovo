@@ -90,8 +90,9 @@ workManager.enqueueUniqueWork(
 )
 ```
 
-`ExistingWorkPolicy.REPLACE` cancels whatever is enqueued under that name and starts over. `KEEP`
-leaves an unfinished existing job alone and drops the new request.
+`ExistingWorkPolicy.REPLACE` cancels whatever is enqueued under that name and starts over, stopping
+the worker if one is already running. That holds on both platforms. `KEEP` leaves an unfinished
+existing job alone and drops the new request.
 
 ### Periodic
 
@@ -128,8 +129,9 @@ workManager.cancelUniqueWork("media-sync-periodic")
 workManager.cancelAllWorkByTag("sync")
 ```
 
-A run already in flight is cancelled. On iOS, a cancel that lands while a worker is running wins:
-whatever the worker returns afterwards is discarded.
+Cancelling stops a worker that's already running, on both platforms. On iOS it also ends the
+work's continued processing task, the way cancelling on Android stops its foreground service, and
+anything the stopped worker returns afterwards is discarded.
 
 ### Expedited work
 
@@ -215,11 +217,81 @@ doing, which is why `LongRunningInfo` carries display text.
 | | Behaviour | Ceiling |
 | --- | --- | --- |
 | Android | `setForeground` promotes the run to a `dataSync` foreground service with an ongoing notification. | The 10-minute JobScheduler deadline stops applying. Android 15+ budgets `dataSync` services to roughly 6 hours per day (`STOP_REASON_FOREGROUND_SERVICE_TIMEOUT`). |
-| iOS 26+ | A `BGContinuedProcessingTaskRequest` with system progress UI. Starts immediately and keeps running after the user leaves the app. | System-managed. Tasks that look stalled are forcibly expired. |
+| iOS 26+ | Runs on the ordinary drain with no system UI while the app is open. As the user leaves, a `BGContinuedProcessingTaskRequest` carries the run into the background with a Live Activity. See *How it behaves on iOS* below. | System-managed. Tasks that stop moving are expired. |
 | iOS below 26 | Falls back to the ordinary `BGProcessingTask` queue. | Whatever the OS grants, typically a few minutes. |
 
-`setProgress` drives the Android notification and the iOS `NSProgress`. On iOS it is not optional in
-practice: the scheduler may kill a continued processing task that appears to have stalled.
+`setProgress` drives the Android notification and the iOS `NSProgress`.
+
+On iOS, the module seeds `NSProgress` with a determinate `1 / 1000` the moment a continued
+processing task starts, before the worker reports anything. With no progress at all, a backgrounded
+task was killed within seconds on a test device. The seed claims one unit rather than zero because a
+`completedUnitCount` of zero renders as an indefinite bar, even though `NSProgress` itself only calls
+the both-zero case indeterminate. The seed covers the window before the first real `setProgress`,
+which for a worker that scans a library before it knows any totals can be a long way in.
+
+**The seed is a floor, not a substitute for reporting.** Apple's position ([WWDC25 session
+227](https://developer.apple.com/videos/play/wwdc2025/227/)) is that tasks not reporting progress get
+expired so the system can reclaim resources, and that work progressing slower than expected causes
+the system to ask the person whether to continue. Report real numbers as you get them.
+
+Device measurements, for calibration rather than as a contract:
+
+| Charging | Progress reported | Outcome |
+| --- | --- | --- |
+| Yes | none | expired within seconds of backgrounding |
+| Yes | one initial value, nothing after | survived for as long as it was left running |
+| No | one initial value, nothing after | expired after roughly a minute |
+| No | the same value, re-set every second | expired after roughly a minute |
+| No | rising every second | survived over an hour, until the test stopped it |
+| No | rising, then falling back, then rising again | survived |
+
+The practical reading is that **movement** keeps a task alive. Re-setting an unchanged value counts
+for nothing, while a value that falls back does count, which is what you get when a scan grows the
+denominator faster than work completes. So report the real `completed / total` as often as either
+changes, and don't clamp it to stop the bar going backwards.
+
+Apple documents none of this. The class reference says only "run-time conditions" and "resource
+constraints", and power state is never named as a trigger. Treat the table as evidence that the
+policy is adaptive and unpublished, and do not build anything that depends on the specific numbers.
+
+Note also that an expired continued processing task does not resume. Per Apple DTS on [this
+thread](https://developer.apple.com/forums/thread/806668), the API extends foreground time rather
+than granting background time, so the opportunity is lost until the app is foregrounded again. This
+module survives that because expiry stops the run and returns the record to its own queue, without
+burning a retry attempt, the same as Android stopping a foreground service.
+
+### How it behaves on iOS
+
+The continued processing task is treated as an implementation detail, the iOS stand-in for
+Android's foreground service. It keeps the process alive and gives the current run a progress bar;
+it has no behaviour of its own, and the work itself always runs on the module's ordinary drain.
+Everything below exists to make iOS behave like Android.
+
+| When | What happens |
+| --- | --- |
+| Work is enqueued with the app open | It runs on the drain. No Live Activity is shown while the app is open. |
+| The user leaves (`willResignActive`) | A continued processing request is submitted for long-running work that is running or ready to run. The launch handler attaches the task to the run already in progress; nothing restarts. |
+| The user comes back (`didBecomeActive`) | The task is ended, which dismisses the Live Activity. The run is the module's own coroutine rather than the task's, so it keeps going. Leaving again starts a fresh task for it. |
+| The worker returns | The task is completed with `success = (result is WorkResult.Success)`. On success the bar is filled first. `Failure` and `Retry` complete it as unsuccessful. |
+| `REPLACE`, or `CANCEL_AND_REENQUEUE` for periodic work | The old run is stopped and the replacement runs. The task belongs to the unique work name rather than to a run, so it stays up and passes to the replacement. |
+| Cancel | The run is stopped and the task is ended. |
+| The system expires the task | The run is stopped and the record goes back to the queue without burning an attempt. |
+| The UIKit background assertion runs out, about 30 seconds after leaving | Ignored while a continued task is active, so it can't cut the run off. |
+
+A few things that are less obvious:
+
+- Returning to the app ends the task **as unsuccessful**. Ending it as successful was measured to
+  leave the next request accepted but never launched.
+- Every submission gets a fresh identifier, as Apple's long-running article asks. Even so, on a
+  device roughly one request in nine was accepted and never launched. Coming back to the app
+  withdraws any request in that state so it can't get stuck, and the next time the user leaves
+  it's submitted again.
+- `willResignActive` also fires when the user pulls down Control Center or Notification Center, or
+  takes a call, without leaving the app. The Live Activity can appear briefly in those cases, and
+  it's dismissed as soon as the app is active again.
+- Apple's guidance is that continued processing should start from a user action. Here it starts
+  for work the app already had running when the user leaves, which is exactly the situation the API
+  exists for, but it's the argument you'd be making if App Review ever asks.
 
 Rules, enforced in `OneTimeWorkRequest`'s `init`:
 
@@ -236,16 +308,14 @@ Allowed, because the two ask for different things. `expedited` is about **when**
 | | With both set |
 | --- | --- |
 | Android | Schedules an expedited job that then promotes itself to a foreground service. Both apply. |
-| iOS 26+ | Ignores `expedited`. A continued processing task already starts immediately and outranks the ordinary queue. |
-| iOS < 26 | Honours both. Long-running work falls back to the ordinary queue, where expedited still moves it to the front. |
+| iOS | Honours both. Expedited moves the work to the front of the drain, and on iOS 26+ a continued processing task carries it into the background when the user leaves. |
 
 Legal does not mean advisable on Android. Expedited quota is finite and meant for short urgent
 work, so spending it on something about to become a foreground service anyway is usually the wrong
 trade. Work enqueued with no delay while the app is foregrounded starts within seconds regardless.
 
-There is no long-running periodic work. `BGContinuedProcessingTaskRequest` must be submitted on
-behalf of a foregrounded app, so this serves "the user tapped Back Up Now" rather than anything on a
-schedule.
+There is no long-running periodic work. `BGContinuedProcessingTaskRequest` can only be submitted on
+behalf of a foregrounded app, so it can't be started on a schedule while the app is closed.
 
 #### What this needed outside the module
 
@@ -263,8 +333,9 @@ from the other two:
 com.serratocreations.phovo.Phovo.work.continued.*
 ```
 
-Each submission uses a concrete identifier beneath it, derived from the unique work name so the
-launch handler can find its record without keeping any mapping around.
+Each submission uses a fresh concrete identifier beneath it: the sanitised unique work name plus a
+random suffix. The module keeps the mapping from identifier back to work name while the request is
+outstanding.
 
 The wildcard belongs in `Info.plist` and nowhere else. It grants permission to use identifiers
 beneath it and is not itself registerable: passing it to `registerForTaskWithIdentifier` is rejected
@@ -275,9 +346,8 @@ no handler exists, and a raised ObjC exception cannot be caught from Kotlin, so 
 app. It also explains why Apple exempts these registrations from the "before the app finishes
 launching" rule that every other `BGTask` follows.
 
-Each identifier is registered once per process, tracked in `registeredContinuedIds`. Registering the
-same identifier twice is documented to kill the app, and identifiers are deterministic, so
-re-enqueuing the same unique work would otherwise do exactly that.
+Registering the same identifier twice is documented to kill the app. Fresh identifiers make that
+unlikely, and `registeredContinuedIds` rules it out.
 
 ## Observing
 
@@ -347,23 +417,31 @@ Four pieces do the work:
    record per name, so rewriting the array on each change costs less than the bookkeeping a real
    database would need, and it keeps Room and KSP out of this module. A record left in `RUNNING` by a
    process that died mid-run is put back to `ENQUEUED` on load.
-2. `BGTaskScheduler` asks the OS for time. iOS allows one pending request per identifier, so the
-   two ordinary identifiers are "drain whatever is due" handlers rather than one task per job, and
-   a fresh request is submitted after every run.
-3. A foreground drain on `UIApplicationDidBecomeActive`, because iOS grants background time
-   unpredictably and close to never in the simulator. Without it the queue would look permanently
-   stuck while you're developing.
-4. `BGContinuedProcessingTask` on iOS 26+, for records enqueued with a `LongRunningInfo`. These get
-   their own per-record request under a wildcard identifier, and the ordinary drain leaves them
-   alone so the long window is the thing that runs them rather than the thirty-second one.
+2. A single **drain** runs whatever is due, one record at a time. It's requested on every enqueue,
+   cancel and return to the app, and requests are coalesced: while a drain is running, a new
+   request only marks that one more pass is needed, so there's never more than one drain. iOS
+   grants background time unpredictably and close to never in the simulator, so without the drain
+   on app-active the queue would look permanently stuck while you're developing.
+3. `BGTaskScheduler` asks the OS for time for queued work. iOS allows one pending request per
+   identifier, so the two ordinary identifiers are "drain whatever is due" handlers rather than one
+   task per job, and the requests are rebuilt whenever a drain finishes.
+4. `BGContinuedProcessingTask` on iOS 26+, standing in for Android's foreground service. See *How
+   it behaves on iOS* under long-running work.
 
-Every foreground drain holds a UIKit background task assertion
-(`beginBackgroundTaskWithName`). iOS suspends a process a few seconds after the user leaves the
-app, which would freeze a worker mid-run and throw away its progress. The assertion buys roughly
-thirty seconds past that point, usually enough to finish the item in flight and checkpoint it. When
-it expires, the drain is cancelled, and the existing `CancellationException` path puts the record
-back to `ENQUEUED` without burning a retry attempt, exactly as a revoked `BGTask` window does. The
-`BGTask` handlers drain without an assertion, since the task itself is already the execution window.
+Each worker runs in its own child job, so one record can be stopped (by `REPLACE`, a cancel, or its
+continued task expiring) without taking down the rest of the drain. Every request also carries a
+generation, which is how a run that was replaced mid-flight knows not to write its result over the
+new request.
+
+The drain holds a UIKit background task assertion (`beginBackgroundTaskWithName`), taken only once
+it holds the lock, so it only ever covers real work. iOS suspends a process a few seconds after the
+user leaves the app, which would freeze a worker mid-run and throw away its progress. The assertion
+buys roughly thirty seconds past that point, usually enough to finish the item in flight and
+checkpoint it. When it expires with no continued task active, the drain is cancelled and the record
+goes back to `ENQUEUED` without burning a retry attempt, as a revoked `BGTask` window does. With a
+continued task active, the expiry is ignored, since that task is what keeps the process alive. The
+`BGTask` handlers drain without an assertion, because the task itself is already the execution
+window.
 
 `BGContinuedProcessingTask` is iOS 26+ and the deployment target is 15.3. Kotlin/Native does not
 model `@available`, so availability is checked at run time with
@@ -378,7 +456,7 @@ Pending continued-processing requests are cancelled by name, never through
 `IosPhovoWorkManager.registerBackgroundTasks()` must run before the app finishes launching, or
 `BGTaskScheduler` raises. It's called from `IosAppInitializer.initialize()`, which runs inside
 `iOSApp.swift`'s `init()`. Continued processing handlers are the one exception Apple carves out,
-and they register in the same call anyway.
+which is what lets them be registered as the user leaves, just before each request is submitted.
 
 All three identifiers have to be listed in the app's `Info.plist` under
 `BGTaskSchedulerPermittedIdentifiers`, alongside `UIBackgroundModes` of `fetch` and `processing`:
