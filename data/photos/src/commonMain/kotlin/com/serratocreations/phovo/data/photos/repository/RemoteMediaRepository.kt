@@ -7,7 +7,15 @@ import com.serratocreations.phovo.core.model.network.isConnected
 import kotlinx.coroutines.flow.Flow
 
 interface RemoteMediaRepository: MediaRepository {
-    suspend fun syncMedia(media: MediaItemDto, mediaUri: String): NetworkResult<Unit>
+    /**
+     * @param onBytesSent called as the upload body is written, with the running total of bytes sent
+     * for this attempt. It restarts from zero if the upload is retried.
+     */
+    suspend fun syncMedia(
+        media: MediaItemDto,
+        mediaUri: String,
+        onBytesSent: (bytesSent: Long) -> Unit = {}
+    ): NetworkResult<Unit>
 
     /**
      * Observes the connection to the phovo server by periodically pinging the server endpoint.

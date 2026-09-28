@@ -57,6 +57,10 @@ interface PhovoMediaDao {
     @Query("SELECT COUNT(*) FROM MediaItemMetadataEntity WHERE isSynced = FALSE")
     fun observeUnsyncedMediaItemCount(): Flow<Int>
 
+    /** Total size in bytes of every item not yet synced. COALESCE because SUM of no rows is NULL. */
+    @Query("SELECT COALESCE(SUM(size), 0) FROM MediaItemMetadataEntity WHERE isSynced = FALSE")
+    fun observeUnsyncedMediaItemBytes(): Flow<Long>
+
     @Transaction
     @Query("SELECT * FROM MediaItemMetadataEntity WHERE assetHash = :assetHash LIMIT 1")
     suspend fun getMediaItemByAssetHash(

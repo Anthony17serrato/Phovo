@@ -11,6 +11,7 @@ import com.serratocreations.phovo.data.photos.mappers.toMediaItemDto
 import com.serratocreations.phovo.core.model.network.NetworkResult
 import com.serratocreations.phovo.core.model.network.isConnected
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
+import com.serratocreations.phovo.data.photos.repository.model.SyncByteProgress
 import com.serratocreations.phovo.data.photos.repository.model.SyncImage
 import com.serratocreations.phovo.data.photos.repository.model.SyncQueueable
 import com.serratocreations.phovo.data.photos.repository.model.SyncVideo
@@ -25,10 +26,9 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
@@ -41,7 +41,17 @@ import kotlinx.coroutines.yield
 import kotlin.time.Duration.Companion.seconds
 
 interface LocalAndRemoteMediaRepository: LocalMediaRepository, RemoteMediaRepository {
-    val syncProgressState: StateFlow<LocalMediaBackupProgress>
+    /**
+     * Suspends if no sync has started
+     */
+    val syncProgressState: Flow<LocalMediaBackupProgress>
+
+    /**
+     * Backup progress in bytes, for surfaces that need continuous movement, such as a background
+     * task's progress bar. Unlike [syncProgressState] it is live before a sync job starts: the
+     * total comes straight from the database, so it grows while a scan is still finding media.
+     */
+    val syncByteProgress: Flow<SyncByteProgress>
     /**
      * Adds the [syncQueueable] to the sync queue. media added using this API gets picked up by
      * sync workers in a first in first out fashion.
@@ -53,14 +63,14 @@ interface LocalAndRemoteMediaRepository: LocalMediaRepository, RemoteMediaReposi
      * already a sync job running, subsequent calls are dropped and the existing Job object is returned.
      * This API should typically be initiated by a work manager(or equivalent platform API)
      *
-     * @param processingJob a reference to the Job which is scanning for new media, while the scan job is
+     * @param scanJob a reference to the Job which is scanning for new media, while the scan job is
      * active sync workers will remain running.
      * @return a [Deferred] of type [Job]. The deferred is guaranteed to complete promptly as it is only
      * used to avoid a locking algorithm implementation. The Job will allow callers to suspend until
      * the sync completes(Useful for periodic sync workers which must wrap the Job)
      */
     fun initiateSyncJob(
-        processingJob: Job
+        scanJob: Job
     ): Deferred<Job>
 }
 
@@ -88,8 +98,27 @@ class LocalAndRemoteMediaRepositoryImpl(
     //  to avoid any parallelism issues
     private var syncJob: Job? = null
 
-    private val _syncProgressState = MutableStateFlow(LocalMediaBackupProgress())
-    override val syncProgressState = _syncProgressState.asStateFlow()
+    private val _syncProgressState = MutableStateFlow<LocalMediaBackupProgress?>(null)
+    override val syncProgressState = _syncProgressState.filterNotNull()
+
+    /** Bytes of items synced since the current sync job started. */
+    private val syncedBytes = MutableStateFlow(0L)
+
+    /** Bytes written so far for each upload in flight, by asset hash. */
+    private val inFlightBytes = MutableStateFlow<Map<String, Long>>(emptyMap())
+
+    override val syncByteProgress: Flow<SyncByteProgress> = combine(
+        localMediaRepository.observeUnsyncedMediaBytes(),
+        syncedBytes,
+        inFlightBytes
+    ) { unsynced, synced, inFlight ->
+        // Items being uploaded are still unsynced, so they sit in the total until they finish;
+        // only their bytes written so far count towards completed.
+        SyncByteProgress(
+            completedBytes = synced + inFlight.values.sum(),
+            totalBytes = synced + unsynced
+        )
+    }.distinctUntilChanged()
 
     init {
         repeat(SYNC_IMAGE_WORKER_COUNT) {
@@ -131,7 +160,7 @@ class LocalAndRemoteMediaRepositoryImpl(
             }
             log.i { "claimed item hash ${nextUnsyncedItem.mediaItemMetadataEntity.assetHash}" }
             // Do not sync if server is not connected
-            remoteMediaRepository.observeConnectionState().filter { it.isConnected }.first()
+            remoteMediaRepository.observeConnectionState().first { it.isConnected }
             val assetHash = nextUnsyncedItem.mediaItemMetadataEntity.assetHash
             log.i { "starting sync for item hash $assetHash" }
             // Terminate the worker if there is no remaining items to sync
@@ -150,7 +179,7 @@ class LocalAndRemoteMediaRepositoryImpl(
             }
             if (result is NetworkResult.NetworkSuccess) {
                 _syncProgressState.update { currentState ->
-                    currentState.copy(syncedCount = (currentState.syncedCount + 1))
+                    currentState?.copy(syncedCount = (currentState.syncedCount + 1))
                 }
             }
         }
@@ -169,15 +198,26 @@ class LocalAndRemoteMediaRepositoryImpl(
     }
 
     private suspend fun sync(mediaItemEntity: LocalMediaItemWithMetadata): NetworkResult<Unit> {
-        val result = remoteMediaRepository.syncMedia(
-            media = mediaItemEntity.mediaItemMetadataEntity.toMediaItemDto(),
-            mediaUri = mediaItemEntity.localLocation.localUri
-        )
-        log.i { "sync complete result $result hash ${mediaItemEntity.mediaItemMetadataEntity.assetHash}" }
-        if (result is NetworkResult.NetworkSuccess) {
-            localMediaRepository.markAsSynced(
-                assetHash = mediaItemEntity.mediaItemMetadataEntity.assetHash
+        val metadata = mediaItemEntity.mediaItemMetadataEntity
+        val assetHash = metadata.assetHash
+        val result = try {
+            remoteMediaRepository.syncMedia(
+                media = metadata.toMediaItemDto(),
+                mediaUri = mediaItemEntity.localLocation.localUri,
+                onBytesSent = { bytesSent ->
+                    // Capped at the recorded size, so a file whose stored size is out of date
+                    // can't push completed past total.
+                    inFlightBytes.update { it + (assetHash to bytesSent.coerceAtMost(metadata.size)) }
+                }
             )
+        } finally {
+            inFlightBytes.update { it - assetHash }
+        }
+        log.i { "sync complete result $result hash $assetHash" }
+        if (result is NetworkResult.NetworkSuccess) {
+            // Credited before marking synced, so the total never drops ahead of completed.
+            syncedBytes.update { it + metadata.size }
+            localMediaRepository.markAsSynced(assetHash = assetHash)
         }
         log.i { "marked as synced ${mediaItemEntity.mediaItemMetadataEntity.assetHash}" }
         return result
@@ -199,31 +239,38 @@ class LocalAndRemoteMediaRepositoryImpl(
         }
     }
 
-    private suspend fun initiateSyncJobInternal(processingJob: Job) = coroutineScope {
+    private suspend fun initiateSyncJobInternal(scanningJob: Job) = coroutineScope {
         val initialUnsyncedCount = localMediaRepository.getUnsyncedMediaCount()
         _syncProgressState.update { currentProgress ->
             LocalMediaBackupProgress(currentPendingSyncQuantity = initialUnsyncedCount)
         }
+        syncedBytes.value = 0L
 
         val pendingSyncCountObservationJob = observeUnsyncedMediaCount()
             .onEach { unsyncedCount ->
                 _syncProgressState.update { currentProgress ->
-                    currentProgress.copy(currentPendingSyncQuantity = unsyncedCount)
+                    currentProgress?.copy(currentPendingSyncQuantity = unsyncedCount)
                 }
             }.launchIn(this)
         val syncJobs = mutableListOf<Job>()
         repeat(SYNC_IMAGE_WORKER_COUNT) {
-            syncJobs.add(syncWorker(MediaType.Image, processingJob))
+            syncJobs.add(syncWorker(MediaType.Image, scanningJob))
         }
         repeat(SYNC_VIDEO_WORKER_COUNT) {
-            syncJobs.add(syncWorker(MediaType.Video, processingJob))
+            syncJobs.add(syncWorker(MediaType.Video, scanningJob))
+        }
+        scanningJob.join()
+        _syncProgressState.update { currentProgress ->
+            currentProgress?.copy(
+                isScanningComplete = true
+            )
         }
         joinAll(*syncJobs.toTypedArray())
         pendingSyncCountObservationJob.cancel()
 
         val finalUnsyncedCount = localMediaRepository.getUnsyncedMediaCount()
         _syncProgressState.update { currentProgress ->
-            currentProgress.copy(
+            currentProgress?.copy(
                 currentPendingSyncQuantity = finalUnsyncedCount,
                 isSyncComplete = true
             )
@@ -231,7 +278,7 @@ class LocalAndRemoteMediaRepositoryImpl(
     }
 
     override fun initiateSyncJob(
-        processingJob: Job
+        scanJob: Job
     ): Deferred<Job> =
         applicationScope.async(singleThreadDefaultDispatcher) {
             syncJob?.let { syncJobNotNull ->
@@ -243,7 +290,7 @@ class LocalAndRemoteMediaRepositoryImpl(
             syncJob?.cancel()
             // Job can be launched with full parallelism support since the need for thread safety has passed
             return@async launch(defaultDispatcher) {
-                initiateSyncJobInternal(processingJob)
+                initiateSyncJobInternal(scanJob)
             }.apply {
                 syncJob = this
             }
@@ -251,8 +298,9 @@ class LocalAndRemoteMediaRepositoryImpl(
 
     override suspend fun syncMedia(
         media: MediaItemDto,
-        mediaUri: String
-    ) = remoteMediaRepository.syncMedia(media, mediaUri)
+        mediaUri: String,
+        onBytesSent: (bytesSent: Long) -> Unit
+    ) = remoteMediaRepository.syncMedia(media, mediaUri, onBytesSent)
 
     override fun observeConnectionState() = remoteMediaRepository.observeConnectionState()
 
@@ -284,6 +332,8 @@ class LocalAndRemoteMediaRepositoryImpl(
         localMediaRepository.addOrUpdateLocalMediaItem(localMediaEntity)
 
     override fun observeUnsyncedMediaCount() = localMediaRepository.observeUnsyncedMediaCount()
+
+    override fun observeUnsyncedMediaBytes() = localMediaRepository.observeUnsyncedMediaBytes()
 
     override suspend fun getUnsyncedMediaCount() = localMediaRepository.getUnsyncedMediaCount()
 

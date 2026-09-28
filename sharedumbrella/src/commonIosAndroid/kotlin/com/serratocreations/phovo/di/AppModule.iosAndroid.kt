@@ -12,6 +12,13 @@ abstract class IosAndroidApplicationPlatformModuleFetcher: ApplicationPlatformMo
     override fun getModule(): Module = module {
         includes(super.getModule(), getPermissionsDataModule(), getWorkManagerModule())
 
-        single { WorkerRegistration(MEDIA_SYNC_WORKER_ID) { MediaSyncWorker(get()) } }
+        single {
+            WorkerRegistration(MEDIA_SYNC_WORKER_ID) {
+                MediaSyncWorker(
+                    get(),
+                    get()
+                )
+            }
+        }
     }
 }

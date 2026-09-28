@@ -16,6 +16,17 @@ abstract class PhovoWorker {
      */
     internal var progressReporter: WorkProgressReporter? = null
 
+    /**
+     * The latest value passed to [setProgress], kept even while no progress surface is attached.
+     *
+     * On iOS the surface only exists while the user is away from the app, and a worker typically
+     * reports only when its numbers change. Without this, a surface attached mid-run would start
+     * from nothing and stay there until the next change, which after the work has gone quiet may
+     * never come.
+     */
+    @kotlin.concurrent.Volatile
+    internal var lastReportedProgress: ReportedProgress? = null
+
     abstract suspend fun doWork(): WorkResult
 
     /**
@@ -28,9 +39,13 @@ abstract class PhovoWorker {
      */
     protected suspend fun setProgress(completed: Long, total: Long) {
         require(completed >= 0 && total >= 0) { "Progress cannot be negative." }
+        lastReportedProgress = ReportedProgress(completed, total)
         progressReporter?.report(completed, total)
     }
 }
+
+/** A value passed to [PhovoWorker.setProgress]. */
+internal data class ReportedProgress(val completed: Long, val total: Long)
 
 /** How [PhovoWorker.setProgress] reaches the platform's progress surface. */
 internal fun interface WorkProgressReporter {

@@ -40,7 +40,10 @@ internal class WorkNotifications(private val context: Context) {
             .setOnlyAlertOnce(true)
 
         if (total > 0) {
-            builder.setProgress(total.toInt(), completed.coerceAtMost(total).toInt(), false)
+            // Notification progress is an Int, and byte totals pass Int.MAX_VALUE at about 2 GB,
+            // so report a fraction on a fixed scale instead of the raw counts.
+            val scaled = (completed.coerceIn(0, total) * PROGRESS_SCALE / total).toInt()
+            builder.setProgress(PROGRESS_SCALE.toInt(), scaled, false)
         } else {
             // Nothing has reported a total yet, so show an indeterminate bar rather than 0%.
             builder.setProgress(0, 0, true)
@@ -65,6 +68,8 @@ internal class WorkNotifications(private val context: Context) {
         const val CHANNEL_ID = "phovo.work.longrunning"
         const val CHANNEL_NAME = "Background sync"
         const val NOTIFICATION_ID = 0x50484F56 // "PHOV"
+        /** Resolution of the notification's progress bar: tenths of a percent. */
+        const val PROGRESS_SCALE = 1000L
         val ICON = android.R.drawable.stat_sys_upload
     }
 }

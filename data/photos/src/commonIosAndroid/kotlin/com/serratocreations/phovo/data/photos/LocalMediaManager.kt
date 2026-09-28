@@ -3,24 +3,22 @@ package com.serratocreations.phovo.data.photos
 import com.serratocreations.phovo.core.common.util.logTimeToComplete
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.core.model.network.isConnected
-import com.serratocreations.phovo.data.permissions.PermissionRepository
-import com.serratocreations.phovo.data.photos.local.BackupCompleteLocal
 import com.serratocreations.phovo.data.photos.local.LocalMediaProcessor
-import com.serratocreations.phovo.data.photos.local.LocalMediaState
-import com.serratocreations.phovo.data.photos.local.Scanning
 import com.serratocreations.phovo.data.photos.repository.LocalAndRemoteMediaRepository
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
+import com.serratocreations.phovo.data.photos.repository.model.SyncByteProgress
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.consumeAsFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class LocalMediaManager(
@@ -34,8 +32,19 @@ class LocalMediaManager(
     }
 
     private val log = logger.withTag(TAG)
-    private val _localMediaState = MutableStateFlow<LocalMediaState>(Scanning)
-    val localMediaState = _localMediaState.asStateFlow()
+
+    // TODO this needs to converge with sync progress state
+    /**
+     * Backup progress in bytes. Sync is usually faster than the scan, so while the scan is still
+     * running the total carries one extra byte: sync catching up with everything found so far then
+     * reads as just short of done rather than done.
+     */
+    val backupByteProgress: Flow<SyncByteProgress> = combine(
+        localAndRemoteMediaRepository.syncByteProgress,
+        localAndRemoteMediaRepository.syncProgressState.map { it.isScanningComplete }
+    ) { bytes, isScanningComplete ->
+        if (isScanningComplete.not()) bytes.copy(totalBytes = bytes.totalBytes + 1) else bytes
+    }.distinctUntilChanged()
 
     // TODO this logic needs to be improved once periodic sync is being implemented
     //  https://github.com/Anthony17serrato/Phovo/issues/124
@@ -54,6 +63,7 @@ class LocalMediaManager(
         // Await server configured before starting sync job
         localAndRemoteMediaRepository.observeConnectionState().first { it.isConnected }
         syncJob(processingJob)
+        processingJob.join()
     }
 
     private suspend fun handleProcessedMediaItem(mediaItem: MediaItem) {
@@ -61,30 +71,14 @@ class LocalMediaManager(
     }
 
     // Syncs any local media which is still pending sync
-    private fun CoroutineScope.syncJob(processingJob: Job) {
+    private fun CoroutineScope.syncJob(scanJob: Job) =
         launch {
-            launch {
-                val syncJob = localAndRemoteMediaRepository.initiateSyncJob(processingJob).await()
-                log.i { "syncJob $syncJob" }
-                logTimeToComplete(apiTag = "$TAG:syncJob") {
-                    syncJob.join()
-                }
+            val syncJob = localAndRemoteMediaRepository.initiateSyncJob(scanJob).await()
+            log.i { "syncJob $syncJob" }
+            logTimeToComplete(apiTag = "$TAG:syncJob") {
+                syncJob.join()
             }
-            localAndRemoteMediaRepository.syncProgressState.onEach { syncStatusUpdate ->
-                _localMediaState.update { currentState ->
-                    if (syncStatusUpdate.isSyncComplete) {
-                        BackupCompleteLocal(
-                            backedUpQuantity = syncStatusUpdate.syncedCount,
-                            // TODO: Implement handling of failed items
-                            failureQuantity = 0
-                        )
-                    } else {
-                        syncStatusUpdate
-                    }
-                }
-            }.launchIn(this)
         }
-    }
 
     private fun CoroutineScope.processJob(
         localItems: List<MediaItem>

@@ -12,8 +12,8 @@ package com.serratocreations.phovo.core.model.network
  * to this hierarchy are not breaking changes.
  */
 sealed interface ServerConnectionState {
-    /** No server is configured, or the first reachability check has not completed yet. */
-    data object Unknown : ServerConnectionState
+    /** No server is configured */
+    data object NotConfigured : ServerConnectionState
 
     /** A reachability check is currently in flight. */
     data object Checking : ServerConnectionState

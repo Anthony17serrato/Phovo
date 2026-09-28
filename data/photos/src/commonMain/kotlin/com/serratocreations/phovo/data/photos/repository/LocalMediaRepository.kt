@@ -29,6 +29,8 @@ interface LocalMediaRepository: MediaRepository {
     // TODO Repository APIs should not expose DAO data models
     suspend fun addOrUpdateLocalMediaItem(localMediaEntity: LocalMediaEntity)
     fun observeUnsyncedMediaCount(): Flow<Int>
+    /** Total size in bytes of every item not yet synced. Grows as a scan finds new media. */
+    fun observeUnsyncedMediaBytes(): Flow<Long>
     suspend fun getUnsyncedMediaCount(): Int
     suspend fun updateMediaItem(mediaItemMetadataEntity: MediaItemMetadataEntity)
     suspend fun getNextUnsyncedItemExcludingUuidSet(
@@ -107,6 +109,9 @@ class LocalMediaRepositoryImpl(
 
     override fun observeUnsyncedMediaCount(): Flow<Int> =
         localMediaDataSource.observeUnsyncedMediaItemCount()
+
+    override fun observeUnsyncedMediaBytes(): Flow<Long> =
+        localMediaDataSource.observeUnsyncedMediaItemBytes()
 
     override suspend fun updateMediaItem(mediaItemMetadataEntity: MediaItemMetadataEntity) {
         localMediaDataSource.update(mediaItemMetadataEntity)

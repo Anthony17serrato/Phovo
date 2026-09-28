@@ -12,19 +12,20 @@ import com.serratocreations.phovo.core.model.network.isConnected
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
 import kotlin.time.Duration.Companion.seconds
 
@@ -41,6 +42,18 @@ class RemoteMediaRepositoryImpl(
         private val CHECK_ALIVE_DELAY = 15.seconds
     }
 
+    private val heartBeatEventFlow = MutableSharedFlow<Unit>()
+
+    init {
+        applicationScope.launch {
+            while (this.isActive) {
+                yield()
+                heartBeatEventFlow.emit(Unit)
+                delay(CHECK_ALIVE_DELAY)
+            }
+        }
+    }
+
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun phovoMediaFlow(): Flow<List<MediaItem>> {
         return serverConfigRepository.observeServerConfig().flatMapLatest {
@@ -53,7 +66,8 @@ class RemoteMediaRepositoryImpl(
 
     override suspend fun syncMedia(
         media: MediaItemDto,
-        mediaUri: String
+        mediaUri: String,
+        onBytesSent: (bytesSent: Long) -> Unit
     ): NetworkResult<Unit> {
         val baseUrl = serverConfigRepository.observeServerConfig().first()?.serverBaseUrlString
         if (baseUrl == null) {
@@ -67,39 +81,35 @@ class RemoteMediaRepositoryImpl(
             mediaUri = mediaUri,
             baseUrl = baseUrl,
             retryPolicy = NetworkCallRetryPolicy.RetryAfterLambda {
-                // drop current state to ensure cached connection status is not used
-                connectionState.drop(1).first { it.isConnected }
-            }
+                observeConnectionState().first { it.isConnected }
+            },
+            onBytesSent = onBytesSent
         )
     }
 
     // TODO: Most likely there is a more sophisticated networking method to check alive
     //  then pinging every X seconds(Investigate)
+    /**
+     * Do not use directly, use [observeConnectionState] which includes on start logic
+     */
     @OptIn(ExperimentalCoroutinesApi::class)
-    private val connectionState: Flow<ServerConnectionState> =
-        serverConfigRepository.observeServerConfig()
-            .flatMapLatest { config ->
-                if (config == null) {
-                    // Not configured is distinct from unreachable: a client that has never been
-                    // paired does not have a problem to report.
-                    flowOf<ServerConnectionState>(ServerConnectionState.Unknown)
-                } else {
-                    flow<ServerConnectionState> {
-                        emit(ServerConnectionState.Checking)
-                        while (currentCoroutineContext().isActive) {
-                            yield()
-                            emit(checkConnection(config.serverBaseUrlString, config.serverId))
-                            delay(CHECK_ALIVE_DELAY)
-                        }
-                    }
-                }
+    private val connectionState: SharedFlow<ServerConnectionState> =
+        combine(
+            heartBeatEventFlow.onStart { emit(Unit) },
+            serverConfigRepository.observeServerConfig()
+        ) { _, config ->
+            if (config == null) {
+                // Not configured is distinct from unreachable: a client that has never been
+                // paired does not have a problem to report.
+                ServerConnectionState.NotConfigured
+            } else {
+                checkConnection(config.serverBaseUrlString, config.serverId)
             }
-            // The poll re-emits the same state every CHECK_ALIVE_DELAY; only changes are interesting.
-            .distinctUntilChanged()
+        }
             .shareIn(
                 scope = applicationScope,
                 started = SharingStarted.Lazily,
-                replay = 1
+                replay = 0
             )
 
     private suspend fun checkConnection(
@@ -130,5 +140,9 @@ class RemoteMediaRepositoryImpl(
         }
 
 
-    override fun observeConnectionState(): Flow<ServerConnectionState> = connectionState
+    override fun observeConnectionState(): Flow<ServerConnectionState> =
+        connectionState.onStart {
+            heartBeatEventFlow.emit(Unit)
+            emit(ServerConnectionState.Checking)
+        }.distinctUntilChanged()
 }
