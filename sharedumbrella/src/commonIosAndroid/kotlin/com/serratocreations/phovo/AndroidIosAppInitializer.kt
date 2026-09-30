@@ -77,15 +77,18 @@ abstract class AndroidIosAppInitializer(
 
 class MediaSyncWorker(
     private val getBackupStatusUseCase: GetBackupStatusUseCase,
-    private val localMediaManager: LocalMediaManager
+    private val localMediaManager: LocalMediaManager,
+    private val localAndRemoteMediaRepository: LocalAndRemoteMediaRepository,
 ) : PhovoWorker() {
     @OptIn(FlowPreview::class)
     override suspend fun doWork(): WorkResult {
         return coroutineScope {
             launch {
-                localMediaManager.backupByteProgress
+                localAndRemoteMediaRepository.syncByteProgress
                     .sample(PROGRESS_REPORT_INTERVAL)
-                    .collect { setProgress(completed = it.completedBytes, total = it.totalBytes) }
+                    .collect {
+                        setProgress(completed = it.completedBytes, total = it.totalBytes)
+                    }
             }
             val serverOffline = async {
                 getBackupStatusUseCase().first { status ->

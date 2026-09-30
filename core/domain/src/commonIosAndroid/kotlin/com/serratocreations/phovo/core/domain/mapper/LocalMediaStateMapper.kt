@@ -1,7 +1,7 @@
 package com.serratocreations.phovo.core.domain.mapper
 
 import com.serratocreations.phovo.core.domain.model.BackupStatus
-import com.serratocreations.phovo.data.photos.local.LocalMediaBackupProgress
+import com.serratocreations.phovo.data.photos.repository.model.LocalMediaBackupProgress
 
 fun LocalMediaBackupProgress.toBackupStatus(): BackupStatus {
     return if (this.isScanningComplete.not() && this.totalSyncJobQuantity == 0) {

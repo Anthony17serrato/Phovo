@@ -6,10 +6,10 @@ import com.serratocreations.phovo.core.database.entities.MediaItemMetadataEntity
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.core.model.MediaType
 import com.serratocreations.phovo.core.model.network.MediaItemDto
-import com.serratocreations.phovo.data.photos.local.LocalMediaBackupProgress
 import com.serratocreations.phovo.data.photos.mappers.toMediaItemDto
 import com.serratocreations.phovo.core.model.network.NetworkResult
 import com.serratocreations.phovo.core.model.network.isConnected
+import com.serratocreations.phovo.data.photos.repository.model.LocalMediaBackupProgress
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import com.serratocreations.phovo.data.photos.repository.model.SyncByteProgress
 import com.serratocreations.phovo.data.photos.repository.model.SyncImage
@@ -32,6 +32,7 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
@@ -101,24 +102,9 @@ class LocalAndRemoteMediaRepositoryImpl(
     private val _syncProgressState = MutableStateFlow<LocalMediaBackupProgress?>(null)
     override val syncProgressState = _syncProgressState.filterNotNull()
 
-    /** Bytes of items synced since the current sync job started. */
-    private val syncedBytes = MutableStateFlow(0L)
-
-    /** Bytes written so far for each upload in flight, by asset hash. */
-    private val inFlightBytes = MutableStateFlow<Map<String, Long>>(emptyMap())
-
-    override val syncByteProgress: Flow<SyncByteProgress> = combine(
-        localMediaRepository.observeUnsyncedMediaBytes(),
-        syncedBytes,
-        inFlightBytes
-    ) { unsynced, synced, inFlight ->
-        // Items being uploaded are still unsynced, so they sit in the total until they finish;
-        // only their bytes written so far count towards completed.
-        SyncByteProgress(
-            completedBytes = synced + inFlight.values.sum(),
-            totalBytes = synced + unsynced
-        )
-    }.distinctUntilChanged()
+    override val syncByteProgress: Flow<SyncByteProgress> = syncProgressState
+        .map { it.syncByteProgress }
+        .distinctUntilChanged()
 
     init {
         repeat(SYNC_IMAGE_WORKER_COUNT) {
@@ -207,16 +193,31 @@ class LocalAndRemoteMediaRepositoryImpl(
                 onBytesSent = { bytesSent ->
                     // Capped at the recorded size, so a file whose stored size is out of date
                     // can't push completed past total.
-                    inFlightBytes.update { it + (assetHash to bytesSent.coerceAtMost(metadata.size)) }
+                    _syncProgressState.update { currentState ->
+                        currentState?.let {
+                            currentState.copy(
+                                inFlightBytes = currentState.inFlightBytes +
+                                    (assetHash to bytesSent.coerceAtMost(metadata.size))
+                            )
+                        } ?: currentState
+                    }
                 }
             )
         } finally {
-            inFlightBytes.update { it - assetHash }
+            _syncProgressState.update { currentState ->
+                currentState?.let {
+                    currentState.copy(inFlightBytes = currentState.inFlightBytes - assetHash)
+                } ?: currentState
+            }
         }
         log.i { "sync complete result $result hash $assetHash" }
         if (result is NetworkResult.NetworkSuccess) {
             // Credited before marking synced, so the total never drops ahead of completed.
-            syncedBytes.update { it + metadata.size }
+            _syncProgressState.update { currentState ->
+                currentState?.let {
+                    currentState.copy(syncedBytes = currentState.syncedBytes + metadata.size)
+                } ?: currentState
+            }
             localMediaRepository.markAsSynced(assetHash = assetHash)
         }
         log.i { "marked as synced ${mediaItemEntity.mediaItemMetadataEntity.assetHash}" }
@@ -241,10 +242,13 @@ class LocalAndRemoteMediaRepositoryImpl(
 
     private suspend fun initiateSyncJobInternal(scanningJob: Job) = coroutineScope {
         val initialUnsyncedCount = localMediaRepository.getUnsyncedMediaCount()
-        _syncProgressState.update { currentProgress ->
-            LocalMediaBackupProgress(currentPendingSyncQuantity = initialUnsyncedCount)
+        _syncProgressState.update {
+            LocalMediaBackupProgress(
+                currentPendingSyncQuantity = initialUnsyncedCount,
+                // TODO this need to be observable and have a converged API with
+                unsyncedBytes = localMediaRepository.observeUnsyncedMediaBytes().first()
+            )
         }
-        syncedBytes.value = 0L
 
         val pendingSyncCountObservationJob = observeUnsyncedMediaCount()
             .onEach { unsyncedCount ->
