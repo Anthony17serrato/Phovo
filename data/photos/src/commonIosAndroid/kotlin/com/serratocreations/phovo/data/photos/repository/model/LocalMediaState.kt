@@ -15,9 +15,8 @@ data class LocalMediaBackupProgress(
     val totalSyncJobQuantity: Int = (currentPendingSyncQuantity + syncedCount)
     val syncByteProgress: SyncByteProgress = SyncByteProgress(
         completedBytes = syncedBytes + inFlightBytes.values.sum(),
-        // TODO this solution is a bit hacky to prevent 100% completion before scanning
+        // TODO this + 1 solution is a bit hacky to prevent 100% completion before scanning
         //  completes
-        // TODO this should be [unsyncedBytes] + [syncedBytes]
-        totalBytes = if (isScanningComplete.not()) unsyncedBytes + 1 else unsyncedBytes
+        totalBytes = (unsyncedBytes + syncedBytes).let { if (isScanningComplete.not()) it + 1 else it }
     )
 }

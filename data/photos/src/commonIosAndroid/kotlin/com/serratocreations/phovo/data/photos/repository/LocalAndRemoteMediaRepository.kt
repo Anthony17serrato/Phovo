@@ -241,19 +241,21 @@ class LocalAndRemoteMediaRepositoryImpl(
     }
 
     private suspend fun initiateSyncJobInternal(scanningJob: Job) = coroutineScope {
-        val initialUnsyncedCount = localMediaRepository.getUnsyncedMediaCount()
+        val initialUnsynced = observeUnsyncedMedia().first()
         _syncProgressState.update {
             LocalMediaBackupProgress(
-                currentPendingSyncQuantity = initialUnsyncedCount,
-                // TODO this need to be observable and have a converged API with
-                unsyncedBytes = localMediaRepository.observeUnsyncedMediaBytes().first()
+                currentPendingSyncQuantity = initialUnsynced.count,
+                unsyncedBytes = initialUnsynced.bytes
             )
         }
 
-        val pendingSyncCountObservationJob = observeUnsyncedMediaCount()
-            .onEach { unsyncedCount ->
+        val unsyncedObservationJob = observeUnsyncedMedia()
+            .onEach { unsynced ->
                 _syncProgressState.update { currentProgress ->
-                    currentProgress?.copy(currentPendingSyncQuantity = unsyncedCount)
+                    currentProgress?.copy(
+                        currentPendingSyncQuantity = unsynced.count,
+                        unsyncedBytes = unsynced.bytes
+                    )
                 }
             }.launchIn(this)
         val syncJobs = mutableListOf<Job>()
@@ -270,12 +272,13 @@ class LocalAndRemoteMediaRepositoryImpl(
             )
         }
         joinAll(*syncJobs.toTypedArray())
-        pendingSyncCountObservationJob.cancel()
+        unsyncedObservationJob.cancel()
 
-        val finalUnsyncedCount = localMediaRepository.getUnsyncedMediaCount()
+        val finalUnsynced = observeUnsyncedMedia().first()
         _syncProgressState.update { currentProgress ->
             currentProgress?.copy(
-                currentPendingSyncQuantity = finalUnsyncedCount,
+                currentPendingSyncQuantity = finalUnsynced.count,
+                unsyncedBytes = finalUnsynced.bytes,
                 isSyncComplete = true
             )
         }
@@ -335,11 +338,7 @@ class LocalAndRemoteMediaRepositoryImpl(
     override suspend fun addOrUpdateLocalMediaItem(localMediaEntity: LocalMediaEntity) =
         localMediaRepository.addOrUpdateLocalMediaItem(localMediaEntity)
 
-    override fun observeUnsyncedMediaCount() = localMediaRepository.observeUnsyncedMediaCount()
-
-    override fun observeUnsyncedMediaBytes() = localMediaRepository.observeUnsyncedMediaBytes()
-
-    override suspend fun getUnsyncedMediaCount() = localMediaRepository.getUnsyncedMediaCount()
+    override fun observeUnsyncedMedia() = localMediaRepository.observeUnsyncedMedia()
 
     override suspend fun updateMediaItem(mediaItemMetadataEntity: MediaItemMetadataEntity) =
         localMediaRepository.updateMediaItem(mediaItemMetadataEntity)
