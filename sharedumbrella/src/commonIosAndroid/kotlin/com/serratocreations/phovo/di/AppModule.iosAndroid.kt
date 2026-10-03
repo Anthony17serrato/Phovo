@@ -17,6 +17,7 @@ abstract class IosAndroidApplicationPlatformModuleFetcher: ApplicationPlatformMo
                 MediaSyncWorker(
                     get(),
                     get(),
+                    get(),
                     get()
                 )
             }

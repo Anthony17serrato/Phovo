@@ -50,7 +50,8 @@ internal actual fun getAndroidDesktopIosModules(): Module = module {
             localAndRemoteMediaRepository = get(),
             localMediaProcessor = get(),
             appScope = get(APPLICATION_SCOPE),
-            logger = get()
+            logger = get(),
+            cpuBudget = get()
         )
     } binds arrayOf(
         LocalMediaManager::class
