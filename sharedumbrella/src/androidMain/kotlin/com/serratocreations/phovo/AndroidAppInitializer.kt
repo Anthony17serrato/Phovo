@@ -1,22 +1,28 @@
 package com.serratocreations.phovo
 
-import com.serratocreations.phovo.data.photos.LocalMediaManager
+import com.serratocreations.phovo.core.workmanager.PhovoWorkManager
+import com.serratocreations.phovo.data.permissions.PermissionRepository
+import com.serratocreations.phovo.data.photos.repository.LocalAndRemoteMediaRepository
 import com.serratocreations.phovo.data.server.ServerAddressResolver
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 
 class AndroidAppInitializer(
-    private val applicationScope: CoroutineScope,
-    private val localMediaManager: LocalMediaManager,
-    private val serverAddressResolver: ServerAddressResolver
-): AndroidDesktopIosAppInitializer() {
+    applicationScope: CoroutineScope,
+    serverAddressResolver: ServerAddressResolver,
+    localAndRemoteMediaRepository: LocalAndRemoteMediaRepository,
+    permissionRepository: PermissionRepository,
+    workManager: PhovoWorkManager
+): AndroidIosAppInitializer(
+    applicationScope,
+    serverAddressResolver,
+    localAndRemoteMediaRepository,
+    permissionRepository,
+    workManager
+) {
 
     override fun initialize() {
         super.initialize()
         // Android specific initialization
-        serverAddressResolver.start()
-        applicationScope.launch {
-            localMediaManager.initMediaProcessing()
-        }
+
     }
 }

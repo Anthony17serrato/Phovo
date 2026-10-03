@@ -48,7 +48,8 @@ fun BackupStatus.toBackupStatus(
             syncedCount = this.syncedCount,
             totalCount = this.totalSyncJobQuantity
         )
-        BackupStatus.Scanning -> PreparingBackupUiModel
+        // TODO these should have distinct UI models
+        BackupStatus.Scanning, BackupStatus.Initializing -> PreparingBackupUiModel
         BackupStatus.ServerOffline -> ServerOfflineUiModel
     }
 }

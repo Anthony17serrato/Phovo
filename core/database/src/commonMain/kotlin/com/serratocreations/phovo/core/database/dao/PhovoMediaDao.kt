@@ -13,6 +13,7 @@ import com.serratocreations.phovo.core.database.entities.LocalMediaItemWithMetad
 import com.serratocreations.phovo.core.database.entities.MediaItemWithMetadata
 import com.serratocreations.phovo.core.database.entities.ProcessingMediaEntity
 import com.serratocreations.phovo.core.database.entities.SyncLogEntity
+import com.serratocreations.phovo.core.database.entities.UnsyncedMediaSummary
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.core.model.MediaType
 import kotlinx.coroutines.flow.Flow
@@ -54,8 +55,12 @@ interface PhovoMediaDao {
     @Query("SELECT * FROM MediaItemMetadataEntity ORDER BY timeStampUtcMs DESC")
     fun observeAllDescendingTimestamp(): Flow<List<MediaItemWithMetadata>>
 
-    @Query("SELECT COUNT(*) FROM MediaItemMetadataEntity WHERE isSynced = FALSE")
-    fun observeUnsyncedMediaItemCount(): Flow<Int>
+    /** COALESCE because SUM of no rows is NULL. */
+    @Query(
+        "SELECT COUNT(*) AS count, COALESCE(SUM(size), 0) AS bytes " +
+            "FROM MediaItemMetadataEntity WHERE isSynced = FALSE"
+    )
+    fun observeUnsyncedMediaSummary(): Flow<UnsyncedMediaSummary>
 
     @Transaction
     @Query("SELECT * FROM MediaItemMetadataEntity WHERE assetHash = :assetHash LIMIT 1")

@@ -31,13 +31,27 @@ data class OneTimeWorkRequest(
      *
      * Expedited work cannot be delayed and cannot ask for power related constraints. See the
      * [init] block.
+     *
+     * Combining this with [longRunning] is allowed, because the two ask for different things:
+     * this one is about when the work starts, [longRunning] is about how long it may run once
+     * started. What each platform makes of the pair:
+     *
+     *  - **Android** schedules an expedited job that then promotes itself to a foreground service.
+     *    Both apply. Worth weighing though: expedited quota is finite and meant for short urgent
+     *    work, so spending it on something that is about to become a foreground service anyway is
+     *    usually a poor trade.
+     *  - **iOS 26+** ignores it. A continued processing task already starts immediately and
+     *    outranks the ordinary queue, so there is nothing left for this flag to ask for.
+     *  - **iOS below 26** honours it. Long-running work falls back to the ordinary queue there,
+     *    where being expedited still moves it to the front.
      */
     val expedited: Boolean = false,
     /**
      * Run this as long-running work with a user-visible progress surface, lifting the platform's
      * ordinary execution deadline. See [LongRunningInfo] for what each platform does with it.
      *
-     * Long-running work already starts promptly, so it cannot also be [expedited].
+     * This says nothing about when the work starts, only how long it may run. See [expedited] for
+     * what combining the two means on each platform.
      */
     val longRunning: LongRunningInfo? = null,
     override val backoffPolicy: BackoffPolicy = BackoffPolicy.EXPONENTIAL,
@@ -56,10 +70,6 @@ data class OneTimeWorkRequest(
                 "Expedited work only supports network constraints, but '$workerId' asked for " +
                     "requiresCharging=${constraints.requiresCharging} " +
                     "requiresBatteryNotLow=${constraints.requiresBatteryNotLow}."
-            }
-            require(longRunning == null) {
-                "Long-running work already starts promptly, so '$workerId' should not also be " +
-                    "expedited. Drop one of the two."
             }
         }
         if (longRunning != null) {

@@ -15,6 +15,7 @@ import com.serratocreations.phovo.data.photos.network.util.networkResultCallWrap
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.plugins.onUpload
 import io.ktor.client.plugins.timeout
 import io.ktor.client.request.get
 import io.ktor.client.request.header
@@ -84,7 +85,8 @@ abstract class MediaNetworkDataSource(
         mediaItemDto: MediaItemDto,
         mediaUri: String,
         baseUrl: BaseUrl,
-        retryPolicy: NetworkCallRetryPolicy
+        retryPolicy: NetworkCallRetryPolicy,
+        onBytesSent: (bytesSent: Long) -> Unit = {}
     ): NetworkResult<Unit> = networkResultCallWrapper(
         retryPolicy = retryPolicy
     ) {
@@ -101,26 +103,32 @@ abstract class MediaNetworkDataSource(
             return@networkResultCallWrapper NetworkResult.NetworkSuccess(Unit)
         }
 
-        return@networkResultCallWrapper chunkedUpload(mediaItemDto, mediaUri, baseUrl)
+        return@networkResultCallWrapper chunkedUpload(mediaItemDto, mediaUri, baseUrl, onBytesSent)
     }
 
     protected abstract suspend fun chunkedUpload(
         mediaItemDto: MediaItemDto,
         mediaUri: String,
-        baseUrl: BaseUrl
+        baseUrl: BaseUrl,
+        onBytesSent: (bytesSent: Long) -> Unit
     ): NetworkResult<Unit>
 
     protected suspend fun syncChunk(
         chunk: ByteReadChannel,
         fileName: String,
         partIndex: String,
-        baseUrl: BaseUrl
+        baseUrl: BaseUrl,
+        onBytesSent: (bytesSent: Long) -> Unit = {}
     ): HttpResponse {
         val chunkUrl = baseUrl / ApiEndpoints.Upload.CHUNK_API
         return client.post(chunkUrl) {
             header("X-File-Name", fileName)
             header("X-Chunk-Index", partIndex)
             setBody(chunk)
+            // Reports as the body is written, so progress moves during a single large upload
+            // rather than only when a whole file finishes. Chunking is currently disabled, so
+            // without this one big video is one request with no progress at all.
+            onUpload { bytesSentTotal, _ -> onBytesSent(bytesSentTotal) }
         }
     }
 

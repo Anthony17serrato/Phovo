@@ -49,9 +49,9 @@ internal actual fun getAndroidDesktopIosModules(): Module = module {
         LocalMediaManager(
             localAndRemoteMediaRepository = get(),
             localMediaProcessor = get(),
-            permissionRepository = get(),
             appScope = get(APPLICATION_SCOPE),
-            logger = get()
+            logger = get(),
+            cpuBudget = get()
         )
     } binds arrayOf(
         LocalMediaManager::class

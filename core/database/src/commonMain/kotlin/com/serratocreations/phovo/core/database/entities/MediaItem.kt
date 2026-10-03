@@ -87,3 +87,11 @@ data class LocalMediaItemWithMetadata(
     @Embedded val mediaItemMetadataEntity: MediaItemMetadataEntity,
     @Embedded(prefix = "local_") val localLocation: LocalMediaEntity
 )
+
+/**
+ * Count and total size in bytes of every item not yet synced
+ */
+data class UnsyncedMediaSummary(
+    val count: Int,
+    val bytes: Long
+)

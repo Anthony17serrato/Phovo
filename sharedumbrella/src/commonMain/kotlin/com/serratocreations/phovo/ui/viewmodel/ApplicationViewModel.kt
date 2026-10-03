@@ -38,7 +38,7 @@ class ApplicationViewModel(
                     ServerConnectionState.IdentityMismatch -> ServerStatusColor.Red
                     // No server configured, or the first check has not landed. Red here would
                     // report a problem the user does not have.
-                    ServerConnectionState.Unknown,
+                    ServerConnectionState.NotConfigured,
                     ServerConnectionState.Checking -> ServerStatusColor.Unavailable
                 }
                 _applicationUiState.update { uiState ->
