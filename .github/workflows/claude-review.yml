@@ -1,0 +1,57 @@
+name: Claude PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review, reopened]
+
+# A new push cancels the review still running for the same PR.
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    # Skip drafts, and skip fork PRs: GitHub withholds secrets from them, so the action can't authenticate.
+    if: >-
+      !github.event.pull_request.draft &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Review PR
+        uses: anthropics/claude-code-action@v1
+        with:
+          # Set one of these as a repo secret; the other stays empty.
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            Review this pull request. Phovo is a Kotlin Multiplatform app (Android, iOS,
+            desktop JVM, wasm) built with Compose Multiplatform, Koin and Room.
+
+            Focus on correctness bugs first: logic errors, wrong expect/actual behavior
+            across platforms, coroutine and lifecycle misuse, threading issues, and
+            resource leaks. Then flag missing tests for new logic in commonMain.
+
+            Project rules to check:
+            - The iOS deployment target is 15.3. Any iOS API newer than that must be
+              guarded at runtime.
+            - Prefer Kotlin/Native platform bindings over Swift interop on iOS.
+
+            Start with `gh pr view --comments` so you don't repeat feedback that has
+            already been given. Put specific issues in inline comments. Leave one short
+            top-level summary comment. If there's nothing worth flagging, say so in one line.
+            Don't comment on style or formatting.
+          claude_args: |
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
