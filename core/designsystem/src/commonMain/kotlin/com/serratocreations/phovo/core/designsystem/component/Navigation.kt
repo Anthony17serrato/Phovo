@@ -4,12 +4,18 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.only
+import androidx.compose.material3.DrawerDefaults
+import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.NavigationRailDefaults
 import androidx.compose.material3.NavigationRailItemDefaults
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.WindowAdaptiveInfo
@@ -52,7 +58,8 @@ import com.serratocreations.phovo.core.common.ui.MEDIUM_WIDTH
  *
  * The floating bar is drawn as an overlay and therefore consumes no layout space, so screens whose
  * content reaches the bottom edge should add this to their bottom padding to stay clear of it. It
- * covers the bar itself only — apply [navigationBarsPadding] separately for the system inset.
+ * covers the bar plus its [FloatingToolbarDefaults.ScreenOffset] margin — apply
+ * [navigationBarsPadding] separately for the system inset.
  */
 val LocalFloatingNavBarHeight = compositionLocalOf { 0.dp }
 
@@ -234,7 +241,10 @@ class PhovoNavigationSuiteScope {
     }
 }
 
-@OptIn(ExperimentalMaterial3AdaptiveApi::class)
+@OptIn(
+    ExperimentalMaterial3AdaptiveApi::class,
+    androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class,
+)
 @Composable
 fun PhovoNavigationSuiteScaffold(
     navigationSuiteItems: PhovoNavigationSuiteScope.() -> Unit,
@@ -278,7 +288,15 @@ fun PhovoNavigationSuiteScaffold(
                 },
                 modifier = modifier
             ) {
-                content()
+                // The drawer sheet already pads its start edge for the system bars and display
+                // cutout, so the content beside it must not apply that inset a second time.
+                Box(
+                    modifier = Modifier.consumeWindowInsets(
+                        DrawerDefaults.windowInsets.only(WindowInsetsSides.Start)
+                    )
+                ) {
+                    content()
+                }
             }
         }
         isMedium -> {
@@ -295,7 +313,16 @@ fun PhovoNavigationSuiteScaffold(
                         )
                     }
                 }
-                Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
+                // The rail already pads its start edge for the system bars and display cutout, so
+                // the content beside it must not apply that inset a second time.
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .consumeWindowInsets(
+                            NavigationRailDefaults.windowInsets.only(WindowInsetsSides.Start)
+                        )
+                ) {
                     content()
                 }
             }
@@ -306,8 +333,11 @@ fun PhovoNavigationSuiteScaffold(
 
             Box(modifier = modifier.fillMaxSize()) {
                 CompositionLocalProvider(
-                    LocalFloatingNavBarHeight provides
-                        if (shouldShowNavBarOnCompactScreens) navBarHeight else 0.dp
+                    LocalFloatingNavBarHeight provides if (shouldShowNavBarOnCompactScreens) {
+                        navBarHeight + FloatingToolbarDefaults.ScreenOffset
+                    } else {
+                        0.dp
+                    }
                 ) {
                     content()
                 }
@@ -316,7 +346,10 @@ fun PhovoNavigationSuiteScaffold(
                     visible = shouldShowNavBarOnCompactScreens,
                     enter = slideInVertically(initialOffsetY = { it }),
                     exit = slideOutVertically(targetOffsetY = { it }),
-                    modifier = Modifier.align(Alignment.BottomCenter).navigationBarsPadding()
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .navigationBarsPadding()
+                        .padding(bottom = FloatingToolbarDefaults.ScreenOffset)
                 ) {
                     PhovoNavigationBar(
                         modifier = Modifier.onSizeChanged { size ->
