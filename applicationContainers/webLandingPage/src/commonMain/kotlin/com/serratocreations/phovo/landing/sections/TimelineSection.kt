@@ -27,7 +27,7 @@ fun TimelineSection() {
         Milestone(
             badge = "CURRENT MILESTONE",
             title = "Alpha Release",
-            date = "September 30, 2026",
+            date = "October 31, 2026",
             availability = "Internal & Early Access",
             focusPoints = listOf(
                 "Early testing of core backup engine",
@@ -95,7 +95,7 @@ fun TimelineSection() {
                 )
 
                 Text(
-                    text = "Phovo is undergoing active development. Early Alpha builds launch September 30, 2026.",
+                    text = "Phovo is undergoing active development. Early Alpha builds launch October 31, 2026.",
                     color = Color(0xFFBEC9C5),
                     fontSize = if (isMobile) 13.sp else 15.sp,
                     textAlign = TextAlign.Center,
