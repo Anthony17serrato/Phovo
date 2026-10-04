@@ -11,8 +11,7 @@ import org.koin.dsl.module
 internal actual val platformModule: Module = module {
     factory<GetBackupStatusUseCase> {
         GetBackupStatusUseCase(
-            localMediaManager = get(),
-            remoteMediaRepository = get()
+            localAndRemoteMediaRepository = get()
         )
     }
 

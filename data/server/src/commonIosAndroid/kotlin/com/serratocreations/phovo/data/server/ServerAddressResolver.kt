@@ -67,7 +67,7 @@ class ServerAddressResolver(
         ServerConnectionState.IdentityMismatch -> true
         ServerConnectionState.Connected,
         ServerConnectionState.Checking,
-        ServerConnectionState.Unknown -> false
+        ServerConnectionState.NotConfigured -> false
     }
 
     private suspend fun lookUpAddress() {

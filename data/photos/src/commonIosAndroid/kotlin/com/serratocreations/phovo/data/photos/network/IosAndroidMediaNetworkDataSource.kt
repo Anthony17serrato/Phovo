@@ -24,7 +24,8 @@ class IosAndroidMediaNetworkDataSource(
         // TODO Pass platform file directly
         mediaItemDto: MediaItemDto,
         mediaUri: String,
-        baseUrl: BaseUrl
+        baseUrl: BaseUrl,
+        onBytesSent: (bytesSent: Long) -> Unit
     ): NetworkResult<Unit> {
         // TODO Clients need to be updated to use asset hash
         val file = mediaItemDto.mediaType.getPlatformFile(mediaUri, ioDispatcher) ?: return NetworkResult.NetworkError(
@@ -43,7 +44,8 @@ class IosAndroidMediaNetworkDataSource(
             chunk = byteReadChannel,
             fileName = mediaItemDto.fileName,
             partIndex = "1",
-            baseUrl = baseUrl
+            baseUrl = baseUrl,
+            onBytesSent = onBytesSent
         )
 
         return if (response.status.isSuccess()) {

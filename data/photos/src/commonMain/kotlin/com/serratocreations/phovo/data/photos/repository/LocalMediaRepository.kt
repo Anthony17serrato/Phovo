@@ -12,8 +12,9 @@ import com.serratocreations.phovo.core.model.MediaType
 import com.serratocreations.phovo.data.photos.mappers.toMediaItemWithMetadataEntity
 import com.serratocreations.phovo.data.photos.mappers.toMediaItems
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
+import com.serratocreations.phovo.data.photos.repository.model.UnsyncedMedia
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlin.time.Clock
 
 // TODO Repository APIs should not expose DAO data models
@@ -28,8 +29,7 @@ interface LocalMediaRepository: MediaRepository {
     suspend fun addOrUpdateMediaItem(mediaItem: MediaItem)
     // TODO Repository APIs should not expose DAO data models
     suspend fun addOrUpdateLocalMediaItem(localMediaEntity: LocalMediaEntity)
-    fun observeUnsyncedMediaCount(): Flow<Int>
-    suspend fun getUnsyncedMediaCount(): Int
+    fun observeUnsyncedMedia(): Flow<UnsyncedMedia>
     suspend fun updateMediaItem(mediaItemMetadataEntity: MediaItemMetadataEntity)
     suspend fun getNextUnsyncedItemExcludingUuidSet(
         mediaType: MediaType
@@ -105,8 +105,9 @@ class LocalMediaRepositoryImpl(
         localMediaDataSource.removeClaim(assetHash = assetHash)
     }
 
-    override fun observeUnsyncedMediaCount(): Flow<Int> =
-        localMediaDataSource.observeUnsyncedMediaItemCount()
+    override fun observeUnsyncedMedia(): Flow<UnsyncedMedia> =
+        localMediaDataSource.observeUnsyncedMediaSummary()
+            .map { UnsyncedMedia(count = it.count, bytes = it.bytes) }
 
     override suspend fun updateMediaItem(mediaItemMetadataEntity: MediaItemMetadataEntity) {
         localMediaDataSource.update(mediaItemMetadataEntity)
@@ -141,6 +142,4 @@ class LocalMediaRepositoryImpl(
     override suspend fun markAsSynced(assetHash: String) {
         localMediaDataSource.markAsSynced(assetHash)
     }
-
-    override suspend fun getUnsyncedMediaCount(): Int = observeUnsyncedMediaCount().first()
 }

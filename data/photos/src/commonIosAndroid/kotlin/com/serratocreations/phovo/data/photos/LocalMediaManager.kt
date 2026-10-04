@@ -1,35 +1,25 @@
 package com.serratocreations.phovo.data.photos
 
+import com.serratocreations.phovo.core.common.performance.ProcessingCpuBudget
 import com.serratocreations.phovo.core.common.util.logTimeToComplete
 import com.serratocreations.phovo.core.logger.PhovoLogger
-import com.serratocreations.phovo.core.model.network.isConnected
-import com.serratocreations.phovo.data.permissions.PermissionRepository
-import com.serratocreations.phovo.data.permissions.PermissionStatus
-import com.serratocreations.phovo.data.photos.local.BackupCompleteLocal
 import com.serratocreations.phovo.data.photos.local.LocalMediaProcessor
-import com.serratocreations.phovo.data.photos.local.LocalMediaState
-import com.serratocreations.phovo.data.photos.local.Scanning
 import com.serratocreations.phovo.data.photos.repository.LocalAndRemoteMediaRepository
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.consumeAsFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class LocalMediaManager(
     private val localAndRemoteMediaRepository: LocalAndRemoteMediaRepository,
     private val localMediaProcessor: LocalMediaProcessor,
-    private val permissionRepository: PermissionRepository,
     private val appScope: CoroutineScope,
+    private val cpuBudget: ProcessingCpuBudget,
     logger: PhovoLogger,
 ) {
     companion object {
@@ -37,68 +27,20 @@ class LocalMediaManager(
     }
 
     private val log = logger.withTag(TAG)
-    private val _localMediaState = MutableStateFlow<LocalMediaState>(Scanning)
-    val localMediaState = _localMediaState.asStateFlow()
-
-    // TODO this logic needs to be improved once periodic sync is being implemented
-    //  https://github.com/Anthony17serrato/Phovo/issues/124
-    /**
-     * API initializes job to process local media and synchronize to server.
-     * Processing includes tasks such as extracting media metadata and generating md5 hashes and
-     * deduplication logic
-     */
-    fun initMediaProcessing() {
-        log.i { "initMediaProcessing" }
-        appScope.launch {
-            localAndRemoteMediaRepository.clearNonFailedSyncLogs()
-            permissionRepository.observeGalleryPermissionStatus()
-                .collectLatest { status ->
-                    if(status.permissionStatus == PermissionStatus.Granted || status.isLimited) {
-                        // todo this approach could lead to OOM ,implement a more memory efficient way to check if media
-                        //  is already processed(refer to desktop media processing implementation)
-                        val alreadyProcessedLocalItems = localAndRemoteMediaRepository.phovoMediaFlow().first()
-                        val processingJob = processJob(
-                            localItems = alreadyProcessedLocalItems,
-                        )
-                        // Await server configured before starting sync job
-                        localAndRemoteMediaRepository.observeConnectionState().first { it.isConnected }
-                        syncJob(processingJob)
-                    }
-                }
-        }
-    }
 
     private suspend fun handleProcessedMediaItem(mediaItem: MediaItem) {
         localAndRemoteMediaRepository.addOrUpdateMediaItem(mediaItem)
     }
 
     // Syncs any local media which is still pending sync
-    private fun CoroutineScope.syncJob(processingJob: Job) {
+    fun CoroutineScope.syncJob(scanJob: Job) =
         launch {
-            launch {
-                val syncJob = localAndRemoteMediaRepository.initiateSyncJob(processingJob).await()
-                log.i { "syncJob $syncJob" }
-                logTimeToComplete(apiTag = "$TAG:syncJob") {
-                    syncJob.join()
-                }
+            logTimeToComplete(apiTag = "$TAG:syncJob") {
+                localAndRemoteMediaRepository.sync(scanJob)
             }
-            localAndRemoteMediaRepository.syncProgressState.onEach { syncStatusUpdate ->
-                _localMediaState.update { currentState ->
-                    if (syncStatusUpdate.isSyncComplete) {
-                        BackupCompleteLocal(
-                            backedUpQuantity = syncStatusUpdate.syncedCount,
-                            // TODO: Implement handling of failed items
-                            failureQuantity = 0
-                        )
-                    } else {
-                        syncStatusUpdate
-                    }
-                }
-            }.launchIn(this)
         }
-    }
 
-    private fun CoroutineScope.processJob(
+    fun CoroutineScope.processJob(
         localItems: List<MediaItem>
     ) = launch {
         val processMediaChannel = Channel<MediaItem>()
