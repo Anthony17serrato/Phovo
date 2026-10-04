@@ -286,6 +286,7 @@ class LocalAndRemoteMediaRepositoryImpl(
     // Held for the whole sync, so only one runs at a time
     private val syncMutex = Mutex()
     override suspend fun sync(scanJob: Job) = syncMutex.withLock {
+        clearNonFailedSyncLogs()
         withContext(defaultDispatcher) { initiateSyncJobInternal(scanJob) }
     }
 
