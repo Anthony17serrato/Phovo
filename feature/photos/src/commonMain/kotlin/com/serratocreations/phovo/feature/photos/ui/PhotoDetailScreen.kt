@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.serratocreations.phovo.feature.photos.ui.components.LoadMultiResImage
@@ -50,6 +51,7 @@ internal fun PhotoViewerScreen(
     areBarsVisible: Boolean,
     onToggleBars: () -> Unit,
     onDismiss: () -> Unit,
+    controlsBottomPadding: Dp,
     modifier: Modifier = Modifier
 ) {
     val state by photosViewModel.photosUiState.collectAsStateWithLifecycle()
@@ -97,6 +99,7 @@ internal fun PhotoViewerScreen(
             areBarsVisible = areBarsVisible,
             onToggleBars = onToggleBars,
             onDismiss = onDismiss,
+            controlsBottomPadding = controlsBottomPadding,
             isActivePage = (page == pagerState.currentPage),
             modifier = Modifier.fillMaxSize()
         )
@@ -116,6 +119,7 @@ internal fun PhotoViewerScreen(
     areBarsVisible: Boolean,
     onToggleBars: () -> Unit,
     onDismiss: () -> Unit,
+    controlsBottomPadding: Dp,
     isActivePage: Boolean,
     modifier: Modifier = Modifier
 ) {
@@ -196,17 +200,22 @@ internal fun PhotoViewerScreen(
                             if (isActivePage) {
                                 VideoPlayer(
                                     videoPlatformFile = item.sourceAsset.localAssetLocation,
-                                    modifier = Modifier
-                                        .sharedElement(
-                                            sharedContentState = sharedElementTransition
-                                                .rememberSharedContentState(key = "image-$key"),
-                                            animatedVisibilityScope = animatedContentScope
+                                    controlsVisible = areBarsVisible,
+                                    controlsBottomPadding = controlsBottomPadding,
+                                    onClick = onToggleBars,
+                                    poster = {
+                                        LoadMultiResImage(
+                                            lowRes = item.lowResThumbnail,
+                                            highRes = item.thumbnail,
+                                            contentScale = ContentScale.Fit,
+                                            modifier = Modifier.fillMaxSize()
                                         )
-                                        .clickable(
-                                            interactionSource = remember { MutableInteractionSource() },
-                                            indication = null,
-                                            onClick = onToggleBars
-                                        )
+                                    },
+                                    surfaceModifier = Modifier.sharedElement(
+                                        sharedContentState = sharedElementTransition
+                                            .rememberSharedContentState(key = "image-$key"),
+                                        animatedVisibilityScope = animatedContentScope
+                                    )
                                 )
                             } else {
                                 // Show static thumbnail for non-active video pages. No shared

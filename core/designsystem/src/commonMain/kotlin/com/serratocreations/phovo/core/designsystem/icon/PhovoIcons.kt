@@ -70,6 +70,22 @@ object PhovoIcons {
         @Composable
         get() = vectorResource(Res.drawable.ic_chevron_right_rounded)
 
+    val Play: ImageVector
+        @Composable
+        get() = vectorResource(Res.drawable.ic_play_arrow_rounded)
+
+    val Pause: ImageVector
+        @Composable
+        get() = vectorResource(Res.drawable.ic_pause_rounded)
+
+    val VolumeUp: ImageVector
+        @Composable
+        get() = vectorResource(Res.drawable.ic_volume_up_rounded)
+
+    val VolumeOff: ImageVector
+        @Composable
+        get() = vectorResource(Res.drawable.ic_volume_off_rounded)
+
     val PhovoIcon: ImageVector
         @Composable
         get() = vectorResource(Res.drawable.phovo_icon)

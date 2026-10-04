@@ -4,6 +4,8 @@ import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.LaunchedEffect
@@ -28,7 +30,7 @@ import com.serratocreations.phovo.feature.photos.ui.PhotosViewModel
 import com.serratocreations.phovo.feature.photos.ui.components.PhotosHomeTitleContent
 import org.koin.compose.viewmodel.koinViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 /**
  * @param onFinishServerSetup take the user to where a server is set up. Photos cannot name that
  *   destination - it lives in another feature - so the app supplies it.
@@ -123,6 +125,9 @@ fun EntryProviderScope<NavKey>.photosEntries(
             areBarsVisible = areBarsVisible,
             onToggleBars = { areBarsVisible = !areBarsVisible },
             onDismiss = navigationViewModel::goBack,
+            // The bottom toolbar floats ScreenOffset above the space the scaffold reserves for it.
+            controlsBottomPadding = scaffoldPadding.calculateBottomPadding() +
+                FloatingToolbarDefaults.ScreenOffset,
             modifier = Modifier.padding(
                 appBarConfig.calculateAdjustedPadding(scaffoldPadding)
             )

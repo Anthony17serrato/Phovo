@@ -11,11 +11,8 @@ androidx-datastore = "1.2.1"
 androidx-splash = "1.2.0"
 androidx-work = "2.11.2"
 coil = "3.5.0"
-# TODO: Investigate feasibility of using this lib for all target platforms
 # https://github.com/kdroidFilter/ComposeMediaPlayer/blob/master/README_VIDEO.MD
-compose-video-player = "0.11.3"
-# TODO: Replace with compose-video-player
-exoplayer = "1.10.1"
+compose-video-player = "0.11.4"
 filekit = "0.14.2"
 
 # KMP Compose Start(All of these dependencies should be checked to be compatable on upgrade)
@@ -91,8 +88,6 @@ compose-resources = { group = "org.jetbrains.compose.components", name = "compon
 compose-video-player = { group = "io.github.kdroidfilter", name = "composemediaplayer", version.ref = "compose-video-player" }
 lifecycle-runtime-compose = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "lifecycle" }
 compose-foundation = { group= "org.jetbrains.compose.foundation", name = "foundation", version.ref = "foundation" }
-exoplayer = { group = "androidx.media3", name = "media3-exoplayer", version.ref = "exoplayer" }
-media-ui = { group = "androidx.media3", name = "media3-ui", version.ref = "exoplayer" }
 material3-adaptive-navigation-suite = { group = "org.jetbrains.compose.material3", name = "material3-adaptive-navigation-suite", version.ref = "material3" }
 filekit-core = { group = "io.github.vinceglb", name = "filekit-core", version.ref = "filekit" }
 filekit-dialogs = { group = "io.github.vinceglb", name = "filekit-dialogs", version.ref = "filekit" }
