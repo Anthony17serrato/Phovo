@@ -31,6 +31,10 @@ import com.serratocreations.phovo.feature.photos.ui.model.VideoPhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.components.VideoPlayer
 import com.serratocreations.phovo.feature.photos.ui.components.SystemBarsController
 import com.serratocreations.phovo.feature.photos.util.CycleZoomOnDoubleClick
+import me.saket.telephoto.ExperimentalTelephotoApi
+import me.saket.telephoto.flick.FlickToDismiss
+import me.saket.telephoto.flick.FlickToDismissState.GestureState.Dismissing
+import me.saket.telephoto.flick.rememberFlickToDismissState
 import me.saket.telephoto.zoomable.ZoomSpec
 import me.saket.telephoto.zoomable.rememberZoomableState
 import me.saket.telephoto.zoomable.zoomable
@@ -45,6 +49,7 @@ internal fun PhotoViewerScreen(
     photosViewModel: PhotosViewModel,
     areBarsVisible: Boolean,
     onToggleBars: () -> Unit,
+    onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val state by photosViewModel.photosUiState.collectAsStateWithLifecycle()
@@ -91,13 +96,18 @@ internal fun PhotoViewerScreen(
             animatedContentScope = animatedContentScope,
             areBarsVisible = areBarsVisible,
             onToggleBars = onToggleBars,
+            onDismiss = onDismiss,
             isActivePage = (page == pagerState.currentPage),
             modifier = Modifier.fillMaxSize()
         )
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
+@OptIn(
+    ExperimentalMaterial3Api::class,
+    ExperimentalSharedTransitionApi::class,
+    ExperimentalTelephotoApi::class
+)
 @Composable
 internal fun PhotoViewerScreen(
     item: MediaUiItem?,
@@ -105,96 +115,116 @@ internal fun PhotoViewerScreen(
     animatedContentScope: AnimatedContentScope,
     areBarsVisible: Boolean,
     onToggleBars: () -> Unit,
+    onDismiss: () -> Unit,
     isActivePage: Boolean,
     modifier: Modifier = Modifier
 ) {
     if (item == null) return
     SystemBarsController(visible = areBarsVisible)
-    Column(
-        modifier = modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+
+    // Rotation is off because the shared element only carries bounds back to the grid, so a tilted
+    // photo would snap upright the moment the pop transition takes over.
+    val flickState = rememberFlickToDismissState(rotateOnDrag = false)
+    val isDismissing = flickState.gestureState is Dismissing
+    // Navigate as soon as the release is past the threshold rather than waiting for the photo to
+    // leave the screen. The shared element then flies it from where the finger let go back to its
+    // thumbnail, instead of the photo falling off screen and the grid fading in afterwards.
+    LaunchedEffect(isDismissing) {
+        if (isDismissing) onDismiss()
+    }
+
+    // Zoomable only hands a vertical pan up to here when the photo is not zoomed in, so dragging a
+    // zoomed photo still pans it instead of dismissing.
+    FlickToDismiss(
+        state = flickState,
+        modifier = modifier.fillMaxSize()
     ) {
-        with(sharedElementTransition) {
-            val key = item.key
-            when (item) {
-                is ImagePhotoUiItem -> {
-                    val focusRequester = remember { FocusRequester() }
-                    LaunchedEffect(isActivePage) {
-                        if (isActivePage) {
-                            focusRequester.requestFocus()
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            with(sharedElementTransition) {
+                val key = item.key
+                when (item) {
+                    is ImagePhotoUiItem -> {
+                        val focusRequester = remember { FocusRequester() }
+                        LaunchedEffect(isActivePage) {
+                            if (isActivePage) {
+                                focusRequester.requestFocus()
+                            }
                         }
+
+                        val sharedContentState = sharedElementTransition
+                            .rememberSharedContentState(key = "image-$key")
+
+                        LoadMultiResImage(
+                            lowRes = item.lowResThumbnail,
+                            highRes = item.thumbnail,
+                            sourceRes = item.sourceAsset,
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier
+                                // Only the active page takes part in the transition. Pages the pager
+                                // has composed either side of it match the same grid thumbnail keys,
+                                // and shared elements render in an overlay that the pager viewport does
+                                // not clip, so a neighbour would fly across the screen alongside the
+                                // photo the user actually opened. An edge swipe is enough to compose
+                                // one, because it nudges the pager while starting predictive back.
+                                .then(
+                                    if (isActivePage) {
+                                        Modifier.sharedBounds(
+                                            sharedContentState = sharedContentState,
+                                            animatedVisibilityScope = animatedContentScope
+                                        )
+                                    } else {
+                                        Modifier
+                                    }
+                                )
+                                .focusRequester(focusRequester)
+                                .zoomable(
+                                    state = rememberZoomableState(zoomSpec = ZoomSpec(maxZoomFactor = 3f)),
+                                    onClick = { _ -> onToggleBars() },
+                                    onDoubleClick = CycleZoomOnDoubleClick(onDoubleClick = { onToggleBars() })
+                                )
+                                .fillMaxSize()
+                        )
                     }
 
-                    val sharedContentState = sharedElementTransition
-                        .rememberSharedContentState(key = "image-$key")
-
-                    LoadMultiResImage(
-                        lowRes = item.lowResThumbnail,
-                        highRes = item.thumbnail,
-                        sourceRes = item.sourceAsset,
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier
-                            // Only the active page takes part in the transition. Pages the pager
-                            // has composed either side of it match the same grid thumbnail keys,
-                            // and shared elements render in an overlay that the pager viewport does
-                            // not clip, so a neighbour would fly across the screen alongside the
-                            // photo the user actually opened. An edge swipe is enough to compose
-                            // one, because it nudges the pager while starting predictive back.
-                            .then(
-                                if (isActivePage) {
-                                    Modifier.sharedBounds(
-                                        sharedContentState = sharedContentState,
-                                        animatedVisibilityScope = animatedContentScope
-                                    )
-                                } else {
-                                    Modifier
-                                }
-                            )
-                            .focusRequester(focusRequester)
-                            .zoomable(
-                                state = rememberZoomableState(zoomSpec = ZoomSpec(maxZoomFactor = 3f)),
-                                onClick = { _ -> onToggleBars() },
-                                onDoubleClick = CycleZoomOnDoubleClick(onDoubleClick = { onToggleBars() })
-                            )
-                            .fillMaxSize()
-                    )
-                }
-
-                is VideoPhotoUiItem -> {
-                    // TODO Support both local and remote video
-                    if (item.sourceAsset is DomainAssetLocation.LocalAssetLocation) {
-                        if (isActivePage) {
-                            VideoPlayer(
-                                videoPlatformFile = item.sourceAsset.localAssetLocation,
-                                modifier = Modifier
-                                    .sharedElement(
-                                        sharedContentState = sharedElementTransition
-                                            .rememberSharedContentState(key = "image-$key"),
-                                        animatedVisibilityScope = animatedContentScope
-                                    )
-                                    .clickable(
-                                        interactionSource = remember { MutableInteractionSource() },
-                                        indication = null,
-                                        onClick = onToggleBars
-                                    )
-                            )
-                        } else {
-                            // Show static thumbnail for non-active video pages. No shared
-                            // bounds here for the same reason as above: this page is not the one
-                            // the transition is for.
-                            LoadMultiResImage(
-                                lowRes = item.lowResThumbnail,
-                                highRes = item.thumbnail,
-                                contentScale = ContentScale.Fit,
-                                modifier = Modifier
-                                    .clickable(
-                                        interactionSource = remember { MutableInteractionSource() },
-                                        indication = null,
-                                        onClick = onToggleBars
-                                    )
-                                    .fillMaxSize()
-                            )
+                    is VideoPhotoUiItem -> {
+                        // TODO Support both local and remote video
+                        if (item.sourceAsset is DomainAssetLocation.LocalAssetLocation) {
+                            if (isActivePage) {
+                                VideoPlayer(
+                                    videoPlatformFile = item.sourceAsset.localAssetLocation,
+                                    modifier = Modifier
+                                        .sharedElement(
+                                            sharedContentState = sharedElementTransition
+                                                .rememberSharedContentState(key = "image-$key"),
+                                            animatedVisibilityScope = animatedContentScope
+                                        )
+                                        .clickable(
+                                            interactionSource = remember { MutableInteractionSource() },
+                                            indication = null,
+                                            onClick = onToggleBars
+                                        )
+                                )
+                            } else {
+                                // Show static thumbnail for non-active video pages. No shared
+                                // bounds here for the same reason as above: this page is not the one
+                                // the transition is for.
+                                LoadMultiResImage(
+                                    lowRes = item.lowResThumbnail,
+                                    highRes = item.thumbnail,
+                                    contentScale = ContentScale.Fit,
+                                    modifier = Modifier
+                                        .clickable(
+                                            interactionSource = remember { MutableInteractionSource() },
+                                            indication = null,
+                                            onClick = onToggleBars
+                                        )
+                                        .fillMaxSize()
+                                )
+                            }
                         }
                     }
                 }
@@ -202,4 +232,3 @@ internal fun PhotoViewerScreen(
         }
     }
 }
-

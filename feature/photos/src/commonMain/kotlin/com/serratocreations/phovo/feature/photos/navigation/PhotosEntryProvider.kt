@@ -122,6 +122,7 @@ fun EntryProviderScope<NavKey>.photosEntries(
             photosViewModel = photosViewModel,
             areBarsVisible = areBarsVisible,
             onToggleBars = { areBarsVisible = !areBarsVisible },
+            onDismiss = navigationViewModel::goBack,
             modifier = Modifier.padding(
                 appBarConfig.calculateAdjustedPadding(scaffoldPadding)
             )
