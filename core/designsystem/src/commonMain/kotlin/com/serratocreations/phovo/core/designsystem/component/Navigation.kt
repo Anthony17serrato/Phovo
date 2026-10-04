@@ -208,13 +208,25 @@ fun PhovoNavigationRail(
     )
 }
 
+/**
+ * A destination in [PhovoNavigationSuiteScaffold].
+ *
+ * [title], [iosImage], [iosSelectedImage] and [badgeColor] describe the item to a platform native
+ * navigation bar, which cannot render the composable slots. [iosImage] names an image in the iOS
+ * app's asset catalog or an SF Symbol. The native bar is only used when every item supplies a
+ * [title] and [iosImage].
+ */
 class PhovoNavigationSuiteItem(
     val selected: Boolean,
     val onClick: () -> Unit,
     val modifier: Modifier,
     val icon: @Composable () -> Unit,
     val selectedIcon: @Composable () -> Unit,
-    val label: @Composable () -> Unit
+    val label: @Composable () -> Unit,
+    val title: String?,
+    val iosImage: String?,
+    val iosSelectedImage: String?,
+    val badgeColor: Color?,
 )
 
 class PhovoNavigationSuiteScope {
@@ -227,6 +239,10 @@ class PhovoNavigationSuiteScope {
         icon: @Composable () -> Unit,
         selectedIcon: @Composable () -> Unit = icon,
         label: @Composable () -> Unit,
+        title: String? = null,
+        iosImage: String? = null,
+        iosSelectedImage: String? = iosImage,
+        badgeColor: Color? = null,
     ) {
         items.add(
             PhovoNavigationSuiteItem(
@@ -235,7 +251,11 @@ class PhovoNavigationSuiteScope {
                 modifier = modifier,
                 icon = icon,
                 selectedIcon = selectedIcon,
-                label = label
+                label = label,
+                title = title,
+                iosImage = iosImage,
+                iosSelectedImage = iosSelectedImage,
+                badgeColor = badgeColor,
             )
         )
     }
@@ -346,25 +366,31 @@ fun PhovoNavigationSuiteScaffold(
                     visible = shouldShowNavBarOnCompactScreens,
                     enter = slideInVertically(initialOffsetY = { it }),
                     exit = slideOutVertically(targetOffsetY = { it }),
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .navigationBarsPadding()
-                        .padding(bottom = FloatingToolbarDefaults.ScreenOffset)
+                    modifier = Modifier.align(Alignment.BottomCenter)
                 ) {
-                    PhovoNavigationBar(
-                        modifier = Modifier.onSizeChanged { size ->
-                            navBarHeight = with(density) { size.height.toDp() }
-                        }
-                    ) {
-                        scope.items.forEach { item ->
-                            PhovoNavigationBarItem(
-                                selected = item.selected,
-                                onClick = item.onClick,
-                                icon = item.icon,
-                                selectedIcon = item.selectedIcon,
-                                label = item.label,
-                                modifier = item.modifier
-                            )
+                    val barModifier = Modifier.onSizeChanged { size ->
+                        navBarHeight = with(density) { size.height.toDp() }
+                    }
+                    val nativeBar = platformNavigationBar
+                    if (nativeBar != null && scope.items.all { it.title != null && it.iosImage != null }) {
+                        nativeBar(scope.items, barModifier)
+                    } else {
+                        PhovoNavigationBar(
+                            modifier = Modifier
+                                .navigationBarsPadding()
+                                .padding(bottom = FloatingToolbarDefaults.ScreenOffset)
+                                .then(barModifier)
+                        ) {
+                            scope.items.forEach { item ->
+                                PhovoNavigationBarItem(
+                                    selected = item.selected,
+                                    onClick = item.onClick,
+                                    icon = item.icon,
+                                    selectedIcon = item.selectedIcon,
+                                    label = item.label,
+                                    modifier = item.modifier
+                                )
+                            }
                         }
                     }
                 }
@@ -372,6 +398,16 @@ fun PhovoNavigationSuiteScaffold(
         }
     }
 }
+
+/**
+ * The platform's own navigation bar, drawn in place of [PhovoNavigationBar] on compact screens, or
+ * null where the platform has none worth using. It receives every item and a modifier that reports
+ * a height to [LocalFloatingNavBarHeight]. It sits flush with the bottom edge and handles the
+ * system inset itself, so it should apply that modifier to whatever stands for the bar's height
+ * above the inset, less [FloatingToolbarDefaults.ScreenOffset].
+ */
+internal expect val platformNavigationBar:
+    (@Composable (items: List<PhovoNavigationSuiteItem>, modifier: Modifier) -> Unit)?
 
 /**
  * Phovo navigation default values.

@@ -26,7 +26,6 @@ import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -109,17 +108,28 @@ internal fun InternalPhovoApp(
 ) {
     val applicationUiSate by applicationViewModel.applicationUiState.collectAsState()
     val appBarState by navigationViewModel.appBarState.collectAsState()
+    // Resolved up front because the native iOS bar takes plain strings, and the items lambda below
+    // is not composable.
+    val navItemTitles = TOP_LEVEL_NAV_ITEMS.mapValues { (_, navItem) ->
+        stringResource(navItem.iconTextId)
+    }
+    val serverStatusColor = applicationUiSate.serverStatusColor.toColor()
 
     PhovoNavigationSuiteScaffold(
         navigationSuiteItems = {
             TOP_LEVEL_NAV_ITEMS.forEach { (navKey, navItem) ->
                 val selected = navKey == navigationState.topLevelRoute
-                val customModifier = if (navKey == ConnectionsHomeNavKey) {
-                    Modifier.notificationDot(applicationUiSate.serverStatusColor)
+                val isConnections = navKey == ConnectionsHomeNavKey
+                val customModifier = if (isConnections) {
+                    Modifier.notificationDot(serverStatusColor)
                 } else { Modifier }
                 item(
                     selected = selected,
                     onClick = { navigationViewModel.navigate(navKey) },
+                    title = navItemTitles.getValue(navKey),
+                    iosImage = navItem.iosImage,
+                    iosSelectedImage = navItem.iosSelectedImage,
+                    badgeColor = if (isConnections) serverStatusColor else null,
                     icon = {
                         when(navItem.unselectedIcon) {
                             is ImageVectorIcon -> {
@@ -312,22 +322,22 @@ private fun NavKey?.isTopLevel() =
         key == this@isTopLevel
     }
 
-private fun Modifier.notificationDot(statusColor: ServerStatusColor): Modifier =
-    composed {
-        val color = when(statusColor) {
-            ServerStatusColor.Green -> MaterialTheme.colorScheme.primary
-            ServerStatusColor.Red -> MaterialTheme.colorScheme.error
-            ServerStatusColor.Unavailable -> MaterialTheme.colorScheme.onSurfaceVariant
-        }
-        drawWithContent {
-            drawContent()
-            drawCircle(
-                color = color,
-                radius = 4.dp.toPx(),
-                center = Offset(
-                    x = size.width - 12.dp.toPx(),
-                    y = 10.dp.toPx(),
-                ),
-            )
-        }
+@Composable
+private fun ServerStatusColor.toColor(): Color = when(this) {
+    ServerStatusColor.Green -> MaterialTheme.colorScheme.primary
+    ServerStatusColor.Red -> MaterialTheme.colorScheme.error
+    ServerStatusColor.Unavailable -> MaterialTheme.colorScheme.onSurfaceVariant
+}
+
+private fun Modifier.notificationDot(color: Color): Modifier =
+    drawWithContent {
+        drawContent()
+        drawCircle(
+            color = color,
+            radius = 4.dp.toPx(),
+            center = Offset(
+                x = size.width - 12.dp.toPx(),
+                y = 10.dp.toPx(),
+            ),
+        )
     }
