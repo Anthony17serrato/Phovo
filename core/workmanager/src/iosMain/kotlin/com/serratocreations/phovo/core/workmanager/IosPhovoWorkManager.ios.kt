@@ -41,8 +41,6 @@ import platform.Foundation.NSOperatingSystemVersion
 import platform.Foundation.NSOperationQueue
 import platform.Foundation.NSProcessInfo
 import platform.Foundation.NSProgress
-import platform.Foundation.stringWithContentsOfFile
-import platform.Foundation.writeToFile
 import platform.Foundation.dateWithTimeIntervalSince1970
 import platform.Foundation.timeIntervalSince1970
 import platform.UIKit.UIApplication
@@ -171,7 +169,6 @@ class IosPhovoWorkManager internal constructor(
             `object` = null,
             queue = NSOperationQueue.mainQueue,
             usingBlock = {
-                /* TEMP-DIAG */ diag("didBecomeActive")
                 handBackContinuedTasks()
                 requestDrain()
             }
@@ -185,7 +182,7 @@ class IosPhovoWorkManager internal constructor(
             name = UIApplicationWillResignActiveNotification,
             `object` = null,
             queue = NSOperationQueue.mainQueue,
-            usingBlock = { /* TEMP-DIAG */ diag("willResignActive"); submitContinuedRequests() }
+            usingBlock = { submitContinuedRequests() }
         )
 
         requestDrain()
@@ -407,7 +404,6 @@ class IosPhovoWorkManager internal constructor(
                 // Android, so the run must not be cut off along with the assertion. Measured on
                 // device: the run carried on well past this point.
                 logger.d { "Background assertion expired; a continued task is keeping the drain alive." }
-                /* TEMP-DIAG */ diag("assertion expired, continued task active, drain kept")
             }
             end()
         }
@@ -462,7 +458,6 @@ class IosPhovoWorkManager internal constructor(
         if (claimed == null || claimed.generation != record.generation || claimed.state != WorkState.ENQUEUED) return
         put(claimed.copy(state = WorkState.RUNNING))
         logger.d { "Running '$name'." }
-        /* TEMP-DIAG */ diag("run START $name")
 
         var entry: InFlight? = null
         var result: WorkResult?
@@ -489,11 +484,9 @@ class IosPhovoWorkManager internal constructor(
             // system stop on Android: back to the queue without burning an attempt.
             restoreIfCurrent(record, WorkState.ENQUEUED)
             logger.d { "'$name' stopped: its execution window closed. Back to the queue." }
-            /* TEMP-DIAG */ diag("run STOPPED $name reason=window-closed")
             throw e
         } catch (e: Exception) {
             logger.e(e) { "Worker '${record.workerId}' threw, failing '$name'." }
-            /* TEMP-DIAG */ diag("worker THREW for $name: $e")
             result = WorkResult.Failure
         } finally {
             worker.progressReporter = null
@@ -507,12 +500,10 @@ class IosPhovoWorkManager internal constructor(
             if (current != null && current.generation == record.generation && current.state != WorkState.CANCELLED) {
                 put(current.nextState(finished))
                 logger.d { "'$name' returned $finished." }
-                /* TEMP-DIAG */ diag("run END $name result=$finished")
                 // The worker returned, so its foreground surface goes, whatever it returned.
                 activeContinued.value[name]?.let { finishContinued(name, it, finished is WorkResult.Success) }
             } else {
                 logger.d { "'$name' returned $finished, discarded: replaced or cancelled meanwhile." }
-                /* TEMP-DIAG */ diag("run END $name result=$finished discarded")
             }
             return
         }
@@ -520,17 +511,15 @@ class IosPhovoWorkManager internal constructor(
         when (entry?.stopReason) {
             // The replacement owns the record. Any continued task stays up and passes to the
             // replacement run, as a foreground service would.
-            StopReason.REPLACED -> { logger.d { "'$name' stopped: replaced. Any continued task passes to the replacement." }; /* TEMP-DIAG */ diag("run STOPPED $name reason=replaced") }
-            StopReason.CANCELLED -> { logger.d { "'$name' stopped: cancelled." }; /* TEMP-DIAG */ diag("run STOPPED $name reason=cancelled") }
+            StopReason.REPLACED -> logger.d { "'$name' stopped: replaced. Any continued task passes to the replacement." }
+            StopReason.CANCELLED -> logger.d { "'$name' stopped: cancelled." }
             StopReason.EXPIRED -> {
                 restoreIfCurrent(record, WorkState.ENQUEUED)
                 logger.d { "'$name' stopped: its continued task expired. Back to the queue." }
-                /* TEMP-DIAG */ diag("run STOPPED $name reason=task-expired")
             }
             null -> {
                 restoreIfCurrent(record, WorkState.ENQUEUED)
                 logger.w { "'$name' stopped for no recorded reason. Back to the queue." }
-                /* TEMP-DIAG */ diag("run STOPPED $name reason=unknown")
             }
         }
     }
@@ -639,7 +628,6 @@ class IosPhovoWorkManager internal constructor(
             }
 
             val accepted = submit(request)
-            /* TEMP-DIAG */ diag("submit ${record.uniqueWorkName} state=${record.state} accepted=$accepted")
             if (accepted) {
                 continuedSubmissions.update { it + (record.uniqueWorkName to identifier) }
             }
@@ -687,7 +675,6 @@ class IosPhovoWorkManager internal constructor(
             return
         }
 
-        /* TEMP-DIAG */ diag("launch handler $name state=${record.state} running=${inFlight.value[name] != null}")
         attachContinued(name, task)
         if (inFlight.value[name] == null) {
             // Not running yet. The drain runs it like any other work; this task only keeps the
@@ -706,10 +693,7 @@ class IosPhovoWorkManager internal constructor(
         progress.totalUnitCount = SEED_PROGRESS_TOTAL
         progress.completedUnitCount = 1
 
-        val reporter = WorkProgressReporter { completed, total ->
-            /* TEMP-DIAG */ diag("progress $completed/$total")
-            progress.show(completed, total)
-        }
+        val reporter = WorkProgressReporter { completed, total -> progress.show(completed, total) }
 
         continuedReporters.update { it + (name to reporter) }
         activeContinued.update { it + (name to task) }
@@ -718,7 +702,6 @@ class IosPhovoWorkManager internal constructor(
             // Start from where the run already is. Anything it reported while the app was open
             // had nowhere to go, and it may not report again until its numbers next change.
             worker.lastReportedProgress?.let { last ->
-                /* TEMP-DIAG */ diag("replaying last progress ${last.completed}/${last.total} on attach")
                 progress.show(last.completed, last.total)
             }
         }
@@ -756,7 +739,6 @@ class IosPhovoWorkManager internal constructor(
     /** The system took the task back, like Android stopping a foreground service: back to the queue. */
     private fun expireContinued(name: String, task: BGContinuedProcessingTask) {
         logger.i { "Continued task for '$name' expired; the run goes back to the queue." }
-        /* TEMP-DIAG */ diag("EXPIRED continued task for $name")
         stopInFlight(name, StopReason.EXPIRED)
         finishContinued(name, task, success = false)
     }
@@ -795,7 +777,6 @@ class IosPhovoWorkManager internal constructor(
             progress.totalUnitCount = progress.totalUnitCount.coerceAtLeast(1)
             progress.completedUnitCount = progress.totalUnitCount
         }
-        /* TEMP-DIAG */ diag("finished continued task for $name success=$success")
         task.setTaskCompletedWithSuccess(success)
         return true
     }
@@ -894,58 +875,11 @@ class IosPhovoWorkManager internal constructor(
             // Expected in the simulator and whenever Background App Refresh is switched off.
             // The foreground drain still runs everything, so this is not fatal.
             logger.w { "BGTaskScheduler rejected '${request.identifier}': ${error.value?.localizedDescription}" }
-            /* TEMP-DIAG */ diag("REJECTED ${request.identifier}: ${error.value?.localizedDescription}")
         }
         submitted
     }
 
     // endregion
-
-    // TEMPORARY DIAGNOSTIC, REMOVE BEFORE MERGE. Every line tagged TEMP-DIAG calls this; it writes
-    // Documents/phovo-diag.log so the timeline can be pulled with devicectl over Wi-Fi. Appends
-    // across launches, so a relaunch after a failure keeps the timeline that led up to it.
-    private val diagLock = platform.Foundation.NSLock()
-    private val diagLines: MutableList<String> by lazy {
-        val previous = diagPath()?.let {
-            platform.Foundation.NSString.stringWithContentsOfFile(
-                path = it, encoding = platform.Foundation.NSUTF8StringEncoding, error = null
-            )
-        }
-        val lines = previous?.split("\n")?.takeLast(DIAG_MAX_LINES)?.toMutableList() ?: mutableListOf()
-        lines += "===== new process ${diagClock()} ====="
-        lines
-    }
-
-    private fun diagPath(): String? {
-        val dir = platform.Foundation.NSSearchPathForDirectoriesInDomains(
-            platform.Foundation.NSDocumentDirectory, platform.Foundation.NSUserDomainMask, true
-        ).firstOrNull() as? String ?: return null
-        return "$dir/phovo-diag.log"
-    }
-
-    private fun diagClock(): String {
-        val formatter = platform.Foundation.NSDateFormatter()
-        formatter.dateFormat = "HH:mm:ss"
-        return formatter.stringFromDate(NSDate())
-    }
-
-    private fun diag(line: String) {
-        diagLock.lock()
-        try {
-            diagLines += "[${diagClock()}] $line"
-            while (diagLines.size > DIAG_MAX_LINES) diagLines.removeAt(0)
-            val path = diagPath() ?: return
-            @Suppress("CAST_NEVER_SUCCEEDS")
-            (diagLines.joinToString("\n") as platform.Foundation.NSString).writeToFile(
-                path = path,
-                atomically = true,
-                encoding = platform.Foundation.NSUTF8StringEncoding,
-                error = null
-            )
-        } finally {
-            diagLock.unlock()
-        }
-    }
 
     private fun nowEpochMillis(): Long = (NSDate().timeIntervalSince1970 * MILLIS_PER_SECOND).toLong()
 
@@ -972,9 +906,6 @@ class IosPhovoWorkManager internal constructor(
 
         private const val MILLIS_PER_SECOND = 1000.0
         private const val BACKGROUND_ASSERTION_NAME = "phovo-work-drain"
-
-        /** TEMPORARY DIAGNOSTIC, REMOVE BEFORE MERGE. */
-        private const val DIAG_MAX_LINES = 20_000
 
         /** Nominal denominator for the pre-report seed. See where it is used. */
         private const val SEED_PROGRESS_TOTAL = 1000L
