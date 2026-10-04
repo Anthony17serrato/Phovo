@@ -47,7 +47,6 @@ fun PhovoBottomToolBar(
         exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
         modifier = modifier/*.align(Alignment.BottomCenter)*/
     ) {
-        val vibrantColors = FloatingToolbarDefaults.vibrantFloatingToolbarColors()
         Row(
             modifier = Modifier.fillMaxWidth().windowInsetsPadding(
                 WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom)
@@ -55,30 +54,12 @@ fun PhovoBottomToolBar(
             horizontalArrangement = Arrangement.Center
         ) {
             HorizontalFloatingToolbar(
-                // Always expanded as the toolbar is bottom-centered. We will use a
-                // FloatingToolbarScrollBehavior to hide both the toolbar and its FAB on scroll.
+                // Always expanded as the toolbar is bottom-centered.
                 expanded = true,
-                floatingActionButton = {
-                    TooltipBox(
-                        positionProvider =
-                            TooltipDefaults.rememberTooltipPositionProvider(
-                                TooltipAnchorPosition.Above
-                            ),
-                        tooltip = { PlainTooltip { Text("TODO: Localized description") } },
-                        state = rememberTooltipState(),
-                    ) {
-                        // Match the FAB to the vibrantColors. See also
-                        // StandardFloatingActionButton.
-                        FloatingToolbarDefaults.VibrantFloatingActionButton(
-                            onClick = { /* doSomething() */ }
-                        ) {
-                            Icon(painterResource(Res.drawable.ic_add_default), "Localized description")
-                        }
-                    }
-                },
                 modifier =
                     Modifier/*.align(Alignment.BottomCenter)*/.offset(y = -ScreenOffset).zIndex(1f),
-                colors = vibrantColors,
+                // Match PhovoNavigationBar on the photos grid.
+                colors = FloatingToolbarDefaults.standardFloatingToolbarColors(),
                 //scrollBehavior = exitAlwaysScrollBehavior,
                 content = {
                     TooltipBox(
