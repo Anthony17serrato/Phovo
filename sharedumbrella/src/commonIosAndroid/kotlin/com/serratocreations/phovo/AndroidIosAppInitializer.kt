@@ -90,6 +90,7 @@ class MediaSyncWorker(
     @OptIn(FlowPreview::class)
     override suspend fun doWork(): WorkResult {
         return coroutineScope {
+            localAndRemoteMediaRepository.clearNonFailedSyncLogs()
             launch {
                 // TODO media processing needs to post progress too otherwise IOS will kill
                 //  the worker
