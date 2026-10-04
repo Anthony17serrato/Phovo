@@ -35,10 +35,8 @@ class LocalMediaManager(
     // Syncs any local media which is still pending sync
     fun CoroutineScope.syncJob(scanJob: Job) =
         launch {
-            val syncJob = localAndRemoteMediaRepository.initiateSyncJob(scanJob).await()
-            log.i { "syncJob $syncJob" }
             logTimeToComplete(apiTag = "$TAG:syncJob") {
-                syncJob.join()
+                localAndRemoteMediaRepository.sync(scanJob)
             }
         }
 

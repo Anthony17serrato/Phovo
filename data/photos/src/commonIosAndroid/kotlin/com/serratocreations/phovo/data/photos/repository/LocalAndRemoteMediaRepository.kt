@@ -17,9 +17,7 @@ import com.serratocreations.phovo.data.photos.repository.model.SyncQueueable
 import com.serratocreations.phovo.data.photos.repository.model.SyncVideo
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.coroutineScope
@@ -38,19 +36,28 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import kotlin.time.Duration.Companion.seconds
 
 interface LocalAndRemoteMediaRepository: LocalMediaRepository, RemoteMediaRepository {
     /**
-     * Suspends if no sync has started
+     * Progress of the current sync job. Emits nothing until the first sync job in this process
+     * starts. Once a job finishes, its final state is kept, and new collectors get it, until the
+     * next job starts and resets it.
      */
     val syncProgressState: Flow<LocalMediaBackupProgress>
 
     /**
      * Backup progress in bytes, for surfaces that need continuous movement, such as a background
-     * task's progress bar. Unlike [syncProgressState] it is live before a sync job starts: the
-     * total comes straight from the database, so it grows while a scan is still finding media.
+     * task's progress bar. The total is kept live from the database while a job runs, so it grows
+     * while a scan is still finding media.
+     *
+     * Derived from [syncProgressState], so the same gaps apply: nothing is emitted before the first
+     * sync job starts, including while only media processing is running, and a new collector first
+     * gets the previous job's final value (completed equal to total) until the next job resets it.
      */
     val syncByteProgress: Flow<SyncByteProgress>
     /**
@@ -60,19 +67,17 @@ interface LocalAndRemoteMediaRepository: LocalMediaRepository, RemoteMediaReposi
     suspend fun syncMedia(syncQueueable: SyncQueueable)
 
     /**
-     * Initiates an application wide sync job, when this API is called multiple times and there is
-     * already a sync job running, subsequent calls are dropped and the existing Job object is returned.
-     * This API should typically be initiated by a work manager(or equivalent platform API)
+     * Runs an application wide sync and suspends until it completes. Cancelling the caller cancels
+     * the sync. This API should typically be initiated by a work manager(or equivalent platform API)
+     *
+     * Only one sync runs at a time. A call made while another sync is running waits for it to
+     * finish, then runs its own, so an overlapping run (such as a replaced worker still cancelling)
+     * never mixes its progress into the next one.
      *
      * @param scanJob a reference to the Job which is scanning for new media, while the scan job is
      * active sync workers will remain running.
-     * @return a [Deferred] of type [Job]. The deferred is guaranteed to complete promptly as it is only
-     * used to avoid a locking algorithm implementation. The Job will allow callers to suspend until
-     * the sync completes(Useful for periodic sync workers which must wrap the Job)
      */
-    fun initiateSyncJob(
-        scanJob: Job
-    ): Deferred<Job>
+    suspend fun sync(scanJob: Job)
 }
 
 class LocalAndRemoteMediaRepositoryImpl(
@@ -92,12 +97,6 @@ class LocalAndRemoteMediaRepositoryImpl(
 
     private val syncImageRequestChannel = Channel<String>(Channel.RENDEZVOUS)
     private val syncVideoRequestChannel = Channel<String>(Channel.RENDEZVOUS)
-    // Since only one sync job should be running at any time, a single thread dispatcher can be used
-    // to avoid a locking algorithm
-    private val singleThreadDefaultDispatcher = defaultDispatcher.limitedParallelism(parallelism = 1)
-    // Only one job should be active, this property should only be accessed from the single thread dispatcher
-    //  to avoid any parallelism issues
-    private var syncJob: Job? = null
 
     private val _syncProgressState = MutableStateFlow<LocalMediaBackupProgress?>(null)
     override val syncProgressState = _syncProgressState.filterNotNull()
@@ -284,24 +283,11 @@ class LocalAndRemoteMediaRepositoryImpl(
         }
     }
 
-    override fun initiateSyncJob(
-        scanJob: Job
-    ): Deferred<Job> =
-        applicationScope.async(singleThreadDefaultDispatcher) {
-            syncJob?.let { syncJobNotNull ->
-                if (syncJobNotNull.isActive) {
-                    return@async syncJobNotNull
-                }
-            }
-            // At this point we have validated that no sync Job is actively running
-            syncJob?.cancel()
-            // Job can be launched with full parallelism support since the need for thread safety has passed
-            return@async launch(defaultDispatcher) {
-                initiateSyncJobInternal(scanJob)
-            }.apply {
-                syncJob = this
-            }
-        }
+    // Held for the whole sync, so only one runs at a time
+    private val syncMutex = Mutex()
+    override suspend fun sync(scanJob: Job) = syncMutex.withLock {
+        withContext(defaultDispatcher) { initiateSyncJobInternal(scanJob) }
+    }
 
     override suspend fun syncMedia(
         media: MediaItemDto,
