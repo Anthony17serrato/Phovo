@@ -24,15 +24,16 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.time.Duration.Companion.seconds
 
@@ -112,27 +113,37 @@ class MediaSyncWorker(
                     .map { it.isConnected }
                     .firstOrNull { it }
             }
+
             val syncJob = if (canSyncStart == true) {
                 with(localMediaManager) {
                     syncJob(processingJob)
                 }
-            } else null
+            } else {
+                null
+            }
             processingJob.join()
 
             var result: WorkResult = WorkResult.Success
             if (syncJob != null) {
                 // Kill sync if server connection goes bad & processing job is done already
-                getBackupStatusUseCase().takeWhile { status ->
+                val serverTransitionsOfflineJob = getBackupStatusUseCase().takeWhile { status ->
                     when (status) {
                         is BackupStatus.BackupCompleteLocal, BackupStatus.Initializing,
                         is BackupStatus.LocalMediaBackupProgress, BackupStatus.Scanning -> true
                         BackupStatus.ServerOffline -> {
-                            syncJob.cancel()
-                            result = WorkResult.Retry
                             false
                         }
                     }
-                }.collect()
+                }.launchIn(this)
+                select {
+                    serverTransitionsOfflineJob.onJoin {
+                        syncJob.cancel()
+                        result = WorkResult.Retry
+                    }
+                    syncJob.onJoin {
+                        serverTransitionsOfflineJob.cancel()
+                    }
+                }
             }
             coroutineContext.cancelChildren()
             return@coroutineScope result
