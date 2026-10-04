@@ -20,4 +20,9 @@
     <string name="description_sync_tip">Keep the app open for faster backup</string>
     <string name="description_server_offline">Make sure that the Phovo app is running on your desktop machine</string>
     <string name="button_view_failed_items">View failed items</string>
+    <string name="video_play">Play</string>
+    <string name="video_pause">Pause</string>
+    <string name="video_mute">Mute</string>
+    <string name="video_unmute">Unmute</string>
+    <string name="video_seek">Playback position</string>
 </resources>

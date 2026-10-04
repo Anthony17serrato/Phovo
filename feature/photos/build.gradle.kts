@@ -12,8 +12,6 @@ kotlin {
     sourceSets {
         androidMain.dependencies {
             implementation(libs.coil.video)
-            implementation(libs.exoplayer)
-            implementation(libs.media.ui)
             implementation(libs.ktor.client.okhttp)
         }
 
@@ -36,6 +34,7 @@ kotlin {
             implementation(libs.filekit.core)
             implementation(libs.telephoto.zoomable)
             implementation(libs.telephoto.flick)
+            implementation(libs.compose.video.player)
             implementation(libs.coil.network.ktor)
         }
 
@@ -55,7 +54,6 @@ kotlin {
             implementation(projects.data.thumbnails)
 
             implementation(libs.filekit.core)
-            implementation(libs.compose.video.player)
         }
     }
 }
