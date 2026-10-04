@@ -35,6 +35,7 @@ kotlin {
             implementation(libs.bundles.navigation3)
             implementation(libs.filekit.core)
             implementation(libs.telephoto.zoomable)
+            implementation(libs.telephoto.flick)
             implementation(libs.coil.network.ktor)
         }
 

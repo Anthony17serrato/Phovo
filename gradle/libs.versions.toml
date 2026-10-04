@@ -139,6 +139,7 @@ room-bundled-sqlite = { group = "androidx.sqlite", name = "sqlite-bundled", vers
 # https://github.com/saket/telephoto/issues/9
 # https://saket.github.io/telephoto/zoomableimage/
 telephoto-zoomable = { group = "me.saket.telephoto", name = "zoomable", version.ref = "telephoto"}
+telephoto-flick = { group = "me.saket.telephoto", name = "flick", version.ref = "telephoto"}
 # Dependencies of the included build-logic
 android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "androidGradlePlugin" }
 compose-compiler-gradlePlugin = { module = "org.jetbrains.kotlin:compose-compiler-gradle-plugin", version.ref = "kotlin" }
