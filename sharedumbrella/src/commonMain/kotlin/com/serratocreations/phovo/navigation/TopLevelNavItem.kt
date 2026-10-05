@@ -25,13 +25,21 @@ data class TopLevelNavItem(
     val unselectedIcon: IconAsset,
     val iconTextId: StringResource,
     val titleTextId: StringResource,
+    /**
+     * Images for the native iOS tab bar, which cannot draw the Compose icons: an image in the iOS
+     * app's asset catalog, or else an SF Symbol name.
+     */
+    val iosImage: String,
+    val iosSelectedImage: String = iosImage,
 )
 
 val PHOTOS = TopLevelNavItem(
     selectedIcon = PainterVectorIcon(designRes.drawable.phovo_icon),
     unselectedIcon = PainterVectorIcon(designRes.drawable.phovo_icon),
     iconTextId = photosRes.string.feature_photos_title,
-    titleTextId = Res.string.app_name
+    titleTextId = Res.string.app_name,
+    // Template copy of phovo_icon in the iOS asset catalog.
+    iosImage = "phovo_tab_icon",
 )
 
 val SEARCH = TopLevelNavItem(
@@ -39,13 +47,15 @@ val SEARCH = TopLevelNavItem(
     unselectedIcon = PainterVectorIcon(designRes.drawable.ic_search_outlined),
     iconTextId = Res.string.feature_search_title,
     titleTextId = Res.string.feature_search_title,
+    iosImage = "magnifyingglass",
 )
 
 val CONNECTIONS = TopLevelNavItem(
     selectedIcon = PainterVectorIcon(connectionsRes.drawable.ic_dns_rounded),
     unselectedIcon = PainterVectorIcon(connectionsRes.drawable.ic_dns_outlined),
     iconTextId = connectionsRes.string.feature_connections_title,
-    titleTextId = connectionsRes.string.feature_connections_title
+    titleTextId = connectionsRes.string.feature_connections_title,
+    iosImage = "server.rack",
 )
 
 val TOP_LEVEL_NAV_ITEMS: Map<NavKey, TopLevelNavItem> = mapOf(
