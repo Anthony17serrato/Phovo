@@ -2,11 +2,11 @@ package com.serratocreations.phovo.feature.photos.mappers
 
 import com.serratocreations.phovo.core.domain.model.MediaItemWithThumbnails
 import com.serratocreations.phovo.feature.photos.ui.model.ImagePhotoUiItem
-import com.serratocreations.phovo.feature.photos.ui.model.PhotoUiItem
+import com.serratocreations.phovo.feature.photos.ui.model.MediaUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.VideoPhotoUiItem
 import com.serratocreations.phovo.feature.photos.util.toFormattedDurationString
 
-fun MediaItemWithThumbnails.toPhotoUiItem(): PhotoUiItem {
+fun MediaItemWithThumbnails.toMediaUiItem(): MediaUiItem {
     return when (this) {
         is MediaItemWithThumbnails.MediaImageItem -> {
             ImagePhotoUiItem(

@@ -6,7 +6,7 @@ import com.serratocreations.phovo.core.domain.GetPhotosFeedWithThumbnailsUseCase
 import com.serratocreations.phovo.feature.photos.ui.model.DateHeaderPhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.PhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.MediaUiItem
-import com.serratocreations.phovo.feature.photos.mappers.toPhotoUiItem
+import com.serratocreations.phovo.feature.photos.mappers.toMediaUiItem
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,6 +36,7 @@ open class PhotosViewModel(
         getPhotosFeedWithThumbnailsUseCase()
             .onEach { phovoItems ->
                 val uiItemList = mutableListOf<PhotoUiItem>()
+                val mediaItems = mutableListOf<MediaUiItem>()
                 phovoItems.groupBy { Pair(it.dateInFeed.month, it.dateInFeed.year) }.forEach { entry ->
                     uiItemList.add(
                         DateHeaderPhotoUiItem(
@@ -43,10 +44,12 @@ open class PhotosViewModel(
                             year = entry.key.second.takeIf { it != currentYear }
                         )
                     )
-                    uiItemList.addAll(entry.value.map { it.toPhotoUiItem() })
+                    val groupMediaItems = entry.value.map { it.toMediaUiItem() }
+                    uiItemList.addAll(groupMediaItems)
+                    mediaItems.addAll(groupMediaItems)
                 }
                 _photosUiState.update { currentState ->
-                    currentState.copy(photosFeed = uiItemList)
+                    currentState.copy(photosFeed = uiItemList, mediaItems = mediaItems)
                 }
             }.flowOn(ioDispatcher)
             .launchIn(viewModelScope)
@@ -71,14 +74,20 @@ open class PhotosViewModel(
 
     fun onPhotoSelected(mediaUiItem: MediaUiItem) {
         _photosUiState.update { currentState ->
-            currentState.copy(selectedPhoto = mediaUiItem)
+            currentState.copy(openedPhotoKey = mediaUiItem.key)
         }
     }
 }
 
 data class PhotosUiState(
     val photosFeed: List<PhotoUiItem> = emptyList(),
-    val selectedPhoto: MediaUiItem? = null,
+    /** The media in [photosFeed] without the date headers, in the same order. */
+    val mediaItems: List<MediaUiItem> = emptyList(),
+    /**
+     * The photo the viewer opens on. Only the viewer knows which photo it has been swiped to since,
+     * and it tracks that by key, not by an index into a feed that keeps changing.
+     */
+    val openedPhotoKey: String? = null,
     val shouldShowWelcomeBottomSheet: Boolean,
     // The feed only ever shows one row of this, however many there are: a single call to action,
     // or a summary that opens the dedicated call to actions screen.
