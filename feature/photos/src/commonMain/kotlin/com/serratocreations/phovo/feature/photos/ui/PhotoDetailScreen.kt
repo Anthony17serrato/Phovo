@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.runtime.Composable
@@ -55,43 +54,19 @@ internal fun PhotoViewerScreen(
     modifier: Modifier = Modifier
 ) {
     val state by photosViewModel.photosUiState.collectAsStateWithLifecycle()
-    val photos = remember(state.photosFeed) {
-        state.photosFeed.filterIsInstance<MediaUiItem>()
-    }
-    val currentSelectedPhoto = state.selectedPhoto
+    val openedPhotoKey = state.openedPhotoKey ?: return
+    val viewerState = rememberPhotoViewerState(state.mediaItems, openedPhotoKey)
 
-    if (photos.isEmpty() || currentSelectedPhoto == null) return
-
-    val initialPage = remember(photos) {
-        photos.indexOf(currentSelectedPhoto).coerceAtLeast(0)
-    }
-
-    val pagerState = rememberPagerState(initialPage = initialPage) {
-        photos.size
-    }
-
-    // Sync ViewModel selectedPhoto -> Pager selection (for external changes)
-    LaunchedEffect(currentSelectedPhoto) {
-        val targetPage = photos.indexOf(currentSelectedPhoto)
-        if (targetPage >= 0 && targetPage != pagerState.currentPage) {
-            pagerState.scrollToPage(targetPage)
-        }
-    }
-
-    // Sync Pager selection -> ViewModel selectedPhoto (for swipes)
-    LaunchedEffect(pagerState.currentPage) {
-        val activePhoto = photos.getOrNull(pagerState.currentPage)
-        if (activePhoto != null && activePhoto != photosViewModel.photosUiState.value.selectedPhoto) {
-            photosViewModel.onPhotoSelected(activePhoto)
-        }
-    }
+    if (viewerState.photos.isEmpty()) return
 
     HorizontalPager(
-        state = pagerState,
+        state = viewerState.pagerState,
         modifier = modifier.fillMaxSize(),
-        pageSpacing = 16.dp
+        pageSpacing = 16.dp,
+        // Lets a page keep its composition, such as a playing video, when its index changes.
+        key = { page -> viewerState.photos[page].key }
     ) { page ->
-        val photo = photos.getOrNull(page)
+        val photo = viewerState.photos.getOrNull(page)
         PhotoViewerScreen(
             item = photo,
             sharedElementTransition = sharedElementTransition,
@@ -100,7 +75,7 @@ internal fun PhotoViewerScreen(
             onToggleBars = onToggleBars,
             onDismiss = onDismiss,
             controlsBottomPadding = controlsBottomPadding,
-            isActivePage = (page == pagerState.currentPage),
+            isActivePage = photo != null && photo.key == viewerState.activePhotoKey,
             modifier = Modifier.fillMaxSize()
         )
     }
