@@ -14,10 +14,10 @@ class DesktopApplicationPlatformModuleFetcher: ApplicationPlatformModuleFetcher(
         includes(super.getModule())
         factory<AndroidDesktopIosAppInitializer> {
             DesktopAppInitializer(
-                get(APPLICATION_SCOPE),
-                get(),
-                get(),
-                get()
+                applicationScope = get(APPLICATION_SCOPE),
+                serverConfigRepository = inject(),
+                desktopServerConfigManager = inject(),
+                localMediaManager = inject()
             )
         }
     }

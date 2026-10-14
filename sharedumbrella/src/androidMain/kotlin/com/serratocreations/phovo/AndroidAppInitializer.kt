@@ -8,10 +8,10 @@ import kotlinx.coroutines.CoroutineScope
 
 class AndroidAppInitializer(
     applicationScope: CoroutineScope,
-    serverAddressResolver: ServerAddressResolver,
-    localAndRemoteMediaRepository: LocalAndRemoteMediaRepository,
-    permissionRepository: PermissionRepository,
-    workManager: PhovoWorkManager
+    serverAddressResolver: Lazy<ServerAddressResolver>,
+    localAndRemoteMediaRepository: Lazy<LocalAndRemoteMediaRepository>,
+    permissionRepository: Lazy<PermissionRepository>,
+    workManager: Lazy<PhovoWorkManager>
 ): AndroidIosAppInitializer(
     applicationScope,
     serverAddressResolver,
