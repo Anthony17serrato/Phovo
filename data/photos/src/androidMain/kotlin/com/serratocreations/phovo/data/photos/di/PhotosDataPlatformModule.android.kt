@@ -12,6 +12,7 @@ import io.github.vinceglb.filekit.coil.addPlatformFileSupport
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import kotlinx.serialization.json.Json
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.serialization.kotlinx.json.json
 import org.koin.core.module.Module
@@ -24,7 +25,8 @@ internal actual fun getAndroidIosModules(): Module = module {
         HttpClient(OkHttp) {
             expectSuccess = false
             install(ContentNegotiation) {
-                json()
+                // Lets a newer server add fields to its responses without breaking this client.
+                json(Json { ignoreUnknownKeys = true })
             }
             install(HttpTimeout) {
                 requestTimeoutMillis = 5.minutes.inWholeMilliseconds

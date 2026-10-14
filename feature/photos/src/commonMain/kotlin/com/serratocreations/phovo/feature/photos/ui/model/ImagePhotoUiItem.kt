@@ -6,7 +6,8 @@ data class ImagePhotoUiItem(
     override val sourceAsset: DomainAssetLocation,
     override val lowResThumbnail: DomainAssetLocation?,
     override val thumbnail: DomainAssetLocation,
-    override val key: String
+    override val key: String,
+    override val aspectRatio: Float
 ) : MediaUiItem
 
 data class VideoPhotoUiItem(
@@ -14,7 +15,8 @@ data class VideoPhotoUiItem(
     override val lowResThumbnail: DomainAssetLocation?,
     val duration: String,
     override val thumbnail: DomainAssetLocation,
-    override val key: String
+    override val key: String,
+    override val aspectRatio: Float
 ) : MediaUiItem
 
 sealed interface MediaUiItem : PhotoUiItem {
@@ -22,4 +24,6 @@ sealed interface MediaUiItem : PhotoUiItem {
     val sourceAsset: DomainAssetLocation
     val lowResThumbnail: DomainAssetLocation?
     val thumbnail: DomainAssetLocation
+    /** Width over height as displayed. */
+    val aspectRatio: Float
 }

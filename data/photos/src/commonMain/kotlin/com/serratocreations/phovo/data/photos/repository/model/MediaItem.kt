@@ -1,5 +1,6 @@
 package com.serratocreations.phovo.data.photos.repository.model
 
+import com.serratocreations.phovo.core.model.MediaDimensions
 import kotlinx.datetime.LocalDateTime
 
 sealed interface MediaItem {
@@ -12,4 +13,5 @@ sealed interface MediaItem {
     val fileName: String
     val dateInFeed: LocalDateTime
     val size: Long
+    val dimensions: MediaDimensions
 }

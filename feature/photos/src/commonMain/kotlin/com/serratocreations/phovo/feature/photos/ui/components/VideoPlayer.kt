@@ -25,10 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -56,6 +53,11 @@ import phovo.feature.photos.generated.resources.video_unmute
 /**
  * Plays [videoPlatformFile] with playback controls along the bottom.
  *
+ * @param aspectRatio the video's width over its height as displayed, recorded when the media was
+ *   processed. The video is sized from it rather than from the player, whose own value is stuck at
+ *   16:9 on iOS and on Android is a 16:9 placeholder until the first frame has already been drawn,
+ *   squashed into that shape.
+ *
  * @param poster drawn under the video, so there is something on screen while the player loads and
  *   for the shared element transition to carry.
  * @param surfaceModifier applied to the video and [poster] only, not the controls. This is where a
@@ -66,6 +68,7 @@ import phovo.feature.photos.generated.resources.video_unmute
 @Composable
 internal fun VideoPlayer(
     videoPlatformFile: PlatformFile,
+    aspectRatio: Float,
     controlsVisible: Boolean,
     controlsBottomPadding: Dp,
     onClick: () -> Unit,
@@ -74,11 +77,10 @@ internal fun VideoPlayer(
     surfaceModifier: Modifier = Modifier
 ) {
     val playerState = rememberVideoPlayerState()
-    var knownAspectRatio by remember(videoPlatformFile) { mutableStateOf<Float?>(null) }
     // TODO: Need to add alternate UI for unsupported video formats that would allow the user to
     //  open the video in an external application, see handleVideoDesktop().
     LaunchedEffect(videoPlatformFile) {
-        knownAspectRatio = playerState.openVideo(videoPlatformFile)
+        playerState.openVideo(videoPlatformFile)
     }
 
     Box(modifier = modifier.fillMaxSize()) {
@@ -87,17 +89,11 @@ internal fun VideoPlayer(
             contentAlignment = Alignment.Center
         ) {
             poster()
-            // When the aspect ratio is known up front, size the video here and have the player
-            // fill that box, rather than trusting the player's own fit, which is wrong on iOS.
-            val aspectRatio = knownAspectRatio
+            // Sized here and filled by the player, rather than trusting the player's own fit.
             VideoPlayerSurface(
                 playerState = playerState,
-                contentScale = if (aspectRatio != null) ContentScale.Crop else ContentScale.Fit,
-                modifier = if (aspectRatio != null) {
-                    Modifier.aspectRatio(aspectRatio)
-                } else {
-                    Modifier.fillMaxSize()
-                }
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.aspectRatio(aspectRatio)
             )
         }
         // On Android and iOS the video is a native view, which takes any touch that lands on it.

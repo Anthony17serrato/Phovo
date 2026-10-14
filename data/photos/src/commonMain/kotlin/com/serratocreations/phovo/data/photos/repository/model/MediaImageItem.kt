@@ -1,5 +1,6 @@
 package com.serratocreations.phovo.data.photos.repository.model
 
+import com.serratocreations.phovo.core.model.MediaDimensions
 import kotlinx.datetime.LocalDateTime
 
 data class MediaImageItem(
@@ -8,5 +9,6 @@ data class MediaImageItem(
     override val dateInFeed: LocalDateTime,
     override val size: Long,
     override val uniqueAssetIdentifier: String,
-    override val isSynced: Boolean
+    override val isSynced: Boolean,
+    override val dimensions: MediaDimensions
 ) : MediaItem

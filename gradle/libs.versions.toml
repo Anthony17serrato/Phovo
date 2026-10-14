@@ -8,6 +8,8 @@ ksp = "2.3.10"
 
 androidx-activityCompose = "1.13.0"
 androidx-datastore = "1.2.1"
+androidx-exifinterface = "1.4.2"
+metadata-extractor = "2.21.0"
 androidx-splash = "1.2.0"
 androidx-work = "2.11.2"
 coil = "3.5.0"
@@ -57,6 +59,7 @@ serialization-json = "1.11.0"
 sqlite = "2.7.0"
 telephoto = "0.19.0"
 # TODO Revert to org.jmdns:jmdns once a release carrying jmdns/jmdns#365 is out, expected in
+#   Release is available now https://github.com/jmdns/jmdns/releases/tag/v3.6.4
 # 3.6.4. This points at a fork of 3.6.3 with that one fix, which binds the host address when
 # opening the multicast socket. Without it a VPN on the desktop takes the route for 224.0.0.251,
 # outgoing announcements carry a source address from the tunnel, and phones drop them, so the
@@ -95,6 +98,8 @@ filekit-dialogs-compose = { group = "io.github.vinceglb", name = "filekit-dialog
 filekit-coil = { group = "io.github.vinceglb", name = "filekit-coil", version.ref = "filekit" }
 serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization-json" }
 androidx-datastore = { module = "androidx.datastore:datastore", version.ref = "androidx-datastore" }
+androidx-exifinterface = { module = "androidx.exifinterface:exifinterface", version.ref = "androidx-exifinterface" }
+metadata-extractor = { module = "com.drewnoakes:metadata-extractor", version.ref = "metadata-extractor" }
 jetbrains-swing = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-swing", version.ref = "kmp-swing" }
 jmdns = { group = "com.github.Anthony17serrato", name = "jmdns", version.ref = "jmdns" }
 kermit-logging = { group = "co.touchlab", name = "kermit", version.ref = "kermit" }

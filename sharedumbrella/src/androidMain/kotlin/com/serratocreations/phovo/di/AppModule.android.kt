@@ -16,10 +16,10 @@ class AndroidApplicationPlatformModuleFetcher: IosAndroidApplicationPlatformModu
         factory<AndroidDesktopIosAppInitializer> {
             AndroidAppInitializer(
                 applicationScope = get(APPLICATION_SCOPE),
-                serverAddressResolver = get(),
-                localAndRemoteMediaRepository = get(),
-                permissionRepository = get(),
-                workManager = get()
+                serverAddressResolver = inject(),
+                localAndRemoteMediaRepository = inject(),
+                permissionRepository = inject(),
+                workManager = inject()
             )
         }
     }

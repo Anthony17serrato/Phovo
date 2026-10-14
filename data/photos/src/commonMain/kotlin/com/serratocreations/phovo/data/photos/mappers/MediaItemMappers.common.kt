@@ -3,6 +3,7 @@ package com.serratocreations.phovo.data.photos.mappers
 import com.serratocreations.phovo.core.database.entities.LocalMediaEntity
 import com.serratocreations.phovo.core.database.entities.MediaItemMetadataEntity
 import com.serratocreations.phovo.core.database.entities.MediaItemWithMetadata
+import com.serratocreations.phovo.core.model.MediaDimensions
 import com.serratocreations.phovo.core.model.MediaType
 import com.serratocreations.phovo.core.model.network.MediaItemDto
 import com.serratocreations.phovo.data.photos.repository.model.AssetLocation
@@ -26,6 +27,7 @@ fun MediaItemDto.toMediaItem(): MediaItem {
         .fromEpochMilliseconds(timeStampUtcMs + timeOffsetMs)
         .toLocalDateTime(TimeZone.UTC)
 
+    val dimensions = MediaDimensions(displayWidth, displayHeight)
     return when (mediaType) {
         MediaType.Image -> {
             MediaImageItem(
@@ -34,7 +36,8 @@ fun MediaItemDto.toMediaItem(): MediaItem {
                 dateInFeed = dateInFeed,
                 size = size,
                 uniqueAssetIdentifier = assetHash,
-                isSynced = true
+                isSynced = true,
+                dimensions = dimensions
             )
         }
         MediaType.Video -> {
@@ -45,7 +48,8 @@ fun MediaItemDto.toMediaItem(): MediaItem {
                 size = size,
                 uniqueAssetIdentifier = assetHash,
                 duration = (videoDurationMs ?: 0L).milliseconds,
-                isSynced = true
+                isSynced = true,
+                dimensions = dimensions
             )
         }
     }
@@ -66,6 +70,10 @@ fun MediaItemWithMetadata.toMediaItem(): MediaItem {
         AssetLocation.RemoteAssetLocation
     }
 
+    val dimensions = MediaDimensions(
+        width = mediaItemMetadataEntity.displayWidth,
+        height = mediaItemMetadataEntity.displayHeight
+    )
     return when (mediaItemMetadataEntity.mediaType) {
         MediaType.Image -> {
             MediaImageItem(
@@ -74,7 +82,8 @@ fun MediaItemWithMetadata.toMediaItem(): MediaItem {
                 assetLocation = assetLocation,
                 fileName = mediaItemMetadataEntity.fileName,
                 dateInFeed = dateInFeed,
-                size = mediaItemMetadataEntity.size
+                size = mediaItemMetadataEntity.size,
+                dimensions = dimensions
             )
         }
         MediaType.Video -> {
@@ -86,7 +95,8 @@ fun MediaItemWithMetadata.toMediaItem(): MediaItem {
                 fileName = mediaItemMetadataEntity.fileName,
                 dateInFeed = dateInFeed,
                 size = mediaItemMetadataEntity.size,
-                duration = duration
+                duration = duration,
+                dimensions = dimensions
             )
         }
     }
@@ -126,6 +136,8 @@ fun MediaItemMetadataEntity.toMediaItemDto(): MediaItemDto = MediaItemDto(
     timeOffsetMs = timeOffsetMs,
     mediaType = mediaType,
     videoDurationMs = videoDurationMs,
+    displayWidth = displayWidth,
+    displayHeight = displayHeight,
 )
 
 fun MediaItemDto.toMediaItemEntity(isSynced: Boolean): MediaItemMetadataEntity {
@@ -137,7 +149,9 @@ fun MediaItemDto.toMediaItemEntity(isSynced: Boolean): MediaItemMetadataEntity {
         timeOffsetMs = timeOffsetMs,
         size = size,
         mediaType = mediaType,
-        videoDurationMs = videoDurationMs
+        videoDurationMs = videoDurationMs,
+        displayWidth = displayWidth,
+        displayHeight = displayHeight
     )
 }
 
@@ -163,6 +177,8 @@ fun MediaItem.toMediaItemWithMetadataEntity(): MediaItemWithMetadata {
             size = size,
             mediaType = mediaType,
             videoDurationMs = videoDurationMs,
+            displayWidth = dimensions.width,
+            displayHeight = dimensions.height,
         ),
         localLocation = when(val location = assetLocation) {
             is AssetLocation.LocalAssetLocation -> {

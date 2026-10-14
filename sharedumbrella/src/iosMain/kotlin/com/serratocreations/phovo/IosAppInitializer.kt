@@ -7,11 +7,11 @@ import com.serratocreations.phovo.data.server.ServerAddressResolver
 import kotlinx.coroutines.CoroutineScope
 
 class IosAppInitializer(
-    private val workManager: IosPhovoWorkManager,
+    private val workManager: Lazy<IosPhovoWorkManager>,
     applicationScope: CoroutineScope,
-    serverAddressResolver: ServerAddressResolver,
-    localAndRemoteMediaRepository: LocalAndRemoteMediaRepository,
-    permissionRepository: PermissionRepository
+    serverAddressResolver: Lazy<ServerAddressResolver>,
+    localAndRemoteMediaRepository: Lazy<LocalAndRemoteMediaRepository>,
+    permissionRepository: Lazy<PermissionRepository>
 ): AndroidIosAppInitializer(
     applicationScope,
     serverAddressResolver,
@@ -22,7 +22,7 @@ class IosAppInitializer(
     override fun initialize() {
         // BGTaskScheduler only accepts handler registration before the app finishes launching, and
         // this runs inside iOSApp.swift's init(), so it has to happen here rather than lazily.
-        workManager.registerBackgroundTasks()
+        workManager.value.registerBackgroundTasks()
         super.initialize()
     }
 }

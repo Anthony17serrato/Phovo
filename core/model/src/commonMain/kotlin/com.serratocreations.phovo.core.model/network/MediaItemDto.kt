@@ -12,4 +12,7 @@ data class MediaItemDto(
     val timeOffsetMs: Long,
     val mediaType: MediaType,
     val videoDurationMs: Long?,
+    /** The size the media is displayed at, see MediaDimensions. */
+    val displayWidth: Int,
+    val displayHeight: Int,
 )

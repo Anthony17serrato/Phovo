@@ -39,7 +39,8 @@ fun MediaItem.toMediaItemWithThumbnails(
                 fileName = fileName,
                 dateInFeed = dateInFeed,
                 size = size,
-                localUuid = uniqueAssetIdentifier
+                localUuid = uniqueAssetIdentifier,
+                dimensions = dimensions
             )
         }
         is MediaVideoItem -> {
@@ -63,6 +64,7 @@ fun MediaItem.toMediaItemWithThumbnails(
                 dateInFeed = dateInFeed,
                 size = size,
                 localUuid = uniqueAssetIdentifier,
+                dimensions = dimensions,
                 duration = duration
             )
         }

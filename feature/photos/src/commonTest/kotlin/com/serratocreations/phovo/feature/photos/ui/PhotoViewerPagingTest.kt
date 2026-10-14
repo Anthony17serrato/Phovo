@@ -73,7 +73,8 @@ class PhotoViewerPagingTest {
             sourceAsset = location,
             lowResThumbnail = null,
             thumbnail = location,
-            key = key
+            key = key,
+            aspectRatio = 1f
         )
     }
 }

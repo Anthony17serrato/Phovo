@@ -13,28 +13,28 @@ import kotlinx.coroutines.launch
 
 class DesktopAppInitializer(
     private val applicationScope: CoroutineScope,
-    private val serverConfigRepository: DesktopServerConfigRepository,
-    private val desktopServerConfigManager: DesktopServerConfigManager,
-    private val localMediaManager: DesktopLocalMediaManager
+    private val serverConfigRepository: Lazy<DesktopServerConfigRepository>,
+    private val desktopServerConfigManager: Lazy<DesktopServerConfigManager>,
+    private val localMediaManager: Lazy<DesktopLocalMediaManager>
 ): AndroidDesktopIosAppInitializer() {
     override fun initialize() {
         super.initialize()
         // Initialize FileKit
         FileKit.init(appId = "com.serratocreations.phovo")
         applicationScope.launch {
-            val serverConfig = serverConfigRepository.observeServerConfig().first()
+            val serverConfig = serverConfigRepository.value.observeServerConfig().first()
             // If this server has been configured restart it
             serverConfig?.let { availableServerConfig ->
-                desktopServerConfigManager.configureDeviceAsServer(availableServerConfig)
+                desktopServerConfigManager.value.configureDeviceAsServer(availableServerConfig)
             }
         }
         applicationScope.launch {
             // Suspends until a config is available(consider withTimeout)
-            val backupDirectory = serverConfigRepository.observeServerConfig()
+            val backupDirectory = serverConfigRepository.value.observeServerConfig()
                 .mapNotNull { it?.backupDirectory }
                 .distinctUntilChanged()
                 .first()
-            localMediaManager.initMediaProcessing(
+            localMediaManager.value.initMediaProcessing(
                 outputDirectory = backupDirectory.absolutePath()
             )
         }

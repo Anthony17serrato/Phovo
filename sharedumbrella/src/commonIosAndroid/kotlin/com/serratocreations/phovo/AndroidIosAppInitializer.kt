@@ -39,26 +39,26 @@ import kotlin.time.Duration.Companion.seconds
 
 abstract class AndroidIosAppInitializer(
     private val applicationScope: CoroutineScope,
-    private val serverAddressResolver: ServerAddressResolver,
-    private val localAndRemoteMediaRepository: LocalAndRemoteMediaRepository,
-    private val permissionRepository: PermissionRepository,
-    private val workManager: PhovoWorkManager
+    private val serverAddressResolver: Lazy<ServerAddressResolver>,
+    private val localAndRemoteMediaRepository: Lazy<LocalAndRemoteMediaRepository>,
+    private val permissionRepository: Lazy<PermissionRepository>,
+    private val workManager: Lazy<PhovoWorkManager>
 ): AndroidDesktopIosAppInitializer() {
     override fun initialize() {
         super.initialize()
-        serverAddressResolver.start()
+        serverAddressResolver.value.start()
         applicationScope.launch {
-            localAndRemoteMediaRepository.clearNonFailedSyncLogs()
+            localAndRemoteMediaRepository.value.clearNonFailedSyncLogs()
             // First await for permissions, there is no point in processing local media if permission
             // is missing
-            permissionRepository.observeGalleryPermissionStatus()
+            permissionRepository.value.observeGalleryPermissionStatus()
                 .map { status ->
                     status.permissionStatus == PermissionStatus.Granted || status.isLimited
                 }
                 .filter { it }
                 .distinctUntilChanged()
                 .collect {
-                    workManager.enqueueUniqueWork(
+                    workManager.value.enqueueUniqueWork(
                         uniqueWorkName = "media-sync-now",
                         policy = ExistingWorkPolicy.REPLACE,
                         request = OneTimeWorkRequest(

@@ -6,23 +6,16 @@ import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.absolutePath
 import io.github.vinceglb.filekit.div
 import io.github.vinceglb.filekit.exists
-import io.github.vinceglb.filekit.utils.Platform
-import io.github.vinceglb.filekit.utils.PlatformUtil
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.async
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
-import phovo.data.thumbnails.generated.resources.Res
-import java.io.File
 import java.io.IOException
-import java.net.URI
+import kotlin.time.Duration
 
 class FfmpegThumbnailGenerator(
+    private val tools: BundledFfmpegTools,
     private val ioDispatcher: CoroutineDispatcher,
-    private val appScope: CoroutineScope,
     cpuBudget: ProcessingCpuBudget,
     logger: PhovoLogger
 ) {
@@ -50,34 +43,15 @@ class FfmpegThumbnailGenerator(
     )
 
     /**
-     * Runs FFmpeg within the budgeted process ceiling and returns the process exit code.
+     * Runs FFmpeg within the budgeted process ceiling and returns the process exit code. There is no
+     * timeout, because the storyboard decodes the whole video and a long video takes long, but
+     * cancelling the caller kills FFmpeg.
      */
     private suspend fun runFfmpeg(command: List<String>): Int =
         ffmpegProcessSemaphore.withPermit {
-            val process = ProcessBuilder(command)
-                .redirectError(ProcessBuilder.Redirect.INHERIT)
-                .redirectOutput(ProcessBuilder.Redirect.INHERIT)
-                .start()
-
-            process.waitFor()
+            runProcess(command, Duration.INFINITE, ioDispatcher)?.exitCode
+                ?: error("FFmpeg did not finish")
         }
-
-    // TODO Can move to constructor DI if other classes need it
-    val deferredFfmpegFile: Deferred<PlatformFile> by lazy {
-        return@lazy appScope.async {
-            val execName = if (PlatformUtil.current == Platform.Windows) "ffmpeg.exe" else "ffmpeg"
-
-            val ffmpegFile = File.createTempFile("ffmpeg_", if (execName.endsWith(".exe")) ".exe" else "")
-            URI(Res.getUri("files/$execName")).toURL().openStream().use { inputStream ->
-                ffmpegFile.outputStream().use { outputStream ->
-                    inputStream.copyTo(outputStream)
-                }
-            }
-            // FileKit does not support this API
-            ffmpegFile.setExecutable(true)
-            return@async PlatformFile(ffmpegFile)
-        }
-    }
 
     /**
      * Given an input [videoFile] generates
@@ -87,7 +61,7 @@ class FfmpegThumbnailGenerator(
         outputDirectories: ThumbnailDirectories,
         thumbnailNameWithoutExtension: String
     ): Unit = withContext(ioDispatcher) {
-        val ffmpegFile = deferredFfmpegFile.await()
+        val ffmpegFile = tools.ffmpeg.await()
 
         val lowResThumbnail = outputDirectories.lowResThumbnailDirectory / "$thumbnailNameWithoutExtension.webp"
         val highResThumbnail = outputDirectories.highResThumbnailDirectory / "$thumbnailNameWithoutExtension.webp"
@@ -155,7 +129,7 @@ class FfmpegThumbnailGenerator(
         thumbnailNameWithoutExtension: String
     ): Unit = withContext(ioDispatcher) {
 
-        val ffmpegFile = deferredFfmpegFile.await()
+        val ffmpegFile = tools.ffmpeg.await()
 
         val lowResThumbnail = outputDirectories.lowResThumbnailDirectory / "$thumbnailNameWithoutExtension.webp"
         val highResThumbnail = outputDirectories.highResThumbnailDirectory / "$thumbnailNameWithoutExtension.webp"

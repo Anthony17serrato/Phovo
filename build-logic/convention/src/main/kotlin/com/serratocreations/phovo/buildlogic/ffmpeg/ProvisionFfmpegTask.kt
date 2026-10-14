@@ -5,6 +5,7 @@ import org.apache.commons.compress.compressors.xz.XZCompressorInputStream
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
@@ -23,15 +24,20 @@ import java.time.Duration
 import java.util.zip.ZipFile
 
 /**
- * Downloads the pinned FFmpeg build for the host platform, verifies it against its SHA-256, and
- * unpacks the executable into `<outputDirectory>/files/` so Compose can pick it up as a custom
- * resource directory.
+ * Downloads the pinned FFmpeg archives for the host platform, verifies each against its SHA-256, and
+ * unpacks the executables (`ffmpeg` and `ffprobe`) into `<outputDirectory>/files/` so Compose can
+ * pick them up as a custom resource directory.
+ *
+ * Each executable gets a `<name>.sha256` file next to it holding the executable's own checksum. The
+ * app installs the executables under a folder named for that checksum, so it can tell an
+ * up to date install from an old one without reading the binaries.
  *
  * Replaces the previous Git LFS checkout of roughly half a gigabyte of committed binaries.
  *
  * Archives are cached under the Gradle user home rather than the build directory, so `clean` does
  * not force another download. The cache is content addressed by checksum, which means bumping the
- * pinned version can never collide with a previously cached archive of the same file name.
+ * pinned version can never collide with a previously cached archive of the same file name, and an
+ * archive that holds several executables is only fetched once.
  */
 @DisableCachingByDefault(
     because = "Output is a single large binary that is cheaper to keep in the local archive cache " +
@@ -39,18 +45,9 @@ import java.util.zip.ZipFile
 )
 abstract class ProvisionFfmpegTask : DefaultTask() {
 
+    /** Each executable to unpack, with the pinned archive it comes from. */
     @get:Input
-    abstract val downloadUrl: Property<String>
-
-    @get:Input
-    abstract val sha256: Property<String>
-
-    @get:Input
-    abstract val archiveFormat: Property<FfmpegArchiveFormat>
-
-    /** `ffmpeg`, or `ffmpeg.exe` on Windows. */
-    @get:Input
-    abstract val executableName: Property<String>
+    abstract val executables: ListProperty<FfmpegExecutable>
 
     /** Named only for error messages, so a failure says which target it was provisioning. */
     @get:Input
@@ -71,30 +68,34 @@ abstract class ProvisionFfmpegTask : DefaultTask() {
 
     @TaskAction
     fun provision() {
-        val expectedSha = sha256.get().lowercase()
-        val archive = resolveArchive(expectedSha)
-
         val filesDir = outputDirectory.get().asFile.resolve("files")
         // Wipe first so a stale binary from another platform cannot survive here.
         filesDir.deleteRecursively()
         filesDir.mkdirs()
 
-        val target = filesDir.resolve(executableName.get())
-        extractExecutable(archive, target)
-        target.setExecutable(true, false)
+        for (executable in executables.get()) {
+            val archive = resolveArchive(executable.archive)
+            val target = filesDir.resolve(executable.name)
+            extractExecutable(archive, executable, target)
+            target.setExecutable(true, false)
+            filesDir.resolve("${executable.name}.sha256").writeText(target.sha256())
 
-        logger.lifecycle("Provisioned FFmpeg ${FfmpegBinaries.VERSION_BRANCH} (${platform.get()}) at $target")
+            logger.lifecycle(
+                "Provisioned ${executable.name} ${FfmpegBinaries.VERSION_BRANCH} (${platform.get()}) at $target"
+            )
+        }
     }
 
     /**
-     * Returns a verified archive, downloading it only if the cache does not already hold one whose
-     * contents hash to [expectedSha].
+     * Returns a verified copy of [archive], downloading it only if the cache does not already hold
+     * one whose contents hash to its checksum.
      */
-    private fun resolveArchive(expectedSha: String): File {
+    private fun resolveArchive(archive: FfmpegArchive): File {
+        val expectedSha = archive.sha256.lowercase()
         val cacheDir = archiveCacheDirectory.get().asFile
         cacheDir.mkdirs()
 
-        val fileName = downloadUrl.get().substringAfterLast('/')
+        val fileName = archive.url.substringAfterLast('/')
         val cached = cacheDir.resolve("$expectedSha-$fileName")
 
         // A cached archive is named for its own checksum, but rehash it anyway: a half written file
@@ -109,16 +110,15 @@ abstract class ProvisionFfmpegTask : DefaultTask() {
             throw GradleException(
                 "FFmpeg archive for ${platform.get()} is not in the cache at $cacheDir and Gradle " +
                     "is running with --offline. Re-run without --offline to download it from " +
-                    "${downloadUrl.get()}."
+                    "${archive.url}."
             )
         }
 
-        download(cached, expectedSha)
+        download(archive.url, cached, expectedSha)
         return cached
     }
 
-    private fun download(target: File, expectedSha: String) {
-        val url = downloadUrl.get()
+    private fun download(url: String, target: File, expectedSha: String) {
         val temp = File(target.parentFile, "${target.name}.part")
         var lastFailure: Exception? = null
 
@@ -195,15 +195,14 @@ abstract class ProvisionFfmpegTask : DefaultTask() {
         )
     }
 
-    private fun extractExecutable(archive: File, target: File) {
-        val executable = executableName.get()
-        val extracted = when (archiveFormat.get()) {
-            FfmpegArchiveFormat.ZIP -> extractFromZip(archive, executable, target)
-            FfmpegArchiveFormat.TAR_XZ -> extractFromTarXz(archive, executable, target)
+    private fun extractExecutable(archive: File, executable: FfmpegExecutable, target: File) {
+        val extracted = when (executable.archive.format) {
+            FfmpegArchiveFormat.ZIP -> extractFromZip(archive, executable.name, target)
+            FfmpegArchiveFormat.TAR_XZ -> extractFromTarXz(archive, executable.name, target)
         }
 
         if (!extracted) {
-            throw GradleException("No '$executable' entry found inside $archive")
+            throw GradleException("No '${executable.name}' entry found inside $archive")
         }
     }
 
@@ -229,8 +228,8 @@ abstract class ProvisionFfmpegTask : DefaultTask() {
 
     /**
      * Matches on the trailing path segment because the archives disagree about layout: the macOS
-     * zips hold a bare `ffmpeg` at the root while the BtbN archives nest it under
-     * `<build-name>/bin/`. `__MACOSX` holds resource fork stubs that share the file name.
+     * zips hold a bare `ffmpeg` or `ffprobe` at the root while the BtbN archives nest every tool
+     * under `<build-name>/bin/`. `__MACOSX` holds resource fork stubs that share the file name.
      */
     private fun String.isExecutablePath(executable: String): Boolean =
         !startsWith("__MACOSX/") && substringAfterLast('/') == executable
