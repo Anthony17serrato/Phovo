@@ -20,8 +20,8 @@ kotlin {
     }
 }
 
-// FFmpeg is downloaded and checksum verified at build time rather than committed through Git LFS,
-// which has quota limits. See FfmpegBinaries for the pinned builds and how to update them.
+// FFmpeg and ffprobe are downloaded and checksum verified at build time rather than committed through
+// Git LFS, which has quota limits. See FfmpegBinaries for the pinned builds and how to update them.
 compose.resources {
     publicResClass = true
     generateResClass = always
@@ -31,10 +31,7 @@ compose.resources {
             val distribution = FfmpegBinaries.forHost()
 
             platform.set(distribution.platform)
-            downloadUrl.set(distribution.url)
-            sha256.set(distribution.sha256)
-            archiveFormat.set(distribution.format)
-            executableName.set(distribution.executableName)
+            executables.set(distribution.executables)
 
             // Outside the build directory so `clean` does not force another download.
             archiveCacheDirectory.set(gradle.gradleUserHomeDir.resolve("caches/phovo-ffmpeg"))
