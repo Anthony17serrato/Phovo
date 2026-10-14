@@ -6,6 +6,7 @@ import com.serratocreations.phovo.data.photos.local.LocalMediaProcessor
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.darwin.Darwin
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import kotlinx.serialization.json.Json
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.serialization.kotlinx.json.json
 import com.serratocreations.phovo.data.photos.local.IosLocalMediaProcessor
@@ -23,7 +24,7 @@ internal actual fun getAndroidIosModules(): Module = module {
         HttpClient(Darwin) {
             expectSuccess = false
             install(ContentNegotiation) {
-                json()
+                json(Json { ignoreUnknownKeys = true })
             }
             install(HttpTimeout) {
                 requestTimeoutMillis = 5.minutes.inWholeMilliseconds

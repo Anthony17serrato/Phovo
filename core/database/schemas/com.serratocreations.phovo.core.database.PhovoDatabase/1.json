@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "edf755d30a69f7ad40e6d9023e374792",
+    "identityHash": "7d04d90e4f89a111663dadedfce77d51",
     "entities": [
       {
         "tableName": "ServerConfigEntity",
@@ -42,7 +42,7 @@
       },
       {
         "tableName": "MediaItemMetadataEntity",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`assetHash` TEXT NOT NULL, `isSynced` INTEGER NOT NULL, `fileName` TEXT NOT NULL, `timeStampUtcMs` INTEGER NOT NULL, `timeOffsetMs` INTEGER NOT NULL, `size` INTEGER NOT NULL, `mediaType` TEXT NOT NULL, `videoDurationMs` INTEGER, PRIMARY KEY(`assetHash`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`assetHash` TEXT NOT NULL, `isSynced` INTEGER NOT NULL, `fileName` TEXT NOT NULL, `timeStampUtcMs` INTEGER NOT NULL, `timeOffsetMs` INTEGER NOT NULL, `size` INTEGER NOT NULL, `mediaType` TEXT NOT NULL, `videoDurationMs` INTEGER, `displayWidth` INTEGER NOT NULL, `displayHeight` INTEGER NOT NULL, PRIMARY KEY(`assetHash`))",
         "fields": [
           {
             "fieldPath": "assetHash",
@@ -90,6 +90,18 @@
             "fieldPath": "videoDurationMs",
             "columnName": "videoDurationMs",
             "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "displayWidth",
+            "columnName": "displayWidth",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "displayHeight",
+            "columnName": "displayHeight",
+            "affinity": "INTEGER",
+            "notNull": true
           }
         ],
         "primaryKey": {
@@ -256,7 +268,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'edf755d30a69f7ad40e6d9023e374792')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '7d04d90e4f89a111663dadedfce77d51')"
     ]
   }
 }

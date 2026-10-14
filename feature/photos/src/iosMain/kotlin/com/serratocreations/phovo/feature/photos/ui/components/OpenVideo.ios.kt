@@ -21,22 +21,14 @@ import kotlin.coroutines.resume
  * The current version is preferred, so edits made in Photos, such as a rotation, show up in the
  * player the same as in the thumbnail. A slow motion video's current version is an AVComposition
  * with no file behind it though, so that falls back to the original.
- *
- * The aspect ratio comes from the asset because the player's own value is stuck at 16:9 on iOS.
- * https://github.com/kdroidFilter/ComposeMediaPlayer/issues/241
  */
-internal actual suspend fun VideoPlayerState.openVideo(file: PlatformFile): Float? {
-    val asset = file.toPhAsset() ?: return null
+internal actual suspend fun VideoPlayerState.openVideo(file: PlatformFile) {
+    val asset = file.toPhAsset() ?: return
     val url = asset.requestVideoUrl(PHVideoRequestOptionsVersionCurrent)
         ?: asset.requestVideoUrl(PHVideoRequestOptionsVersionOriginal)
-        ?: return null
-    val uri = url.absoluteString ?: return null
+        ?: return
+    val uri = url.absoluteString ?: return
     openUri(uri)
-    return if (asset.pixelWidth > 0uL && asset.pixelHeight > 0uL) {
-        asset.pixelWidth.toFloat() / asset.pixelHeight.toFloat()
-    } else {
-        null
-    }
 }
 
 private suspend fun PHAsset.requestVideoUrl(version: PHVideoRequestOptionsVersion): NSURL? =

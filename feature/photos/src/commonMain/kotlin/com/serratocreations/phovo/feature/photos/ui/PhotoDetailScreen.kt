@@ -175,6 +175,7 @@ internal fun PhotoViewerScreen(
                             if (isActivePage) {
                                 VideoPlayer(
                                     videoPlatformFile = item.sourceAsset.localAssetLocation,
+                                    aspectRatio = item.aspectRatio,
                                     controlsVisible = areBarsVisible,
                                     controlsBottomPadding = controlsBottomPadding,
                                     onClick = onToggleBars,

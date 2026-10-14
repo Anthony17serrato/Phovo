@@ -122,7 +122,7 @@ class DesktopServerConfigManagerImpl(
             }
         }
         install(ContentNegotiation) {
-            json(Json { prettyPrint = true; isLenient = true })
+            json(Json { prettyPrint = true; isLenient = true; ignoreUnknownKeys = true })
         }
 
         routing {

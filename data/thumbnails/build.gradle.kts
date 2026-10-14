@@ -16,6 +16,11 @@ kotlin {
             implementation(libs.filekit.core)
             implementation(projects.core.common)
             implementation(projects.core.logger)
+            implementation(projects.core.model)
+            implementation(libs.serialization.json)
+        }
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
         }
     }
 }

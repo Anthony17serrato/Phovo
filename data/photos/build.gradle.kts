@@ -10,6 +10,7 @@ kotlin {
     }
     sourceSets {
         androidMain.dependencies {
+            implementation(libs.androidx.exifinterface)
             implementation(libs.ktor.client.okhttp)
             implementation(libs.coil.video)
         }
@@ -29,8 +30,6 @@ kotlin {
             implementation(libs.ktor.client.content.negotiation)
             implementation(libs.filekit.core)
             implementation(libs.kotlinx.io)
-            // TODO: Replace with ffmpeg
-            implementation("com.ashampoo:kim:0.20")
         }
 
         commonIosAndroid.dependencies {
@@ -44,9 +43,7 @@ kotlin {
         jvmMain.dependencies {
             implementation(libs.ktor.client.okhttp)
             implementation(projects.data.thumbnails)
-            // TODO: Replace with ffmpeg
-            implementation("org.apache.tika:tika-core:3.2.2")
-            implementation("org.apache.tika:tika-parsers-standard-package:3.2.2")
+            implementation(libs.metadata.extractor)
         }
 
         iosMain.dependencies {

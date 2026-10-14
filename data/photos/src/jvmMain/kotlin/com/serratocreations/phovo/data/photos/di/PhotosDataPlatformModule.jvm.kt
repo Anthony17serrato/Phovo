@@ -44,6 +44,7 @@ internal actual fun getAndroidDesktopIosModules(): Module = module {
         val ioDispatcher: CoroutineDispatcher = get(IO_DISPATCHER)
         DesktopLocalMediaProcessor(
             thumbnailRepository = get(),
+            mediaProbe = get(),
             ioDispatcher = ioDispatcher,
             fileHashCalculator = get(),
             logger = get()

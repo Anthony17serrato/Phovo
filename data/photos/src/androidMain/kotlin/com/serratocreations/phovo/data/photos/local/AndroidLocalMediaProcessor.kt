@@ -4,11 +4,11 @@ import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.Context
-import android.media.ExifInterface
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import androidx.core.database.getLongOrNull
+import androidx.exifinterface.media.ExifInterface
 import coil3.ImageLoader
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.data.photos.repository.model.AssetLocation
@@ -43,12 +43,17 @@ class AndroidLocalMediaProcessor(
     private val imageLoader: ImageLoader,
     private val logger: PhovoLogger
 ) : LocalMediaProcessor {
+    private val log = logger.withTag("AndroidLocalMediaProcessor")
     private val resolver = context.contentResolver
     private val thumbnailExtractor = ThumbnailExtractor(
         context = context,
         imageLoader = imageLoader,
         ioDispatcher = ioDispatcher,
         logger = logger
+    )
+    private val dimensionsReader = AndroidMediaDimensionsReader(
+        context = context,
+        ioDispatcher = ioDispatcher
     )
 
     override fun CoroutineScope.processLocalItems(
@@ -110,6 +115,10 @@ class AndroidLocalMediaProcessor(
                     //  it is needed to update
                     continue
                 }
+                val dimensions = dimensionsReader.readImageDimensions(androidUri) ?: run {
+                    log.e { "Skipping $fileName, could not read its dimensions" }
+                    continue
+                }
                 thumbnailExtractor.createLowResThumbnail(assetPlatformFile, assetHash)
                 thumbnailExtractor.createHighResThumbnail(assetPlatformFile, assetHash)
                 val dateInFeed = cursor.getLongOrNull(dateTakenColumn)?.utcMsToLocalDateTime()
@@ -122,7 +131,8 @@ class AndroidLocalMediaProcessor(
                     fileName = fileName,
                     dateInFeed = dateInFeed,
                     size = size,
-                    uniqueAssetIdentifier = assetHash
+                    uniqueAssetIdentifier = assetHash,
+                    dimensions = dimensions
                 )
                 emit(mediaImageItem)
             }
@@ -175,6 +185,10 @@ class AndroidLocalMediaProcessor(
                     continue
                 }
 
+                val dimensions = dimensionsReader.readVideoDimensions(androidUri) ?: run {
+                    log.e { "Skipping $name, could not read its dimensions" }
+                    continue
+                }
                 thumbnailExtractor.createLowResThumbnail(assetPlatformFile, assetHash)
                 thumbnailExtractor.createHighResThumbnail(assetPlatformFile, assetHash)
 
@@ -188,7 +202,8 @@ class AndroidLocalMediaProcessor(
                     dateInFeed = dateInFeed,
                     size = size,
                     uniqueAssetIdentifier = assetHash,
-                    duration = duration
+                    duration = duration,
+                    dimensions = dimensions
                 )
                 emit(mediaVideoItem)
             }

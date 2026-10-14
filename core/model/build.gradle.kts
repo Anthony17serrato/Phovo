@@ -13,6 +13,7 @@ kotlin {
             implementation(libs.filekit.core)
         }
         commonTest.dependencies {
+            implementation(libs.kotlin.test)
         }
     }
 }

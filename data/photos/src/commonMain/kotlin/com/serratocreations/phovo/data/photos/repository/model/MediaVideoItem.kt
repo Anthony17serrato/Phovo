@@ -1,5 +1,6 @@
 package com.serratocreations.phovo.data.photos.repository.model
 
+import com.serratocreations.phovo.core.model.MediaDimensions
 import kotlinx.datetime.LocalDateTime
 import kotlin.time.Duration
 
@@ -10,5 +11,6 @@ data class MediaVideoItem(
     override val size: Long,
     override val uniqueAssetIdentifier: String,
     val duration: Duration,
-    override val isSynced: Boolean
+    override val isSynced: Boolean,
+    override val dimensions: MediaDimensions
 ) : MediaItem

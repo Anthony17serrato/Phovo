@@ -24,6 +24,12 @@ data class MediaItemMetadataEntity(
     // TODO: Consider separate entities for video and image items
     val mediaType: MediaType,
     val videoDurationMs: Long?,
+    /**
+     * The size the media is displayed at, rotation applied. Always positive: media whose size
+     * cannot be read is not processed.
+     */
+    val displayWidth: Int,
+    val displayHeight: Int,
 )
 
 @Entity

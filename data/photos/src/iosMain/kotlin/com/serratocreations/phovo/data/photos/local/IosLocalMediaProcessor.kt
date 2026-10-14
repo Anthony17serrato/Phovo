@@ -3,6 +3,7 @@ package com.serratocreations.phovo.data.photos.local
 import coil3.ImageLoader
 import com.serratocreations.phovo.core.common.util.phAssetUriFromLocalId
 import com.serratocreations.phovo.core.logger.PhovoLogger
+import com.serratocreations.phovo.core.model.MediaDimensions
 import com.serratocreations.phovo.data.photos.repository.model.AssetLocation
 import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
@@ -94,6 +95,10 @@ class IosLocalMediaProcessor(
             val fullSizeAssetFile = PlatformFile(fullSizeAssetNsurl)
             val assetHash = fileHashCalculator.computeSha256(fullSizeAssetFile)
             if (assetHash in processedImageHashes) return@forEach
+            val dimensions = asset.displayDimensions() ?: run {
+                log.e { "Skipping $assetUri, Photos reports no dimensions" }
+                return@forEach
+            }
             thumbnailExtractor.createLowResThumbnail(assetPlatformFile, assetHash = assetHash)
             thumbnailExtractor.createHighResThumbnail(assetPlatformFile, assetHash = assetHash)
 
@@ -113,7 +118,8 @@ class IosLocalMediaProcessor(
                 dateInFeed = localDateTime,
                 size = bytes,
                 uniqueAssetIdentifier = assetHash,
-                isSynced = false
+                isSynced = false,
+                dimensions = dimensions
             ))
         }
     }.flowOn(ioDispatcher)
@@ -139,6 +145,10 @@ class IosLocalMediaProcessor(
             val fullSizeAssetFile = PlatformFile(fullSizeAssetNsurl)
             val assetHash = fileHashCalculator.computeSha256(fullSizeAssetFile)
             if (assetHash in processedVideoHashes) return@forEach
+            val dimensions = asset.displayDimensions() ?: run {
+                log.e { "Skipping $assetUri, Photos reports no dimensions" }
+                return@forEach
+            }
 
             thumbnailExtractor.createLowResThumbnail(assetPlatformFile, assetHash = assetHash)
             thumbnailExtractor.createHighResThumbnail(assetPlatformFile, assetHash = assetHash)
@@ -159,7 +169,8 @@ class IosLocalMediaProcessor(
                     size = bytes,
                     duration = asset.duration.toLong().seconds,
                     uniqueAssetIdentifier = assetHash,
-                    isSynced = false
+                    isSynced = false,
+                    dimensions = dimensions
                 )
             )
         }
@@ -201,4 +212,15 @@ class IosLocalMediaProcessor(
             PHImageManager.defaultManager().cancelImageRequest(requestID)
         }
     }
+}
+
+/**
+ * Photos reports the size the asset is displayed at, orientation and edits included, which matches
+ * the current version the viewer shows. Returns null when it reports no size, which fails
+ * processing for the asset.
+ */
+private fun PHAsset.displayDimensions(): MediaDimensions? {
+    val width = pixelWidth.toInt()
+    val height = pixelHeight.toInt()
+    return if (width > 0 && height > 0) MediaDimensions(width, height) else null
 }

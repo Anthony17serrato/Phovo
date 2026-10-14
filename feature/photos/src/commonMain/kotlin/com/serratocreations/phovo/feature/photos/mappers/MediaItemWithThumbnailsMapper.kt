@@ -13,7 +13,8 @@ fun MediaItemWithThumbnails.toMediaUiItem(): MediaUiItem {
                 sourceAsset = assetLocation,
                 lowResThumbnail = lowResThumbnailLocation,
                 thumbnail = highResThumbnailLocation,
-                key = this.localUuid
+                key = this.localUuid,
+                aspectRatio = dimensions.aspectRatio
             )
         }
         is MediaItemWithThumbnails.MediaVideoItem -> {
@@ -22,7 +23,8 @@ fun MediaItemWithThumbnails.toMediaUiItem(): MediaUiItem {
                 duration = duration.toFormattedDurationString(),
                 lowResThumbnail = lowResThumbnailLocation,
                 thumbnail = highResThumbnailLocation,
-                key = this.localUuid
+                key = this.localUuid,
+                aspectRatio = dimensions.aspectRatio
             )
         }
     }
