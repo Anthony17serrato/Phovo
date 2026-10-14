@@ -28,6 +28,10 @@ import java.util.zip.ZipFile
  * unpacks the executables (`ffmpeg` and `ffprobe`) into `<outputDirectory>/files/` so Compose can
  * pick them up as a custom resource directory.
  *
+ * Each executable gets a `<name>.sha256` file next to it holding the executable's own checksum. The
+ * app installs the executables under a folder named for that checksum, so it can tell an
+ * up to date install from an old one without reading the binaries.
+ *
  * Replaces the previous Git LFS checkout of roughly half a gigabyte of committed binaries.
  *
  * Archives are cached under the Gradle user home rather than the build directory, so `clean` does
@@ -74,6 +78,7 @@ abstract class ProvisionFfmpegTask : DefaultTask() {
             val target = filesDir.resolve(executable.name)
             extractExecutable(archive, executable, target)
             target.setExecutable(true, false)
+            filesDir.resolve("${executable.name}.sha256").writeText(target.sha256())
 
             logger.lifecycle(
                 "Provisioned ${executable.name} ${FfmpegBinaries.VERSION_BRANCH} (${platform.get()}) at $target"

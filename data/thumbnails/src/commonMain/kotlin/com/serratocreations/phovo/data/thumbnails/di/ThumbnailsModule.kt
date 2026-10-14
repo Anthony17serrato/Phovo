@@ -6,6 +6,9 @@ import com.serratocreations.phovo.data.thumbnails.BundledFfmpegTools
 import com.serratocreations.phovo.data.thumbnails.FfmpegThumbnailGenerator
 import com.serratocreations.phovo.data.thumbnails.FfprobeMediaProbe
 import com.serratocreations.phovo.data.thumbnails.ThumbnailRepository
+import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.div
+import io.github.vinceglb.filekit.filesDir
 import org.koin.dsl.module
 
 val thumbnailsModule = module {
@@ -17,7 +20,8 @@ val thumbnailsModule = module {
     single<BundledFfmpegTools> {
         BundledFfmpegTools(
             appScope = get(APPLICATION_SCOPE),
-            ioDispatcher = get(IO_DISPATCHER)
+            ioDispatcher = get(IO_DISPATCHER),
+            installDirectory = (FileKit.filesDir / "ffmpeg").file
         )
     }
     single<FfmpegThumbnailGenerator> {
