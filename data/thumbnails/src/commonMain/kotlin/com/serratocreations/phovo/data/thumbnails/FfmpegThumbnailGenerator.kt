@@ -11,6 +11,7 @@ import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import java.io.IOException
+import kotlin.time.Duration
 
 class FfmpegThumbnailGenerator(
     private val tools: BundledFfmpegTools,
@@ -42,16 +43,14 @@ class FfmpegThumbnailGenerator(
     )
 
     /**
-     * Runs FFmpeg within the budgeted process ceiling and returns the process exit code.
+     * Runs FFmpeg within the budgeted process ceiling and returns the process exit code. There is no
+     * timeout, because the storyboard decodes the whole video and a long video takes long, but
+     * cancelling the caller kills FFmpeg.
      */
     private suspend fun runFfmpeg(command: List<String>): Int =
         ffmpegProcessSemaphore.withPermit {
-            val process = ProcessBuilder(command)
-                .redirectError(ProcessBuilder.Redirect.INHERIT)
-                .redirectOutput(ProcessBuilder.Redirect.INHERIT)
-                .start()
-
-            process.waitFor()
+            runProcess(command, Duration.INFINITE, ioDispatcher)?.exitCode
+                ?: error("FFmpeg did not finish")
         }
 
     /**

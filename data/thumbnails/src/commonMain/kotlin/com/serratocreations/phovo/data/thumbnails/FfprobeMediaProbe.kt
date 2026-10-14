@@ -5,7 +5,6 @@ import com.serratocreations.phovo.core.model.MediaDimensions
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.absolutePath
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -16,7 +15,6 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import java.io.IOException
-import java.util.concurrent.TimeUnit
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
@@ -66,34 +64,30 @@ class FfprobeMediaProbe(
         )?.let(::parseFfprobeImageSizeOutput)
 
     /** Runs ffprobe with [arguments] and JSON output, returning what it printed. */
-    private suspend fun runFfprobe(file: PlatformFile, vararg arguments: String): String? =
-        withContext(ioDispatcher) {
-            val command = listOf(tools.ffprobe.await().absolutePath(), "-v", "error") +
-                arguments + listOf("-of", "json", file.absolutePath())
-            try {
-                val process = ProcessBuilder(command)
-                    .redirectError(ProcessBuilder.Redirect.INHERIT)
-                    .start()
-                // Read before waiting, so a full output pipe cannot stall the process.
-                val output = process.inputStream.bufferedReader().use { it.readText() }
-                if (!process.waitFor(PROBE_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
-                    process.destroyForcibly()
-                    log.e { "ffprobe timed out on ${file.absolutePath()}" }
-                    return@withContext null
-                }
-                if (process.exitValue() != 0) {
-                    log.e { "ffprobe exited with ${process.exitValue()} on ${file.absolutePath()}" }
-                    return@withContext null
-                }
-                output
-            } catch (e: IOException) {
-                log.e { "ffprobe failed on ${file.absolutePath()}: $e" }
+    private suspend fun runFfprobe(file: PlatformFile, vararg arguments: String): String? {
+        val command = listOf(tools.ffprobe.await().absolutePath(), "-v", "error") +
+            arguments + listOf("-of", "json", file.absolutePath())
+        val result = try {
+            runProcess(command, PROBE_TIMEOUT, ioDispatcher)
+        } catch (e: IOException) {
+            log.e { "ffprobe failed on ${file.absolutePath()}: $e" }
+            return null
+        }
+        return when {
+            result == null -> {
+                log.e { "ffprobe timed out on ${file.absolutePath()}" }
                 null
             }
+            result.exitCode != 0 -> {
+                log.e { "ffprobe exited with ${result.exitCode} on ${file.absolutePath()}" }
+                null
+            }
+            else -> result.stdout
         }
+    }
 
     private companion object {
-        const val PROBE_TIMEOUT_SECONDS = 30L
+        val PROBE_TIMEOUT = 30.seconds
     }
 }
 
