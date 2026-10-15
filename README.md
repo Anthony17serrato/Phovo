@@ -7,12 +7,12 @@ This is a Kotlin Multiplatform project targeting Android, iOS, Desktop and WASM(
 All applications are developed within a single codebase using [Kotlin Multiplatform technology](https://kotlinlang.org/docs/multiplatform.html). The UI is implemented using [Compose Multiplatform UI framework](https://www.jetbrains.com/lp/compose-multiplatform/).
 
 ### Screenshots
-| Android | iOS |
-| --- | --- |
-| ![android_optimized](https://github.com/Anthony17serrato/Phovo/blob/main/docs/images/android_optimized.gif?raw=true) | <img src="https://github.com/Anthony17serrato/Phovo/blob/main/docs/images/Simulator%20Screenshot%20-%20iPhone%2016%20-%202024-12-02%20at%2013.43.23.png?raw=true" width="900" /> |
+| ![android_optimized](https://github.com/Anthony17serrato/Phovo/blob/main/docs/images/android_optimized.gif?raw=true) | <img src="https://github.com/Anthony17serrato/Phovo/blob/main/docs/images/Screenshot_20261014-204941.png" width="900" /> | <img src="https://github.com/Anthony17serrato/Phovo/blob/main/docs/images/Screenshot%202026-10-14%20at%208.27.57%E2%80%AFPM.png" width="900" /> |
+| --- | --- | --- |
+| <img src="https://github.com/Anthony17serrato/Phovo/blob/main/docs/images/Screenshot%202026-10-14%20at%208.51.58%E2%80%AFPM.png" width="900" /> | <img src="https://github.com/Anthony17serrato/Phovo/blob/main/docs/images/Screenshot%202026-10-14%20at%208.34.43%E2%80%AFPM.png" width="900" /> | <img src="https://github.com/Anthony17serrato/Phovo/blob/main/docs/images/Screenshot_20261014-204740.png" width="900" /> |
 
 #### Desktop
-<img src="https://github.com/Anthony17serrato/Phovo/blob/main/docs/images/desktop_screenshot.png" style="max-width: 100%; height: auto;" />
+<img src="https://github.com/Anthony17serrato/Phovo/blob/main/docs/images/Screenshot%202026-10-14%20at%208.56.34%E2%80%AFPM.png" style="max-width: 100%; height: auto;" />
 
 ## 🗓️ Phovo Release Schedule
 
@@ -62,17 +62,6 @@ notes on updating them, live in `build-logic`'s `FfmpegDistribution.kt`.
 The Phovo project makes use of custom source sets to maximize code re-usability when certain features
 are supported only by a subset of platforms. To learn more about custom source sets visit:
 https://kotlinlang.org/docs/multiplatform/multiplatform-advanced-project-structure.html#declaring-custom-source-sets
-
-## Modular Design Strategy
-The Phovo project follows the modular design guidelines published by Google for mobile development:
-
-https://developer.android.com/topic/modularization/patterns
-
-As mentioned in the guidelines modularization can be done by feature or by layer. Due to the flexibility of the gradle build system, projects can also adopt a flexible modular design where modularization is done by both feature and layer. A flexible modular design is required for the Phovo project as there are currently 4 target platforms(Android, IOS, Web, Desktop). 
-- For cases where a feature is small and all platforms may adopt the same UI, the module in the `feature` directory will contain [UI, Domain, and Data layers](https://developer.android.com/topic/architecture)
-- For cases where a feature is large and/or specific targets require different UI layer implementations, modularization will be done by both feature and layer.
-
-<img src="https://github.com/Anthony17serrato/Phovo/blob/main/docs/images/PhovoModularization.png" />
 
 ## Troubleshooting WASM issues
 When adding new dependencies WASM may require a yarn lock upgrade
