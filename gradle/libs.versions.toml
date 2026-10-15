@@ -58,10 +58,6 @@ room-kmp = "2.8.4"
 serialization-json = "1.11.0"
 sqlite = "2.7.0"
 telephoto = "0.19.0"
-# At least 3.6.4, which carries jmdns/jmdns#365: it binds the host address when opening the
-# multicast socket. Without it a VPN on the desktop takes the route for 224.0.0.251, outgoing
-# announcements carry a source address from the tunnel, and phones drop them, so the server is
-# never discovered on macOS or Linux (jmdns/jmdns#203).
 jmdns = "3.6.4"
 # Used by build-logic only, to unpack the FFmpeg archives downloaded at build time. The BtbN Linux
 # builds ship as .tar.xz, which neither the JDK nor Gradle's archive operations can read.
