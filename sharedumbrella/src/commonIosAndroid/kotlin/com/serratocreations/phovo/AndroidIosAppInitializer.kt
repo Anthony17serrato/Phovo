@@ -103,9 +103,7 @@ class MediaSyncWorker(
             //  is already processed(refer to desktop media processing implementation)
             val alreadyProcessedLocalItems = localAndRemoteMediaRepository.phovoMediaFlow().first()
             val processingJob = with(localMediaManager) {
-                processJob(
-                    localItems = alreadyProcessedLocalItems,
-                )
+                processJob()
             }
             val canSyncStart = withTimeoutOrNull(SERVER_CONNECTION_TIMEOUT) {
                 localAndRemoteMediaRepository.observeConnectionState()

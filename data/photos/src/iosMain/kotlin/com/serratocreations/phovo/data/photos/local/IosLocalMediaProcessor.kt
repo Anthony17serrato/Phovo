@@ -6,21 +6,19 @@ import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.core.model.MediaDimensions
 import com.serratocreations.phovo.data.photos.repository.model.AssetLocation
 import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
-import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
 import com.serratocreations.phovo.data.photos.util.FileHashCalculator
 import com.serratocreations.phovo.data.photos.util.segregate
 import io.github.vinceglb.filekit.PlatformFile
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toKotlinInstant
@@ -59,10 +57,9 @@ class IosLocalMediaProcessor(
         logger = logger
     )
 
-    override fun CoroutineScope.processLocalItems(
-        processedItems: List<MediaItem>,
-        processMediaChannel: SendChannel<MediaItem>
-    ) = launch {
+    override suspend fun scanLocalItems(
+        processMediaChannel: SendChannel<PlatformFile>
+    ) = coroutineScope {
         val (processedVideos, processedImages) = processedItems.segregate()
         fetchImages(processedImages)
             .onEach { processMediaChannel.send(it) }
@@ -71,6 +68,7 @@ class IosLocalMediaProcessor(
         fetchVideos(processedVideos)
             .onEach { processMediaChannel.send(it) }
             .launchIn(this)
+        Unit
     }
 
 
