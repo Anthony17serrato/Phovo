@@ -23,8 +23,8 @@ fun localIdFromPhAssetUri(uri: Uri): String =
  * Returns a [PHAsset] if the fetch API was able to retrieve one for the provided [PlatformFile]
  */
 fun PlatformFile.toPhAsset(): PHAsset? {
-    val videoUri = this.absolutePath().toUri()
-    return videoUri.toPhAsset()
+    val fileUri = this.absolutePath().toUri()
+    return fileUri.toPhAsset()
 }
 
 /**

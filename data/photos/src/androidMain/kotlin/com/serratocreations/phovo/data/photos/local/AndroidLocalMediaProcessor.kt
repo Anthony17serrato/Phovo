@@ -17,7 +17,6 @@ import com.serratocreations.phovo.data.photos.local.model.MediaProcessingResult
 import com.serratocreations.phovo.data.photos.repository.model.AssetLocation
 import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
-import com.serratocreations.phovo.data.photos.util.FileHashCalculator
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.mimeType
 import kotlinx.coroutines.CoroutineDispatcher
@@ -41,7 +40,6 @@ import kotlin.time.Instant
 
 class AndroidLocalMediaProcessor(
     private val ioDispatcher: CoroutineDispatcher,
-    private val fileHashCalculator: FileHashCalculator,
     private val context: Context,
     private val imageLoader: ImageLoader,
     private val logger: PhovoLogger
@@ -78,15 +76,14 @@ class AndroidLocalMediaProcessor(
     override suspend fun processItem(
         mediaItem: PlatformFile,
         assetHash: String
-    ): MediaProcessingResult =
-        withContext(ioDispatcher) {
-            val uri = mediaItem.androidFile.androidUri
-            when (mediaItem.mimeType()?.primaryType?.lowercase()) {
-                "image" -> processImage(mediaItem, uri, assetHash)
-                "video" -> processVideo(mediaItem, uri, assetHash)
-                else -> MediaProcessingResult.Failure(MediaProcessingFailure.UnsupportedType)
-            }
+    ): MediaProcessingResult = withContext(ioDispatcher) {
+        val uri = mediaItem.androidFile.androidUri
+        when (mediaItem.mimeType()?.primaryType?.lowercase()) {
+            "image" -> processImage(mediaItem, uri, assetHash)
+            "video" -> processVideo(mediaItem, uri, assetHash)
+            else -> MediaProcessingResult.Failure(MediaProcessingFailure.UnsupportedType)
         }
+    }
 
     private class ImageRow(
         val fileName: String,
@@ -113,7 +110,7 @@ class AndroidLocalMediaProcessor(
                 dateTaken = cursor.getLongOrNull(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_TAKEN))?.milliseconds,
                 dateAdded = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_ADDED)).seconds
             )
-        } ?: return MediaProcessingResult.Failure(MediaProcessingFailure.MissingFromMediaStore)
+        } ?: return MediaProcessingResult.Failure(MediaProcessingFailure.MissingFromLibrary)
 
         thumbnailExtractor.createLowResThumbnail(file, assetHash)
         thumbnailExtractor.createHighResThumbnail(file, assetHash)
@@ -162,7 +159,7 @@ class AndroidLocalMediaProcessor(
                 dateAdded = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DATE_ADDED)).seconds,
                 duration = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DURATION)).milliseconds
             )
-        } ?: return MediaProcessingResult.Failure(MediaProcessingFailure.MissingFromMediaStore)
+        } ?: return MediaProcessingResult.Failure(MediaProcessingFailure.MissingFromLibrary)
 
         thumbnailExtractor.createLowResThumbnail(file, assetHash)
         thumbnailExtractor.createHighResThumbnail(file, assetHash)

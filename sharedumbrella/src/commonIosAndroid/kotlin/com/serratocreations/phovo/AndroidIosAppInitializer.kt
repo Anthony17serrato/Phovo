@@ -26,7 +26,6 @@ import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
@@ -99,9 +98,6 @@ class MediaSyncWorker(
                         setProgress(completed = it.completedBytes, total = it.totalBytes)
                     }
             }
-            // todo this approach could lead to OOM ,implement a more memory efficient way to check if media
-            //  is already processed(refer to desktop media processing implementation)
-            val alreadyProcessedLocalItems = localAndRemoteMediaRepository.phovoMediaFlow().first()
             val processingJob = with(localMediaManager) {
                 processJob()
             }

@@ -17,5 +17,6 @@ enum class MediaProcessingFailure {
     UnreadableDimensions,
 
     /** The file's MediaStore row is gone, usually because it was deleted after the scan. */
-    MissingFromMediaStore
+    MissingFromLibrary,
+    MissingCreationDate
 }

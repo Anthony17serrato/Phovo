@@ -56,7 +56,7 @@ class PhAssetFetcher(
 
     private suspend fun fetchImageData(asset: PHAsset): NSData? = suspendCancellableCoroutine { continuation ->
         val options = PHImageRequestOptions().apply {
-            this.networkAccessAllowed = true
+            this.networkAccessAllowed = false
             resizeMode = PHImageRequestOptionsResizeModeFast
         }
 
@@ -68,6 +68,7 @@ class PhAssetFetcher(
         }
     }
 
+    // TODO This code can cause OOM exception and !! should be removed
     @OptIn(ExperimentalForeignApi::class)
     private fun NSData.toJpegBytes(): ByteArray = memScoped {
         val image = UIImage(data = this@toJpegBytes)

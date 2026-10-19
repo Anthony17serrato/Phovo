@@ -48,7 +48,6 @@ internal actual fun getAndroidIosModules(): Module = module {
     single<LocalMediaProcessor> {
         AndroidLocalMediaProcessor(
             ioDispatcher = get(IO_DISPATCHER),
-            fileHashCalculator = get(),
             context = get(),
             imageLoader = get(),
             logger = get()
