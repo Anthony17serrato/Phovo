@@ -1,8 +1,7 @@
 package com.serratocreations.phovo.data.photos.local
 
-import com.serratocreations.phovo.data.photos.repository.model.MediaItem
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
+import com.serratocreations.phovo.data.photos.local.model.MediaProcessingResult
+import io.github.vinceglb.filekit.PlatformFile
 import kotlinx.coroutines.channels.SendChannel
 
 /**
@@ -13,12 +12,11 @@ interface LocalMediaProcessor {
     /**
      * Processes locally stored media items by extracting metadata for items which we do not have
      * metadata for.
-     * @param processedItems The items which have already been processed previously by the processing
-     * Job.
      * @return A receive channel of processed media items
      */
-    fun CoroutineScope.processLocalItems(
-        processedItems: List<MediaItem>,
-        processMediaChannel: SendChannel<MediaItem>
-    ): Job
+    suspend fun scanLocalItems(
+        processMediaSendChannel: SendChannel<PlatformFile>
+    )
+
+    suspend fun processItem(mediaItem: PlatformFile, assetHash: String): MediaProcessingResult
 }

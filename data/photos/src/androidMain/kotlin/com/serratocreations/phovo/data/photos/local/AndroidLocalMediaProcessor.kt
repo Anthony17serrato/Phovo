@@ -1,44 +1,45 @@
 package com.serratocreations.phovo.data.photos.local
 
-import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.Context
+import android.database.Cursor
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import androidx.core.database.getLongOrNull
 import androidx.exifinterface.media.ExifInterface
 import coil3.ImageLoader
+import com.serratocreations.phovo.core.common.extension.androidUri
 import com.serratocreations.phovo.core.logger.PhovoLogger
+import com.serratocreations.phovo.data.photos.local.model.MediaProcessingFailure
+import com.serratocreations.phovo.data.photos.local.model.MediaProcessingResult
 import com.serratocreations.phovo.data.photos.repository.model.AssetLocation
 import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
-import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
-import com.serratocreations.phovo.data.photos.util.FileHashCalculator
-import com.serratocreations.phovo.data.photos.util.segregate
 import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.mimeType
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toKotlinLocalDateTime
+import kotlinx.datetime.format.char
 import kotlinx.datetime.toLocalDateTime
-import java.time.format.DateTimeFormatter
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
 class AndroidLocalMediaProcessor(
     private val ioDispatcher: CoroutineDispatcher,
-    private val fileHashCalculator: FileHashCalculator,
     private val context: Context,
     private val imageLoader: ImageLoader,
     private val logger: PhovoLogger
@@ -56,27 +57,135 @@ class AndroidLocalMediaProcessor(
         ioDispatcher = ioDispatcher
     )
 
-    override fun CoroutineScope.processLocalItems(
-        processedItems: List<MediaItem>,
-        processMediaChannel: SendChannel<MediaItem>
-    ) = launch {
+    override suspend fun scanLocalItems(
+        processMediaSendChannel: SendChannel<PlatformFile>
+    ) = coroutineScope {
         // TODO add observability of updates(Probably by registering Broadcast receiver)
-        val (processedVideos, processedImages) = processedItems.segregate()
-        queryImages(processedImages)
+        queryImages()
             .onEach { processedImage ->
-                processMediaChannel.send(processedImage)
+                processMediaSendChannel.send(processedImage)
             }.launchIn(this)
 
-        queryVideos(processedVideos)
+        queryVideos()
             .onEach { processedVideo ->
-                processMediaChannel.send(processedVideo)
+                processMediaSendChannel.send(processedVideo)
             }.launchIn(this)
+        Unit
     }
 
-    private fun queryImages(
-        alreadyProcessedImages: List<MediaImageItem>
-    ): Flow<MediaItem> = flow {
-        val processedImageHashes = alreadyProcessedImages.map { it.uniqueAssetIdentifier }
+    override suspend fun processItem(
+        mediaItem: PlatformFile,
+        assetHash: String
+    ): MediaProcessingResult = withContext(ioDispatcher) {
+        val uri = mediaItem.androidFile.androidUri
+        when (mediaItem.mimeType()?.primaryType?.lowercase()) {
+            "image" -> processImage(mediaItem, uri, assetHash)
+            "video" -> processVideo(mediaItem, uri, assetHash)
+            else -> MediaProcessingResult.Failure(MediaProcessingFailure.UnsupportedType)
+        }
+    }
+
+    private class ImageRow(
+        val fileName: String,
+        val size: Long,
+        val dateTaken: Duration?,
+        val dateAdded: Duration
+    )
+
+    private suspend fun processImage(file: PlatformFile, uri: Uri, assetHash: String): MediaProcessingResult {
+        val dimensions = dimensionsReader.readImageDimensions(uri)
+            ?: return MediaProcessingResult.Failure(MediaProcessingFailure.UnreadableDimensions)
+        val row = querySingleRow(
+            uri,
+            arrayOf(
+                MediaStore.Images.Media.DISPLAY_NAME,
+                MediaStore.Images.Media.SIZE,
+                MediaStore.Images.Media.DATE_TAKEN,
+                MediaStore.Images.Media.DATE_ADDED
+            )
+        ) { cursor ->
+            ImageRow(
+                fileName = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME)),
+                size = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.SIZE)),
+                dateTaken = cursor.getLongOrNull(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_TAKEN))?.milliseconds,
+                dateAdded = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_ADDED)).seconds
+            )
+        } ?: return MediaProcessingResult.Failure(MediaProcessingFailure.MissingFromLibrary)
+
+        thumbnailExtractor.createLowResThumbnail(file, assetHash)
+        thumbnailExtractor.createHighResThumbnail(file, assetHash)
+        val dateInFeed = row.dateTaken?.utcMsToLocalDateTime()
+            ?: resolver.parseDateTakenFromExif(uri)
+            ?: row.dateAdded.utcMsToLocalDateTime()
+
+        return MediaProcessingResult.Success(
+            MediaImageItem(
+                assetLocation = AssetLocation.LocalAssetLocation(file),
+                isSynced = false,
+                fileName = row.fileName,
+                dateInFeed = dateInFeed,
+                size = row.size,
+                uniqueAssetIdentifier = assetHash,
+                dimensions = dimensions
+            )
+        )
+    }
+
+    private class VideoRow(
+        val fileName: String,
+        val size: Long,
+        val dateTaken: Duration?,
+        val dateAdded: Duration,
+        val duration: Duration
+    )
+
+    private suspend fun processVideo(file: PlatformFile, uri: Uri, assetHash: String): MediaProcessingResult {
+        val dimensions = dimensionsReader.readVideoDimensions(uri)
+            ?: return MediaProcessingResult.Failure(MediaProcessingFailure.UnreadableDimensions)
+        val row = querySingleRow(
+            uri,
+            arrayOf(
+                MediaStore.Video.Media.DISPLAY_NAME,
+                MediaStore.Video.Media.SIZE,
+                MediaStore.Video.Media.DATE_TAKEN,
+                MediaStore.Video.Media.DATE_ADDED,
+                MediaStore.Video.Media.DURATION
+            )
+        ) { cursor ->
+            VideoRow(
+                fileName = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DISPLAY_NAME)),
+                size = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Video.Media.SIZE)),
+                dateTaken = cursor.getLongOrNull(cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DATE_TAKEN))?.milliseconds,
+                dateAdded = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DATE_ADDED)).seconds,
+                duration = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DURATION)).milliseconds
+            )
+        } ?: return MediaProcessingResult.Failure(MediaProcessingFailure.MissingFromLibrary)
+
+        thumbnailExtractor.createLowResThumbnail(file, assetHash)
+        thumbnailExtractor.createHighResThumbnail(file, assetHash)
+        val dateInFeed = row.dateTaken?.utcMsToLocalDateTime()
+            ?: row.dateAdded.utcMsToLocalDateTime()
+
+        return MediaProcessingResult.Success(
+            MediaVideoItem(
+                assetLocation = AssetLocation.LocalAssetLocation(file),
+                isSynced = false,
+                fileName = row.fileName,
+                dateInFeed = dateInFeed,
+                size = row.size,
+                uniqueAssetIdentifier = assetHash,
+                duration = row.duration,
+                dimensions = dimensions
+            )
+        )
+    }
+
+    private fun <T> querySingleRow(uri: Uri, projection: Array<String>, read: (Cursor) -> T): T? =
+        resolver.query(uri, projection, null, null, null)?.use { cursor ->
+            if (cursor.moveToFirst()) read(cursor) else null
+        }
+
+    private fun queryImages(): Flow<PlatformFile> = flow {
         val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
         } else {
@@ -84,9 +193,6 @@ class AndroidLocalMediaProcessor(
         }
         val projection = arrayOf(
             MediaStore.Images.Media._ID,
-            MediaStore.Images.Media.DISPLAY_NAME,
-            MediaStore.Images.Media.SIZE,
-            MediaStore.Images.Media.DATE_ADDED,
             MediaStore.Images.Media.DATE_TAKEN,
             MediaStore.Images.Media.RELATIVE_PATH
         )
@@ -96,53 +202,17 @@ class AndroidLocalMediaProcessor(
 
         resolver.query(collection, projection, selection, selectionArgs, sortOrder)?.use { cursor ->
             val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
-            val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME)
-            val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.SIZE)
-            val dateAddedColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_ADDED)
-            val dateTakenColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_TAKEN)
 
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(idColumn)
-                val fileName = cursor.getString(nameColumn)
-                val size = cursor.getInt(sizeColumn).toLong()
                 val androidUri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
                 val assetPlatformFile = PlatformFile(androidUri)
-                val assetHash = fileHashCalculator.computeSha256(assetPlatformFile)
-                val assetLocation = AssetLocation.LocalAssetLocation(assetPlatformFile)
-                // Check if media has already been processed
-                if (assetHash in processedImageHashes) {
-                    // TODO if hash exists make sure the asset location has not changed, if it changed
-                    //  it is needed to update
-                    continue
-                }
-                val dimensions = dimensionsReader.readImageDimensions(androidUri) ?: run {
-                    log.e { "Skipping $fileName, could not read its dimensions" }
-                    continue
-                }
-                thumbnailExtractor.createLowResThumbnail(assetPlatformFile, assetHash)
-                thumbnailExtractor.createHighResThumbnail(assetPlatformFile, assetHash)
-                val dateInFeed = cursor.getLongOrNull(dateTakenColumn)?.utcMsToLocalDateTime()
-                    ?: resolver.parseDateTakenFromExif(androidUri)
-                    ?: (cursor.getLong(dateAddedColumn) * 1000).utcMsToLocalDateTime()
-
-                val mediaImageItem = MediaImageItem(
-                    assetLocation = assetLocation,
-                    isSynced = false,
-                    fileName = fileName,
-                    dateInFeed = dateInFeed,
-                    size = size,
-                    uniqueAssetIdentifier = assetHash,
-                    dimensions = dimensions
-                )
-                emit(mediaImageItem)
+                emit(assetPlatformFile)
             }
         }
     }.flowOn(ioDispatcher)
 
-    private fun queryVideos(
-        alreadyProcessedVideos: List<MediaVideoItem>
-    ): Flow<MediaItem> = flow {
-        val processedVideoHashes = alreadyProcessedVideos.map { it.uniqueAssetIdentifier }
+    private fun queryVideos(): Flow<PlatformFile> = flow {
         val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
         } else {
@@ -150,12 +220,8 @@ class AndroidLocalMediaProcessor(
         }
         val projection = arrayOf(
             MediaStore.Video.Media._ID,
-            MediaStore.Video.Media.DISPLAY_NAME,
-            MediaStore.Video.Media.SIZE,
             MediaStore.Video.Media.DATE_TAKEN,
-            MediaStore.Video.Media.DATE_ADDED,
-            MediaStore.Video.Media.RELATIVE_PATH,
-            MediaStore.Video.Media.DURATION
+            MediaStore.Video.Media.RELATIVE_PATH
         )
         val selection = "${MediaStore.Video.Media.RELATIVE_PATH} LIKE ? OR ${MediaStore.Video.Media.RELATIVE_PATH} LIKE ? OR ${MediaStore.Video.Media.RELATIVE_PATH} LIKE ?"
         val selectionArgs = arrayOf("DCIM/%")
@@ -163,74 +229,36 @@ class AndroidLocalMediaProcessor(
 
         resolver.query(collection, projection, selection, selectionArgs, sortOrder)?.use { cursor ->
             val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media._ID)
-            val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DISPLAY_NAME)
-            val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.SIZE)
-            val dateAddedColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DATE_ADDED)
-            val dateTakenColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DATE_TAKEN)
-            val durationColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DURATION)
 
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(idColumn)
-                val name = cursor.getString(nameColumn)
-                val size = cursor.getInt(sizeColumn).toLong()
-                val duration = cursor.getLong(durationColumn).milliseconds
                 val androidUri = ContentUris.withAppendedId(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, id)
                 val assetPlatformFile = PlatformFile(androidUri)
-                val assetHash = fileHashCalculator.computeSha256(assetPlatformFile)
-                val assetLocation = AssetLocation.LocalAssetLocation(assetPlatformFile)
-                // Check if media has already been processed
-                if (assetHash in processedVideoHashes) {
-                    // TODO if hash exists make sure the asset location has not changed, if it changed
-                    //  it is needed to update
-                    continue
-                }
-
-                val dimensions = dimensionsReader.readVideoDimensions(androidUri) ?: run {
-                    log.e { "Skipping $name, could not read its dimensions" }
-                    continue
-                }
-                thumbnailExtractor.createLowResThumbnail(assetPlatformFile, assetHash)
-                thumbnailExtractor.createHighResThumbnail(assetPlatformFile, assetHash)
-
-                val dateInFeed = cursor.getLongOrNull(dateTakenColumn)?.utcMsToLocalDateTime()
-                    ?: (cursor.getLong(dateAddedColumn) * 1000).utcMsToLocalDateTime()
-
-                val mediaVideoItem = MediaVideoItem(
-                    assetLocation = assetLocation,
-                    isSynced = false,
-                    fileName = name,
-                    dateInFeed = dateInFeed,
-                    size = size,
-                    uniqueAssetIdentifier = assetHash,
-                    duration = duration,
-                    dimensions = dimensions
-                )
-                emit(mediaVideoItem)
+                emit(assetPlatformFile)
             }
         }
     }.flowOn(ioDispatcher)
 
     @OptIn(ExperimentalTime::class)
-    private fun Long.utcMsToLocalDateTime(): LocalDateTime {
+    private fun Duration.utcMsToLocalDateTime(): LocalDateTime {
         // Convert seconds to milliseconds
-        val instant = Instant.fromEpochMilliseconds(this)
+        val instant = Instant.fromEpochMilliseconds(this.inWholeMilliseconds)
 
         // Convert to LocalDateTime in the system's default time zone
         return instant.toLocalDateTime(TimeZone.currentSystemDefault())
     }
 
-    // TODO Address lint
-    @SuppressLint("NewApi")
-    private fun ContentResolver.parseDateTakenFromExif(uri: Uri) : LocalDateTime? =
+    private val exifDateTimeFormat = LocalDateTime.Format {
+        year(); char(':'); monthNumber(); char(':'); day()
+        char(' ')
+        hour(); char(':'); minute(); char(':'); second()
+    }
+
+    private fun ContentResolver.parseDateTakenFromExif(uri: Uri): LocalDateTime? =
         openInputStream(uri)?.use { stream ->
             val exif = ExifInterface(stream)
-            val exifDateFormatter = DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss")
-            var exifDateString = exif.getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL)
-            if (exifDateString == null) {
-                exifDateString = exif.getAttribute(ExifInterface.TAG_DATETIME)
-            }
-            if (exifDateString != null) {
-                return@use java.time.LocalDateTime.parse(exifDateString, exifDateFormatter).toKotlinLocalDateTime()
-            } else return@use null
+            val exifDateString = exif.getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL)
+                ?: exif.getAttribute(ExifInterface.TAG_DATETIME)
+            exifDateString?.let(exifDateTimeFormat::parseOrNull)
         }
 }

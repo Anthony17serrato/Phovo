@@ -1,6 +1,7 @@
 package com.serratocreations.phovo.data.photos.util
 
 import com.serratocreations.phovo.core.common.util.logTimeToComplete
+import com.serratocreations.phovo.core.common.util.toPhAsset
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.source
 import kotlinx.coroutines.CoroutineDispatcher
@@ -17,13 +18,16 @@ class IosFileHashCalculator(
     @OptIn(ExperimentalForeignApi::class)
     override suspend fun computeSha256(file: PlatformFile): String = logTimeToComplete(apiTag = "IosFileHashCalculator::computeSha256") {
         withContext(ioDispatcher) {
+            // TODO error handling must be improved
+            val sourceFile = file.toPhAsset()?.fetchFileUrl()?.let { PlatformFile(it) }
+                ?: throw IllegalStateException("File source not found")
             memScoped {
                 // 1. Allocate and initialize the native CommonCrypto SHA256 context
                 val context = alloc<CC_SHA256_CTX>()
                 CC_SHA256_Init(context.ptr)
 
                 // 2. Stream the file content through the exact same kotlinx.io buffering setup
-                file.source().buffered().use { source ->
+                sourceFile.source().buffered().use { source ->
                     val buffer = ByteArray(32 * 1024)
 
                     while (true) {

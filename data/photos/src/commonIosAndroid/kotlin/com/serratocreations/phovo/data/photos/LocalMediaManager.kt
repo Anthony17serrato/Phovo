@@ -4,20 +4,21 @@ import com.serratocreations.phovo.core.common.performance.ProcessingCpuBudget
 import com.serratocreations.phovo.core.common.util.logTimeToComplete
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.data.photos.local.LocalMediaProcessor
+import com.serratocreations.phovo.data.photos.local.model.MediaProcessingResult
 import com.serratocreations.phovo.data.photos.repository.LocalAndRemoteMediaRepository
-import com.serratocreations.phovo.data.photos.repository.model.MediaItem
+import com.serratocreations.phovo.data.photos.util.FileHashCalculator
+import io.github.vinceglb.filekit.PlatformFile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.flow.consumeAsFlow
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.yield
 
 class LocalMediaManager(
     private val localAndRemoteMediaRepository: LocalAndRemoteMediaRepository,
     private val localMediaProcessor: LocalMediaProcessor,
+    private val fileHashCalculator: FileHashCalculator,
     private val appScope: CoroutineScope,
     private val cpuBudget: ProcessingCpuBudget,
     logger: PhovoLogger,
@@ -28,10 +29,6 @@ class LocalMediaManager(
 
     private val log = logger.withTag(TAG)
 
-    private suspend fun handleProcessedMediaItem(mediaItem: MediaItem) {
-        localAndRemoteMediaRepository.addOrUpdateMediaItem(mediaItem)
-    }
-
     // Syncs any local media which is still pending sync
     fun CoroutineScope.syncJob(scanJob: Job) =
         launch {
@@ -40,23 +37,39 @@ class LocalMediaManager(
             }
         }
 
-    fun CoroutineScope.processJob(
-        localItems: List<MediaItem>
-    ) = launch {
-        val processMediaChannel = Channel<MediaItem>()
-        appScope.consumeProcessedMedia(processMediaChannel)
-        with(localMediaProcessor) {
-            processLocalItems(
-                processedItems = localItems,
-                processMediaChannel = processMediaChannel
-            ).join()
-            processMediaChannel.close()
+    fun CoroutineScope.processJob() = launch {
+        val processMediaChannel = Channel<PlatformFile>()
+
+        repeat(cpuBudget.workerCount) {
+            processMediaWorker(processMediaChannel)
         }
+
+        localMediaProcessor.scanLocalItems(
+            processMediaSendChannel = processMediaChannel
+        )
+        processMediaChannel.close()
     }
 
-    private fun CoroutineScope.consumeProcessedMedia(
-        processMediaChannel: ReceiveChannel<MediaItem>
-    ) = processMediaChannel.consumeAsFlow()
-        .onEach(::handleProcessedMediaItem)
-        .launchIn(this)
+    private fun CoroutineScope.processMediaWorker(
+        processMediaReceiveChannel: ReceiveChannel<PlatformFile>
+    ) = launch {
+        for (fileToProcess in processMediaReceiveChannel) {
+            yield()
+            val assetHash = fileHashCalculator.computeSha256(fileToProcess)
+            val isAssetAlreadyProcessed = localAndRemoteMediaRepository
+                .getMediaItemByAssetHash(assetHash)
+                .let { it != null }
+            if (isAssetAlreadyProcessed.not()) {
+                when (val result = localMediaProcessor.processItem(fileToProcess, assetHash)) {
+                    is MediaProcessingResult.Failure -> {
+                        // TODO save failure to DB table
+                        log.e { "Processing failed ${result.reason}" }
+                    }
+                    is MediaProcessingResult.Success -> {
+                        localAndRemoteMediaRepository.addOrUpdateMediaItem(result.mediaItem)
+                    }
+                }
+            }
+        }
+    }
 }
