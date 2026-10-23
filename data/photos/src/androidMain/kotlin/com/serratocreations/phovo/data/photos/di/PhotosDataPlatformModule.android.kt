@@ -6,6 +6,8 @@ import coil3.video.VideoFrameDecoder
 import com.serratocreations.phovo.core.common.di.IO_DISPATCHER
 import com.serratocreations.phovo.data.photos.local.AndroidLocalMediaProcessor
 import com.serratocreations.phovo.data.photos.local.LocalMediaProcessor
+import com.serratocreations.phovo.data.photos.network.AndroidNetworkTypeDataSource
+import com.serratocreations.phovo.data.photos.network.NetworkTypeDataSource
 import com.serratocreations.phovo.data.photos.util.AndroidFileHashCalculator
 import com.serratocreations.phovo.data.photos.util.FileHashCalculator
 import io.github.vinceglb.filekit.coil.addPlatformFileSupport
@@ -57,4 +59,6 @@ internal actual fun getAndroidIosModules(): Module = module {
     factory<FileHashCalculator> {
         AndroidFileHashCalculator(ioDispatcher = get(IO_DISPATCHER))
     }
+
+    single<NetworkTypeDataSource> { AndroidNetworkTypeDataSource(context = get()) }
 }
