@@ -134,9 +134,10 @@ class LocalAndRemoteMediaRepositoryImpl(
         processingJob: Job
     ) = launch {
         while (this.isActive) {
+            val wasProcessing = processingJob.isActive
             val nextUnsyncedItem = getNextUnsyncedItem(type) ?: run {
                 // Keep worker running if processing job has not completed
-                if (processingJob.isActive) {
+                if (wasProcessing) {
                     delay(WORKER_IDLE_DELAY)
                     continue
                 } else {

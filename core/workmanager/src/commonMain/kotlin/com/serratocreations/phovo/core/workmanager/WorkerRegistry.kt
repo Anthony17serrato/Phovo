@@ -4,11 +4,14 @@ package com.serratocreations.phovo.core.workmanager
  * Binds a stable [workerId] to a way of creating the worker.
  *
  * Work outlives the process that enqueued it, so a persisted work record can only name its worker
- * by id. Consumers contribute one registration per worker to DI:
+ * by id. Consumers contribute one registration per worker to DI, qualified by the worker id:
  *
  * ```
- * single { WorkerRegistration("media-sync") { MediaSyncWorker(get()) } }
+ * single(named("media-sync")) { WorkerRegistration("media-sync") { MediaSyncWorker(get()) } }
  * ```
+ *
+ * The qualifier is required. Unqualified singles of one type override each other in Koin, so
+ * [WorkerRegistry] would only ever see the last registration.
  *
  * Ids are part of the persisted format. Renaming one orphans any work already on disk.
  */
