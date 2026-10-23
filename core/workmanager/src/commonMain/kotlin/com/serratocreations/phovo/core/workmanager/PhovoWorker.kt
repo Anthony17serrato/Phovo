@@ -30,6 +30,21 @@ abstract class PhovoWorker {
     abstract suspend fun doWork(): WorkResult
 
     /**
+     * Called instead of [doWork] when work enqueued with a [LongRunningInfo] cannot be given
+     * long-running execution for this run.
+     *
+     * Android: the system refused to start the foreground service, which happens when the run
+     * starts while the app is in the background, e.g. a retry after process death or a reschedule
+     * after a reboot. iOS: the run starts in the background with no continued processing task,
+     * because the OS is below iOS 26 or none was submitted or accepted when the user left.
+     *
+     * Without long-running execution the run would be cut off by the platform's ordinary limits,
+     * so the worker decides what to do instead, typically scheduling lighter work for later and
+     * returning [WorkResult.Success]. The default fails the work.
+     */
+    open suspend fun onLongRunningDenied(): WorkResult = WorkResult.Failure
+
+    /**
      * Reports how far along this run is, updating the Android notification and the iOS system
      * progress UI.
      *

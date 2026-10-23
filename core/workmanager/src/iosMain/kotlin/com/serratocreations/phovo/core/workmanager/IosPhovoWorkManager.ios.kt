@@ -45,6 +45,7 @@ import platform.Foundation.dateWithTimeIntervalSince1970
 import platform.Foundation.timeIntervalSince1970
 import platform.UIKit.UIApplication
 import platform.UIKit.UIApplicationDidBecomeActiveNotification
+import platform.UIKit.UIApplicationState
 import platform.UIKit.UIApplicationWillResignActiveNotification
 import platform.UIKit.UIBackgroundTaskIdentifier
 import platform.UIKit.UIBackgroundTaskInvalid
@@ -135,6 +136,16 @@ class IosPhovoWorkManager internal constructor(
     private val drainActive = MutableStateFlow(false)
 
     /**
+     * Set once this trip to the background is past the point where a continued processing task can
+     * be asked for: after willResignActive has submitted its requests, or from launch when the
+     * process started in the background. Cleared on didBecomeActive. A long-running record that
+     * starts after this point without a continued task has missed its chance; see
+     * [isLongRunningDenied].
+     */
+    @kotlin.concurrent.Volatile
+    private var pastContinuedHandOff = false
+
+    /**
      * BGContinuedProcessingTask is iOS 26+. The deployment target is well below that, and
      * Kotlin/Native does not model @available, so this is checked at run time and everything
      * below falls back to the BGProcessingTask queue.
@@ -164,12 +175,18 @@ class IosPhovoWorkManager internal constructor(
         // just before its request is submitted, which is exactly why Apple exempts these
         // registrations from the "before the app finishes launching" rule.
 
+        // Inactive, not active, is what a normal foreground launch reports at this point, so only
+        // an explicit background launch counts as one.
+        pastContinuedHandOff =
+            UIApplication.sharedApplication.applicationState == UIApplicationState.UIApplicationStateBackground
+
         NSNotificationCenter.defaultCenter.addObserverForName(
             name = UIApplicationDidBecomeActiveNotification,
             `object` = null,
             queue = NSOperationQueue.mainQueue,
             usingBlock = {
                 handBackContinuedTasks()
+                pastContinuedHandOff = false
                 requestDrain()
             }
         )
@@ -182,10 +199,27 @@ class IosPhovoWorkManager internal constructor(
             name = UIApplicationWillResignActiveNotification,
             `object` = null,
             queue = NSOperationQueue.mainQueue,
-            usingBlock = { submitContinuedRequests() }
+            usingBlock = {
+                submitContinuedRequests()
+                pastContinuedHandOff = true
+            }
         )
 
         requestDrain()
+    }
+
+    /**
+     * iOS's counterpart to Android refusing to start a foreground service from the background: a
+     * long-running record is about to run in the background with no continued processing task
+     * behind it, either because the OS is below iOS 26 or because none was submitted or accepted
+     * for it at willResignActive. It would only get a BGTask window or a UIKit assertion, so the
+     * worker decides what to do instead through [PhovoWorker.onLongRunningDenied].
+     */
+    private fun isLongRunningDenied(record: PersistedWorkRecord): Boolean {
+        if (record.longRunningTitle == null || !pastContinuedHandOff) return false
+        if (!supportsContinuedProcessing) return true
+        val name = record.uniqueWorkName
+        return name !in continuedSubmissions.value && name !in activeContinued.value
     }
 
     private fun registerHandler(identifier: String) {
@@ -463,7 +497,14 @@ class IosPhovoWorkManager internal constructor(
         var result: WorkResult?
         try {
             result = coroutineScope {
-                val child = async(start = CoroutineStart.LAZY) { worker.doWork() }
+                val child = async(start = CoroutineStart.LAZY) {
+                    if (isLongRunningDenied(record)) {
+                        logger.w { "'$name' is long-running but has no continued task in the background; handing to onLongRunningDenied." }
+                        worker.onLongRunningDenied()
+                    } else {
+                        worker.doWork()
+                    }
+                }
                 val live = InFlight(worker, child, record.generation)
                 entry = live
                 inFlight.update { it + (name to live) }

@@ -18,7 +18,13 @@ internal class WorkNotifications(private val context: Context) {
 
     private val manager = context.getSystemService(NotificationManager::class.java)
 
+    /**
+     * [workerId] picks the notification id, so two long-running workers in the foreground at once
+     * each keep their own notification instead of overwriting the other's, and one finishing does
+     * not take down the other's.
+     */
     fun foregroundInfo(
+        workerId: String,
         title: String,
         subtitle: String,
         completed: Long,
@@ -49,12 +55,17 @@ internal class WorkNotifications(private val context: Context) {
             builder.setProgress(0, 0, true)
         }
 
+        val notificationId = notificationIdFor(workerId)
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            ForegroundInfo(NOTIFICATION_ID, builder.build(), ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+            ForegroundInfo(notificationId, builder.build(), ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
         } else {
-            ForegroundInfo(NOTIFICATION_ID, builder.build())
+            ForegroundInfo(notificationId, builder.build())
         }
     }
+
+    // startForeground rejects an id of 0.
+    private fun notificationIdFor(workerId: String): Int =
+        (NOTIFICATION_ID xor workerId.hashCode()).takeIf { it != 0 } ?: NOTIFICATION_ID
 
     private fun ensureChannel() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return

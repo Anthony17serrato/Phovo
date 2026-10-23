@@ -10,6 +10,8 @@ import kotlinx.serialization.json.Json
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.serialization.kotlinx.json.json
 import com.serratocreations.phovo.data.photos.local.IosLocalMediaProcessor
+import com.serratocreations.phovo.data.photos.network.IosNetworkTypeDataSource
+import com.serratocreations.phovo.data.photos.network.NetworkTypeDataSource
 import com.serratocreations.phovo.data.photos.util.FileHashCalculator
 import com.serratocreations.phovo.data.photos.util.IosFileHashCalculator
 import io.github.vinceglb.filekit.coil.addPlatformFileSupport
@@ -52,4 +54,6 @@ internal actual fun getAndroidIosModules(): Module = module {
             imageLoader = get()
         )
     }
+
+    single<NetworkTypeDataSource> { IosNetworkTypeDataSource() }
 }
