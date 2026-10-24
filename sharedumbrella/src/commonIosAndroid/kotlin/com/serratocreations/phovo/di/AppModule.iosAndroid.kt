@@ -16,10 +16,8 @@ abstract class IosAndroidApplicationPlatformModuleFetcher: ApplicationPlatformMo
         single(named(MEDIA_SYNC_WORKER_ID)) {
             WorkerRegistration(MEDIA_SYNC_WORKER_ID) {
                 MediaSyncWorker(
-                    get(),
-                    get(),
-                    get(),
-                    get()
+                    localMediaManager = get(),
+                    localAndRemoteMediaRepository = get()
                 )
             }
         }

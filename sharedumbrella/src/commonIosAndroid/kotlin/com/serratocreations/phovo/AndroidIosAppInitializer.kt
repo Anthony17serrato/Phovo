@@ -1,10 +1,5 @@
 package com.serratocreations.phovo
 
-import com.serratocreations.phovo.core.common.performance.ProcessingCpuBudget
-import com.serratocreations.phovo.core.domain.GetBackupStatusUseCase
-import com.serratocreations.phovo.core.domain.model.BackupStatus
-import com.serratocreations.phovo.core.model.network.ServerConnectionState
-import com.serratocreations.phovo.core.model.network.isConnected
 import com.serratocreations.phovo.core.workmanager.BackoffPolicy
 import com.serratocreations.phovo.core.workmanager.Constraints
 import com.serratocreations.phovo.core.workmanager.ExistingWorkPolicy
@@ -26,14 +21,9 @@ import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.sample
-import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.selects.select
-import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.time.Duration.Companion.seconds
 
 abstract class AndroidIosAppInitializer(
@@ -81,72 +71,27 @@ abstract class AndroidIosAppInitializer(
 }
 
 class MediaSyncWorker(
-    private val getBackupStatusUseCase: GetBackupStatusUseCase,
     private val localMediaManager: LocalMediaManager,
     private val localAndRemoteMediaRepository: LocalAndRemoteMediaRepository,
-    private val cpuBudget: ProcessingCpuBudget,
 ) : PhovoWorker() {
     @OptIn(FlowPreview::class)
-    override suspend fun doWork(): WorkResult {
-        return coroutineScope {
-            launch {
-                // TODO media processing needs to post progress too otherwise IOS will kill
-                //  the worker
-                localAndRemoteMediaRepository.syncByteProgress
-                    .sample(PROGRESS_REPORT_INTERVAL)
-                    .collect {
-                        setProgress(completed = it.completedBytes, total = it.totalBytes)
-                    }
-            }
-            val processingJob = with(localMediaManager) {
-                processJob()
-            }
-            val canSyncStart = withTimeoutOrNull(SERVER_CONNECTION_TIMEOUT) {
-                localAndRemoteMediaRepository.observeConnectionState()
-                    .takeWhile { it !is ServerConnectionState.NotConfigured }
-                    .map { it.isConnected }
-                    .firstOrNull { it }
-            }
-
-            val syncJob = if (canSyncStart == true) {
-                with(localMediaManager) {
-                    syncJob(processingJob)
+    override suspend fun doWork(): WorkResult = coroutineScope {
+        launch {
+            // TODO media processing needs to post progress too otherwise IOS will kill
+            //  the worker
+            localAndRemoteMediaRepository.syncByteProgress
+                .sample(PROGRESS_REPORT_INTERVAL)
+                .collect {
+                    setProgress(completed = it.completedBytes, total = it.totalBytes)
                 }
-            } else {
-                null
-            }
-            processingJob.join()
-
-            var result: WorkResult = WorkResult.Success
-            if (syncJob != null) {
-                // Kill sync if server connection goes bad & processing job is done already
-                val serverTransitionsOfflineJob = getBackupStatusUseCase().takeWhile { status ->
-                    when (status) {
-                        is BackupStatus.BackupCompleteLocal, BackupStatus.Initializing,
-                        is BackupStatus.LocalMediaBackupProgress, BackupStatus.Scanning -> true
-                        BackupStatus.ServerOffline -> {
-                            false
-                        }
-                    }
-                }.launchIn(this)
-                select {
-                    serverTransitionsOfflineJob.onJoin {
-                        syncJob.cancel()
-                        result = WorkResult.Retry
-                    }
-                    syncJob.onJoin {
-                        serverTransitionsOfflineJob.cancel()
-                    }
-                }
-            }
-            coroutineContext.cancelChildren()
-            return@coroutineScope result
         }
+        localMediaManager.awaitBackupIdle()
+        coroutineContext.cancelChildren()
+        WorkResult.Success
     }
 
     private companion object {
         /** About the cadence measured to keep an iOS background task alive on battery. */
         val PROGRESS_REPORT_INTERVAL = 1.seconds
-        val SERVER_CONNECTION_TIMEOUT = 10.seconds
     }
 }
