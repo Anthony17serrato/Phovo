@@ -2,6 +2,7 @@ package com.serratocreations.phovo
 
 import com.serratocreations.phovo.core.workmanager.IosPhovoWorkManager
 import com.serratocreations.phovo.data.permissions.PermissionRepository
+import com.serratocreations.phovo.data.photos.LocalMediaManager
 import com.serratocreations.phovo.data.photos.repository.LocalAndRemoteMediaRepository
 import com.serratocreations.phovo.data.server.ServerAddressResolver
 import kotlinx.coroutines.CoroutineScope
@@ -11,12 +12,14 @@ class IosAppInitializer(
     applicationScope: CoroutineScope,
     serverAddressResolver: Lazy<ServerAddressResolver>,
     localAndRemoteMediaRepository: Lazy<LocalAndRemoteMediaRepository>,
-    permissionRepository: Lazy<PermissionRepository>
+    permissionRepository: Lazy<PermissionRepository>,
+    localMediaManager: Lazy<LocalMediaManager>
 ): AndroidIosAppInitializer(
     applicationScope,
     serverAddressResolver,
     localAndRemoteMediaRepository,
     permissionRepository,
+    localMediaManager,
     workManager
 ) {
     override fun initialize() {

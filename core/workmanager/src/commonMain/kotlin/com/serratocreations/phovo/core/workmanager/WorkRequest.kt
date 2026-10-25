@@ -52,6 +52,18 @@ data class OneTimeWorkRequest(
      *
      * This says nothing about when the work starts, only how long it may run. See [expedited] for
      * what combining the two means on each platform.
+     *
+     * Enqueued while the app is open, with no [constraints], long-running work is foreground
+     * first on both platforms: it runs in-process, with no foreground service or continued
+     * processing task. Only if it is **still running when the user leaves** is it carried into the
+     * background, by a foreground service on Android or a continued processing task on iOS 26+,
+     * and that ends again if the user comes back while it runs. So how long [PhovoWorker.doWork]
+     * keeps going decides whether the work gets promoted at all: return once there is nothing
+     * useful left to do, rather than waiting on a condition that may not change while the app is
+     * in the background.
+     *
+     * When long-running execution cannot be had, [PhovoWorker.onLongRunningDenied] runs instead of
+     * [PhovoWorker.doWork].
      */
     val longRunning: LongRunningInfo? = null,
     override val backoffPolicy: BackoffPolicy = BackoffPolicy.EXPONENTIAL,

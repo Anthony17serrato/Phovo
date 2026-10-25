@@ -19,6 +19,7 @@ class AndroidApplicationPlatformModuleFetcher: IosAndroidApplicationPlatformModu
                 serverAddressResolver = inject(),
                 localAndRemoteMediaRepository = inject(),
                 permissionRepository = inject(),
+                localMediaManager = inject(),
                 workManager = inject()
             )
         }
