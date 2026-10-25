@@ -45,6 +45,7 @@ import platform.Foundation.dateWithTimeIntervalSince1970
 import platform.Foundation.timeIntervalSince1970
 import platform.UIKit.UIApplication
 import platform.UIKit.UIApplicationDidBecomeActiveNotification
+import platform.UIKit.UIApplicationDidEnterBackgroundNotification
 import platform.UIKit.UIApplicationState
 import platform.UIKit.UIApplicationWillResignActiveNotification
 import platform.UIKit.UIBackgroundTaskIdentifier
@@ -136,11 +137,11 @@ class IosPhovoWorkManager internal constructor(
     private val drainActive = MutableStateFlow(false)
 
     /**
-     * Set once this trip to the background is past the point where a continued processing task can
-     * be asked for: after willResignActive has submitted its requests, or from launch when the
-     * process started in the background. Cleared on didBecomeActive. A long-running record that
-     * starts after this point without a continued task has missed its chance; see
-     * [isLongRunningDenied].
+     * Set once the app is actually in the background, past the point where a continued processing
+     * task can be asked for: on didEnterBackground, which follows willResignActive's submissions,
+     * or from launch when the process started in the background. Cleared on didBecomeActive. A
+     * long-running record that starts after this point without a continued task has missed its
+     * chance; see [isLongRunningDenied].
      */
     @kotlin.concurrent.Volatile
     private var pastContinuedHandOff = false
@@ -199,10 +200,17 @@ class IosPhovoWorkManager internal constructor(
             name = UIApplicationWillResignActiveNotification,
             `object` = null,
             queue = NSOperationQueue.mainQueue,
-            usingBlock = {
-                submitContinuedRequests()
-                pastContinuedHandOff = true
-            }
+            usingBlock = { submitContinuedRequests() }
+        )
+
+        // Not willResignActive: a system alert, such as a permission prompt, resigns active while
+        // the app stays on screen. Measured on device: work starting under the first-launch photo
+        // permission prompt was denied as if it were in the background.
+        NSNotificationCenter.defaultCenter.addObserverForName(
+            name = UIApplicationDidEnterBackgroundNotification,
+            `object` = null,
+            queue = NSOperationQueue.mainQueue,
+            usingBlock = { pastContinuedHandOff = true }
         )
 
         requestDrain()
