@@ -21,7 +21,8 @@ class IosApplicationPlatformModuleFetcher: IosAndroidApplicationPlatformModuleFe
                 applicationScope = get(APPLICATION_SCOPE),
                 serverAddressResolver = inject(),
                 localAndRemoteMediaRepository = inject(),
-                permissionRepository = inject()
+                permissionRepository = inject(),
+                localMediaManager = inject()
             )
         }
     }
