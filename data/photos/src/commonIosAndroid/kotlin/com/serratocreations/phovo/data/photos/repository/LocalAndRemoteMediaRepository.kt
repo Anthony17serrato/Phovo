@@ -17,17 +17,17 @@ import com.serratocreations.phovo.data.photos.repository.model.SyncVideo
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
@@ -37,12 +37,6 @@ import kotlinx.coroutines.yield
 import kotlin.time.Duration.Companion.seconds
 
 interface LocalAndRemoteMediaRepository: LocalMediaRepository, RemoteMediaRepository {
-//    /**
-//     * Progress of the current sync job. Emits nothing until the first sync job in this process
-//     * starts. Once a job finishes, its final state is kept, and new collectors get it, until the
-//     * next job starts and resets it.
-//     */
-//    val syncProgressState: Flow<LocalMediaBackupProgress>
 
     /**
      * Adds the [syncQueueable] to the sync queue. media added using this API gets picked up by
@@ -51,17 +45,21 @@ interface LocalAndRemoteMediaRepository: LocalMediaRepository, RemoteMediaReposi
     suspend fun syncMedia(syncQueueable: SyncQueueable)
 
     /**
-     * Runs an application wide sync and suspends until it completes. Cancelling the caller cancels
-     * the sync. This API should typically be initiated by a work manager(or equivalent platform API)
+     * Runs an application wide sync while the returned flow is collected. Nothing runs until
+     * collection starts, and cancelling the collector cancels the sync. This API should typically be
+     * initiated by a work manager(or equivalent platform API)
      *
-     * Only one sync runs at a time. A call made while another sync is running waits for it to
-     * finish, then runs its own, so an overlapping run (such as a replaced worker still cancelling)
-     * never mixes its progress into the next one.
+     * Emits [SyncState.Syncing] as soon as the sync starts and again as it progresses, then a single
+     * [SyncState.SyncComplete] once every worker has finished, and completes. Progress belongs to
+     * this collection: counts start from zero and leave out uploads queued with [syncMedia].
+     *
+     * Only one sync runs at a time. Collecting while another sync is running waits for it to finish
+     * before emitting anything.
      *
      * @param scanJob a reference to the Job which is scanning for new media, while the scan job is
-     * active sync workers will remain running.
+     * active sync workers will remain running, so media it processes during the sync is picked up.
      */
-    suspend fun sync(scanJob: Job): Flow<SyncState>
+    fun sync(scanJob: Job): Flow<SyncState>
 }
 
 class LocalAndRemoteMediaRepositoryImpl(
@@ -81,9 +79,6 @@ class LocalAndRemoteMediaRepositoryImpl(
 
     private val syncImageRequestChannel = Channel<String>(Channel.RENDEZVOUS)
     private val syncVideoRequestChannel = Channel<String>(Channel.RENDEZVOUS)
-
-//    private val _syncProgressState = MutableStateFlow<LocalMediaBackupProgress?>(null)
-//    override val syncProgressState = _syncProgressState.filterNotNull()
 
     init {
         repeat(SYNC_IMAGE_WORKER_COUNT) {
@@ -113,7 +108,7 @@ class LocalAndRemoteMediaRepositoryImpl(
     private fun CoroutineScope.syncWorker(
         type: MediaType,
         processingJob: Job,
-        inFlightMediaItemProgressSendChannel: SendChannel<InFlightMediaItemProgress>
+        syncProgressStateFlow: MutableStateFlow<SyncState.Syncing>
     ) = launch {
         while (this.isActive) {
             val wasProcessing = processingJob.isActive
@@ -131,8 +126,7 @@ class LocalAndRemoteMediaRepositoryImpl(
             remoteMediaRepository.observeConnectionState().first { it.isConnected }
             val assetHash = nextUnsyncedItem.mediaItemMetadataEntity.assetHash
             log.i { "starting sync for item hash $assetHash" }
-            // Terminate the worker if there is no remaining items to sync
-            val result = sync(nextUnsyncedItem, inFlightMediaItemProgressSendChannel)
+            val result = syncMediaItem(nextUnsyncedItem, syncProgressStateFlow)
             log.i { "sync complete for item hash $assetHash result $result" }
             when (result) {
                 is NetworkResult.NetworkError -> {
@@ -159,29 +153,21 @@ class LocalAndRemoteMediaRepositoryImpl(
             val localMediaItemWithMetadata =
                 localMediaRepository.getLocalMediaItemWithMetadataByAssetHash(assetHash)
             localMediaItemWithMetadata?.let { mediaItemEntityNotNull ->
-                sync(mediaItemEntityNotNull)
+                syncMediaItem(mediaItemEntityNotNull)
             }
         }
     }
 
-    private sealed interface InFlightMediaItemProgress {
-        val assetHash: String
-        data class Progress(
-            override val assetHash: String,
-            val bytesSynced: Long
-        ): InFlightMediaItemProgress
-
-        data class Complete(
-            override val assetHash: String,
-            /** The file's size when the upload succeeded, 0 when it failed or was cancelled */
-            val syncedBytes: Long
-        ) : InFlightMediaItemProgress
-    }
-
-    private suspend fun sync(
+    /**
+     * Uploads one item and marks it synced when the upload succeeds.
+     *
+     * @param syncProgressStateFlow progress of the sync this upload belongs to. It tracks the bytes
+     *   sent while uploading, and credits the item once it succeeds. Null for uploads that aren't
+     *   part of a sync, such as ones queued with [syncMedia].
+     */
+    private suspend fun syncMediaItem(
         mediaItemEntity: LocalMediaItemWithMetadata,
-        /** Optional param for receiving sync progress updates **/
-        inFlightMediaItemProgressSendChannel: SendChannel<InFlightMediaItemProgress>? = null
+        syncProgressStateFlow: MutableStateFlow<SyncState.Syncing>? = null
     ): NetworkResult<Unit> {
         val metadata = mediaItemEntity.mediaItemMetadataEntity
         val assetHash = metadata.assetHash
@@ -191,27 +177,28 @@ class LocalAndRemoteMediaRepositoryImpl(
             onBytesSent = { bytesSent ->
                 // Capped at the recorded size, so a file whose stored size is out of date
                 // can't push completed past total.
-                inFlightMediaItemProgressSendChannel?.trySend(
-                    InFlightMediaItemProgress.Progress(
-                        assetHash = assetHash,
-                        bytesSynced = bytesSent.coerceAtMost(metadata.size)
+                syncProgressStateFlow?.update { currentState ->
+                    currentState.copy(
+                        inFlightBytes = currentState.inFlightBytes +
+                            (assetHash to bytesSent.coerceAtMost(metadata.size))
                     )
-                )
+                }
             }
         )
-
-        inFlightMediaItemProgressSendChannel?.trySend(
-            InFlightMediaItemProgress.Complete(
-                assetHash = assetHash,
-                syncedBytes = if (result is NetworkResult.NetworkSuccess) metadata.size else 0
+        val isSuccess = result is NetworkResult.NetworkSuccess
+        // Credited before marking synced, so the total never drops ahead of completed.
+        syncProgressStateFlow?.update {
+            it.copy(
+                inFlightBytes = it.inFlightBytes - assetHash,
+                syncedCount = if (isSuccess) it.syncedCount + 1 else it.syncedCount,
+                syncedBytes = if (isSuccess) it.syncedBytes + metadata.size else it.syncedBytes
             )
-        )
-
-        log.i { "sync complete result $result hash $assetHash" }
-        if (result is NetworkResult.NetworkSuccess) {
-            localMediaRepository.markAsSynced(assetHash = assetHash)
         }
-        log.i { "marked as synced ${mediaItemEntity.mediaItemMetadataEntity.assetHash}" }
+        if (isSuccess) {
+            localMediaRepository.markAsSynced(assetHash = assetHash)
+        } else {
+            log.w { "sync failed to upload item with hash $assetHash with result $result" }
+        }
         return result
     }
 
@@ -231,72 +218,51 @@ class LocalAndRemoteMediaRepositoryImpl(
         }
     }
 
-    // Held for the whole sync, so only one runs at a time
+    // Held for the whole sync, so only one runs at a time. Each sync starts by clearing the claims in
+    // the sync log, so a second sync running alongside would release the first one's claims and
+    // upload the same items again.
     private val syncMutex = Mutex()
-    override suspend fun sync(scanJob: Job): Flow<SyncState> = channelFlow {
+    override fun sync(scanJob: Job): Flow<SyncState> = channelFlow {
         syncMutex.withLock {
             clearNonFailedSyncLogs()
             val initialUnsynced = observeUnsyncedMedia().first()
-            val inFlightBytes = mutableMapOf<String, Long>()
-            send(
+            val syncState = MutableStateFlow(
                 SyncState.Syncing(
                     currentPendingSyncQuantity = initialUnsynced.count,
                     unsyncedBytes = initialUnsynced.bytes
                 )
             )
-            val inFlightMediaItemProgressChannel = Channel<InFlightMediaItemProgress>(Channel.UNLIMITED)
 
-            val progressJob = combine(
-                observeUnsyncedMedia(),
-                inFlightMediaItemProgressChannel.consumeAsFlow()
-            ) { unsynced, progress ->
-                when (progress) {
-                    is InFlightMediaItemProgress.Complete -> {
-                        inFlightBytes.remove(progress.assetHash)
-                    }
-                    is InFlightMediaItemProgress.Progress -> {
-                        inFlightBytes[progress.assetHash] = progress.bytesSynced
+            val syncProgressJob = launch {
+                launch {
+                    observeUnsyncedMedia().collect { unsyncedMedia ->
+                        syncState.update { currentState ->
+                            currentState.copy(
+                                currentPendingSyncQuantity = unsyncedMedia.count,
+                                unsyncedBytes = unsyncedMedia.bytes
+                            )
+                        }
                     }
                 }
-                send(
-                    SyncState.Syncing(
-                        syncedCount = initialUnsynced.count - unsynced.count,
-                        currentPendingSyncQuantity = unsynced.count,
-                        unsyncedBytes = unsynced.bytes,
-                        syncedBytes = initialUnsynced.bytes - unsynced.bytes,
-                        inFlightBytes = inFlightBytes
-                    )
-                )
-            }.launchIn(this)
-
-            val syncJobs = mutableListOf<Job>()
-            repeat(SYNC_IMAGE_WORKER_COUNT) {
-                syncJobs.add(
-                    syncWorker(
-                        type = MediaType.Image,
-                        processingJob = scanJob,
-                        inFlightMediaItemProgressSendChannel = inFlightMediaItemProgressChannel
-                    )
-                )
+                // Forward progress to the collector. Updates that arrive faster than it reads them
+                // are conflated, so it gets the latest.
+                syncState.collect {
+                    send(it)
+                }
             }
-            repeat(SYNC_VIDEO_WORKER_COUNT) {
-                syncJobs.add(
-                    syncWorker(
-                        type = MediaType.Video,
-                        processingJob = scanJob,
-                        inFlightMediaItemProgressSendChannel = inFlightMediaItemProgressChannel
-                    )
-                )
-            }
-            scanJob.join()
-            joinAll(*syncJobs.toTypedArray())
-            progressJob.cancel()
 
-            val finalUnsynced = observeUnsyncedMedia().first()
+            val syncJobs = List(SYNC_IMAGE_WORKER_COUNT) {
+                syncWorker(MediaType.Image, scanJob, syncState)
+            } + List(SYNC_VIDEO_WORKER_COUNT) {
+                syncWorker(MediaType.Video, scanJob, syncState)
+            }
+            syncJobs.joinAll()
+            syncProgressJob.cancelAndJoin()
+
             send(
                 SyncState.SyncComplete(
-                    backedUpQuantity = initialUnsynced.count - finalUnsynced.count,
-                    failureQuantity = finalUnsynced.count
+                    backedUpQuantity = syncState.value.syncedCount,
+                    failureQuantity = observeUnsyncedMedia().first().count
                 )
             )
         }
