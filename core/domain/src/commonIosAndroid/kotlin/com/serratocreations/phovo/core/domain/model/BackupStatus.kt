@@ -2,6 +2,11 @@ package com.serratocreations.phovo.core.domain.model
 
 sealed interface BackupStatus {
     data object Initializing: BackupStatus
+
+    data object Unconfigured: BackupStatus
+
+    data object Processing: BackupStatus
+
     data object ServerOffline: BackupStatus
 
     data object Scanning: BackupStatus

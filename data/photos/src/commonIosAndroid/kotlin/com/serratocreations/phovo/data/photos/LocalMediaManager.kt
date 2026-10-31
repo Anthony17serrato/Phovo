@@ -5,7 +5,9 @@ import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.core.model.network.isConnected
 import com.serratocreations.phovo.data.photos.local.LocalMediaProcessor
 import com.serratocreations.phovo.data.photos.local.model.MediaProcessingResult
+import com.serratocreations.phovo.data.photos.model.BackupState
 import com.serratocreations.phovo.data.photos.repository.LocalAndRemoteMediaRepository
+import com.serratocreations.phovo.data.photos.repository.model.SyncState
 import com.serratocreations.phovo.data.photos.util.FileHashCalculator
 import io.github.vinceglb.filekit.PlatformFile
 import kotlinx.coroutines.CoroutineScope
@@ -20,10 +22,8 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.launch
@@ -41,17 +41,11 @@ class LocalMediaManager(
         private const val TAG = "LocalMediaManager"
     }
 
-    private data class BackupState(val isProcessing: Boolean, val isSyncing: Boolean) {
-        val isIdle: Boolean get() = !isProcessing && !isSyncing
-    }
-
     private val log = logger.withTag(TAG)
 
     private val scanRequests = MutableSharedFlow<Unit>(replay = 1)
 
-    // scanRequests stands in for a processing trigger data source, e.g. one that emits when new
-    // media is added to the library. Until that exists, a pass starts once at process start and
-    // again whenever joinOrStartBackup() finds nothing processing.
+    // scanRequests feeds incoming processing requests and acts as the initializing event for backups
     //
     // flatMapLatest restarts the pass on every trigger, cancelling processing and any sync in
     // flight. That is deliberate: a running pass scans from a query taken when it started, so
@@ -59,11 +53,9 @@ class LocalMediaManager(
     // re-scans and re-hashes the whole library (#171), and an upload cancelled mid-file starts
     // over from the beginning on the next pass.
     @OptIn(ExperimentalCoroutinesApi::class)
-    private val backupState: SharedFlow<BackupState> = scanRequests.onStart { emit(Unit) }
+    val backupState: SharedFlow<BackupState> = scanRequests.onStart { emit(Unit) }
         .flatMapLatest { backupPass() }
         .shareIn(appScope, SharingStarted.Eagerly, replay = 1)
-
-    val isBackupBusy: Flow<Boolean> = backupState.map { !it.isIdle }.distinctUntilChanged()
 
     suspend fun joinOrStartBackup() {
         coroutineScope {
@@ -83,13 +75,22 @@ class LocalMediaManager(
         val processing = launch { processLocalMedia() }
         localAndRemoteMediaRepository.observeConnectionState()
             .collectLatest { server ->
+                var currentSyncState: SyncState = SyncState.Waiting(server)
                 if (server.isConnected) {
-                    send(BackupState(isProcessing = processing.isActive, isSyncing = true))
-                    localAndRemoteMediaRepository.sync(processing)
+                    localAndRemoteMediaRepository.sync(processing).collect { syncState ->
+                        currentSyncState = syncState
+                        send(BackupState(isProcessing = processing.isActive, syncState = syncState))
+                    }
+                } else {
+                    send(
+                        BackupState(
+                            isProcessing = processing.isActive,
+                            syncState = currentSyncState
+                        )
+                    )
                 }
-                send(BackupState(isProcessing = processing.isActive, isSyncing = false))
                 processing.join()
-                send(BackupState(isProcessing = false, isSyncing = false))
+                send(BackupState(isProcessing = false, syncState = currentSyncState))
             }
     }
 

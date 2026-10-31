@@ -15,14 +15,19 @@ import com.serratocreations.phovo.data.permissions.PermissionRepository
 import com.serratocreations.phovo.data.permissions.PermissionStatus
 import com.serratocreations.phovo.data.photos.LocalMediaManager
 import com.serratocreations.phovo.data.photos.repository.LocalAndRemoteMediaRepository
+import com.serratocreations.phovo.data.photos.repository.model.SyncState
 import com.serratocreations.phovo.data.server.ServerAddressResolver
 import com.serratocreations.phovo.di.MEDIA_BACKUP_WORKER_ID
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.hours
@@ -39,6 +44,11 @@ abstract class AndroidIosAppInitializer(
     private val localMediaManager: Lazy<LocalMediaManager>,
     private val workManager: Lazy<PhovoWorkManager>
 ): AndroidDesktopIosAppInitializer() {
+
+    private val isBackupBusy: Flow<Boolean> by lazy {
+        localMediaManager.value.backupState.map { !it.isIdle }.distinctUntilChanged()
+    }
+
     override fun initialize() {
         super.initialize()
         serverAddressResolver.value.start()
@@ -66,8 +76,7 @@ abstract class AndroidIosAppInitializer(
 
         // If backup is busy we should bind that backup work to a work manager so that backgrounding
         // the application continues the backup.
-        localMediaManager.value.isBackupBusy
-            .filter { it }
+        isBackupBusy.filter { it }
             .collect {
                 workManager.value.enqueueUniqueWork(
                     uniqueWorkName = MEDIA_BACKUP_WORK,
@@ -98,7 +107,11 @@ class MediaBackupWorker(
         launch {
             // TODO media processing needs to post progress too otherwise IOS will kill
             //  the worker
-            localAndRemoteMediaRepository.syncByteProgress
+            localMediaManager.backupState
+                .map { it.syncState }
+                .filterIsInstance<SyncState.Syncing>()
+                // TODO Temporary hardcode, address syncByteProgress TODO
+                .map { it.syncByteProgress(true) }
                 .sample(PROGRESS_REPORT_INTERVAL)
                 .collect {
                     setProgress(completed = it.completedBytes, total = it.totalBytes)
