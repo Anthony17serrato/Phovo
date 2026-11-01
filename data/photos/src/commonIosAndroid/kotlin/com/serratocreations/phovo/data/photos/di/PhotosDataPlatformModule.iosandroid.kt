@@ -52,7 +52,8 @@ internal actual fun getAndroidDesktopIosModules(): Module = module {
             fileHashCalculator = get(),
             appScope = get(APPLICATION_SCOPE),
             logger = get(),
-            cpuBudget = get()
+            cpuBudget = get(),
+            permissionRepository = get()
         )
     } binds arrayOf(
         LocalMediaManager::class

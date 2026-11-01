@@ -11,6 +11,7 @@ interface PermissionRepository {
 
     fun observeGalleryPermissionStatus(): Flow<GalleryPermissionsStatus>
 
+    // TODO need to make this API resilient to cancellations of the callers scope
     suspend fun requestGalleryPermissions(): GalleryPermissionsStatus
 
     @DelicatePermissionsApi

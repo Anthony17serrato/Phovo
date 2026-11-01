@@ -14,6 +14,7 @@ import com.serratocreations.phovo.core.workmanager.WorkResult
 import com.serratocreations.phovo.data.permissions.PermissionRepository
 import com.serratocreations.phovo.data.permissions.PermissionStatus
 import com.serratocreations.phovo.data.photos.LocalMediaManager
+import com.serratocreations.phovo.data.photos.model.BackupState
 import com.serratocreations.phovo.data.photos.repository.LocalAndRemoteMediaRepository
 import com.serratocreations.phovo.data.photos.repository.model.SyncState
 import com.serratocreations.phovo.data.server.ServerAddressResolver
@@ -56,9 +57,8 @@ abstract class AndroidIosAppInitializer(
     }
 
     private fun initiateBackupWork() = applicationScope.launch {
-        localAndRemoteMediaRepository.value.clearNonFailedSyncLogs()
-        // First await for permissions, there is no point in processing local media if permission
-        // is missing
+        // No point scheduling periodic backups until there is something to back up. Busy
+        // detection below needs no gate: LocalMediaManager does not process without gallery access.
         permissionRepository.value.observeGalleryPermissionStatus()
             .first { status -> status.permissionStatus == PermissionStatus.Granted || status.isLimited }
 
@@ -108,6 +108,7 @@ class MediaBackupWorker(
             // TODO media processing needs to post progress too otherwise IOS will kill
             //  the worker
             localMediaManager.backupState
+                .filterIsInstance<BackupState.Active>()
                 .map { it.syncState }
                 .filterIsInstance<SyncState.Syncing>()
                 // TODO Temporary hardcode, address syncByteProgress TODO

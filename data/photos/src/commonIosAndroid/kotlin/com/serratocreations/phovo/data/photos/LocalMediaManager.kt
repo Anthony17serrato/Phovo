@@ -3,6 +3,8 @@ package com.serratocreations.phovo.data.photos
 import com.serratocreations.phovo.core.common.performance.ProcessingCpuBudget
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.core.model.network.isConnected
+import com.serratocreations.phovo.data.permissions.PermissionRepository
+import com.serratocreations.phovo.data.permissions.PermissionStatus
 import com.serratocreations.phovo.data.photos.local.LocalMediaProcessor
 import com.serratocreations.phovo.data.photos.local.model.MediaProcessingResult
 import com.serratocreations.phovo.data.photos.model.BackupState
@@ -22,8 +24,11 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.launch
@@ -35,6 +40,7 @@ class LocalMediaManager(
     private val fileHashCalculator: FileHashCalculator,
     private val appScope: CoroutineScope,
     private val cpuBudget: ProcessingCpuBudget,
+    private val permissionRepository: PermissionRepository,
     logger: PhovoLogger,
 ) {
     companion object {
@@ -45,6 +51,10 @@ class LocalMediaManager(
 
     private val scanRequests = MutableSharedFlow<Unit>(replay = 1)
 
+    // Gallery access gates every pass, whoever reads this first. Without it a pass would scan
+    // nothing, then report everything as backed up. Granting access starts a pass, and revoking it
+    // cancels the one in flight.
+    //
     // scanRequests feeds incoming processing requests and acts as the initializing event for backups
     //
     // flatMapLatest restarts the pass on every trigger, cancelling processing and any sync in
@@ -53,16 +63,30 @@ class LocalMediaManager(
     // re-scans and re-hashes the whole library (#171), and an upload cancelled mid-file starts
     // over from the beginning on the next pass.
     @OptIn(ExperimentalCoroutinesApi::class)
-    val backupState: SharedFlow<BackupState> = scanRequests.onStart { emit(Unit) }
-        .flatMapLatest { backupPass() }
+    val backupState: SharedFlow<BackupState> = permissionRepository.observeGalleryPermissionStatus()
+        .map { it.permissionStatus == PermissionStatus.Granted || it.isLimited }
+        .distinctUntilChanged()
+        .flatMapLatest { canReadGallery ->
+            if (canReadGallery) {
+                scanRequests.onStart { emit(Unit) }.flatMapLatest { backupPass() }
+            } else {
+                flowOf(BackupState.MediaAccessRequired)
+            }
+        }
         .shareIn(appScope, SharingStarted.Eagerly, replay = 1)
 
     suspend fun joinOrStartBackup() {
+        // Without gallery access processing never starts, so there is nothing to join.
+        if (backupState.first() is BackupState.MediaAccessRequired) return
         coroutineScope {
             val awaitProcessingStart = launch(start = CoroutineStart.UNDISPATCHED) {
-                backupState.first { it.isProcessing }
+                // Access can also be revoked before processing starts.
+                backupState.first {
+                    it is BackupState.MediaAccessRequired || (it is BackupState.Active && it.isProcessing)
+                }
             }
-            if (backupState.first().isProcessing.not()) {
+            val currentState = backupState.first()
+            if (currentState is BackupState.Active && currentState.isProcessing.not()) {
                 scanRequests.emit(Unit)
             }
             awaitProcessingStart.join()
@@ -79,18 +103,18 @@ class LocalMediaManager(
                 if (server.isConnected) {
                     localAndRemoteMediaRepository.sync(processing).collect { syncState ->
                         currentSyncState = syncState
-                        send(BackupState(isProcessing = processing.isActive, syncState = syncState))
+                        send(BackupState.Active(isProcessing = processing.isActive, syncState = syncState))
                     }
                 } else {
                     send(
-                        BackupState(
+                        BackupState.Active(
                             isProcessing = processing.isActive,
                             syncState = currentSyncState
                         )
                     )
                 }
                 processing.join()
-                send(BackupState(isProcessing = false, syncState = currentSyncState))
+                send(BackupState.Active(isProcessing = false, syncState = currentSyncState))
             }
     }
 

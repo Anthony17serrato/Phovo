@@ -7,11 +7,13 @@ import com.serratocreations.phovo.core.designsystem.UiStringBuilder
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.StringResource
 import phovo.feature.photos.generated.resources.Res
+import phovo.feature.photos.generated.resources.button_allow_photo_access
 import phovo.feature.photos.generated.resources.button_set_up_server
 import phovo.feature.photos.generated.resources.button_view_failed_items
 import phovo.feature.photos.generated.resources.chip_backup_complete
 import phovo.feature.photos.generated.resources.chip_backup_failures
 import phovo.feature.photos.generated.resources.chip_backup_in_progress
+import phovo.feature.photos.generated.resources.chip_backup_off
 import phovo.feature.photos.generated.resources.chip_backup_not_set_up
 import phovo.feature.photos.generated.resources.chip_connecting
 import phovo.feature.photos.generated.resources.chip_preparing_backup
@@ -22,6 +24,7 @@ import phovo.feature.photos.generated.resources.description_backup_not_set_up_pr
 import phovo.feature.photos.generated.resources.description_connecting_processing
 import phovo.feature.photos.generated.resources.description_in_progress
 import phovo.feature.photos.generated.resources.description_in_progress_processing
+import phovo.feature.photos.generated.resources.description_media_access_required
 import phovo.feature.photos.generated.resources.description_preparing_backup
 import phovo.feature.photos.generated.resources.description_server_offline
 import phovo.feature.photos.generated.resources.description_server_offline_processing
@@ -29,6 +32,7 @@ import phovo.feature.photos.generated.resources.header_backup_complete
 import phovo.feature.photos.generated.resources.header_backup_in_progress
 import phovo.feature.photos.generated.resources.header_backup_not_set_up
 import phovo.feature.photos.generated.resources.header_connecting
+import phovo.feature.photos.generated.resources.header_media_access_required
 import phovo.feature.photos.generated.resources.header_preparing_backup
 import phovo.feature.photos.generated.resources.header_server_offline
 import phovo.feature.photos.generated.resources.ic_cloud_done_outlined
@@ -38,6 +42,7 @@ import phovo.feature.photos.generated.resources.main_status_complete
 import phovo.feature.photos.generated.resources.main_status_connecting
 import phovo.feature.photos.generated.resources.main_status_failures
 import phovo.feature.photos.generated.resources.main_status_in_progress
+import phovo.feature.photos.generated.resources.main_status_media_access_required
 import phovo.feature.photos.generated.resources.main_status_preparing_backup
 import phovo.feature.photos.generated.resources.main_status_server_offline
 
@@ -69,6 +74,22 @@ sealed interface BackupStatusIndicator {
     data class Progress(val progress: Float) : BackupStatusIndicator
 
     data class Icon(val icon: DrawableResource) : BackupStatusIndicator
+}
+
+/** Phovo can't read the gallery, so nothing is backed up until the user allows access. */
+data object MediaAccessRequiredUiModel : BackupStatusUiModel {
+    override val chipText: StringResource = Res.string.chip_backup_off
+    override val indicator: BackupStatusIndicator =
+        BackupStatusIndicator.Icon(Res.drawable.ic_cloud_off_outlined)
+    override val header: UiStringBuilder = Res.string.header_media_access_required.toUiString()
+    override val mainStatus: UiStringBuilder =
+        Res.string.main_status_media_access_required.toUiString()
+    override val statusDescription: UiStringBuilder =
+        Res.string.description_media_access_required.toUiString()
+    override val actionButton: BackupActionButton = BackupActionButton(
+        actionText = Res.string.button_allow_photo_access,
+        action = BackupStatusAction.AllowPhotoAccess
+    )
 }
 
 /**

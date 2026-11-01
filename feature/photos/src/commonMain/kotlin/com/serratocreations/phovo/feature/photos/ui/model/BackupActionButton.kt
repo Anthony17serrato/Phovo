@@ -14,6 +14,9 @@ data class BackupActionButton(
  * navigate, so the UI reads this and routes each case to whoever owns it.
  */
 sealed interface BackupStatusAction {
+    /** Ask for gallery access, or open the system settings once the app can no longer ask. */
+    data object AllowPhotoAccess : BackupStatusAction
+
     /** Take the user to where a server is set up. Navigation, so the UI layer handles it. */
     data object SetUpServer : BackupStatusAction
 

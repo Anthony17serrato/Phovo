@@ -6,6 +6,14 @@ sealed interface PhovoAppState {
      */
     val scanningStatus: Boolean // TODO in the future this may contain more details hence the non-semantic name
 
+    /**
+     * Phovo can't read the gallery, so nothing is processed or backed up whatever the server is
+     * doing.
+     */
+    data object MediaAccessRequired: PhovoAppState {
+        override val scanningStatus: Boolean = false
+    }
+
     data class CheckingServerConnection(
         override val scanningStatus: Boolean
     ): PhovoAppState

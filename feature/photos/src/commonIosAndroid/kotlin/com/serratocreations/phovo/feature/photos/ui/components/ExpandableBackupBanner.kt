@@ -78,6 +78,7 @@ fun ExpandableBackupBanner(
     // nothing.
     val onActionClick: (BackupStatusAction) -> Unit = { action ->
         when (action) {
+            BackupStatusAction.AllowPhotoAccess -> appStateViewModel.onAllowPhotoAccess()
             BackupStatusAction.SetUpServer -> onFinishServerSetup()
             BackupStatusAction.ViewFailedItems -> appStateViewModel.onViewFailedItems()
         }

@@ -1,6 +1,7 @@
 <resources>
     <string name="feature_photos_title">Photos</string>
     <!-- Backup status chip: two or three words, it shares the app bar with the title -->
+    <string name="chip_backup_off">Backup off</string>
     <string name="chip_connecting">Connecting</string>
     <string name="chip_backup_not_set_up">Backup not set up</string>
     <string name="chip_server_offline">Server offline</string>
@@ -10,6 +11,7 @@
     <string name="chip_backup_failures">Some items failed</string>
 
     <!-- Backup status card title -->
+    <string name="header_media_access_required">Phovo can't see your photos</string>
     <string name="header_connecting">Connecting to your server</string>
     <string name="header_backup_not_set_up">Backup isn't set up</string>
     <string name="header_server_offline">Can't reach your server</string>
@@ -18,6 +20,7 @@
     <string name="header_backup_complete">Backup complete</string>
 
     <!-- Backup status card main line: what is happening to the user's photos right now -->
+    <string name="main_status_media_access_required">Allow photo access to back up</string>
     <string name="main_status_connecting">Backup will start once connected</string>
     <string name="main_status_backup_not_set_up">Connect a server to back up your photos</string>
     <string name="main_status_server_offline">Backup is paused</string>
@@ -32,6 +35,7 @@
 
     <!-- Backup status card description. "Getting photos ready" is the user facing name for
          processing; the _processing variants show while it is still running. -->
+    <string name="description_media_access_required">Your photos are only on this device until Phovo can see them.</string>
     <string name="description_connecting_processing">Getting new photos ready in the meantime.</string>
     <string name="description_backup_not_set_up">Your photos are only on this device until you connect a server.</string>
     <string name="description_backup_not_set_up_processing">Phovo is getting your photos ready, so backup can start as soon as you connect.</string>
@@ -46,6 +50,7 @@
         <item quantity="other">%1$s new items backed up</item>
     </plurals>
 
+    <string name="button_allow_photo_access">Allow access</string>
     <string name="button_set_up_server">Set up server</string>
     <string name="button_view_failed_items">View failed items</string>
     <string name="video_play">Play</string>
