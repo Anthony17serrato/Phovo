@@ -147,10 +147,8 @@ class RemoteMediaRepositoryImpl(
         // Undispatched so the subscription exists before the heartbeat. Otherwise a fast probe can
         // finish before this collector is listening, and it waits for the next heartbeat.
         launch(start = CoroutineStart.UNDISPATCHED) {
-            connectionState.distinctUntilChanged().collect {
-                send(it)
-            }
+            connectionState.collect { send(it) }
         }
         heartBeatEventFlow.emit(Unit)
-    }
+    }.distinctUntilChanged()
 }
