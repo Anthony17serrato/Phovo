@@ -114,7 +114,7 @@ data class BackupNotSetUpUiModel(
 ) : BackupStatusUiModel {
     override val chipText: StringResource = Res.string.chip_backup_not_set_up
     override val indicator: BackupStatusIndicator =
-        BackupStatusIndicator.Icon(Res.drawable.ic_cloud_off_outlined)
+        spinnerWhileProcessing(isProcessing, Res.drawable.ic_cloud_off_outlined)
     override val header: UiStringBuilder = Res.string.header_backup_not_set_up.toUiString()
     override val mainStatus: UiStringBuilder = Res.string.main_status_backup_not_set_up.toUiString()
     override val statusDescription: UiStringBuilder = if (isProcessing) {
@@ -134,7 +134,7 @@ data class ServerOfflineUiModel(
 ) : BackupStatusUiModel {
     override val chipText: StringResource = Res.string.chip_server_offline
     override val indicator: BackupStatusIndicator =
-        BackupStatusIndicator.Icon(Res.drawable.ic_cloud_off_outlined)
+        spinnerWhileProcessing(isProcessing, Res.drawable.ic_cloud_off_outlined)
     override val header: UiStringBuilder = Res.string.header_server_offline.toUiString()
     override val mainStatus: UiStringBuilder = Res.string.main_status_server_offline.toUiString()
     override val statusDescription: UiStringBuilder = if (isProcessing) {
@@ -223,5 +223,15 @@ data class BackupCompleteUiModel(
         null
     }
 }
+
+/**
+ * Processing has no progress to show, so while it runs a state without sync progress shows a
+ * spinner rather than its own [icon].
+ */
+private fun spinnerWhileProcessing(
+    isProcessing: Boolean,
+    icon: DrawableResource
+): BackupStatusIndicator =
+    if (isProcessing) BackupStatusIndicator.Indeterminate else BackupStatusIndicator.Icon(icon)
 
 private fun StringResource.toUiString(): UiStringBuilder = UiStringBuilder(PhovoString(this))
