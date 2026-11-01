@@ -262,6 +262,7 @@ class LocalAndRemoteMediaRepositoryImpl(
             send(
                 SyncState.SyncComplete(
                     backedUpQuantity = syncState.value.syncedCount,
+                    // TODO this may need to be calculated differently to accurately summarize fail count
                     failureQuantity = observeUnsyncedMedia().first().count
                 )
             )

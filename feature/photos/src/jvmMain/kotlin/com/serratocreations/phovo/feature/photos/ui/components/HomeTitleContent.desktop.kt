@@ -4,6 +4,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 
 @Composable
-actual fun PhotosHomeTitleContent() {
+actual fun PhotosHomeTitleContent(onFinishServerSetup: () -> Unit) {
     Text("Phovo")
 }

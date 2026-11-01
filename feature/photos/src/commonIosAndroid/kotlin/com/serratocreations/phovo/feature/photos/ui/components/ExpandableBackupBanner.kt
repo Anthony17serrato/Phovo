@@ -39,6 +39,7 @@ import androidx.compose.material3.ToggleButton
 import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.WavyProgressIndicatorDefaults
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -58,22 +59,29 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.serratocreations.phovo.core.designsystem.constants.CommonDimensions.defaultIconSize
-import com.serratocreations.phovo.feature.photos.ui.BackupStatusViewModel
-import com.serratocreations.phovo.feature.photos.ui.model.BackupCompleteUiModel
-import com.serratocreations.phovo.feature.photos.ui.model.BackupInProgressUiModel
+import com.serratocreations.phovo.feature.photos.ui.AppStateViewModel
+import com.serratocreations.phovo.feature.photos.ui.model.BackupStatusAction
+import com.serratocreations.phovo.feature.photos.ui.model.BackupStatusIndicator
 import com.serratocreations.phovo.feature.photos.ui.model.BackupStatusUiModel
-import com.serratocreations.phovo.feature.photos.ui.model.PreparingBackupUiModel
-import com.serratocreations.phovo.feature.photos.ui.model.ServerOfflineUiModel
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn( ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ExpandableBackupBanner(
-    backupStatusViewModel: BackupStatusViewModel = koinViewModel()
+    onFinishServerSetup: () -> Unit,
+    appStateViewModel: AppStateViewModel = koinViewModel()
 ) {
-    val backupState by backupStatusViewModel.backupUiState.collectAsState()
+    val backupState by appStateViewModel.backupUiState.collectAsState()
     var isExpanded by remember { mutableStateOf(false) }
+    // Exhaustive on purpose, so a new action has to be routed here rather than silently doing
+    // nothing.
+    val onActionClick: (BackupStatusAction) -> Unit = { action ->
+        when (action) {
+            BackupStatusAction.SetUpServer -> onFinishServerSetup()
+            BackupStatusAction.ViewFailedItems -> appStateViewModel.onViewFailedItems()
+        }
+    }
 
     Column {
         val size = ButtonDefaults.ExtraSmallContainerHeight
@@ -92,42 +100,12 @@ fun ExpandableBackupBanner(
                             cap = StrokeCap.Round
                         )
                     }
-                when (val backupState = backupState) {
-                    is BackupCompleteUiModel -> {
-                        Icon(
-                            painter = painterResource(Res.drawable.ic_cloud_done_outlined),
-                            contentDescription = stringResource(backupState.chipText),
-                            modifier = Modifier.size(ButtonDefaults.iconSizeFor(size))
-                        )
-                    }
-                    is BackupInProgressUiModel -> {
-                        val animatedProgress by
-                        animateFloatAsState(
-                            targetValue = backupState.progress,
-                            animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec,
-                        )
-                        CircularWavyProgressIndicator(
-                            progress = { animatedProgress },
-                            modifier = Modifier.size(ButtonDefaults.iconSizeFor(size)),
-                            stroke = thinStroke,
-                            trackStroke = thinStroke
-                        )
-                    }
-                    PreparingBackupUiModel -> {
-                        CircularWavyProgressIndicator(
-                            modifier = Modifier.size(ButtonDefaults.iconSizeFor(size)),
-                            stroke = thinStroke,
-                            trackStroke = thinStroke
-                        )
-                    }
-                    ServerOfflineUiModel -> {
-                        Icon(
-                            painter = painterResource(Res.drawable.ic_cloud_off_outlined),
-                            contentDescription = stringResource(backupState.chipText),
-                            modifier = Modifier.size(ButtonDefaults.iconSizeFor(size))
-                        )
-                    }
-                }
+                BackupStatusIndicatorView(
+                    indicator = backupState.indicator,
+                    modifier = Modifier.size(ButtonDefaults.iconSizeFor(size)),
+                    stroke = thinStroke,
+                    trackStroke = thinStroke
+                )
                 Spacer(Modifier.size(ButtonDefaults.iconSpacingFor(size)))
                 Text(stringResource(backupState.chipText))
             }
@@ -181,7 +159,8 @@ fun ExpandableBackupBanner(
         ) { targetExpanded ->
             if (targetExpanded) {
                 BackupSummaryCard(
-                    status = backupState
+                    status = backupState,
+                    onActionClick = onActionClick
                 )
             }
         }
@@ -191,7 +170,8 @@ fun ExpandableBackupBanner(
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun BackupSummaryCard(
-    status: BackupStatusUiModel
+    status: BackupStatusUiModel,
+    onActionClick: (BackupStatusAction) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -222,35 +202,10 @@ fun BackupSummaryCard(
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                when (status) {
-                    PreparingBackupUiModel -> {
-                        CircularWavyProgressIndicator()
-                    }
-                    is BackupInProgressUiModel -> {
-                        val animatedProgress by
-                        animateFloatAsState(
-                            targetValue = status.progress,
-                            animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec,
-                        )
-                        CircularWavyProgressIndicator(
-                            progress = { animatedProgress }
-                        )
-                    }
-                    is BackupCompleteUiModel -> {
-                        Icon(
-                            painter = painterResource(Res.drawable.ic_cloud_done_outlined),
-                            contentDescription = null,
-                            modifier = Modifier.size(defaultIconSize)
-                        )
-                    }
-                    ServerOfflineUiModel -> {
-                        Icon(
-                            painter = painterResource(Res.drawable.ic_cloud_off_outlined),
-                            contentDescription = stringResource(status.chipText),
-                            modifier = Modifier.size(defaultIconSize)
-                        )
-                    }
-                }
+                BackupStatusIndicatorView(
+                    indicator = status.indicator,
+                    iconModifier = Modifier.size(defaultIconSize)
+                )
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
                     text = status.mainStatus.build(),
@@ -260,7 +215,10 @@ fun BackupSummaryCard(
                 )
             }
 
-            AnimatedVisibility(visible = status.statusDescription != null) {
+            // The action button lives in this section too, so it shows for either.
+            AnimatedVisibility(
+                visible = status.statusDescription != null || status.actionButton != null
+            ) {
                 HorizontalDivider(
                     modifier = Modifier,
                     thickness = 1.dp,
@@ -280,7 +238,7 @@ fun BackupSummaryCard(
 
                     status.actionButton?.let {
                         OutlinedButton(
-                            onClick = it.onActionButtonClick,
+                            onClick = { onActionClick(it.action) },
                             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                             modifier = Modifier
                                 .padding(top = 12.dp)
@@ -294,6 +252,53 @@ fun BackupSummaryCard(
                     }
                 }
             }
+        }
+    }
+}
+/**
+ * Draws [indicator]. It always sits next to text that says the same thing, so icons carry no
+ * content description of their own.
+ *
+ * @param modifier applied to whichever indicator is drawn
+ * @param iconModifier applied to icons instead of [modifier], for callers that size icons apart
+ *   from progress indicators
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun BackupStatusIndicatorView(
+    indicator: BackupStatusIndicator,
+    modifier: Modifier = Modifier,
+    iconModifier: Modifier = modifier,
+    stroke: Stroke = WavyProgressIndicatorDefaults.circularIndicatorStroke,
+    trackStroke: Stroke = WavyProgressIndicatorDefaults.circularTrackStroke
+) {
+    when (indicator) {
+        BackupStatusIndicator.Indeterminate -> {
+            CircularWavyProgressIndicator(
+                modifier = modifier,
+                stroke = stroke,
+                trackStroke = trackStroke
+            )
+        }
+        is BackupStatusIndicator.Progress -> {
+            val animatedProgress by
+            animateFloatAsState(
+                targetValue = indicator.progress,
+                animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec,
+            )
+            CircularWavyProgressIndicator(
+                progress = { animatedProgress },
+                modifier = modifier,
+                stroke = stroke,
+                trackStroke = trackStroke
+            )
+        }
+        is BackupStatusIndicator.Icon -> {
+            Icon(
+                painter = painterResource(indicator.icon),
+                contentDescription = null,
+                modifier = iconModifier
+            )
         }
     }
 }
