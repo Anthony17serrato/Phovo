@@ -48,7 +48,7 @@ fun EntryProviderScope<NavKey>.photosEntries(
         val photosViewModel: PhotosViewModel = koinViewModel()
         val appBarConfig: AppBarConfig = remember {
             AppBarConfig(
-                title = { PhotosHomeTitleContent() },
+                title = { PhotosHomeTitleContent(onFinishServerSetup = onFinishServerSetup) },
                 topAppBarColors = {
                     val defaultColors = TopAppBarDefaults.topAppBarColors()
                     defaultColors.copy(

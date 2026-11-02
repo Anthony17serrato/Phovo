@@ -11,12 +11,14 @@ import com.serratocreations.phovo.core.model.network.ServerConnectionState
 import com.serratocreations.phovo.core.model.network.isConnected
 import com.serratocreations.phovo.data.photos.repository.model.MediaItem
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
@@ -140,9 +142,13 @@ class RemoteMediaRepositoryImpl(
         }
 
 
-    override fun observeConnectionState(): Flow<ServerConnectionState> =
-        connectionState.onStart {
-            heartBeatEventFlow.emit(Unit)
-            emit(ServerConnectionState.Checking)
-        }.distinctUntilChanged()
+    override fun observeConnectionState(): Flow<ServerConnectionState> = channelFlow {
+        send(ServerConnectionState.Checking)
+        // Undispatched so the subscription exists before the heartbeat. Otherwise a fast probe can
+        // finish before this collector is listening, and it waits for the next heartbeat.
+        launch(start = CoroutineStart.UNDISPATCHED) {
+            connectionState.collect { send(it) }
+        }
+        heartBeatEventFlow.emit(Unit)
+    }.distinctUntilChanged()
 }

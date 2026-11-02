@@ -59,6 +59,8 @@ class AndroidPermissionRepository(
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             permissions.add(Manifest.permission.READ_MEDIA_IMAGES)
             permissions.add(Manifest.permission.READ_MEDIA_VIDEO)
+        } else {
+            permissions.add(Manifest.permission.READ_EXTERNAL_STORAGE)
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             permissions.add(Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED)
@@ -225,6 +227,8 @@ class AndroidPermissionRepository(
 }
 
 enum class PermissionDeclaration(val permissionId: String) {
+    /** Gallery access below TIRAMISU, replaced by [Images] and [Video] from TIRAMISU on. */
+    ExternalStorage(Manifest.permission.READ_EXTERNAL_STORAGE),
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     Images(Manifest.permission.READ_MEDIA_IMAGES),
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)

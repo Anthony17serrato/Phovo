@@ -14,6 +14,7 @@ import com.serratocreations.phovo.core.workmanager.WorkResult
 import com.serratocreations.phovo.data.permissions.PermissionRepository
 import com.serratocreations.phovo.data.permissions.PermissionStatus
 import com.serratocreations.phovo.data.photos.LocalMediaManager
+import com.serratocreations.phovo.data.photos.model.BackupState
 import com.serratocreations.phovo.data.photos.repository.LocalAndRemoteMediaRepository
 import com.serratocreations.phovo.data.server.ServerAddressResolver
 import com.serratocreations.phovo.di.MEDIA_BACKUP_WORKER_ID
@@ -21,8 +22,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.hours
@@ -39,6 +44,11 @@ abstract class AndroidIosAppInitializer(
     private val localMediaManager: Lazy<LocalMediaManager>,
     private val workManager: Lazy<PhovoWorkManager>
 ): AndroidDesktopIosAppInitializer() {
+
+    private val isBackupBusy: Flow<Boolean> by lazy {
+        localMediaManager.value.backupState.map { !it.isIdle }.distinctUntilChanged()
+    }
+
     override fun initialize() {
         super.initialize()
         serverAddressResolver.value.start()
@@ -46,9 +56,8 @@ abstract class AndroidIosAppInitializer(
     }
 
     private fun initiateBackupWork() = applicationScope.launch {
-        localAndRemoteMediaRepository.value.clearNonFailedSyncLogs()
-        // First await for permissions, there is no point in processing local media if permission
-        // is missing
+        // No point scheduling periodic backups until there is something to back up. Busy
+        // detection below needs no gate: LocalMediaManager does not process without gallery access.
         permissionRepository.value.observeGalleryPermissionStatus()
             .first { status -> status.permissionStatus == PermissionStatus.Granted || status.isLimited }
 
@@ -66,8 +75,7 @@ abstract class AndroidIosAppInitializer(
 
         // If backup is busy we should bind that backup work to a work manager so that backgrounding
         // the application continues the backup.
-        localMediaManager.value.isBackupBusy
-            .filter { it }
+        isBackupBusy.filter { it }
             .collect {
                 workManager.value.enqueueUniqueWork(
                     uniqueWorkName = MEDIA_BACKUP_WORK,
@@ -90,18 +98,19 @@ abstract class AndroidIosAppInitializer(
 }
 
 class MediaBackupWorker(
-    private val localMediaManager: LocalMediaManager,
-    private val localAndRemoteMediaRepository: LocalAndRemoteMediaRepository,
+    private val localMediaManager: LocalMediaManager
 ) : PhovoWorker() {
     @OptIn(FlowPreview::class)
     override suspend fun doWork(): WorkResult = coroutineScope {
         launch {
-            // TODO media processing needs to post progress too otherwise IOS will kill
-            //  the worker
-            localAndRemoteMediaRepository.syncByteProgress
+            // Processing reports progress too, otherwise iOS would expire the task during a long
+            // processing run with nothing uploading yet.
+            localMediaManager.backupState
+                .filterIsInstance<BackupState.Active>()
                 .sample(PROGRESS_REPORT_INTERVAL)
-                .collect {
-                    setProgress(completed = it.completedBytes, total = it.totalBytes)
+                .map { it.progress() }
+                .collect { backupProgress ->
+                    setProgress(completed = backupProgress.completed, total = backupProgress.total)
                 }
         }
         localMediaManager.joinOrStartBackup()

@@ -3,9 +3,16 @@ package com.serratocreations.phovo.data.photos
 import com.serratocreations.phovo.core.common.performance.ProcessingCpuBudget
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.core.model.network.isConnected
+import com.serratocreations.phovo.data.permissions.PermissionRepository
+import com.serratocreations.phovo.data.permissions.PermissionStatus
 import com.serratocreations.phovo.data.photos.local.LocalMediaProcessor
 import com.serratocreations.phovo.data.photos.local.model.MediaProcessingResult
+import com.serratocreations.phovo.data.photos.local.model.ScanEvent
+import com.serratocreations.phovo.data.photos.model.BackupState
+import com.serratocreations.phovo.data.photos.model.ProcessingProgress
+import com.serratocreations.phovo.data.photos.model.ProcessingState
 import com.serratocreations.phovo.data.photos.repository.LocalAndRemoteMediaRepository
+import com.serratocreations.phovo.data.photos.repository.model.SyncState
 import com.serratocreations.phovo.data.photos.util.FileHashCalculator
 import io.github.vinceglb.filekit.PlatformFile
 import kotlinx.coroutines.CoroutineScope
@@ -13,19 +20,28 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.channelFlow
-import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.last
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.runningFold
 import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
 
@@ -35,23 +51,22 @@ class LocalMediaManager(
     private val fileHashCalculator: FileHashCalculator,
     private val appScope: CoroutineScope,
     private val cpuBudget: ProcessingCpuBudget,
+    private val permissionRepository: PermissionRepository,
     logger: PhovoLogger,
 ) {
     companion object {
         private const val TAG = "LocalMediaManager"
     }
 
-    private data class BackupState(val isProcessing: Boolean, val isSyncing: Boolean) {
-        val isIdle: Boolean get() = !isProcessing && !isSyncing
-    }
-
     private val log = logger.withTag(TAG)
 
     private val scanRequests = MutableSharedFlow<Unit>(replay = 1)
 
-    // scanRequests stands in for a processing trigger data source, e.g. one that emits when new
-    // media is added to the library. Until that exists, a pass starts once at process start and
-    // again whenever joinOrStartBackup() finds nothing processing.
+    // Gallery access gates every pass, whoever reads this first. Without it a pass would scan
+    // nothing, then report everything as backed up. Granting access starts a pass, and revoking it
+    // cancels the one in flight.
+    //
+    // scanRequests feeds incoming processing requests and acts as the initializing event for backups
     //
     // flatMapLatest restarts the pass on every trigger, cancelling processing and any sync in
     // flight. That is deliberate: a running pass scans from a query taken when it started, so
@@ -59,18 +74,30 @@ class LocalMediaManager(
     // re-scans and re-hashes the whole library (#171), and an upload cancelled mid-file starts
     // over from the beginning on the next pass.
     @OptIn(ExperimentalCoroutinesApi::class)
-    private val backupState: SharedFlow<BackupState> = scanRequests.onStart { emit(Unit) }
-        .flatMapLatest { backupPass() }
+    val backupState: SharedFlow<BackupState> = permissionRepository.observeGalleryPermissionStatus()
+        .map { it.permissionStatus == PermissionStatus.Granted || it.isLimited }
+        .distinctUntilChanged()
+        .flatMapLatest { canReadGallery ->
+            if (canReadGallery) {
+                scanRequests.onStart { emit(Unit) }.flatMapLatest { backupPass() }
+            } else {
+                flowOf(BackupState.MediaAccessRequired)
+            }
+        }
         .shareIn(appScope, SharingStarted.Eagerly, replay = 1)
 
-    val isBackupBusy: Flow<Boolean> = backupState.map { !it.isIdle }.distinctUntilChanged()
-
     suspend fun joinOrStartBackup() {
+        // Without gallery access processing never starts, so there is nothing to join.
+        if (backupState.first() is BackupState.MediaAccessRequired) return
         coroutineScope {
             val awaitProcessingStart = launch(start = CoroutineStart.UNDISPATCHED) {
-                backupState.first { it.isProcessing }
+                // Access can also be revoked before processing starts.
+                backupState.first {
+                    it is BackupState.MediaAccessRequired || (it is BackupState.Active && it.isProcessing)
+                }
             }
-            if (backupState.first().isProcessing.not()) {
+            val currentState = backupState.first()
+            if (currentState is BackupState.Active && currentState.isProcessing.not()) {
                 scanRequests.emit(Unit)
             }
             awaitProcessingStart.join()
@@ -79,35 +106,72 @@ class LocalMediaManager(
         }
     }
 
+    // Processing and sync each update the state on their own, so processing progress keeps moving
+    // while sync waits for the server, and sync progress keeps moving after processing is done.
+    @OptIn(ExperimentalCoroutinesApi::class)
     private fun backupPass(): Flow<BackupState> = channelFlow {
-        val processing = launch { processLocalMedia() }
-        localAndRemoteMediaRepository.observeConnectionState()
-            .collectLatest { server ->
+        // Shared once: combine and sync both read it, and collecting processLocalMedia() twice would
+        // process the library twice.
+        val processing = processLocalMedia()
+            .stateIn(this, SharingStarted.Eagerly, ProcessingState.Running())
+        val moreMediaExpected = processing.map { it is ProcessingState.Running }
+        val syncStates = localAndRemoteMediaRepository.observeConnectionState()
+            .flatMapLatest { server ->
                 if (server.isConnected) {
-                    send(BackupState(isProcessing = processing.isActive, isSyncing = true))
-                    localAndRemoteMediaRepository.sync(processing)
+                    localAndRemoteMediaRepository.sync(moreMediaExpected)
+                } else {
+                    flowOf(SyncState.Waiting(server))
                 }
-                send(BackupState(isProcessing = processing.isActive, isSyncing = false))
-                processing.join()
-                send(BackupState(isProcessing = false, isSyncing = false))
             }
+        combine(processing, syncStates) { processingState, syncState ->
+            BackupState.Active(processing = processingState, syncState = syncState)
+        }.collect { send(it) }
     }
 
-    private suspend fun processLocalMedia() = coroutineScope {
+    /**
+     * Processes the local library while collected. Emits [ProcessingState.Running] as progress
+     * changes, then a single [ProcessingState.Done] once every item is stored, and completes.
+     */
+    private fun processLocalMedia(): Flow<ProcessingState> = channelFlow {
         val processMediaChannel = Channel<PlatformFile>()
+        val onMediaProcessedChannel = Channel<Unit>()
 
-        repeat(cpuBudget.workerCount) {
-            processMediaWorker(processMediaChannel)
+        val workers = List(cpuBudget.workerCount) {
+            processMediaWorker(processMediaChannel, onMediaProcessedChannel)
         }
+        // Closed once every worker is done, which ends processedCount
+        launch {
+            workers.joinAll()
+            onMediaProcessedChannel.close()
+        }
+        data class ScanCounts(val found: Int = 0, val skipped: Int = 0)
 
-        localMediaProcessor.scanLocalItems(
-            processMediaSendChannel = processMediaChannel
-        )
-        processMediaChannel.close()
+        val scanCounts = localMediaProcessor.scanLocalItems()
+            // Suspends while every worker is busy, which holds the scan back
+            .onEach { if (it is ScanEvent.Item) processMediaChannel.send(it.file) }
+            .onCompletion { processMediaChannel.close() }
+            .runningFold(ScanCounts()) { counts, event ->
+                when (event) {
+                    is ScanEvent.Found -> counts.copy(found = counts.found + event.count)
+                    ScanEvent.Skipped -> counts.copy(skipped = counts.skipped + 1)
+                    is ScanEvent.Item -> counts
+                }
+            }
+            .distinctUntilChanged()
+        val processedCount = onMediaProcessedChannel.consumeAsFlow().runningFold(0) { acc, _ -> acc + 1 }
+
+        // Completes once the scan and every worker are done, so everything processed is stored
+        val lastProgress = combine(scanCounts, processedCount) { scan, processed ->
+            ProcessingProgress(processedCount = processed + scan.skipped, foundCount = scan.found)
+        }
+            .onEach { send(ProcessingState.Running(it)) }
+            .last()
+        send(ProcessingState.Done(lastProgress))
     }
 
     private fun CoroutineScope.processMediaWorker(
-        processMediaReceiveChannel: ReceiveChannel<PlatformFile>
+        processMediaReceiveChannel: ReceiveChannel<PlatformFile>,
+        onMediaProcessedSendChannel: SendChannel<Unit>
     ) = launch {
         for (fileToProcess in processMediaReceiveChannel) {
             yield()
@@ -126,6 +190,7 @@ class LocalMediaManager(
                     }
                 }
             }
+            onMediaProcessedSendChannel.send(Unit)
         }
     }
 }

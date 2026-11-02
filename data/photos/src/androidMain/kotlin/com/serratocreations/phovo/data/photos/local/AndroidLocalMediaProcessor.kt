@@ -14,19 +14,17 @@ import com.serratocreations.phovo.core.common.extension.androidUri
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.data.photos.local.model.MediaProcessingFailure
 import com.serratocreations.phovo.data.photos.local.model.MediaProcessingResult
+import com.serratocreations.phovo.data.photos.local.model.ScanEvent
 import com.serratocreations.phovo.data.photos.repository.model.AssetLocation
 import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.mimeType
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.channels.SendChannel
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
@@ -57,21 +55,8 @@ class AndroidLocalMediaProcessor(
         ioDispatcher = ioDispatcher
     )
 
-    override suspend fun scanLocalItems(
-        processMediaSendChannel: SendChannel<PlatformFile>
-    ) = coroutineScope {
-        // TODO add observability of updates(Probably by registering Broadcast receiver)
-        queryImages()
-            .onEach { processedImage ->
-                processMediaSendChannel.send(processedImage)
-            }.launchIn(this)
-
-        queryVideos()
-            .onEach { processedVideo ->
-                processMediaSendChannel.send(processedVideo)
-            }.launchIn(this)
-        Unit
-    }
+    // TODO add observability of updates(Probably by registering Broadcast receiver)
+    override fun scanLocalItems(): Flow<ScanEvent> = merge(queryImages(), queryVideos())
 
     override suspend fun processItem(
         mediaItem: PlatformFile,
@@ -185,7 +170,7 @@ class AndroidLocalMediaProcessor(
             if (cursor.moveToFirst()) read(cursor) else null
         }
 
-    private fun queryImages(): Flow<PlatformFile> = flow {
+    private fun queryImages(): Flow<ScanEvent> = flow {
         val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
         } else {
@@ -201,18 +186,19 @@ class AndroidLocalMediaProcessor(
         val sortOrder = "${MediaStore.Images.Media.DATE_TAKEN} DESC"
 
         resolver.query(collection, projection, selection, selectionArgs, sortOrder)?.use { cursor ->
+            emit(ScanEvent.Found(cursor.count))
             val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
 
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(idColumn)
                 val androidUri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
                 val assetPlatformFile = PlatformFile(androidUri)
-                emit(assetPlatformFile)
+                emit(ScanEvent.Item(assetPlatformFile))
             }
         }
     }.flowOn(ioDispatcher)
 
-    private fun queryVideos(): Flow<PlatformFile> = flow {
+    private fun queryVideos(): Flow<ScanEvent> = flow {
         val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
         } else {
@@ -228,13 +214,14 @@ class AndroidLocalMediaProcessor(
         val sortOrder = "${MediaStore.Video.Media.DATE_TAKEN} DESC"
 
         resolver.query(collection, projection, selection, selectionArgs, sortOrder)?.use { cursor ->
+            emit(ScanEvent.Found(cursor.count))
             val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media._ID)
 
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(idColumn)
                 val androidUri = ContentUris.withAppendedId(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, id)
                 val assetPlatformFile = PlatformFile(androidUri)
-                emit(assetPlatformFile)
+                emit(ScanEvent.Item(assetPlatformFile))
             }
         }
     }.flowOn(ioDispatcher)

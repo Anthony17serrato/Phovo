@@ -18,8 +18,13 @@ interface RemoteMediaRepository: MediaRepository {
     ): NetworkResult<Unit>
 
     /**
-     * Observes the connection to the phovo server by periodically pinging the server endpoint.
-     * Callers that only need to gate work on connectivity can reduce this with [isConnected].
+     * Emits [ServerConnectionState.Checking], then the result of a health probe started when
+     * collection starts, then every change after that. A new collector never gets a result left
+     * over from the last heartbeat, which can be up to [CHECK_ALIVE_DELAY] old, so the first state
+     * after [ServerConnectionState.Checking] is the server's current one.
+     *
+     * Distinct until changed, so a state that persists is emitted once rather than on every
+     * heartbeat.
      */
     fun observeConnectionState(): Flow<ServerConnectionState>
 }

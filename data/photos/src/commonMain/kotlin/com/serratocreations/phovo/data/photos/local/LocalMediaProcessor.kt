@@ -1,8 +1,9 @@
 package com.serratocreations.phovo.data.photos.local
 
 import com.serratocreations.phovo.data.photos.local.model.MediaProcessingResult
+import com.serratocreations.phovo.data.photos.local.model.ScanEvent
 import io.github.vinceglb.filekit.PlatformFile
-import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.flow.Flow
 
 /**
  * Processes Locally available media. Processed media becomes available for user to view and
@@ -10,13 +11,10 @@ import kotlinx.coroutines.channels.SendChannel
  */
 interface LocalMediaProcessor {
     /**
-     * Processes locally stored media items by extracting metadata for items which we do not have
-     * metadata for.
-     * @return A receive channel of processed media items
+     * Scans locally stored media. Each query reports how many assets it matched, then the assets
+     * to process, and any it skipped. Cold: collecting it runs the scan.
      */
-    suspend fun scanLocalItems(
-        processMediaSendChannel: SendChannel<PlatformFile>
-    )
+    fun scanLocalItems(): Flow<ScanEvent>
 
     suspend fun processItem(mediaItem: PlatformFile, assetHash: String): MediaProcessingResult
 }
