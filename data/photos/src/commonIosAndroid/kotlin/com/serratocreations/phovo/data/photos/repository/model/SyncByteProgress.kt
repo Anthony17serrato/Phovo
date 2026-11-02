@@ -10,7 +10,7 @@ package com.serratocreations.phovo.data.photos.repository.model
  * [totalBytes] grows while a scan is still finding media, so [completedBytes] / [totalBytes] can
  * fall back as well as rise. That is expected, and still counts as movement.
  */
-data class SyncByteProgress(
+internal data class SyncByteProgress(
     /** Bytes synced this session, plus bytes written so far for uploads still in flight. */
     val completedBytes: Long,
     /** Bytes synced this session, plus the size of everything not yet synced. */

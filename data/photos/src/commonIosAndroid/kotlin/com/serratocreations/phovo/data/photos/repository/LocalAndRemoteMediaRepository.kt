@@ -16,7 +16,6 @@ import com.serratocreations.phovo.data.photos.repository.model.SyncState
 import com.serratocreations.phovo.data.photos.repository.model.SyncVideo
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -56,10 +55,12 @@ interface LocalAndRemoteMediaRepository: LocalMediaRepository, RemoteMediaReposi
      * Only one sync runs at a time. Collecting while another sync is running waits for it to finish
      * before emitting anything.
      *
-     * @param scanJob a reference to the Job which is scanning for new media, while the scan job is
-     * active sync workers will remain running, so media it processes during the sync is picked up.
+     * @param moreMediaExpected true while media can still be added to the unsynced queue, such as
+     * while processing runs. Workers that find the queue empty keep checking for new media until it
+     * turns false, so media added during the sync is picked up. It must only turn false once everything
+     * that will be added has been stored.
      */
-    fun sync(scanJob: Job): Flow<SyncState>
+    fun sync(moreMediaExpected: Flow<Boolean>): Flow<SyncState>
 }
 
 class LocalAndRemoteMediaRepositoryImpl(
@@ -107,14 +108,16 @@ class LocalAndRemoteMediaRepositoryImpl(
 
     private fun CoroutineScope.syncWorker(
         type: MediaType,
-        processingJob: Job,
+        moreMediaExpected: Flow<Boolean>,
         syncProgressStateFlow: MutableStateFlow<SyncState.Syncing>
     ) = launch {
         while (this.isActive) {
-            val wasProcessing = processingJob.isActive
+            // Read before the query. Once no more media is expected everything has been stored, so
+            // an empty queue then means the worker is done.
+            val wasMoreMediaExpected = moreMediaExpected.first()
             val nextUnsyncedItem = getNextUnsyncedItem(type) ?: run {
-                // Keep worker running if processing job has not completed
-                if (wasProcessing) {
+                // Keep worker running while more media may still be added
+                if (wasMoreMediaExpected) {
                     delay(WORKER_IDLE_DELAY)
                     continue
                 } else {
@@ -222,7 +225,7 @@ class LocalAndRemoteMediaRepositoryImpl(
     // the sync log, so a second sync running alongside would release the first one's claims and
     // upload the same items again.
     private val syncMutex = Mutex()
-    override fun sync(scanJob: Job): Flow<SyncState> = channelFlow {
+    override fun sync(moreMediaExpected: Flow<Boolean>): Flow<SyncState> = channelFlow {
         syncMutex.withLock {
             clearNonFailedSyncLogs()
             val initialUnsynced = observeUnsyncedMedia().first()
@@ -252,9 +255,9 @@ class LocalAndRemoteMediaRepositoryImpl(
             }
 
             val syncJobs = List(SYNC_IMAGE_WORKER_COUNT) {
-                syncWorker(MediaType.Image, scanJob, syncState)
+                syncWorker(MediaType.Image, moreMediaExpected, syncState)
             } + List(SYNC_VIDEO_WORKER_COUNT) {
-                syncWorker(MediaType.Video, scanJob, syncState)
+                syncWorker(MediaType.Video, moreMediaExpected, syncState)
             }
             syncJobs.joinAll()
             syncProgressJob.cancelAndJoin()

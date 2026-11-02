@@ -16,8 +16,7 @@ abstract class IosAndroidApplicationPlatformModuleFetcher: ApplicationPlatformMo
         single(named(MEDIA_BACKUP_WORKER_ID)) {
             WorkerRegistration(MEDIA_BACKUP_WORKER_ID) {
                 MediaBackupWorker(
-                    localMediaManager = get(),
-                    localAndRemoteMediaRepository = get()
+                    localMediaManager = get()
                 )
             }
         }

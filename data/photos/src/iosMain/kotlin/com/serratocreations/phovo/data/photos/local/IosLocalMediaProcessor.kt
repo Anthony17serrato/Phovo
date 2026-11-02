@@ -7,6 +7,7 @@ import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.core.model.MediaDimensions
 import com.serratocreations.phovo.data.photos.local.model.MediaProcessingFailure
 import com.serratocreations.phovo.data.photos.local.model.MediaProcessingResult
+import com.serratocreations.phovo.data.photos.local.model.ScanEvent
 import com.serratocreations.phovo.data.photos.repository.model.AssetLocation
 import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
@@ -14,14 +15,11 @@ import com.serratocreations.phovo.data.photos.util.fetchFileUrl
 import io.github.vinceglb.filekit.PlatformFile
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.channels.SendChannel
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toKotlinInstant
@@ -48,24 +46,14 @@ class IosLocalMediaProcessor(
         logger = logger
     )
 
-    override suspend fun scanLocalItems(
-        processMediaSendChannel: SendChannel<PlatformFile>
-    ) = coroutineScope {
-        fetchImages()
-            .onEach { processMediaSendChannel.send(it) }
-            .launchIn(this)
-
-        fetchVideos()
-            .onEach { processMediaSendChannel.send(it) }
-            .launchIn(this)
-        Unit
-    }
+    override fun scanLocalItems(): Flow<ScanEvent> = merge(fetchImages(), fetchVideos())
 
 
     @OptIn(ExperimentalForeignApi::class)
-    private fun fetchImages(): Flow<PlatformFile> = flow {
+    private fun fetchImages(): Flow<ScanEvent> = flow {
         val fetchOptions = PHFetchOptions()
         val assets = PHAsset.fetchAssetsWithMediaType(PHAssetMediaTypeImage, fetchOptions)
+        emit(ScanEvent.Found(assets.count.toInt()))
         val imageItems = mutableListOf<PHAsset>()
         // Enumerate the assets using the block-based approach
         assets.enumerateObjectsUsingBlock { obj, _, _ ->
@@ -150,11 +138,12 @@ class IosLocalMediaProcessor(
     }
 
     @OptIn(ExperimentalForeignApi::class)
-    private fun fetchVideos(): Flow<PlatformFile> = flow {
+    private fun fetchVideos(): Flow<ScanEvent> = flow {
         val fetchOptions = PHFetchOptions()
         val videoItems = mutableListOf<PHAsset>()
         val videoAssets =
             PHAsset.fetchAssetsWithMediaType(PHAssetMediaTypeVideo, fetchOptions)
+        emit(ScanEvent.Found(videoAssets.count.toInt()))
         videoAssets.enumerateObjectsUsingBlock { obj, _, _ ->
             videoItems.add(obj as PHAsset)
         }
@@ -166,15 +155,17 @@ class IosLocalMediaProcessor(
 
     /**
      * Emits the asset's phasset:// file. Assets whose file is not on the device, such as ones only
-     * stored in iCloud, are skipped because there is nothing to hash.
+     * stored in iCloud, are skipped because there is nothing to hash, and reported as
+     * [ScanEvent.Skipped].
      */
-    private suspend fun FlowCollector<PlatformFile>.emitIfOnDevice(asset: PHAsset) {
+    private suspend fun FlowCollector<ScanEvent>.emitIfOnDevice(asset: PHAsset) {
         val assetPlatformFile = PlatformFile(phAssetUriFromLocalId(asset.localIdentifier).toString())
         if (asset.fetchFileUrl() == null) {
             log.e { "Could not get full size asset for $assetPlatformFile" }
+            emit(ScanEvent.Skipped)
             return
         }
-        emit(assetPlatformFile)
+        emit(ScanEvent.Item(assetPlatformFile))
     }
 }
 

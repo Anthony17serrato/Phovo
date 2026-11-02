@@ -16,7 +16,6 @@ import com.serratocreations.phovo.data.permissions.PermissionStatus
 import com.serratocreations.phovo.data.photos.LocalMediaManager
 import com.serratocreations.phovo.data.photos.model.BackupState
 import com.serratocreations.phovo.data.photos.repository.LocalAndRemoteMediaRepository
-import com.serratocreations.phovo.data.photos.repository.model.SyncState
 import com.serratocreations.phovo.data.server.ServerAddressResolver
 import com.serratocreations.phovo.di.MEDIA_BACKUP_WORKER_ID
 import kotlinx.coroutines.CoroutineScope
@@ -99,23 +98,19 @@ abstract class AndroidIosAppInitializer(
 }
 
 class MediaBackupWorker(
-    private val localMediaManager: LocalMediaManager,
-    private val localAndRemoteMediaRepository: LocalAndRemoteMediaRepository,
+    private val localMediaManager: LocalMediaManager
 ) : PhovoWorker() {
     @OptIn(FlowPreview::class)
     override suspend fun doWork(): WorkResult = coroutineScope {
         launch {
-            // TODO media processing needs to post progress too otherwise IOS will kill
-            //  the worker
+            // Processing reports progress too, otherwise iOS would expire the task during a long
+            // processing run with nothing uploading yet.
             localMediaManager.backupState
                 .filterIsInstance<BackupState.Active>()
-                .map { it.syncState }
-                .filterIsInstance<SyncState.Syncing>()
-                // TODO Temporary hardcode, address syncByteProgress TODO
-                .map { it.syncByteProgress(true) }
                 .sample(PROGRESS_REPORT_INTERVAL)
-                .collect {
-                    setProgress(completed = it.completedBytes, total = it.totalBytes)
+                .map { it.progress() }
+                .collect { backupProgress ->
+                    setProgress(completed = backupProgress.completed, total = backupProgress.total)
                 }
         }
         localMediaManager.joinOrStartBackup()

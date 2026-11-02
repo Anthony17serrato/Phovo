@@ -5,6 +5,7 @@ import com.serratocreations.phovo.core.designsystem.PhovoPlural
 import com.serratocreations.phovo.core.designsystem.PhovoString
 import com.serratocreations.phovo.core.designsystem.UiStringBuilder
 import org.jetbrains.compose.resources.DrawableResource
+import org.jetbrains.compose.resources.PluralStringResource
 import org.jetbrains.compose.resources.StringResource
 import phovo.feature.photos.generated.resources.Res
 import phovo.feature.photos.generated.resources.button_allow_photo_access
@@ -21,13 +22,18 @@ import phovo.feature.photos.generated.resources.chip_server_offline
 import phovo.feature.photos.generated.resources.description_backup_complete
 import phovo.feature.photos.generated.resources.description_backup_not_set_up
 import phovo.feature.photos.generated.resources.description_backup_not_set_up_processing
+import phovo.feature.photos.generated.resources.description_backup_not_set_up_processing_count
 import phovo.feature.photos.generated.resources.description_connecting_processing
+import phovo.feature.photos.generated.resources.description_connecting_processing_count
 import phovo.feature.photos.generated.resources.description_in_progress
 import phovo.feature.photos.generated.resources.description_in_progress_processing
+import phovo.feature.photos.generated.resources.description_in_progress_processing_count
 import phovo.feature.photos.generated.resources.description_media_access_required
 import phovo.feature.photos.generated.resources.description_preparing_backup
+import phovo.feature.photos.generated.resources.description_preparing_backup_count
 import phovo.feature.photos.generated.resources.description_server_offline
 import phovo.feature.photos.generated.resources.description_server_offline_processing
+import phovo.feature.photos.generated.resources.description_server_offline_processing_count
 import phovo.feature.photos.generated.resources.header_backup_complete
 import phovo.feature.photos.generated.resources.header_backup_in_progress
 import phovo.feature.photos.generated.resources.header_backup_not_set_up
@@ -67,6 +73,13 @@ sealed interface BackupStatusUiModel {
     val actionButton: BackupActionButton?
 }
 
+/**
+ * How far processing has got while it runs. [processedCount] counts every item handled, including
+ * ones processed before, so it reaches [foundCount] when processing is done. [foundCount] is 0
+ * until the scan has counted the library, and states fall back to their uncounted copy until then.
+ */
+data class ProcessingCounts(val processedCount: Int, val foundCount: Int)
+
 sealed interface BackupStatusIndicator {
     /** Work is happening but there is nothing to measure it against yet */
     data object Indeterminate : BackupStatusIndicator
@@ -93,35 +106,37 @@ data object MediaAccessRequiredUiModel : BackupStatusUiModel {
 }
 
 /**
- * Connecting to the server. When [isProcessing], new media is being processed in the meantime, so
- * the description says so instead of leaving the card looking idle.
+ * Connecting to the server. When [processing], new media is being processed in the meantime, so
+ * the description says so instead of leaving the card looking idle. The indicator stays a spinner
+ * either way, since connecting is what the chip names.
  */
 data class CheckingServerUiModel(
-    private val isProcessing: Boolean
+    private val processing: ProcessingCounts?
 ) : BackupStatusUiModel {
     override val chipText: StringResource = Res.string.chip_connecting
     override val indicator: BackupStatusIndicator = BackupStatusIndicator.Indeterminate
     override val header: UiStringBuilder = Res.string.header_connecting.toUiString()
     override val mainStatus: UiStringBuilder = Res.string.main_status_connecting.toUiString()
-    override val statusDescription: UiStringBuilder? =
-        if (isProcessing) Res.string.description_connecting_processing.toUiString() else null
+    override val statusDescription: UiStringBuilder? = processing?.description(
+        uncounted = Res.string.description_connecting_processing,
+        counted = Res.plurals.description_connecting_processing_count
+    )
     override val actionButton: BackupActionButton? = null
 }
 
 /** No server has been set up, so nothing can be backed up until the user sets one up. */
 data class BackupNotSetUpUiModel(
-    private val isProcessing: Boolean
+    private val processing: ProcessingCounts?
 ) : BackupStatusUiModel {
     override val chipText: StringResource = Res.string.chip_backup_not_set_up
     override val indicator: BackupStatusIndicator =
-        spinnerWhileProcessing(isProcessing, Res.drawable.ic_cloud_off_outlined)
+        processing.indicatorOr(Res.drawable.ic_cloud_off_outlined)
     override val header: UiStringBuilder = Res.string.header_backup_not_set_up.toUiString()
     override val mainStatus: UiStringBuilder = Res.string.main_status_backup_not_set_up.toUiString()
-    override val statusDescription: UiStringBuilder = if (isProcessing) {
-        Res.string.description_backup_not_set_up_processing.toUiString()
-    } else {
-        Res.string.description_backup_not_set_up.toUiString()
-    }
+    override val statusDescription: UiStringBuilder = processing?.description(
+        uncounted = Res.string.description_backup_not_set_up_processing,
+        counted = Res.plurals.description_backup_not_set_up_processing_count
+    ) ?: Res.string.description_backup_not_set_up.toUiString()
     override val actionButton: BackupActionButton = BackupActionButton(
         actionText = Res.string.button_set_up_server,
         action = BackupStatusAction.SetUpServer
@@ -130,40 +145,43 @@ data class BackupNotSetUpUiModel(
 
 /** A server is set up but can't be reached, so backup is paused. */
 data class ServerOfflineUiModel(
-    private val isProcessing: Boolean
+    private val processing: ProcessingCounts?
 ) : BackupStatusUiModel {
     override val chipText: StringResource = Res.string.chip_server_offline
     override val indicator: BackupStatusIndicator =
-        spinnerWhileProcessing(isProcessing, Res.drawable.ic_cloud_off_outlined)
+        processing.indicatorOr(Res.drawable.ic_cloud_off_outlined)
     override val header: UiStringBuilder = Res.string.header_server_offline.toUiString()
     override val mainStatus: UiStringBuilder = Res.string.main_status_server_offline.toUiString()
-    override val statusDescription: UiStringBuilder = if (isProcessing) {
-        Res.string.description_server_offline_processing.toUiString()
-    } else {
-        Res.string.description_server_offline.toUiString()
-    }
+    override val statusDescription: UiStringBuilder = processing?.description(
+        uncounted = Res.string.description_server_offline_processing,
+        counted = Res.plurals.description_server_offline_processing_count
+    ) ?: Res.string.description_server_offline.toUiString()
     override val actionButton: BackupActionButton? = null
 }
 
 /** Connected, but processing hasn't produced anything to upload yet. */
-data object PreparingBackupUiModel : BackupStatusUiModel {
+data class PreparingBackupUiModel(
+    private val processing: ProcessingCounts
+) : BackupStatusUiModel {
     override val chipText: StringResource = Res.string.chip_preparing_backup
-    override val indicator: BackupStatusIndicator = BackupStatusIndicator.Indeterminate
+    override val indicator: BackupStatusIndicator = processing.indicator()
     override val header: UiStringBuilder = Res.string.header_preparing_backup.toUiString()
     override val mainStatus: UiStringBuilder = Res.string.main_status_preparing_backup.toUiString()
-    override val statusDescription: UiStringBuilder =
-        Res.string.description_preparing_backup.toUiString()
+    override val statusDescription: UiStringBuilder = processing.description(
+        uncounted = Res.string.description_preparing_backup,
+        counted = Res.plurals.description_preparing_backup_count
+    )
     override val actionButton: BackupActionButton? = null
 }
 
 /**
- * Uploading. While [isProcessing], [totalCount] keeps growing as new media is processed, so the
+ * Uploading. While [processing], [totalCount] keeps growing as new media is processed, so the
  * description warns that the total may go up rather than letting the progress look like it slipped.
  */
 data class BackupInProgressUiModel(
     private val syncedCount: Int,
     private val totalCount: Int,
-    private val isProcessing: Boolean
+    private val processing: ProcessingCounts?
 ) : BackupStatusUiModel {
     override val chipText: StringResource = Res.string.chip_backup_in_progress
     // A sync can start with nothing pending, and 0 / 0 would be NaN.
@@ -174,11 +192,10 @@ data class BackupInProgressUiModel(
     override val mainStatus: UiStringBuilder = UiStringBuilder(
         PhovoString(Res.string.main_status_in_progress),
         syncedCount.localize(), totalCount.localize())
-    override val statusDescription: UiStringBuilder = if (isProcessing) {
-        Res.string.description_in_progress_processing.toUiString()
-    } else {
-        Res.string.description_in_progress.toUiString()
-    }
+    override val statusDescription: UiStringBuilder = processing?.description(
+        uncounted = Res.string.description_in_progress_processing,
+        counted = Res.plurals.description_in_progress_processing_count
+    ) ?: Res.string.description_in_progress.toUiString()
     override val actionButton: BackupActionButton? = null
 }
 
@@ -224,14 +241,32 @@ data class BackupCompleteUiModel(
     }
 }
 
-/**
- * Processing has no progress to show, so while it runs a state without sync progress shows a
- * spinner rather than its own [icon].
- */
-private fun spinnerWhileProcessing(
-    isProcessing: Boolean,
-    icon: DrawableResource
-): BackupStatusIndicator =
-    if (isProcessing) BackupStatusIndicator.Indeterminate else BackupStatusIndicator.Icon(icon)
+/** Processing progress, or a spinner until the scan has counted the library. */
+private fun ProcessingCounts.indicator(): BackupStatusIndicator =
+    if (foundCount == 0) {
+        BackupStatusIndicator.Indeterminate
+    } else {
+        BackupStatusIndicator.Progress(
+            (processedCount.toFloat() / foundCount.toFloat()).coerceAtMost(1f)
+        )
+    }
+
+/** For a state without sync progress: processing progress while it runs, otherwise [idleIcon]. */
+private fun ProcessingCounts?.indicatorOr(idleIcon: DrawableResource): BackupStatusIndicator =
+    this?.indicator() ?: BackupStatusIndicator.Icon(idleIcon)
+
+/** [counted] once the scan has counted the library, [uncounted] until then. */
+private fun ProcessingCounts.description(
+    uncounted: StringResource,
+    counted: PluralStringResource
+): UiStringBuilder =
+    if (foundCount == 0) {
+        uncounted.toUiString()
+    } else {
+        UiStringBuilder(
+            PhovoPlural(counted, foundCount),
+            processedCount.localize(), foundCount.localize()
+        )
+    }
 
 private fun StringResource.toUiString(): UiStringBuilder = UiStringBuilder(PhovoString(this))

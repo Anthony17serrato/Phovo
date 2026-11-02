@@ -44,6 +44,28 @@
     <string name="description_preparing_backup">Backup starts as soon as photos are ready. This takes longer the first time.</string>
     <string name="description_in_progress">Keep Phovo open to back up faster.</string>
     <string name="description_in_progress_processing">Still finding new photos, so the total may go up.</string>
+    <!-- The _count variants replace the _processing ones once the scan has counted the library:
+         %1$s items handled so far of %2$s found. Quantity follows %2$s. -->
+    <plurals name="description_connecting_processing_count">
+        <item quantity="one">Getting new photos ready in the meantime (%1$s of %2$s item).</item>
+        <item quantity="other">Getting new photos ready in the meantime (%1$s of %2$s items).</item>
+    </plurals>
+    <plurals name="description_backup_not_set_up_processing_count">
+        <item quantity="one">Phovo is getting your photos ready (%1$s of %2$s item), so backup can start as soon as you connect.</item>
+        <item quantity="other">Phovo is getting your photos ready (%1$s of %2$s items), so backup can start as soon as you connect.</item>
+    </plurals>
+    <plurals name="description_server_offline_processing_count">
+        <item quantity="one">Make sure Phovo is open on your computer. New photos are still being prepared (%1$s of %2$s item), so backup can pick up right away.</item>
+        <item quantity="other">Make sure Phovo is open on your computer. New photos are still being prepared (%1$s of %2$s items), so backup can pick up right away.</item>
+    </plurals>
+    <plurals name="description_preparing_backup_count">
+        <item quantity="one">%1$s of %2$s item ready. This takes longer the first time.</item>
+        <item quantity="other">%1$s of %2$s items ready. This takes longer the first time.</item>
+    </plurals>
+    <plurals name="description_in_progress_processing_count">
+        <item quantity="one">Still getting photos ready (%1$s of %2$s item), so the total may go up.</item>
+        <item quantity="other">Still getting photos ready (%1$s of %2$s items), so the total may go up.</item>
+    </plurals>
     <!-- Items uploaded by the backup that just finished -->
     <plurals name="description_backup_complete">
         <item quantity="one">%1$s new item backed up</item>

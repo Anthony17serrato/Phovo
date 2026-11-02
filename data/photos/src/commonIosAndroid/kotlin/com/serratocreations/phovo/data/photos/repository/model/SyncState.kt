@@ -1,6 +1,7 @@
 package com.serratocreations.phovo.data.photos.repository.model
 
 import com.serratocreations.phovo.core.model.network.ServerConnectionState
+import com.serratocreations.phovo.data.photos.model.BackupState
 
 sealed interface SyncState {
     data class Waiting(val serverConnectionState: ServerConnectionState): SyncState
@@ -13,13 +14,14 @@ sealed interface SyncState {
         internal val inFlightBytes: Map<String, Long> = emptyMap()
     ): SyncState {
         val totalSyncJobQuantity: Int = (currentPendingSyncQuantity + syncedCount)
-        // TODO: Progress will probably be computed in BackupState instead as a combination of
-        //  both sync and processing
-        fun syncByteProgress(isProcessing: Boolean): SyncByteProgress = SyncByteProgress(
+
+        /**
+         * Can reach the total while processing is still finding media, so this alone doesn't mean
+         * the backup is done. [BackupState.Active.progress] accounts for that.
+         */
+        internal fun syncByteProgress(): SyncByteProgress = SyncByteProgress(
             completedBytes = syncedBytes + inFlightBytes.values.sum(),
-            // TODO this + 1 solution is a bit hacky to prevent 100% completion before scanning
-            //  completes
-            totalBytes = (unsyncedBytes + syncedBytes).let { if (isProcessing.not()) it + 1 else it }
+            totalBytes = unsyncedBytes + syncedBytes
         )
     }
 

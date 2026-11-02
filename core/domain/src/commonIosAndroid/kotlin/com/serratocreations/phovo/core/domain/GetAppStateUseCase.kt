@@ -4,6 +4,7 @@ import com.serratocreations.phovo.core.domain.model.PhovoAppState
 import com.serratocreations.phovo.core.model.network.ServerConnectionState
 import com.serratocreations.phovo.data.photos.LocalMediaManager
 import com.serratocreations.phovo.data.photos.model.BackupState
+import com.serratocreations.phovo.data.photos.model.ProcessingState
 import com.serratocreations.phovo.data.photos.repository.LocalAndRemoteMediaRepository
 import com.serratocreations.phovo.data.photos.repository.model.SyncState
 import kotlinx.coroutines.flow.Flow
@@ -36,11 +37,16 @@ class GetAppStateUseCase(
     private fun BackupState.Active.toAppState(
         connectionState: ServerConnectionState
     ): PhovoAppState {
+        val smartCastProcessing = processing // Enables smart cast where needed
         return when (connectionState) {
             is ServerConnectionState.Connected -> {
                 val syncState = syncState
-                if (isProcessing && syncState is SyncState.Syncing && syncState.totalSyncJobQuantity == 0) {
-                    PhovoAppState.SyncAwaitingItemsFromProcessingJob
+                if (
+                    smartCastProcessing is ProcessingState.Running &&
+                    syncState is SyncState.Syncing &&
+                    syncState.totalSyncJobQuantity == 0
+                ) {
+                    PhovoAppState.SyncAwaitingItemsFromProcessingJob(smartCastProcessing)
                 } else {
                     when (syncState) {
                         is SyncState.SyncComplete -> {
@@ -53,22 +59,22 @@ class GetAppStateUseCase(
                             PhovoAppState.LocalMediaBackupProgress(
                                 syncedCount = syncState.syncedCount,
                                 currentPendingSyncQuantity = syncState.currentPendingSyncQuantity,
-                                scanningStatus = isProcessing
+                                processing = smartCastProcessing
                             )
                         }
                         is SyncState.Waiting -> {
-                            PhovoAppState.CheckingServerConnection(isProcessing)
+                            PhovoAppState.CheckingServerConnection(smartCastProcessing)
                         }
                     }
                 }
             }
-            ServerConnectionState.Checking -> PhovoAppState.CheckingServerConnection(scanningStatus = isProcessing)
-            ServerConnectionState.NotConfigured -> PhovoAppState.Unconfigured(scanningStatus = isProcessing)
+            ServerConnectionState.Checking -> PhovoAppState.CheckingServerConnection(smartCastProcessing)
+            ServerConnectionState.NotConfigured -> PhovoAppState.Unconfigured(smartCastProcessing)
             // Unreachable and answered-by-the-wrong-server
             // are all "no backup happening" as far as the user is concerned; none of them imply
             // a different action here.
             is ServerConnectionState.Unreachable,
-            ServerConnectionState.IdentityMismatch -> PhovoAppState.ServerOffline(scanningStatus = isProcessing)
+            ServerConnectionState.IdentityMismatch -> PhovoAppState.ServerOffline(smartCastProcessing)
         }
     }
 }
