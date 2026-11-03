@@ -25,7 +25,9 @@ data class AppBarConfig(
     val shouldOverlayTopAppBar: Boolean = false,
     val showBottomAppBar: Boolean = true,
     val showBottomToolbar: Boolean = false,
-    val showTopAppBar: Boolean = true
+    val showTopAppBar: Boolean = true,
+    /** Shown under the top app bar's row, see [ExpandableHeader]. */
+    val expandableHeader: ExpandableHeader? = null
 ) {
     @Composable
     fun calculateAdjustedPadding(scaffoldPadding: PaddingValues): PaddingValues {

@@ -13,6 +13,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
 import org.jetbrains.compose.resources.painterResource
 import phovo.sharedumbrella.generated.resources.*
@@ -29,8 +31,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavKey
 import com.serratocreations.phovo.core.navigation.AppBarConfig
+import com.serratocreations.phovo.core.navigation.ExpandableHeaderDefaults
+import com.serratocreations.phovo.core.navigation.ExpandableHeaderLayout
+import com.serratocreations.phovo.core.navigation.expandableHeaderBackground
 import com.serratocreations.phovo.ui.model.OverflowMenuOption
 import com.serratocreations.phovo.util.animated
 import org.jetbrains.compose.resources.stringResource
@@ -53,48 +59,67 @@ fun PhovoTopAppBar(
         enter = slideInVertically(initialOffsetY = { -it }),
         exit = slideOutVertically(targetOffsetY = { -it })
     ) {
-        TopAppBar(
-            title = appBarState.title,
-            navigationIcon = appBarState.navigationIcon,
-            actions = {
-                Box(modifier = Modifier.wrapContentSize(Alignment.TopStart)) {
-                    // Icon button should have a tooltip associated with it for a11y.
-                    TooltipBox(
-                        positionProvider =
-                            TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-                        tooltip = { PlainTooltip { Text("Localized description") } },
-                        state = rememberTooltipState(),
-                    ) {
-                        IconButton(onClick = { expanded = true }) {
-                            Icon(
-                                imageVector = actionIcon,
-                                contentDescription = actionIconContentDescription,
-                                tint = MaterialTheme.colorScheme.onSurface,
-                            )
+        val header = appBarState.expandableHeader
+        val headerColor = ExpandableHeaderDefaults.containerColor
+        Column(
+            modifier = modifier.then(
+                header?.let { Modifier.expandableHeaderBackground(it.state, headerColor) }
+                    ?: Modifier
+            )
+        ) {
+            TopAppBar(
+                title = appBarState.title,
+                navigationIcon = appBarState.navigationIcon,
+                actions = {
+                    Box(modifier = Modifier.wrapContentSize(Alignment.TopStart)) {
+                        // Icon button should have a tooltip associated with it for a11y.
+                        TooltipBox(
+                            positionProvider =
+                                TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
+                            tooltip = { PlainTooltip { Text("Localized description") } },
+                            state = rememberTooltipState(),
+                        ) {
+                            IconButton(onClick = { expanded = true }) {
+                                Icon(
+                                    imageVector = actionIcon,
+                                    contentDescription = actionIconContentDescription,
+                                    tint = MaterialTheme.colorScheme.onSurface,
+                                )
+                            }
+                        }
+                        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                            menuOptions.forEach { menuOption ->
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(menuOption.title)) },
+                                    onClick = {
+                                        expanded = false
+                                        onMenuActionClick(menuOption.route)
+                                    },
+                                    leadingIcon = {
+                                        Icon(
+                                            painter = painterResource(Res.drawable.ic_edit_outlined),
+                                            contentDescription = null
+                                        )
+                                    },
+                                )
+                            }
                         }
                     }
-                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                        menuOptions.forEach { menuOption ->
-                            DropdownMenuItem(
-                                text = { Text(stringResource(menuOption.title)) },
-                                onClick = {
-                                    expanded = false
-                                    onMenuActionClick(menuOption.route)
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        painter = painterResource(Res.drawable.ic_edit_outlined),
-                                        contentDescription = null
-                                    )
-                                },
-                            )
-                        }
-                    }
-                }
-            },
-            colors = animatedAppBarColors,
-            scrollBehavior = scrollBehavior,
-            modifier = modifier
-        )
+                },
+                colors = animatedAppBarColors,
+                scrollBehavior = scrollBehavior
+            )
+            // Under the bar's row rather than in its title slot, so it takes the full width and the
+            // actions keep their place.
+            if (header != null) {
+                ExpandableHeaderLayout(
+                    header = header,
+                    modifier = Modifier.padding(horizontal = ExpandableHeaderHorizontalPadding)
+                )
+            }
+        }
     }
 }
+
+/** Lines the header up with the bar's title. */
+private val ExpandableHeaderHorizontalPadding = 16.dp

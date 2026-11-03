@@ -19,14 +19,19 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import com.serratocreations.phovo.core.navigation.AppBarConfig
 import com.serratocreations.phovo.core.navigation.DefaultNavigationIcon
+import com.serratocreations.phovo.core.navigation.ExpandableHeader
+import com.serratocreations.phovo.core.navigation.ExpandableHeaderDefaults
+import com.serratocreations.phovo.core.navigation.expandableHeaderTopCorners
 import com.serratocreations.phovo.core.navigation.NavigationViewModel
 import com.serratocreations.phovo.core.navigation.SharedViewModelStoreNavEntryDecorator
+import com.serratocreations.phovo.core.navigation.rememberExpandableHeaderState
 import com.serratocreations.phovo.core.navigation.toContentKey
 import com.serratocreations.phovo.feature.photos.ui.CallToActionAction
 import com.serratocreations.phovo.feature.photos.ui.CallToActionsScreen
 import com.serratocreations.phovo.feature.photos.ui.PhotoViewerScreen
 import com.serratocreations.phovo.feature.photos.ui.PhotosHomeScreen
 import com.serratocreations.phovo.feature.photos.ui.PhotosViewModel
+import com.serratocreations.phovo.feature.photos.ui.components.PhotosHomeHeaderContent
 import com.serratocreations.phovo.feature.photos.ui.components.PhotosHomeTitleContent
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -46,15 +51,19 @@ fun EntryProviderScope<NavKey>.photosEntries(
         clazzContentKey = { key -> key.toContentKey() }
     ) {
         val photosViewModel: PhotosViewModel = koinViewModel()
-        val appBarConfig: AppBarConfig = remember {
+        val headerState = rememberExpandableHeaderState()
+        val appBarConfig: AppBarConfig = remember(headerState) {
             AppBarConfig(
-                title = { PhotosHomeTitleContent(onFinishServerSetup = onFinishServerSetup) },
+                title = { PhotosHomeTitleContent(headerState = headerState) },
                 topAppBarColors = {
                     val defaultColors = TopAppBarDefaults.topAppBarColors()
                     defaultColors.copy(
                         containerColor = defaultColors.containerColor.copy(alpha = 0f),
                         scrolledContainerColor = defaultColors.containerColor.copy(alpha = 0f)
                     )
+                },
+                expandableHeader = ExpandableHeader(headerState) {
+                    PhotosHomeHeaderContent(onFinishServerSetup = onFinishServerSetup)
                 }
             )
         }
@@ -81,9 +90,12 @@ fun EntryProviderScope<NavKey>.photosEntries(
             animatedContentScope = LocalNavAnimatedContentScope.current,
             photosViewModel = photosViewModel,
             isCurrentDestination = navigationViewModel.state.currentKey == PhotosHomeNavKey,
-            modifier = Modifier.padding(
-                appBarConfig.calculateAdjustedPadding(scaffoldPadding)
-            )
+            modifier = Modifier
+                .padding(appBarConfig.calculateAdjustedPadding(scaffoldPadding))
+                .expandableHeaderTopCorners(
+                    state = headerState,
+                    color = ExpandableHeaderDefaults.containerColor
+                )
         )
     }
     entry<PhotoDetailNavKey>(
