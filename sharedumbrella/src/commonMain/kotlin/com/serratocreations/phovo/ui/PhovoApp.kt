@@ -192,7 +192,15 @@ internal fun InternalPhovoApp(
                     appBarConfig = appBarState
                 )
             },
-            modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+            // The header's connection goes outside the bar's, so it sees scrolls first: an open
+            // header takes forward scrolls to close itself, and the bar stays put meanwhile.
+            modifier = modifier
+                .then(
+                    appBarState.expandableHeader?.let {
+                        Modifier.nestedScroll(it.state.nestedScrollConnection)
+                    } ?: Modifier
+                )
+                .nestedScroll(scrollBehavior.nestedScrollConnection),
             containerColor = Color.Transparent,
             contentColor = MaterialTheme.colorScheme.onBackground,
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
