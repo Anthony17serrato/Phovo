@@ -59,7 +59,11 @@ room-kmp = "2.8.4"
 serialization-json = "1.11.0"
 sqlite = "2.7.0"
 telephoto = "0.19.0"
-jmdns = "3.6.4"
+# At least 3.6.5. 3.6.4 bound its only receive socket to the host address on macOS, which never
+# receives multicast, so the server answered no queries and phones found it only by catching one of
+# its announcements (jmdns/jmdns#373). 3.6.5 receives on a wildcard socket and still sends from the
+# host address, so a VPN cannot take the multicast source (jmdns/jmdns#365).
+jmdns = "3.6.5"
 # Used by build-logic only, to unpack the FFmpeg archives downloaded at build time. The BtbN Linux
 # builds ship as .tar.xz, which neither the JDK nor Gradle's archive operations can read.
 commons-compress = "1.28.0"
