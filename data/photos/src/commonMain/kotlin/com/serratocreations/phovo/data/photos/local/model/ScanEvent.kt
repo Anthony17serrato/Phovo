@@ -5,8 +5,8 @@ import io.github.vinceglb.filekit.PlatformFile
 /** What a scan of the local library reports, in order. */
 sealed interface ScanEvent {
     /**
-     * A query matched [count] assets. Emitted before that query's [Item]s, and once per query, so
-     * counts add up across queries.
+     * The scan matched [count] assets in total, across every query it runs. Emitted once, before
+     * any [Item] or [Skipped].
      */
     data class Found(val count: Int) : ScanEvent
 

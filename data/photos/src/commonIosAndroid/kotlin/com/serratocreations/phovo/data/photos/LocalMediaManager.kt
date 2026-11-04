@@ -152,7 +152,7 @@ class LocalMediaManager(
             .onCompletion { processMediaChannel.close() }
             .runningFold(ScanCounts()) { counts, event ->
                 when (event) {
-                    is ScanEvent.Found -> counts.copy(found = counts.found + event.count)
+                    is ScanEvent.Found -> counts.copy(found = event.count)
                     ScanEvent.Skipped -> counts.copy(skipped = counts.skipped + 1)
                     is ScanEvent.Item -> counts
                 }
