@@ -1,6 +1,7 @@
 package com.serratocreations.phovo.data.photos.local
 
 import coil3.ImageLoader
+import com.serratocreations.phovo.core.common.util.interleave
 import com.serratocreations.phovo.core.common.util.phAssetUriFromLocalId
 import com.serratocreations.phovo.core.common.util.toPhAsset
 import com.serratocreations.phovo.core.logger.PhovoLogger
@@ -13,13 +14,12 @@ import com.serratocreations.phovo.data.photos.repository.model.MediaImageItem
 import com.serratocreations.phovo.data.photos.repository.model.MediaVideoItem
 import com.serratocreations.phovo.data.photos.util.fetchFileUrl
 import io.github.vinceglb.filekit.PlatformFile
-import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.FlowCollector
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toKotlinInstant
@@ -27,10 +27,12 @@ import kotlinx.datetime.toLocalDateTime
 import platform.Foundation.NSNumber
 import platform.Foundation.valueForKey
 import platform.Photos.PHAsset
+import platform.Photos.PHAssetMediaType
 import platform.Photos.PHAssetMediaTypeImage
 import platform.Photos.PHAssetMediaTypeVideo
 import platform.Photos.PHAssetResource
 import platform.Photos.PHFetchOptions
+import platform.Photos.PHFetchResult
 import kotlin.time.Duration.Companion.seconds
 
 class IosLocalMediaProcessor(
@@ -46,24 +48,29 @@ class IosLocalMediaProcessor(
         logger = logger
     )
 
-    override fun scanLocalItems(): Flow<ScanEvent> = merge(fetchImages(), fetchVideos())
-
-
-    @OptIn(ExperimentalForeignApi::class)
-    private fun fetchImages(): Flow<ScanEvent> = flow {
-        val fetchOptions = PHFetchOptions()
-        val assets = PHAsset.fetchAssetsWithMediaType(PHAssetMediaTypeImage, fetchOptions)
-        emit(ScanEvent.Found(assets.count.toInt()))
-        val imageItems = mutableListOf<PHAsset>()
-        // Enumerate the assets using the block-based approach
-        assets.enumerateObjectsUsingBlock { obj, _, _ ->
-            imageItems.add(obj as PHAsset)
-        }
-        log.i { "IosPhovoItemDao images $imageItems" }
-        imageItems.forEach { asset ->
-            emitIfOnDevice(asset)
-        }
+    override fun scanLocalItems(): Flow<ScanEvent> = flow {
+        val imageAssets = fetchAssets(PHAssetMediaTypeImage)
+        val videoAssets = fetchAssets(PHAssetMediaTypeVideo)
+        val combinedCount = (imageAssets.count + videoAssets.count).toInt()
+        emit(ScanEvent.Found(count = combinedCount))
+        // Mapped before interleaving so each producer looks up its next file while it waits its turn
+        val scanEvents = interleave(
+            imageAssets.assets().map { it.toScanEvent() },
+            videoAssets.assets().map { it.toScanEvent() }
+        )
+        emitAll(scanEvents)
     }.flowOn(ioDispatcher)
+
+    private fun fetchAssets(mediaType: PHAssetMediaType): PHFetchResult =
+        PHAsset.fetchAssetsWithMediaType(mediaType, PHFetchOptions())
+
+    /** Reads the assets lazily, one index at a time, instead of copying the whole result first. */
+    private fun PHFetchResult.assets(): Flow<PHAsset> = flow {
+        val result = this@assets
+        for (index in 0uL until result.count) {
+            emit(result.objectAtIndex(index) as PHAsset)
+        }
+    }
 
     override suspend fun processItem(
         mediaItem: PlatformFile,
@@ -137,35 +144,18 @@ class IosLocalMediaProcessor(
         )
     }
 
-    @OptIn(ExperimentalForeignApi::class)
-    private fun fetchVideos(): Flow<ScanEvent> = flow {
-        val fetchOptions = PHFetchOptions()
-        val videoItems = mutableListOf<PHAsset>()
-        val videoAssets =
-            PHAsset.fetchAssetsWithMediaType(PHAssetMediaTypeVideo, fetchOptions)
-        emit(ScanEvent.Found(videoAssets.count.toInt()))
-        videoAssets.enumerateObjectsUsingBlock { obj, _, _ ->
-            videoItems.add(obj as PHAsset)
-        }
-        log.i { "IosPhovoItemDao fetchVideos $videoItems" }
-        videoItems.forEach { asset ->
-            emitIfOnDevice(asset)
-        }
-    }.flowOn(ioDispatcher)
-
     /**
-     * Emits the asset's phasset:// file. Assets whose file is not on the device, such as ones only
-     * stored in iCloud, are skipped because there is nothing to hash, and reported as
+     * Maps the asset to its phasset:// file. Assets whose file is not on the device, such as ones
+     * only stored in iCloud, are skipped because there is nothing to hash, and reported as
      * [ScanEvent.Skipped].
      */
-    private suspend fun FlowCollector<ScanEvent>.emitIfOnDevice(asset: PHAsset) {
-        val assetPlatformFile = PlatformFile(phAssetUriFromLocalId(asset.localIdentifier).toString())
-        if (asset.fetchFileUrl() == null) {
+    private suspend fun PHAsset.toScanEvent(): ScanEvent {
+        val assetPlatformFile = PlatformFile(phAssetUriFromLocalId(localIdentifier).toString())
+        if (fetchFileUrl() == null) {
             log.e { "Could not get full size asset for $assetPlatformFile" }
-            emit(ScanEvent.Skipped)
-            return
+            return ScanEvent.Skipped
         }
-        emit(ScanEvent.Item(assetPlatformFile))
+        return ScanEvent.Item(assetPlatformFile)
     }
 }
 

@@ -6,11 +6,13 @@ import android.content.Context
 import android.database.Cursor
 import android.net.Uri
 import android.os.Build
+import android.provider.BaseColumns
 import android.provider.MediaStore
 import androidx.core.database.getLongOrNull
 import androidx.exifinterface.media.ExifInterface
 import coil3.ImageLoader
 import com.serratocreations.phovo.core.common.extension.androidUri
+import com.serratocreations.phovo.core.common.util.interleave
 import com.serratocreations.phovo.core.logger.PhovoLogger
 import com.serratocreations.phovo.data.photos.local.model.MediaProcessingFailure
 import com.serratocreations.phovo.data.photos.local.model.MediaProcessingResult
@@ -22,9 +24,10 @@ import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.mimeType
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
@@ -56,7 +59,33 @@ class AndroidLocalMediaProcessor(
     )
 
     // TODO add observability of updates(Probably by registering Broadcast receiver)
-    override fun scanLocalItems(): Flow<ScanEvent> = merge(queryImages(), queryVideos())
+    override fun scanLocalItems(): Flow<ScanEvent> = flow {
+        var imagesCursor: Cursor? = null
+        var videosCursor: Cursor? = null
+        try {
+            imagesCursor = queryImages()
+            videosCursor = queryVideos()
+            val combinedCount = (imagesCursor?.count ?: 0) + (videosCursor?.count ?: 0)
+            emit(ScanEvent.Found(count = combinedCount))
+            val scanEvents = interleave(
+                imagesCursor.rows(MediaStore.Images.Media.EXTERNAL_CONTENT_URI),
+                videosCursor.rows(MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
+            ).map { ScanEvent.Item(PlatformFile(it)) }
+            emitAll(scanEvents)
+        } finally {
+            imagesCursor?.close()
+            videosCursor?.close()
+        }
+    }.flowOn(ioDispatcher)
+
+    /** Reads the rows lazily, so the cursor must stay open while the sequence is consumed. */
+    private fun Cursor?.rows(contentUri: Uri): Flow<Uri> = flow {
+        val cursor = this@rows ?: return@flow
+        val idColumn = cursor.getColumnIndexOrThrow(BaseColumns._ID)
+        while (cursor.moveToNext()) {
+            emit(ContentUris.withAppendedId(contentUri, cursor.getLong(idColumn)))
+        }
+    }
 
     override suspend fun processItem(
         mediaItem: PlatformFile,
@@ -170,7 +199,7 @@ class AndroidLocalMediaProcessor(
             if (cursor.moveToFirst()) read(cursor) else null
         }
 
-    private fun queryImages(): Flow<ScanEvent> = flow {
+    private fun queryImages(): Cursor? {
         val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
         } else {
@@ -184,21 +213,10 @@ class AndroidLocalMediaProcessor(
         val selection = "${MediaStore.Images.Media.RELATIVE_PATH} LIKE ? OR ${MediaStore.Images.Media.RELATIVE_PATH} LIKE ?"
         val selectionArgs = arrayOf("DCIM/%")
         val sortOrder = "${MediaStore.Images.Media.DATE_TAKEN} DESC"
+        return resolver.query(collection, projection, selection, selectionArgs, sortOrder)
+    }
 
-        resolver.query(collection, projection, selection, selectionArgs, sortOrder)?.use { cursor ->
-            emit(ScanEvent.Found(cursor.count))
-            val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
-
-            while (cursor.moveToNext()) {
-                val id = cursor.getLong(idColumn)
-                val androidUri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
-                val assetPlatformFile = PlatformFile(androidUri)
-                emit(ScanEvent.Item(assetPlatformFile))
-            }
-        }
-    }.flowOn(ioDispatcher)
-
-    private fun queryVideos(): Flow<ScanEvent> = flow {
+    private fun queryVideos(): Cursor? {
         val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
         } else {
@@ -212,19 +230,8 @@ class AndroidLocalMediaProcessor(
         val selection = "${MediaStore.Video.Media.RELATIVE_PATH} LIKE ? OR ${MediaStore.Video.Media.RELATIVE_PATH} LIKE ? OR ${MediaStore.Video.Media.RELATIVE_PATH} LIKE ?"
         val selectionArgs = arrayOf("DCIM/%")
         val sortOrder = "${MediaStore.Video.Media.DATE_TAKEN} DESC"
-
-        resolver.query(collection, projection, selection, selectionArgs, sortOrder)?.use { cursor ->
-            emit(ScanEvent.Found(cursor.count))
-            val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media._ID)
-
-            while (cursor.moveToNext()) {
-                val id = cursor.getLong(idColumn)
-                val androidUri = ContentUris.withAppendedId(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, id)
-                val assetPlatformFile = PlatformFile(androidUri)
-                emit(ScanEvent.Item(assetPlatformFile))
-            }
-        }
-    }.flowOn(ioDispatcher)
+        return resolver.query(collection, projection, selection, selectionArgs, sortOrder)
+    }
 
     @OptIn(ExperimentalTime::class)
     private fun Duration.utcMsToLocalDateTime(): LocalDateTime {
