@@ -44,15 +44,11 @@ jobs:
             across platforms, coroutine and lifecycle misuse, threading issues, and
             resource leaks. Then flag missing tests for new logic in commonMain.
 
-            Project rules to check:
-            - The iOS deployment target is 15.3. Any iOS API newer than that must be
-              guarded at runtime.
-            - Prefer Kotlin/Native platform bindings over Swift interop on iOS.
-
             Start with `gh pr view --comments` so you don't repeat feedback that has
             already been given. Put specific issues in inline comments. Leave one short
-            top-level summary comment. If there's nothing worth flagging, say so in one line.
-            Don't comment on style or formatting.
+            top-level summary comment that covers only problems found; don't list the
+            things you checked that turned out fine. If there's nothing worth flagging,
+            say so in one line. Don't comment on style or formatting.
           claude_args: |
             --model claude-opus-5-5
             --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
