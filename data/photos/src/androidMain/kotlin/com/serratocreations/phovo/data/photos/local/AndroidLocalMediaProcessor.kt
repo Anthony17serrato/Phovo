@@ -224,7 +224,9 @@ class AndroidLocalMediaProcessor(
     // `datetaken` column before that.
     @SuppressLint("InlinedApi")
     private fun queryCameraMedia(collection: Uri): Cursor? {
-        val selection = CameraMediaSelection.forSdk(Build.VERSION.SDK_INT)
+        val selection = CameraMediaSelection.forSdk(Build.VERSION.SDK_INT) {
+            CameraMediaSelection.legacyVolumeRoots(context)
+        }
         return resolver.query(
             collection,
             arrayOf(MediaStore.MediaColumns._ID),

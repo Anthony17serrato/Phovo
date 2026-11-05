@@ -1,16 +1,18 @@
 package com.serratocreations.phovo.data.photos.local
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.os.Build
+import android.os.Environment
 import android.provider.MediaStore
 
 /**
  * The MediaStore `WHERE` clause that picks out camera media: what Phovo backs up by default.
  *
- * Camera media is anything in a `DCIM/` folder on any storage volume, minus the screenshot and
- * screen-recording folders some OEMs put there. The rule follows Google Photos (7.98), whose
- * default "camera folder" check is also path-only: a path containing `/dcim/`, case-insensitive,
- * on any volume.
+ * Camera media is anything in the `DCIM/` folder at the root of a storage volume, minus the
+ * screenshot and screen-recording folders some OEMs put there. The rule follows Google Photos
+ * (7.98), whose default "camera folder" check is also path-only, though looser: a path containing
+ * `/dcim/` at any depth, case-insensitive.
  *
  * Why each part is there:
  * - **`DCIM/` on any volume.** Android reserves DCIM for camera output, and every stock camera
@@ -30,8 +32,12 @@ import android.provider.MediaStore
  *   Phovo (while `adb shell content query`, running as shell, still matches them).
  * - **Pending and trashed rows** need no clause. MediaStore leaves out `IS_PENDING` rows of
  *   other apps (API 29+) and `IS_TRASHED` rows (API 30+) unless asked for them.
- * - **Below API 29** there is no `RELATIVE_PATH`, so the same folder rule
- *   runs on the absolute `DATA` path, where `/DCIM/` can sit on any volume root.
+ * - **Below API 29** there is no `RELATIVE_PATH`, so the rule runs on the absolute `DATA` path,
+ *   anchored to each mounted volume's root (see [legacyVolumeRoots]). A bare `%/DCIM/%` would
+ *   also match `DCIM` folders deeper down, such as an app's
+ *   `Android/data/<pkg>/files/DCIM/`, which the pre-Q scanner indexes unless it holds a
+ *   `.nomedia` file. API 29+ never selects those, because their `RELATIVE_PATH` doesn't start
+ *   with `DCIM/`. Anchoring keeps both branches selecting the same folders.
  */
 internal class CameraMediaSelection private constructor(
     val selection: String,
@@ -46,39 +52,63 @@ internal class CameraMediaSelection private constructor(
             "ScreenRecords"
         )
 
+        /**
+         * The selection for this device. [volumeRoots] is only called below API 29, where it
+         * gives the absolute path of every mounted volume's root, without a trailing slash.
+         */
         // RELATIVE_PATH is only used on API 29+, DATA only below it.
         @SuppressLint("InlinedApi")
         @Suppress("DEPRECATION")
-        fun forSdk(sdkInt: Int): CameraMediaSelection =
+        fun forSdk(sdkInt: Int, volumeRoots: () -> List<String>): CameraMediaSelection =
             if (sdkInt >= Build.VERSION_CODES.Q) {
-                build(
-                    pathColumn = MediaStore.MediaColumns.RELATIVE_PATH,
-                    dcimPattern = "DCIM/%",
-                    screenCapturePattern = { "DCIM/$it/%" }
-                )
+                build(pathColumn = MediaStore.MediaColumns.RELATIVE_PATH, prefixes = listOf(""))
             } else {
                 build(
                     pathColumn = MediaStore.MediaColumns.DATA,
-                    dcimPattern = "%/DCIM/%",
-                    screenCapturePattern = { "%/DCIM/$it/%" }
+                    prefixes = volumeRoots().map { "${it.trimEnd('/')}/" }.distinct()
                 )
             }
 
-        private fun build(
-            pathColumn: String,
-            dcimPattern: String,
-            screenCapturePattern: (String) -> String
-        ): CameraMediaSelection {
-            val clauses = mutableListOf("$pathColumn LIKE ?")
-            val args = mutableListOf(dcimPattern)
-            screenCaptureFolders.forEach { folder ->
-                clauses += "$pathColumn NOT LIKE ?"
-                args += screenCapturePattern(folder)
+        /**
+         * The root of every mounted storage volume, for matching `DATA` paths below API 29.
+         * `getExternalFilesDirs` returns `<root>/Android/data/<pkg>/files` for each mounted
+         * volume (null for one that isn't mounted) and works from API 19, unlike
+         * `StorageVolume.getDirectory()`, which needs API 30.
+         */
+        @Suppress("DEPRECATION")
+        fun legacyVolumeRoots(context: Context): List<String> =
+            context.getExternalFilesDirs(null)
+                .mapNotNull { dir ->
+                    dir?.absolutePath
+                        ?.substringBefore("/Android/data/", missingDelimiterValue = "")
+                        ?.takeIf { it.isNotEmpty() }
+                }
+                .ifEmpty { listOf(Environment.getExternalStorageDirectory().absolutePath) }
+
+        /**
+         * `(path LIKE '<prefix>DCIM/%' OR …) AND path NOT LIKE '<prefix>DCIM/<capture folder>/%' …`
+         * for every prefix. Prefixes are escaped so a `_` or `%` in a volume path matches
+         * literally.
+         */
+        private fun build(pathColumn: String, prefixes: List<String>): CameraMediaSelection {
+            val like = "$pathColumn LIKE ? ESCAPE '\\'"
+            val notLike = "$pathColumn NOT LIKE ? ESCAPE '\\'"
+            val escaped = prefixes.map(::escapeLike)
+            val clauses = mutableListOf(escaped.joinToString(" OR ", "(", ")") { like })
+            val args = escaped.mapTo(mutableListOf()) { "${it}DCIM/%" }
+            escaped.forEach { prefix ->
+                screenCaptureFolders.forEach { folder ->
+                    clauses += notLike
+                    args += "${prefix}DCIM/$folder/%"
+                }
             }
             return CameraMediaSelection(
                 selection = clauses.joinToString(separator = " AND "),
                 args = args.toTypedArray()
             )
         }
+
+        private fun escapeLike(value: String): String =
+            value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
     }
 }
