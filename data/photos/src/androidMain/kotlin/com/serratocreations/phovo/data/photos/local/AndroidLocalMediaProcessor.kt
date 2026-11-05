@@ -1,5 +1,6 @@
 package com.serratocreations.phovo.data.photos.local
 
+import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.Context
@@ -199,38 +200,40 @@ class AndroidLocalMediaProcessor(
             if (cursor.moveToFirst()) read(cursor) else null
         }
 
-    private fun queryImages(): Cursor? {
-        val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+    private fun queryImages(): Cursor? = queryCameraMedia(
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
         } else {
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI
         }
-        val projection = arrayOf(
-            MediaStore.Images.Media._ID,
-            MediaStore.Images.Media.DATE_TAKEN,
-            MediaStore.Images.Media.RELATIVE_PATH
-        )
-        val selection = "${MediaStore.Images.Media.RELATIVE_PATH} LIKE ? OR ${MediaStore.Images.Media.RELATIVE_PATH} LIKE ?"
-        val selectionArgs = arrayOf("DCIM/%")
-        val sortOrder = "${MediaStore.Images.Media.DATE_TAKEN} DESC"
-        return resolver.query(collection, projection, selection, selectionArgs, sortOrder)
-    }
+    )
 
-    private fun queryVideos(): Cursor? {
-        val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+    private fun queryVideos(): Cursor? = queryCameraMedia(
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
         } else {
             MediaStore.Video.Media.EXTERNAL_CONTENT_URI
         }
-        val projection = arrayOf(
-            MediaStore.Video.Media._ID,
-            MediaStore.Video.Media.DATE_TAKEN,
-            MediaStore.Video.Media.RELATIVE_PATH
+    )
+
+    /**
+     * Queries [collection] for camera media, see [CameraMediaSelection] for the rule. Only `_ID`
+     * is projected because [rows] reads nothing else.
+     */
+    // MediaColumns.DATE_TAKEN is new in API 29, but the images and video tables had the
+    // `datetaken` column before that.
+    @SuppressLint("InlinedApi")
+    private fun queryCameraMedia(collection: Uri): Cursor? {
+        val selection = CameraMediaSelection.forSdk(Build.VERSION.SDK_INT) {
+            CameraMediaSelection.legacyVolumeRoots(context)
+        }
+        return resolver.query(
+            collection,
+            arrayOf(MediaStore.MediaColumns._ID),
+            selection.selection,
+            selection.args,
+            "${MediaStore.MediaColumns.DATE_TAKEN} DESC"
         )
-        val selection = "${MediaStore.Video.Media.RELATIVE_PATH} LIKE ? OR ${MediaStore.Video.Media.RELATIVE_PATH} LIKE ? OR ${MediaStore.Video.Media.RELATIVE_PATH} LIKE ?"
-        val selectionArgs = arrayOf("DCIM/%")
-        val sortOrder = "${MediaStore.Video.Media.DATE_TAKEN} DESC"
-        return resolver.query(collection, projection, selection, selectionArgs, sortOrder)
     }
 
     @OptIn(ExperimentalTime::class)
