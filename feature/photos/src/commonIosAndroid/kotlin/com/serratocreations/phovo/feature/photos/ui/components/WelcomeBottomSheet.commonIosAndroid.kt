@@ -19,6 +19,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,7 +41,8 @@ actual fun WelcomeBottomSheet(
     var dismissedBottomSheet by remember { mutableStateOf(false) }
     if (shouldShowBottomSheet && dismissedBottomSheet.not()) {
         ModalBottomSheet(
-            onDismissRequest = { dismissedBottomSheet = true }
+            onDismissRequest = { dismissedBottomSheet = true },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         ) {
             Column(
                 modifier = Modifier
