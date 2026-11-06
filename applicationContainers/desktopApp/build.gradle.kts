@@ -56,7 +56,10 @@ compose.desktop {
                 // Debian package names must be lowercase.
                 packageName = "phovo"
                 shortcut = true
-                appCategory = "Graphics"
+                // Debian control Section: only; lowercase per Debian policy.
+                appCategory = "graphics"
+                // Becomes Categories= in the generated .desktop file.
+                menuGroup = "Graphics;Photography;"
                 iconFile.set(icons.file("phovo.png"))
             }
             appResourcesRootDir =
