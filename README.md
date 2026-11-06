@@ -58,6 +58,35 @@ archive is cached under `~/.gradle/caches/phovo-ffmpeg`, which survives `clean`,
 work offline. Only the binary for the platform running the build is fetched. The pinned builds, and
 notes on updating them, live in `build-logic`'s `FfmpegDistribution.kt`.
 
+### Windows: x64 only
+Phovo publishes Windows builds for x64 only. Windows on ARM devices run the x64 build through
+Windows' built-in x64 emulation, so there is no separate ARM64 release.
+
+The reason is SQLite. Room uses `BundledSQLiteDriver` from `androidx.sqlite:sqlite-bundled`, and its
+JVM artifact ships a native library for `windows_x64` but none for `windows_arm64` (checked on 2.6.2
+and 2.7.0). A native ARM64 build compiles and launches, but every database call then fails with
+`Cannot find a suitable SQLite binary for windows 11 | aarch64`.
+
+#### Building the x64 release on a Windows on ARM machine
+The packaged app bundles the JVM that runs Gradle, and the Skiko and FFmpeg binaries are picked by
+that JVM's architecture. To get an x64 app on an ARM machine, Gradle has to run on an x64 JVM:
+
+1. Set `JAVA_HOME` to an **x64 JetBrains Runtime 17**. `gradle/gradle-daemon-jvm.properties`
+   requires a JetBrains 17 daemon, so with any other JDK Gradle falls back to an ARM64 JetBrains
+   Runtime and the result is ARM64 again.
+2. Stop any running daemons so an ARM64 daemon is not reused.
+3. Force `createRuntimeImage` to run. It does not notice an architecture change when the JDK
+   version is the same, and would otherwise keep a stale ARM64 runtime next to an x64 launcher,
+   which fails to start.
+
+```
+./gradlew --stop
+./gradlew :applicationContainers:desktopApp:createRuntimeImage --rerun :applicationContainers:desktopApp:createDistributable --no-configuration-cache
+```
+
+The same `--rerun` applies when switching back to an ARM64 JVM on the same checkout, or run `clean`
+first.
+
 ## Source Sets
 The Phovo project makes use of custom source sets to maximize code re-usability when certain features
 are supported only by a subset of platforms. To learn more about custom source sets visit:
