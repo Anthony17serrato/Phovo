@@ -57,7 +57,7 @@ ktor = "3.5.1"
 platformtools = "0.7.5"
 room-kmp = "2.8.4"
 serialization-json = "1.11.0"
-sqlite = "2.7.0"
+sqlite = "2.6.2"
 telephoto = "0.19.0"
 # At least 3.6.5. 3.6.4 bound its only receive socket to the host address on macOS, which never
 # receives multicast, so the server answered no queries and phones found it only by catching one of
