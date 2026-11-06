@@ -14,6 +14,7 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.serratocreations.phovo.di.initApplication
 import com.serratocreations.phovo.ui.PhovoApp
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.vectorResource
 import kotlin.system.exitProcess
 import androidx.compose.ui.graphics.ColorFilter
@@ -25,6 +26,8 @@ import androidx.compose.ui.unit.dp
 import io.github.kdroidfilter.platformtools.darkmodedetector.isSystemInDarkMode
 import phovo.core.designsystem.generated.resources.Res
 import phovo.core.designsystem.generated.resources.phovo_icon
+import com.serratocreations.phovo.desktop.resources.Res as DesktopRes
+import com.serratocreations.phovo.desktop.resources.phovo_window_icon
 
 fun main() = application {
     val windowState = rememberWindowState(
@@ -48,6 +51,8 @@ fun main() = application {
     Window(
         onCloseRequest = { isVisible = false },// Keep the process alive
         title = "Phovo",
+        // Title bar and taskbar icon on Windows/Linux; macOS takes the dock icon from the bundle.
+        icon = painterResource(DesktopRes.drawable.phovo_window_icon),
         visible = isVisible,
         state = windowState
     ) {
