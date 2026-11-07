@@ -24,9 +24,12 @@ import org.gradle.kotlin.dsl.register
  */
 fun Project.registerDesktopReleasePackaging() {
     val version = phovoVersion()
-    val platform = hostPlatform()
-    val arch = hostArch()
-    val baseName = "Phovo-${version.name}-$platform-$arch"
+    val osName = System.getProperty("os.name")
+    val cpuArch = System.getProperty("os.arch")
+    // Unknown hosts (a 32-bit JVM, riscv64, FreeBSD, ...) get null here instead of an exception, so
+    // only running the release task fails on them, not configuring the whole build.
+    val platform = hostPlatform(osName)
+    val arch = hostArch(cpuArch)
     // The package tasks name their output after the numeric version, e.g. Phovo-1.0.11.dmg or
     // phovo_1.0.11_amd64.deb. Matching on it skips files left over from earlier versions.
     val packageVersion = version.desktopPackageVersion
@@ -37,13 +40,30 @@ fun Project.registerDesktopReleasePackaging() {
         dependsOn("createDistributable")
         from(layout.buildDirectory.dir("compose/binaries/main/app"))
         compression = Compression.GZIP
-        archiveFileName.set("$baseName.tar.gz")
+        archiveFileName.set("Phovo-${version.name}-${platform ?: osName}-${arch ?: cpuArch}.tar.gz")
         destinationDirectory.set(layout.buildDirectory.dir("compose/binaries/main/tarball"))
     }
 
+    val releaseDescription =
+        "Builds this machine's release formats into build/release as Phovo-<version>-<os>-<arch>.<ext>."
+    if (platform == null || arch == null) {
+        tasks.register("packageReleaseDistributions") {
+            group = "compose desktop"
+            description = releaseDescription
+            doLast {
+                throw GradleException(
+                    "No desktop release format for $osName on $cpuArch. Releases are built on macOS " +
+                        "(arm64, x64), Windows (x64) and Linux (x64, arm64)."
+                )
+            }
+        }
+        return
+    }
+
+    val baseName = "Phovo-${version.name}-$platform-$arch"
     tasks.register<Sync>("packageReleaseDistributions") {
         group = "compose desktop"
-        description = "Builds this machine's release formats into build/release as Phovo-<version>-<os>-<arch>.<ext>."
+        description = releaseDescription
         into(layout.buildDirectory.dir("release"))
         // Two files mapping to the same release name means the match above is wrong: fail loudly.
         duplicatesStrategy = DuplicatesStrategy.FAIL
@@ -67,18 +87,18 @@ fun Project.registerDesktopReleasePackaging() {
     }
 }
 
-private fun hostPlatform(): String {
-    val os = System.getProperty("os.name").lowercase()
+private fun hostPlatform(osName: String): String? {
+    val os = osName.lowercase()
     return when {
         os.contains("mac") -> "macos"
         os.contains("win") -> "windows"
         os.contains("linux") -> "linux"
-        else -> throw GradleException("No desktop release format for OS \"$os\".")
+        else -> null
     }
 }
 
-private fun hostArch(): String = when (val arch = System.getProperty("os.arch").lowercase()) {
+private fun hostArch(cpuArch: String): String? = when (cpuArch.lowercase()) {
     "aarch64", "arm64" -> "arm64"
     "amd64", "x86_64" -> "x64"
-    else -> throw GradleException("No desktop release format for CPU architecture \"$arch\".")
+    else -> null
 }
