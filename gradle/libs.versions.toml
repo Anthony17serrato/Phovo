@@ -57,6 +57,9 @@ ktor = "3.5.1"
 platformtools = "0.7.5"
 room-kmp = "2.8.4"
 serialization-json = "1.11.0"
+# Pinned: 2.7.0's sqlite-bundled-jvm ships no osx_x64 native, so Room fails to open its DB on Intel
+# Macs ("Cannot find a suitable SQLite binary for mac os x | x86_64"). Don't bump until upstream
+# restores osx_x64 (https://issuetracker.google.com/issues/582381746). See #196.
 sqlite = "2.6.2"
 telephoto = "0.19.0"
 # At least 3.6.5. 3.6.4 bound its only receive socket to the host address on macOS, which never
