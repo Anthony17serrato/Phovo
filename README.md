@@ -87,8 +87,9 @@ from its branch name, and the label decides the PR's section:
 | `docs/*` | `documentation` | Documentation |
 | `chore/*` | `chore` | Maintenance (library bumps, CI, build changes) |
 
-Anything else lands under "Other changes". Add `skip-changelog` to keep a PR out of the notes, and add
-`release` to a PR to build a draft release when it merges.
+PRs from `develop`, `main` or `release/*` (promotions and merge-forwards) get `skip-changelog`, since the
+PRs they carry are already listed. Anything else lands under "Other changes". Add `skip-changelog` by hand
+to keep any other PR out of the notes.
 
 ### Patching stable and beta together
 

@@ -11,3 +11,9 @@ documentation:
 
 chore:
   - head-branch: ['^chore/']
+
+# Promotion and merge-forward PRs (develop → main, release/x.y → main,
+# main → release/x.y, release/x.y → develop) only carry PRs that are already
+# in the notes under their own labels.
+skip-changelog:
+  - head-branch: ['^develop$', '^main$', '^release/']
