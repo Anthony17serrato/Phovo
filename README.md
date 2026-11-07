@@ -59,7 +59,7 @@ betas are marked as pre-releases, so the "Latest" badge always points at the new
 | `main` | Stable code. It only changes through PRs from `develop`, `release/*` or `hotfix/*`. | Stable: `v1.0.0`, `v1.0.1`, `v1.1.0` |
 | `develop` | The default branch. Feature and fix branches merge here. | Alphas, and betas before 1.0 |
 | `release/x.y` | A beta line, cut from `develop` when version x.y stops taking new features. Deleted after it ships. | Betas: `v1.1.0-beta.1`, `v1.1.0-beta.2` |
-| `hotfix/x.y.z` | A patch for the current stable version, cut from `main`. | The stable patch, e.g. `v1.0.1` |
+| `hotfix/x.y.z` | A patch for the current stable version, cut from `main`. | None. The patch (e.g. `v1.0.1`) is tagged on `main` after the merge. |
 | `feature/*`, `fix/*`, `docs/*` | Day to day work, merged into `develop` by PR. | None |
 
 Before 1.0 there is nothing older to keep stable, so `develop` carries both the alphas and the betas and
