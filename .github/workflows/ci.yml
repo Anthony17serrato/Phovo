@@ -35,6 +35,9 @@ jobs:
       #  run: ./gradlew kotlinUpgradeYarnLock
       - name: Build Project
         run: ./gradlew build
+      # build-logic is an included build, so the root build doesn't run its tests.
+      - name: Test build logic
+        run: ./gradlew -p build-logic test
 #      - name: Compile Android
 #        run: ./gradlew compileDebugKotlinAndroid
 #      - name: Compile Web
