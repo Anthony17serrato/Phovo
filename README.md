@@ -141,6 +141,16 @@ offered a stable build as an "upgrade". The desktop version is `major.minor.(pat
 stays inside Windows Installer's limit of 65535 for the third field. The scheme allows up to 39 alphas, 29
 betas and 18 release candidates per version, and up to 99 minor and 99 patch versions.
 
+The version lives in [`version.properties`](version.properties) as `versionName`, and the release PR bumps
+it. `build-logic`'s `PhovoVersion.kt` does the calculation and fails the build on a version it can't encode.
+Run `./gradlew -q printVersion` to see what a build will use. App code reads the version from the generated
+`PhovoBuildInfo` object in `core:common`, which the About screen (overflow menu → About) shows.
+
+### Build flavors
+
+Local builds use the flavor in `gradle/flavor.properties`, which stays `dev` and adds the Dev Menu. Release
+builds pass `-Pphovo.flavor=prod`, which overrides the file, so the file never has to change for a release.
+
 # Project Structure
 ## How to build and run
 The project can be assembled in an environment which has been configured for Kotlin Multiplatform development, please follow the official guide:

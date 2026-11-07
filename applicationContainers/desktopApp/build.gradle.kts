@@ -1,3 +1,4 @@
+import com.serratocreations.phovo.buildlogic.phovoVersion
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 plugins {
@@ -31,7 +32,8 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             // The user-facing app name: Phovo.app, the Start menu entry, the Linux launcher.
             packageName = "Phovo"
-            packageVersion = "1.0.0"
+            // Numeric only: calculated from version.properties (1.0.0-alpha.1 → 1.0.11).
+            packageVersion = phovoVersion().desktopPackageVersion
 
             val icons = layout.projectDirectory.dir("icons")
             macOS {
