@@ -29,30 +29,38 @@ private const val REQUIRE_RELEASE_SIGNING = "phovo.requireReleaseSigning"
  * signing" in the README.
  */
 internal fun ApplicationExtension.configureReleaseSigning(project: Project) {
-    val values = SigningValue.entries.associateWith { value ->
+    val missing = mutableListOf<SigningValue>()
+    fun read(value: SigningValue): String? =
         // A blank property (say `phovo.signing.keyPassword=` left in gradle.properties) counts as
         // unset, so the environment variable still gets a chance.
         project.providers.gradleProperty(value.property).filter { it.isNotBlank() }
             .orElse(project.providers.environmentVariable(value.environmentVariable).filter { it.isNotBlank() })
             .orNull
-    }
-    val required = project.providers.gradleProperty(REQUIRE_RELEASE_SIGNING).orNull.toBoolean()
-    val missing = values.filterValues { it == null }.keys
+            .also { if (it == null) missing += value }
 
-    val releaseSigning = if (missing.isEmpty()) {
+    val storeFilePath = read(SigningValue.StoreFile)
+    val storePassword = read(SigningValue.StorePassword)
+    val keyAlias = read(SigningValue.KeyAlias)
+    val keyPassword = read(SigningValue.KeyPassword)
+    val required = project.providers.gradleProperty(REQUIRE_RELEASE_SIGNING).orNull.toBoolean()
+    val missingNames = missing.joinToString { "${it.property} (or ${it.environmentVariable})" }
+
+    val releaseSigning = if (
+        storeFilePath != null && storePassword != null && keyAlias != null && keyPassword != null
+    ) {
         signingConfigs.create("release") {
             // Relative paths resolve against the repository root, not the app module. A missing
             // file is left to AGP's validateSigningRelease task, which only runs when a release is
             // packaged, so a stale path doesn't break builds that never sign anything.
-            storeFile = project.rootProject.file(values.getValue(SigningValue.StoreFile)!!)
-            storePassword = values.getValue(SigningValue.StorePassword)
-            keyAlias = values.getValue(SigningValue.KeyAlias)
-            keyPassword = values.getValue(SigningValue.KeyPassword)
+            storeFile = project.rootProject.file(storeFilePath)
+            this.storePassword = storePassword
+            this.keyAlias = keyAlias
+            this.keyPassword = keyPassword
         }
     } else if (required) {
         throw GradleException(
             "$REQUIRE_RELEASE_SIGNING is set but the Android release key isn't fully configured. " +
-                "Missing: " + missing.joinToString { "${it.property} (or ${it.environmentVariable})" } + "."
+                "Missing: $missingNames."
         )
     } else {
         // Some but not all values set is almost always a mistake, so say so instead of quietly
@@ -60,7 +68,7 @@ internal fun ApplicationExtension.configureReleaseSigning(project: Project) {
         if (missing.size < SigningValue.entries.size) {
             project.logger.warn(
                 "Android release key is only partly configured, so release builds use the debug key. " +
-                    "Missing: " + missing.joinToString { "${it.property} (or ${it.environmentVariable})" } + "."
+                    "Missing: $missingNames."
             )
         }
         null
