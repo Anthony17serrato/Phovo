@@ -20,6 +20,39 @@ import org.gradle.api.GradleException
  * - Stable versions come from `main`; alphas, betas and release candidates from `develop` or a
  *   `release/x.y` beta line. See "Branching and Releases" in the README.
  */
+fun releaseVersionProblems(
+    version: PhovoVersion,
+    branch: String,
+    existingTags: Collection<String>,
+): List<String> = buildList {
+    val tag = "v${version.name}"
+    if (tag in existingTags) add("The tag $tag already exists. Bump versionName in version.properties.")
+
+    val released = existingTags.filter { it != tag }.mapNotNull(::parseTagOrNull)
+    val installedOver = if (version.isPrerelease) {
+        released.filter { it.major == version.major && it.minor == version.minor }
+    } else {
+        released.filter { !it.isPrerelease }
+    }
+    val newer = installedOver.filter { it.versionCode >= version.versionCode }.sortedBy { it.versionCode }
+    if (newer.isNotEmpty()) {
+        add(
+            "$tag isn't newer than " + newer.joinToString { "v${it.name}" } +
+                ". Installs of those builds would refuse it as a downgrade."
+        )
+    }
+
+    when {
+        branch == "main" -> if (version.isPrerelease) {
+            add("$tag is a pre-release. main only publishes stable versions; release it from develop or release/*.")
+        }
+        branch == "develop" || branch.startsWith("release/") -> if (!version.isPrerelease) {
+            add("$tag is a stable version. Stable releases are published from main.")
+        }
+        else -> add("Releases are published from main, develop or release/*, not $branch.")
+    }
+}
+
 /**
  * The tag the release notes for [version] should start from: the previous release on the same line,
  * picked from [ancestorTags], the `v*` tags reachable from the commit being released. Null when
@@ -51,38 +84,5 @@ private fun parseTagOrNull(tag: String): PhovoVersion? {
         PhovoVersion.parse(tag.removePrefix("v"))
     } catch (_: GradleException) {
         null
-    }
-}
-
-fun releaseVersionProblems(
-    version: PhovoVersion,
-    branch: String,
-    existingTags: Collection<String>,
-): List<String> = buildList {
-    val tag = "v${version.name}"
-    if (tag in existingTags) add("The tag $tag already exists. Bump versionName in version.properties.")
-
-    val released = existingTags.filter { it != tag }.mapNotNull(::parseTagOrNull)
-    val installedOver = if (version.isPrerelease) {
-        released.filter { it.major == version.major && it.minor == version.minor }
-    } else {
-        released.filter { !it.isPrerelease }
-    }
-    val newer = installedOver.filter { it.versionCode >= version.versionCode }.sortedBy { it.versionCode }
-    if (newer.isNotEmpty()) {
-        add(
-            "$tag isn't newer than " + newer.joinToString { "v${it.name}" } +
-                ". Installs of those builds would refuse it as a downgrade."
-        )
-    }
-
-    when {
-        branch == "main" -> if (version.isPrerelease) {
-            add("$tag is a pre-release. main only publishes stable versions; release it from develop or release/*.")
-        }
-        branch == "develop" || branch.startsWith("release/") -> if (!version.isPrerelease) {
-            add("$tag is a stable version. Stable releases are published from main.")
-        }
-        else -> add("Releases are published from main, develop or release/*, not $branch.")
     }
 }
