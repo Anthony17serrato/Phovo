@@ -97,7 +97,7 @@ fun PhovoTopAppBar(
                                     },
                                     leadingIcon = {
                                         Icon(
-                                            painter = painterResource(Res.drawable.ic_edit_outlined),
+                                            painter = painterResource(menuOption.icon),
                                             contentDescription = null
                                         )
                                     },

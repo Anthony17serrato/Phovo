@@ -5,7 +5,6 @@ import org.gradle.api.Project
 import org.gradle.kotlin.dsl.configure
 import org.jetbrains.compose.ComposeExtension
 import org.jetbrains.compose.desktop.DesktopExtension
-import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 class KmpDesktopApplicationConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
@@ -21,12 +20,7 @@ class KmpDesktopApplicationConventionPlugin : Plugin<Project> {
                 configure<DesktopExtension> {
                     application {
                         mainClass = "com.serratocreations.phovo.MainKt"
-
-                        nativeDistributions {
-                            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-                            packageName = "com.serratocreations.phovo"
-                            packageVersion = "1.0.0"
-                        }
+                        // Packaging (formats, names, version) lives in desktopApp/build.gradle.kts.
                     }
                 }
             }

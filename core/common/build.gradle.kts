@@ -1,8 +1,13 @@
+import com.serratocreations.phovo.buildlogic.generatePhovoBuildInfo
+
 plugins {
     alias(libs.plugins.phovo.kmp.android.ios.desktop.library)
     alias(libs.plugins.phovo.kmp.library.koin)
     alias(libs.plugins.phovo.kmp.library.compose)
 }
+
+// PhovoBuildInfo: the app version and build flavor, readable from common code.
+generatePhovoBuildInfo(packageName = "com.serratocreations.phovo.core.common")
 
 kotlin {
     android {

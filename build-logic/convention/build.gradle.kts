@@ -45,6 +45,7 @@ dependencies {
     // Needed at execution time by ProvisionFfmpegTask, so these cannot be compileOnly.
     implementation(libs.commons.compress)
     runtimeOnly(libs.tukaani.xz)
+    testImplementation(libs.kotlin.test.junit)
     //implementation(libs.truth)
 }
 

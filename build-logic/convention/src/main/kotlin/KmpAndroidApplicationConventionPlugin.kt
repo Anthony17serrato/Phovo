@@ -1,5 +1,6 @@
 import com.android.build.api.dsl.ApplicationExtension
 import com.serratocreations.phovo.buildlogic.configureAndroidApplication
+import com.serratocreations.phovo.buildlogic.phovoVersion
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.configure
@@ -17,8 +18,9 @@ class KmpAndroidApplicationConventionPlugin : Plugin<Project> {
                 defaultConfig {
                     targetSdk = 37
                     applicationId = "com.serratocreations.phovo"
-                    versionCode = 1
-                    versionName = "1.0"
+                    val version = phovoVersion()
+                    versionCode = version.versionCode
+                    versionName = version.name
                 }
                 packaging {
                     resources {

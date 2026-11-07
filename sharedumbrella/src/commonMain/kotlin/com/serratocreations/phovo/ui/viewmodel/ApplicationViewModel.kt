@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.serratocreations.phovo.core.model.network.ServerConnectionState
 import com.serratocreations.phovo.data.photos.repository.MediaRepository
 import com.serratocreations.phovo.data.photos.repository.RemoteMediaRepository
+import com.serratocreations.phovo.navigation.AboutNavKey
 import com.serratocreations.phovo.ui.model.OverflowMenuOption
 import com.serratocreations.phovo.util.getFlavorOptions
 import kotlinx.coroutines.CoroutineScope
@@ -13,6 +14,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
+import phovo.core.designsystem.generated.resources.ic_info_outlined
+import phovo.sharedumbrella.generated.resources.Res
+import phovo.sharedumbrella.generated.resources.about_menu_option
+import phovo.core.designsystem.generated.resources.Res as DesignSystemRes
 
 class ApplicationViewModel(
     private val mediaRepository: MediaRepository
@@ -51,7 +56,14 @@ class ApplicationViewModel(
     private fun getOverflowMenuOptions(): Set<OverflowMenuOption> {
         val optionsSet = mutableSetOf<OverflowMenuOption>()
         optionsSet.addAll(getFlavorOptions())
-        // Add common options here
+        // Common options come last, so About sits at the bottom of the menu.
+        optionsSet.add(
+            OverflowMenuOption(
+                title = Res.string.about_menu_option,
+                icon = DesignSystemRes.drawable.ic_info_outlined,
+                route = AboutNavKey
+            )
+        )
         return optionsSet.toSet()
     }
 }

@@ -63,6 +63,7 @@ import com.serratocreations.phovo.feature.photos.extensions.showAppBar
 import com.serratocreations.phovo.feature.photos.navigation.photosEntries
 import com.serratocreations.phovo.navigation.PhovoNavSavedStateConfiguration
 import com.serratocreations.phovo.navigation.TOP_LEVEL_NAV_ITEMS
+import com.serratocreations.phovo.navigation.aboutEntries
 import com.serratocreations.phovo.navigation.flavorEntries
 import com.serratocreations.phovo.navigation.searchEntries
 import com.serratocreations.phovo.ui.components.PhovoBottomToolBar
@@ -246,6 +247,10 @@ internal fun InternalPhovoApp(
                                 scaffoldPadding = padding
                             )
                             connectionsEntries(
+                                navigationViewModel = navigationViewModel,
+                                scaffoldPadding = padding
+                            )
+                            aboutEntries(
                                 navigationViewModel = navigationViewModel,
                                 scaffoldPadding = padding
                             )

@@ -5,4 +5,9 @@
     <string name="feature_settings_top_app_bar_action_icon_description">Settings</string>
     <string name="search_top_app_bar_description">Search</string>
     <string name="dev_menu_option">Dev Menu</string>
+    <string name="about_menu_option">About</string>
+    <string name="about_title">About</string>
+    <string name="about_version">Version %1$s</string>
+    <string name="about_build">Build %1$s</string>
+    <string name="about_prerelease_notice">This is a pre-release build. Expect bugs, and include the version above when you report one.</string>
 </resources>
