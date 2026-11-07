@@ -1,0 +1,277 @@
+name: Release
+
+# Builds every release file and creates a draft GitHub release for the version in
+# version.properties. See "Releasing" in the README.
+#
+# - Merging a PR labeled `release` into main, develop or release/** publishes a draft.
+# - "Run workflow" (workflow_dispatch) either builds everything without creating a release
+#   (test-only, the default), or creates a draft from the chosen branch (draft).
+on:
+  pull_request:
+    types: [closed]
+    branches: [main, develop, 'release/**']
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "test-only builds every file without creating a release. draft also creates a draft release."
+        type: choice
+        options: [test-only, draft]
+        default: test-only
+
+# One release at a time; a second one waits instead of racing the first for the same tag. Every
+# closed PR starts this workflow, but only real release runs join the shared group: GitHub keeps one
+# pending run per group, so an unlabeled merge would otherwise replace a release waiting its turn.
+concurrency:
+  group: >-
+    ${{
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event.pull_request.merged == true &&
+        contains(github.event.pull_request.labels.*.name, 'release')))
+      && 'release' || format('release-skip-{0}', github.run_id)
+    }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    # Git Bash on Windows, so every step runs the same shell script.
+    shell: bash
+
+env:
+  JAVA_VERSION: "17"
+  # Release builds always use the prod flavor; gradle/flavor.properties stays dev for local work.
+  GRADLE_FLAVOR: -Pphovo.flavor=prod
+
+jobs:
+  prepare:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true &&
+       contains(github.event.pull_request.labels.*.name, 'release'))
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.versionName }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
+      notes-start-tag: ${{ steps.notes.outputs.notesStartTag }}
+      sha: ${{ steps.target.outputs.sha }}
+      publish: ${{ steps.target.outputs.publish }}
+    steps:
+      - name: Work out what to build
+        id: target
+        env:
+          EVENT: ${{ github.event_name }}
+          MODE: ${{ inputs.mode }}
+          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          if [[ "$EVENT" == "pull_request" ]]; then
+            echo "sha=$MERGE_SHA" >> "$GITHUB_OUTPUT"
+            echo "branch=$BASE_REF" >> "$GITHUB_OUTPUT"
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "sha=$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+            echo "branch=$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
+            echo "publish=$([[ "$MODE" == "draft" ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ steps.target.outputs.sha }}
+          # Tags, for the "newer than every release" check.
+          fetch-depth: 0
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Read the version
+        id: version
+        run: |
+          # Keep only the key=value lines, in case Gradle prints anything else.
+          ./gradlew -q printVersion $GRADLE_FLAVOR | grep -E '^[A-Za-z]+=' > "$RUNNER_TEMP/version.txt"
+          cat "$RUNNER_TEMP/version.txt"
+          grep -qx "flavor=prod" "$RUNNER_TEMP/version.txt" || { echo "::error::Release builds must use the prod flavor."; exit 1; }
+          cat "$RUNNER_TEMP/version.txt" >> "$GITHUB_OUTPUT"
+
+      - name: Check the version can be released from ${{ steps.target.outputs.branch }}
+        # A test-only run still reports problems, but builds anyway.
+        continue-on-error: ${{ steps.target.outputs.publish != 'true' }}
+        env:
+          BRANCH: ${{ steps.target.outputs.branch }}
+        run: ./gradlew -q checkReleaseVersion "-Pphovo.releaseBranch=$BRANCH"
+
+      # GitHub would otherwise start the notes at the latest release, which can be on another line.
+      - name: Find where the release notes start
+        id: notes
+        run: ./gradlew -q printReleaseNotesStartTag | grep -E '^notesStartTag=' | tee -a "$GITHUB_OUTPUT"
+
+  build-desktop:
+    needs: prepare
+    strategy:
+      # Let every platform finish, so one failure shows the state of all of them.
+      fail-fast: false
+      matrix:
+        include:
+          - { runner: macos-15, platform: macos-arm64 }
+          - { runner: macos-15-intel, platform: macos-x64 }
+          - { runner: windows-latest, platform: windows-x64 }
+          - { runner: ubuntu-latest, platform: linux-x64 }
+          - { runner: ubuntu-24.04-arm, platform: linux-arm64 }
+    name: build-desktop (${{ matrix.platform }})
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+      # Gradle configures the Android modules even for desktop tasks, so it needs an SDK. The
+      # x64 images ship one; the arm64 image may not.
+      - name: Set up the Android SDK
+        if: matrix.platform == 'linux-arm64'
+        uses: android-actions/setup-android@v4
+      # jpackage needs rpmbuild for the RPM.
+      - name: Install rpm
+        if: matrix.platform == 'linux-x64'
+        run: sudo apt-get update && sudo apt-get install -y rpm
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Package ${{ matrix.platform }}
+        run: ./gradlew :applicationContainers:desktopApp:packageReleaseDistributions $GRADLE_FLAVOR
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release-${{ matrix.platform }}
+          path: applicationContainers/desktopApp/build/release/*
+          if-no-files-found: error
+
+  build-android:
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Decode the release keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [[ -z "$KEYSTORE_BASE64" ]]; then
+            echo "::error::The ANDROID_KEYSTORE_BASE64 secret isn't set."
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.jks"
+
+      - name: Build the signed release APK
+        env:
+          PHOVO_SIGNING_STORE_FILE: ${{ runner.temp }}/release.jks
+          PHOVO_SIGNING_STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          PHOVO_SIGNING_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          PHOVO_SIGNING_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew :applicationContainers:androidApp:assembleRelease $GRADLE_FLAVOR -Pphovo.requireReleaseSigning=true
+
+      - name: Remove the keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/release.jks"
+
+      # Guards against a wrong key in the secrets: testers couldn't update over a build signed
+      # with a different one. The expected fingerprint is a repository variable (it's public).
+      - name: Check the signing certificate
+        env:
+          EXPECTED: ${{ vars.ANDROID_SIGNING_CERT_SHA256 }}
+        run: |
+          if [[ -z "$EXPECTED" ]]; then
+            echo "::error::Set the ANDROID_SIGNING_CERT_SHA256 repository variable to the release key's SHA-256 fingerprint."
+            exit 1
+          fi
+          apksigner="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner"
+          apk=applicationContainers/androidApp/build/outputs/apk/release/androidApp-release.apk
+          actual=$("$apksigner" verify --print-certs "$apk" | grep -m1 "certificate SHA-256 digest" | awk '{print $NF}')
+          # keytool prints "SHA256: 4A:9F:..."; apksigner prints "4a9f...". Compare without either style.
+          normalize() { echo "$1" | sed 's/^SHA-\{0,1\}256: *//I' | tr -d ': ' | tr '[:upper:]' '[:lower:]'; }
+          if [[ "$(normalize "$actual")" != "$(normalize "$EXPECTED")" ]]; then
+            echo "::error::The APK is signed with $actual, not the release key ($EXPECTED)."
+            exit 1
+          fi
+          echo "Signed with the release key ($actual)."
+
+      - name: Name the APK
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          mkdir -p dist
+          cp applicationContainers/androidApp/build/outputs/apk/release/androidApp-release.apk "dist/Phovo-$VERSION-android.apk"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release-android
+          path: dist/*
+          if-no-files-found: error
+
+  publish:
+    needs: [prepare, build-desktop, build-android]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: release-*
+          path: dist
+          merge-multiple: true
+
+      - name: Write checksums
+        working-directory: dist
+        run: |
+          sha256sum * > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: List the files
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          {
+            echo "### Phovo $VERSION"
+            echo
+            echo '| File | Size |'
+            echo '|---|---|'
+            for f in dist/*; do echo "| $(basename "$f") | $(du -h "$f" | cut -f1) |"; done
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Create the draft release
+        if: needs.prepare.outputs.publish == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+          PRERELEASE: ${{ needs.prepare.outputs.prerelease }}
+          SHA: ${{ needs.prepare.outputs.sha }}
+          NOTES_START_TAG: ${{ needs.prepare.outputs.notes-start-tag }}
+        run: |
+          tag="v$VERSION"
+          # Drafts have no tag yet, so the version check can't see them. Don't make a second one.
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "::error::A release or draft for $tag already exists. Delete the draft, or bump versionName."
+            exit 1
+          fi
+          flags=()
+          [[ "$PRERELEASE" == "true" ]] && flags+=(--prerelease)
+          # Empty for the first release, where GitHub's default (everything so far) is right.
+          [[ -n "$NOTES_START_TAG" ]] && flags+=(--notes-start-tag "$NOTES_START_TAG")
+          gh release create "$tag" dist/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --draft "${flags[@]}" \
+            --target "$SHA" \
+            --title "Phovo $VERSION" \
+            --generate-notes
+          echo "Draft created: $(gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json url -q .url)" >> "$GITHUB_STEP_SUMMARY"
