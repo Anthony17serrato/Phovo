@@ -39,6 +39,9 @@ fun Project.registerDesktopReleasePackaging() {
         description = "Packages the app folder from createDistributable as a portable .tar.gz."
         dependsOn("createDistributable")
         from(layout.buildDirectory.dir("compose/binaries/main/app"))
+        // Gradle 9 archives store every file as 0644 by default (reproducible builds), which leaves
+        // bin/Phovo and the bundled JVM's executables unrunnable once unpacked. Keep their real modes.
+        useFileSystemPermissions()
         compression = Compression.GZIP
         archiveFileName.set("Phovo-${version.name}-${platform ?: osName}-${arch ?: cpuArch}.tar.gz")
         destinationDirectory.set(layout.buildDirectory.dir("compose/binaries/main/tarball"))
@@ -61,6 +64,18 @@ fun Project.registerDesktopReleasePackaging() {
     }
 
     val baseName = "Phovo-${version.name}-$platform-$arch"
+    // The DEB as jpackage builds it only installs on Debian 13 / Ubuntu 24.04+; see WidenDebDependenciesTask.
+    val widenDeb = if (platform == "linux") {
+        tasks.register<WidenDebDependenciesTask>("widenDebDependencies") {
+            group = "compose desktop"
+            description = "Rewrites the DEB so its t64 dependencies also accept their pre-t64 names."
+            debDirectory.set(tasks.named("packageDeb").map { layout.buildDirectory.dir("compose/binaries/main/deb").get() })
+            this.packageVersion.set(version.desktopPackageVersion)
+            outputDirectory.set(layout.buildDirectory.dir("compose/binaries/main/deb-widened"))
+        }
+    } else {
+        null
+    }
     tasks.register<Sync>("packageReleaseDistributions") {
         group = "compose desktop"
         description = releaseDescription
@@ -68,19 +83,19 @@ fun Project.registerDesktopReleasePackaging() {
         // Two files mapping to the same release name means the match above is wrong: fail loudly.
         duplicatesStrategy = DuplicatesStrategy.FAIL
 
-        fun collect(taskName: String, extension: String) {
-            from(tasks.named(taskName)) {
+        fun collect(source: Any, extension: String) {
+            from(source) {
                 include("*$packageVersion*.$extension")
                 rename { "$baseName.$extension" }
             }
         }
         when (platform) {
-            "macos" -> collect("packageDmg", "dmg")
-            "windows" -> collect("packageMsi", "msi")
+            "macos" -> collect(tasks.named("packageDmg"), "dmg")
+            "windows" -> collect(tasks.named("packageMsi"), "msi")
             "linux" -> {
-                collect("packageDeb", "deb")
+                collect(widenDeb ?: tasks.named("packageDeb"), "deb")
                 // RPM distros on ARM are rare, so arm64 ships DEB and the tarball only.
-                if (arch == "x64") collect("packageRpm", "rpm")
+                if (arch == "x64") collect(tasks.named("packageRpm"), "rpm")
                 from(tarball)
             }
         }
