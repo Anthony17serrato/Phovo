@@ -18,9 +18,17 @@ on:
         options: [test-only, draft]
         default: test-only
 
-# One release at a time; a second one waits instead of racing the first for the same tag.
+# One release at a time; a second one waits instead of racing the first for the same tag. Every
+# closed PR starts this workflow, but only real release runs join the shared group: GitHub keeps one
+# pending run per group, so an unlabeled merge would otherwise replace a release waiting its turn.
 concurrency:
-  group: release
+  group: >-
+    ${{
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event.pull_request.merged == true &&
+        contains(github.event.pull_request.labels.*.name, 'release')))
+      && 'release' || format('release-skip-{0}', github.run_id)
+    }}
   cancel-in-progress: false
 
 permissions:

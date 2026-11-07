@@ -125,8 +125,11 @@ release. Nothing is public until the draft is published by hand.
 1. Open a PR into the branch the release comes from (`develop` for alphas and betas before 1.0,
    `release/x.y` for later betas, `main` for stable) that bumps `versionName` in `version.properties`.
 2. Add the `release` label and merge it.
-3. The workflow checks the version first. It stops if the tag already exists, if the version isn't newer
-   than every earlier release, or if the version's stage doesn't fit the branch (stable only from `main`).
+3. The workflow checks the version first. It stops if the tag already exists, if the version's stage
+   doesn't fit the branch (stable only from `main`), or if the version isn't newer than a release it could
+   be installed over. A stable version is compared with earlier stable releases, so a `1.0.1` hotfix can
+   still ship after `1.1.0-beta.1`. A pre-release is compared with every release on its own `major.minor`
+   line.
 4. Five runners build the desktop files (macOS arm64 and x64, Windows x64, Linux x64 and arm64) and one
    builds the signed APK. A last job adds `SHA256SUMS` and creates the draft, tagged on the merged commit,
    with notes generated from the PRs since the previous tag.

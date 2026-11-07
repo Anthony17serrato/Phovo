@@ -8,9 +8,15 @@ import org.gradle.api.GradleException
  * building anything.
  *
  * - The tag `v<version>` must not exist yet.
- * - The version must be newer than every existing release, compared by versionCode. Android and
- *   Windows Installer refuse to install a lower number over a higher one, so publishing an older
- *   version would strand everyone who installed the newer one.
+ * - The version must be newer, by versionCode, than every release it could be installed over.
+ *   Android and Windows Installer refuse a lower number over a higher one. Which releases count
+ *   depends on the version:
+ *   - A stable version is compared with the earlier stable releases. Stable users only have those.
+ *     A newer beta or alpha line doesn't count: its testers are never offered the stable patch,
+ *     because it sorts lower, so a 1.0.1 hotfix can ship after 1.1.0-beta.1.
+ *   - A pre-release is compared with every release on its own major.minor line, so 1.1.0-beta.3
+ *     must follow 1.1.0-beta.2 and can't come after 1.1.0. Other lines don't count, so release/1.1
+ *     can keep shipping betas after develop tags 1.2.0-alpha.1.
  * - Stable versions come from `main`; alphas, betas and release candidates from `develop` or a
  *   `release/x.y` beta line. See "Branching and Releases" in the README.
  */
@@ -22,7 +28,7 @@ fun releaseVersionProblems(
     val tag = "v${version.name}"
     if (tag in existingTags) add("The tag $tag already exists. Bump versionName in version.properties.")
 
-    val newer = existingTags
+    val released = existingTags
         .filter { it.startsWith("v") && it != tag }
         // Tags outside the scheme can't be compared, so they don't block a release.
         .mapNotNull { existing ->
@@ -32,11 +38,15 @@ fun releaseVersionProblems(
                 null
             }
         }
-        .filter { it.versionCode >= version.versionCode }
-        .sortedBy { it.versionCode }
+    val installedOver = if (version.isPrerelease) {
+        released.filter { it.major == version.major && it.minor == version.minor }
+    } else {
+        released.filter { !it.isPrerelease }
+    }
+    val newer = installedOver.filter { it.versionCode >= version.versionCode }.sortedBy { it.versionCode }
     if (newer.isNotEmpty()) {
         add(
-            "$tag isn't newer than the existing release(s) " + newer.joinToString { "v${it.name}" } +
+            "$tag isn't newer than " + newer.joinToString { "v${it.name}" } +
                 ". Installs of those builds would refuse it as a downgrade."
         )
     }

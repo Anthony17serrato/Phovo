@@ -30,18 +30,35 @@ class ReleaseVersionCheckTest {
     }
 
     @Test
-    fun `older version than an existing release is rejected`() {
-        // A stable patch released after a newer beta line is fine; going below an existing one isn't.
+    fun `older pre-release on the same line is rejected`() {
         val result = problems("1.0.0-alpha.2", "develop", listOf("v1.0.0-alpha.3"))
-        assertTrue(result.single().contains("isn't newer"), result.toString())
-        assertTrue(result.single().contains("v1.0.0-alpha.3"))
+        assertTrue(result.single().contains("isn't newer than v1.0.0-alpha.3"), result.toString())
     }
 
     @Test
-    fun `stable patch below a newer beta line is rejected`() {
-        // 1.0.1 sorts below 1.1.0-beta.1, so it can only ship while no newer line has been released.
-        val result = problems("1.0.1", "main", listOf("v1.0.0", "v1.1.0-beta.1"))
-        assertTrue(result.single().contains("v1.1.0-beta.1"), result.toString())
+    fun `pre-release after its own stable release is rejected`() {
+        val result = problems("1.1.0-beta.4", "release/1.1", listOf("v1.1.0-beta.3", "v1.1.0"))
+        assertTrue(result.single().contains("v1.1.0"), result.toString())
+    }
+
+    @Test
+    fun `stable hotfix ships after a newer beta or alpha line`() {
+        // The README's patching flow: 1.0.1 from main while release/1.1 and develop have tagged
+        // newer pre-releases. Their testers aren't offered 1.0.1, since it sorts lower.
+        val tags = listOf("v1.0.0", "v1.1.0-beta.1", "v1.1.0-beta.2", "v1.2.0-alpha.1")
+        assertEquals(emptyList(), problems("1.0.1", "main", tags))
+    }
+
+    @Test
+    fun `beta line keeps shipping after develop tags the next alpha`() {
+        val tags = listOf("v1.0.0", "v1.1.0-beta.2", "v1.2.0-alpha.1")
+        assertEquals(emptyList(), problems("1.1.0-beta.3", "release/1.1", tags))
+    }
+
+    @Test
+    fun `stable version older than an earlier stable release is rejected`() {
+        assertTrue(problems("1.0.1", "main", listOf("v1.0.0", "v1.1.0")).single().contains("v1.1.0"))
+        assertTrue(problems("1.0.0", "main", listOf("v1.0.0-alpha.1", "v1.0.1")).single().contains("v1.0.1"))
     }
 
     @Test
