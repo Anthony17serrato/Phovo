@@ -172,7 +172,14 @@ internal fun InternalPhovoApp(
         },
         shouldShowNavBarOnCompactScreens = navigationState.currentKey.isTopLevel()
     ) {
-        val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+        val collapseOnScroll = appBarState.collapseTopAppBarOnScroll
+        val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(
+            canScroll = { collapseOnScroll }
+        )
+        // A screen that pins the bar should never open with it half hidden by the previous screen.
+        LaunchedEffect(collapseOnScroll) {
+            if (!collapseOnScroll) scrollBehavior.state.heightOffset = 0f
+        }
         Scaffold(
             topBar = {
                 PhovoTopAppBar(
