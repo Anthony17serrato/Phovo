@@ -54,6 +54,7 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.versionName }}
       prerelease: ${{ steps.version.outputs.prerelease }}
+      notes-start-tag: ${{ steps.notes.outputs.notesStartTag }}
       sha: ${{ steps.target.outputs.sha }}
       publish: ${{ steps.target.outputs.publish }}
     steps:
@@ -101,6 +102,11 @@ jobs:
         env:
           BRANCH: ${{ steps.target.outputs.branch }}
         run: ./gradlew -q checkReleaseVersion "-Pphovo.releaseBranch=$BRANCH"
+
+      # GitHub would otherwise start the notes at the latest release, which can be on another line.
+      - name: Find where the release notes start
+        id: notes
+        run: ./gradlew -q printReleaseNotesStartTag | grep -E '^notesStartTag=' | tee -a "$GITHUB_OUTPUT"
 
   build-desktop:
     needs: prepare
@@ -250,6 +256,7 @@ jobs:
           VERSION: ${{ needs.prepare.outputs.version }}
           PRERELEASE: ${{ needs.prepare.outputs.prerelease }}
           SHA: ${{ needs.prepare.outputs.sha }}
+          NOTES_START_TAG: ${{ needs.prepare.outputs.notes-start-tag }}
         run: |
           tag="v$VERSION"
           # Drafts have no tag yet, so the version check can't see them. Don't make a second one.
@@ -259,6 +266,8 @@ jobs:
           fi
           flags=()
           [[ "$PRERELEASE" == "true" ]] && flags+=(--prerelease)
+          # Empty for the first release, where GitHub's default (everything so far) is right.
+          [[ -n "$NOTES_START_TAG" ]] && flags+=(--notes-start-tag "$NOTES_START_TAG")
           gh release create "$tag" dist/* \
             --repo "$GITHUB_REPOSITORY" \
             --draft "${flags[@]}" \

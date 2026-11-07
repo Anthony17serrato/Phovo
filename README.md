@@ -103,7 +103,8 @@ develop     ──●──────●────────────�
 
 ### Release notes
 
-GitHub writes each release's notes from the PRs merged since the previous tag. A workflow labels every PR
+GitHub writes each release's notes from the PRs merged since the previous release on the same line (see
+"Releasing" below). A workflow labels every PR
 from its branch name, and the label decides the PR's section:
 
 | Branch | Label | Section |
@@ -132,7 +133,8 @@ release. Nothing is public until the draft is published by hand.
    line.
 4. Five runners build the desktop files (macOS arm64 and x64, Windows x64, Linux x64 and arm64) and one
    builds the signed APK. A last job adds `SHA256SUMS` and creates the draft, tagged on the merged commit,
-   with notes generated from the PRs since the previous tag.
+   with notes generated from the PRs since the previous release on the same line: the previous stable
+   release for a stable version, or the previous release on its `major.minor` line for a pre-release.
 5. Download and try the files, edit the notes, then click **Publish release**. The tag is created at this
    point.
 

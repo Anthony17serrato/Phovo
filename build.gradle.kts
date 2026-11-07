@@ -1,5 +1,6 @@
 import com.serratocreations.phovo.buildlogic.getBuildFlavor
 import com.serratocreations.phovo.buildlogic.phovoVersion
+import com.serratocreations.phovo.buildlogic.releaseNotesStartTag
 import com.serratocreations.phovo.buildlogic.releaseVersionProblems
 
 plugins {
@@ -40,8 +41,8 @@ tasks.register("printVersion") {
 }
 
 // Fails when version.properties can't be released from -Pphovo.releaseBranch: the tag exists, the
-// version isn't newer than every v* tag, or its stage doesn't fit the branch. The release workflow
-// runs it before building anything. See ReleaseVersionCheck.kt.
+// version isn't newer than a release it could be installed over, or its stage doesn't fit the
+// branch. The release workflow runs it before building anything. See ReleaseVersionCheck.kt.
 tasks.register("checkReleaseVersion") {
     val version = phovoVersion()
     val branch = providers.gradleProperty("phovo.releaseBranch")
@@ -55,5 +56,17 @@ tasks.register("checkReleaseVersion") {
             throw GradleException("v${version.name} can't be released from $releaseBranch:\n- " + problems.joinToString("\n- "))
         }
         println("v${version.name} can be released from $releaseBranch.")
+    }
+}
+
+// Prints notesStartTag=<tag>: the previous release on this version's line among the tags reachable
+// from HEAD (empty for the first release). The release workflow passes it to --notes-start-tag, so
+// generated notes don't start from another line's release. See releaseNotesStartTag().
+tasks.register("printReleaseNotesStartTag") {
+    val version = phovoVersion()
+    val ancestorTags = providers.exec { commandLine("git", "tag", "--merged", "HEAD", "--list", "v*") }
+        .standardOutput.asText.map { it.lines().map(String::trim).filter(String::isNotEmpty) }
+    doLast {
+        println("notesStartTag=${releaseNotesStartTag(version, ancestorTags.get()).orEmpty()}")
     }
 }
