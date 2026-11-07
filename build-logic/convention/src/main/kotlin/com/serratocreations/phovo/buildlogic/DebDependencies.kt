@@ -23,14 +23,15 @@ import javax.inject.Inject
  * Ubuntu 24.04+ have, so Debian 12, Raspberry Pi OS Bookworm, Ubuntu 22.04 and Mint 21 refuse the
  * package even though the libraries are installed. The `|` alternative accepts either name.
  *
- * [depends] is the value of a control file's `Depends:` field. Entries keep any version constraint,
- * and entries that already list alternatives are left as they are.
+ * [depends] is the value of a control file's `Depends:` field. Entries that already list alternatives
+ * are left as they are. A version constraint stays on the t64 name only: a minimum version there comes
+ * from a post-transition build, which an old distro's package never reaches (Bookworm ships
+ * libasound2 1.2.8), so copying it would make the fallback impossible to install again.
  */
 fun widenT64Dependencies(depends: String): String =
     depends.split(",").map(String::trim).filter(String::isNotEmpty).joinToString(", ") { entry ->
         val name = entry.substringBefore(" ").substringBefore("(")
-        val constraint = entry.removePrefix(name)
-        if ("|" in entry || !name.endsWith("t64")) entry else "$entry | ${name.removeSuffix("t64")}$constraint"
+        if ("|" in entry || !name.endsWith("t64")) entry else "$entry | ${name.removeSuffix("t64")}"
     }
 
 /**

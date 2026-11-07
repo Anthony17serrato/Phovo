@@ -15,9 +15,10 @@ class DebDependenciesTest {
     }
 
     @Test
-    fun `version constraints are kept for both names`() {
+    fun `version constraint stays on the t64 name only`() {
+        // Bookworm ships libasound2 1.2.8; carrying ">= 1.2.11" over would make the fallback unusable.
         assertEquals(
-            "libasound2t64 (>= 1.2.11) | libasound2 (>= 1.2.11)",
+            "libasound2t64 (>= 1.2.11) | libasound2",
             widenT64Dependencies("libasound2t64 (>= 1.2.11)")
         )
     }
