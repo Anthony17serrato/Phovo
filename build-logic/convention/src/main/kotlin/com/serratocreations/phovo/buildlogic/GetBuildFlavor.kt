@@ -8,10 +8,11 @@ import org.gradle.api.Project
  */
 fun Project.getBuildFlavor(): Flavor {
     val flavor = providers.gradleProperty("phovo.flavor").orNull ?: run {
-        val flavorProperties = java.util.Properties().apply {
-            load(rootProject.file("gradle/flavor.properties").inputStream())
-        }
-        flavorProperties.getProperty("FLAVOR")
+        // Read through Gradle so no file handle stays open in the daemon, the same way
+        // phovoVersion() reads version.properties.
+        val file = rootProject.layout.projectDirectory.file("gradle/flavor.properties")
+        val text = providers.fileContents(file).asText.get()
+        java.util.Properties().apply { load(text.reader()) }.getProperty("FLAVOR")
     }
     return when(flavor) {
         Flavor.Dev.flavorName -> Flavor.Dev
