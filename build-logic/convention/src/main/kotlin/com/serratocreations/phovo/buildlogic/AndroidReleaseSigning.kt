@@ -30,16 +30,18 @@ private const val REQUIRE_RELEASE_SIGNING = "phovo.requireReleaseSigning"
  */
 internal fun ApplicationExtension.configureReleaseSigning(project: Project) {
     val values = SigningValue.entries.associateWith { value ->
-        project.providers.gradleProperty(value.property)
-            .orElse(project.providers.environmentVariable(value.environmentVariable))
+        // A blank property (say `phovo.signing.keyPassword=` left in gradle.properties) counts as
+        // unset, so the environment variable still gets a chance.
+        project.providers.gradleProperty(value.property).filter { it.isNotBlank() }
+            .orElse(project.providers.environmentVariable(value.environmentVariable).filter { it.isNotBlank() })
             .orNull
-            ?.takeIf { it.isNotBlank() }
     }
     val required = project.providers.gradleProperty(REQUIRE_RELEASE_SIGNING).orNull.toBoolean()
     val missing = values.filterValues { it == null }.keys
 
     val releaseSigning = if (missing.isEmpty()) {
-        val storeFile = project.file(values.getValue(SigningValue.StoreFile)!!)
+        // Relative paths resolve against the repository root, not the app module.
+        val storeFile = project.rootProject.file(values.getValue(SigningValue.StoreFile)!!)
         if (!storeFile.isFile) {
             throw GradleException("The Android release keystore ${storeFile.path} doesn't exist.")
         }
@@ -55,6 +57,14 @@ internal fun ApplicationExtension.configureReleaseSigning(project: Project) {
                 "Missing: " + missing.joinToString { "${it.property} (or ${it.environmentVariable})" } + "."
         )
     } else {
+        // Some but not all values set is almost always a mistake, so say so instead of quietly
+        // signing with the debug key. Nothing set at all is the normal local setup.
+        if (missing.size < SigningValue.entries.size) {
+            project.logger.warn(
+                "Android release key is only partly configured, so release builds use the debug key. " +
+                    "Missing: " + missing.joinToString { "${it.property} (or ${it.environmentVariable})" } + "."
+            )
+        }
         null
     }
 

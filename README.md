@@ -167,10 +167,14 @@ The build reads the key from Gradle properties, or from environment variables wh
 | `phovo.signing.keyAlias` | `PHOVO_SIGNING_KEY_ALIAS` |
 | `phovo.signing.keyPassword` | `PHOVO_SIGNING_KEY_PASSWORD` |
 
-Without them, release builds fall back to the debug key, which is fine for local testing. The release
-workflow passes `-Pphovo.requireReleaseSigning=true`, which turns a missing key into a build failure, so a
-debug-signed APK can't be published. In CI the key comes from the `ANDROID_KEYSTORE_BASE64`,
-`ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` and `ANDROID_KEY_PASSWORD` repository secrets.
+A relative `storeFile` path resolves against the repository root. Without these values, release builds fall
+back to the debug key, which is fine for local testing, and Gradle warns when only some of them are set.
+Passing `-Pphovo.requireReleaseSigning=true` turns a missing key into a build failure instead.
+
+The key is stored in the `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` and
+`ANDROID_KEY_PASSWORD` repository secrets. The release workflow (not built yet) will decode the keystore in
+its APK job, map those secrets to the `PHOVO_SIGNING_*` variables and pass
+`-Pphovo.requireReleaseSigning=true`, so a debug-signed APK can't be published.
 
 # Project Structure
 ## How to build and run
