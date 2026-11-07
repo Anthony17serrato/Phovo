@@ -25,3 +25,7 @@ gha-creds-*.json
 
 # Firebase local deploy cache
 .firebase/
+
+# Android release keystores: never commit them (see "Android release signing" in the README)
+*.jks
+*.keystore
