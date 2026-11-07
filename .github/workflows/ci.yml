@@ -4,7 +4,17 @@ on:
   push:
     branches:
       - main
+      - develop
+      - 'release/**'
   pull_request:
+
+# One run per PR: a new push cancels the PR's run that's still going, so the
+# self-hosted runner doesn't spend time building commits that were replaced.
+# Pushes to main, develop and release/* each get their own group (by commit),
+# so a post-merge build is never cancelled by the next merge.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   compile-kmp:
