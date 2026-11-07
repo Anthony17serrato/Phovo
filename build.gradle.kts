@@ -1,5 +1,6 @@
 import com.serratocreations.phovo.buildlogic.getBuildFlavor
 import com.serratocreations.phovo.buildlogic.phovoVersion
+import com.serratocreations.phovo.buildlogic.releaseVersionProblems
 
 plugins {
     // this is necessary to avoid the plugins to be loaded multiple times
@@ -35,5 +36,24 @@ tasks.register("printVersion") {
         println("desktopPackageVersion=${version.desktopPackageVersion}")
         println("prerelease=${version.isPrerelease}")
         println("flavor=$flavor")
+    }
+}
+
+// Fails when version.properties can't be released from -Pphovo.releaseBranch: the tag exists, the
+// version isn't newer than every v* tag, or its stage doesn't fit the branch. The release workflow
+// runs it before building anything. See ReleaseVersionCheck.kt.
+tasks.register("checkReleaseVersion") {
+    val version = phovoVersion()
+    val branch = providers.gradleProperty("phovo.releaseBranch")
+    val tags = providers.exec { commandLine("git", "tag", "--list", "v*") }
+        .standardOutput.asText.map { it.lines().map(String::trim).filter(String::isNotEmpty) }
+    doLast {
+        val releaseBranch = branch.orNull
+            ?: throw GradleException("Pass the branch being released: -Pphovo.releaseBranch=<branch>.")
+        val problems = releaseVersionProblems(version, releaseBranch, tags.get())
+        if (problems.isNotEmpty()) {
+            throw GradleException("v${version.name} can't be released from $releaseBranch:\n- " + problems.joinToString("\n- "))
+        }
+        println("v${version.name} can be released from $releaseBranch.")
     }
 }

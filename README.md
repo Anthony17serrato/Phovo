@@ -117,6 +117,26 @@ PRs from `develop`, `main` or `release/*` (promotions and merge-forwards) get `s
 PRs they carry are already listed. Anything else lands under "Other changes". Add `skip-changelog` by hand
 to keep any other PR out of the notes.
 
+### Releasing
+
+[`release.yml`](.github/workflows/release.yml) builds every file on its own runner and creates a **draft**
+release. Nothing is public until the draft is published by hand.
+
+1. Open a PR into the branch the release comes from (`develop` for alphas and betas before 1.0,
+   `release/x.y` for later betas, `main` for stable) that bumps `versionName` in `version.properties`.
+2. Add the `release` label and merge it.
+3. The workflow checks the version first. It stops if the tag already exists, if the version isn't newer
+   than every earlier release, or if the version's stage doesn't fit the branch (stable only from `main`).
+4. Five runners build the desktop files (macOS arm64 and x64, Windows x64, Linux x64 and arm64) and one
+   builds the signed APK. A last job adds `SHA256SUMS` and creates the draft, tagged on the merged commit,
+   with notes generated from the PRs since the previous tag.
+5. Download and try the files, edit the notes, then click **Publish release**. The tag is created at this
+   point.
+
+**Run workflow** on the Actions tab starts it by hand. `test-only` builds every file without creating a
+release, and the files are on the run's summary page. `draft` creates a draft from the chosen branch, which
+is how a version already in `version.properties` gets released without a bump PR.
+
 ### Patching stable and beta together
 
 A fix goes on the oldest line that has the bug and is then merged forward into every newer line. Each
@@ -198,9 +218,11 @@ back to the debug key, which is fine for local testing, and Gradle warns when on
 Passing `-Pphovo.requireReleaseSigning=true` turns a missing key into a build failure instead.
 
 The key is stored in the `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` and
-`ANDROID_KEY_PASSWORD` repository secrets. The release workflow (not built yet) will decode the keystore in
-its APK job, map those secrets to the `PHOVO_SIGNING_*` variables and pass
-`-Pphovo.requireReleaseSigning=true`, so a debug-signed APK can't be published.
+`ANDROID_KEY_PASSWORD` repository secrets. The release workflow decodes the keystore in its APK job only,
+maps those secrets to the `PHOVO_SIGNING_*` variables and passes `-Pphovo.requireReleaseSigning=true`, so a
+debug-signed APK can't be published. It then compares the APK's signing certificate with the
+`ANDROID_SIGNING_CERT_SHA256` repository variable (the key's public SHA-256 fingerprint) and fails on a
+mismatch.
 
 # Project Structure
 ## How to build and run
