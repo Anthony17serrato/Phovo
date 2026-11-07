@@ -1,5 +1,6 @@
 import com.android.build.api.dsl.ApplicationExtension
 import com.serratocreations.phovo.buildlogic.configureAndroidApplication
+import com.serratocreations.phovo.buildlogic.configureReleaseSigning
 import com.serratocreations.phovo.buildlogic.phovoVersion
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -28,14 +29,13 @@ class KmpAndroidApplicationConventionPlugin : Plugin<Project> {
                     }
                 }
                 buildTypes {
-                    // TODO temporary config
                     getByName("release") {
                         //isDebuggable = true
+                        // R8 needs its own testing pass (reflection, serialization) before it's on.
                         isMinifyEnabled = false
-                        // TODO Update when ready to release
-                        signingConfig = signingConfigs.getByName("debug")
                     }
                 }
+                configureReleaseSigning(target)
                 testOptions.animationsDisabled = true
             }
         }

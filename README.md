@@ -151,6 +151,31 @@ Run `./gradlew -q printVersion` to see what a build will use. App code reads the
 Local builds use the flavor in `gradle/flavor.properties`, which stays `dev` and adds the Dev Menu. Release
 builds pass `-Pphovo.flavor=prod`, which overrides the file, so the file never has to change for a release.
 
+### Android release signing
+
+Every Android release is signed with the same release key. Android only installs an update signed with the
+key the installed app was signed with, so a different key would force testers to uninstall and lose their
+data. The keystore and its passwords are kept outside the repository (`*.jks` and `*.keystore` are
+ignored), with backups held by the maintainer.
+
+The build reads the key from Gradle properties, or from environment variables when those aren't set:
+
+| Gradle property | Environment variable |
+|---|---|
+| `phovo.signing.storeFile` | `PHOVO_SIGNING_STORE_FILE` |
+| `phovo.signing.storePassword` | `PHOVO_SIGNING_STORE_PASSWORD` |
+| `phovo.signing.keyAlias` | `PHOVO_SIGNING_KEY_ALIAS` |
+| `phovo.signing.keyPassword` | `PHOVO_SIGNING_KEY_PASSWORD` |
+
+A relative `storeFile` path resolves against the repository root. Without these values, release builds fall
+back to the debug key, which is fine for local testing, and Gradle warns when only some of them are set.
+Passing `-Pphovo.requireReleaseSigning=true` turns a missing key into a build failure instead.
+
+The key is stored in the `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` and
+`ANDROID_KEY_PASSWORD` repository secrets. The release workflow (not built yet) will decode the keystore in
+its APK job, map those secrets to the `PHOVO_SIGNING_*` variables and pass
+`-Pphovo.requireReleaseSigning=true`, so a debug-signed APK can't be published.
+
 # Project Structure
 ## How to build and run
 The project can be assembled in an environment which has been configured for Kotlin Multiplatform development, please follow the official guide:
