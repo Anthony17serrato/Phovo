@@ -1,0 +1,19 @@
+# Labels PRs from their branch name (see .github/workflows/labeler.yml). The
+# labels pick the PR's section in the release notes (.github/release.yml).
+enhancement:
+  - head-branch: ['^feature/']
+
+bug:
+  - head-branch: ['^fix/', '^hotfix/']
+
+documentation:
+  - head-branch: ['^docs/']
+
+chore:
+  - head-branch: ['^chore/']
+
+# Promotion and merge-forward PRs (develop → main, release/x.y → main,
+# main → release/x.y, release/x.y → develop) only carry PRs that are already
+# in the notes under their own labels.
+skip-changelog:
+  - head-branch: ['^develop$', '^main$', '^release/']

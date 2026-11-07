@@ -1,0 +1,18 @@
+name: Label PRs by branch
+
+# pull_request_target runs with the base branch's workflow and config, so it can
+# label PRs from forks too. It never checks out the PR's code, only its branch
+# name, which keeps that safe.
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/labeler@v7

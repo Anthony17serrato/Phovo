@@ -75,6 +75,22 @@ release/1.1   │        ●──────●────●─────�
 develop     ──●──────●──────────────●──────────────▶  next features (1.2 alpha)
 ```
 
+### Release notes
+
+GitHub writes each release's notes from the PRs merged since the previous tag. A workflow labels every PR
+from its branch name, and the label decides the PR's section:
+
+| Branch | Label | Section |
+|---|---|---|
+| `feature/*` | `enhancement` | Features |
+| `fix/*`, `hotfix/*` | `bug` | Fixes |
+| `docs/*` | `documentation` | Documentation |
+| `chore/*` | `chore` | Maintenance (library bumps, CI, build changes) |
+
+PRs from `develop`, `main` or `release/*` (promotions and merge-forwards) get `skip-changelog`, since the
+PRs they carry are already listed. Anything else lands under "Other changes". Add `skip-changelog` by hand
+to keep any other PR out of the notes.
+
 ### Patching stable and beta together
 
 A fix goes on the oldest line that has the bug and is then merged forward into every newer line. Each

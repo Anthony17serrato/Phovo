@@ -1,0 +1,23 @@
+# Groups the notes GitHub generates for a release ("Generate release notes",
+# or `gh release create --generate-notes`) by PR label. PRs are labeled from
+# their branch name by .github/labeler.yml. Sections appear in this order.
+changelog:
+  exclude:
+    labels:
+      - skip-changelog
+  categories:
+    - title: Features
+      labels:
+        - enhancement
+    - title: Fixes
+      labels:
+        - bug
+    - title: Documentation
+      labels:
+        - documentation
+    - title: Maintenance
+      labels:
+        - chore
+    - title: Other changes
+      labels:
+        - "*"
