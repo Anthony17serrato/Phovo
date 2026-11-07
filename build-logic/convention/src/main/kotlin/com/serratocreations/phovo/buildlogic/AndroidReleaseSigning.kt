@@ -40,13 +40,11 @@ internal fun ApplicationExtension.configureReleaseSigning(project: Project) {
     val missing = values.filterValues { it == null }.keys
 
     val releaseSigning = if (missing.isEmpty()) {
-        // Relative paths resolve against the repository root, not the app module.
-        val storeFile = project.rootProject.file(values.getValue(SigningValue.StoreFile)!!)
-        if (!storeFile.isFile) {
-            throw GradleException("The Android release keystore ${storeFile.path} doesn't exist.")
-        }
         signingConfigs.create("release") {
-            this.storeFile = storeFile
+            // Relative paths resolve against the repository root, not the app module. A missing
+            // file is left to AGP's validateSigningRelease task, which only runs when a release is
+            // packaged, so a stale path doesn't break builds that never sign anything.
+            storeFile = project.rootProject.file(values.getValue(SigningValue.StoreFile)!!)
             storePassword = values.getValue(SigningValue.StorePassword)
             keyAlias = values.getValue(SigningValue.KeyAlias)
             keyPassword = values.getValue(SigningValue.KeyPassword)
