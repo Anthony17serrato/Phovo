@@ -1,4 +1,5 @@
 import com.serratocreations.phovo.buildlogic.phovoVersion
+import com.serratocreations.phovo.buildlogic.registerDesktopReleasePackaging
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 plugins {
@@ -29,7 +30,7 @@ compose.desktop {
         mainClass = "com.serratocreations.phovo.MainKt"
 
         nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb, TargetFormat.Rpm)
             // The user-facing app name: Phovo.app, the Start menu entry, the Linux launcher.
             packageName = "Phovo"
             // Numeric only: calculated from version.properties (1.0.0-alpha.1 → 1.0.11).
@@ -70,3 +71,7 @@ compose.desktop {
         }
     }
 }
+
+// packageReleaseDistributions (and packageTarball): this machine's release files, named
+// Phovo-<version>-<os>-<arch>.<ext>, in build/release. See DesktopReleasePackaging.kt.
+registerDesktopReleasePackaging()

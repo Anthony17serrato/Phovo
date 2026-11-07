@@ -47,6 +47,32 @@ Phovo is currently undergoing active development. Core logic, architecture, and 
 - All critical and high-priority bugs resolved  
 - Full cross-platform support
 
+## ⬇️ Downloads
+
+Builds are published on [GitHub Releases](https://github.com/Anthony17serrato/Phovo/releases). Each
+release has one file per system, named `Phovo-<version>-<os>-<arch>.<ext>`:
+
+| System | File |
+|---|---|
+| macOS, Apple Silicon (M1 and later) | `…-macos-arm64.dmg` |
+| macOS, Intel | `…-macos-x64.dmg` |
+| Windows 10/11 (also Windows on ARM, through emulation) | `…-windows-x64.msi` |
+| Ubuntu, Debian, Linux Mint, Pop!_OS | `…-linux-x64.deb` |
+| Fedora, RHEL, Rocky, AlmaLinux, openSUSE | `…-linux-x64.rpm` |
+| Arch, Manjaro and other distros | `…-linux-x64.tar.gz` |
+| Raspberry Pi 3, 4, 5 or Zero 2 W on 64-bit Raspberry Pi OS | `…-linux-arm64.deb` (or `…-linux-arm64.tar.gz`) |
+| Android | `…-android.apk` |
+
+The `.tar.gz` needs no installing: unpack it anywhere and run the launcher in the unpacked folder's `bin`
+directory. It doesn't add a menu entry. The Raspberry Pi builds need the 64-bit edition of Raspberry Pi OS; 32-bit
+systems can't run them.
+
+The desktop builds aren't code signed yet, so the first launch shows a warning:
+
+- **macOS:** "Phovo can't be opened" or "cannot be verified". Open **System Settings → Privacy &
+  Security**, scroll down, and click **Open Anyway** next to the Phovo message.
+- **Windows:** "Windows protected your PC". Click **More info**, then **Run anyway**.
+
 ## 🌿 Branching and Releases
 
 Releases are published on [GitHub Releases](https://github.com/Anthony17serrato/Phovo/releases). Alphas and
