@@ -225,6 +225,11 @@ jobs:
     permissions:
       contents: write
     steps:
+      # Only for .github/release-notes-header.md, the install instructions every draft starts with.
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+          sparse-checkout: .github
       - uses: actions/download-artifact@v8
         with:
           pattern: release-*
@@ -273,5 +278,6 @@ jobs:
             --draft "${flags[@]}" \
             --target "$SHA" \
             --title "Phovo $VERSION" \
+            --notes-file .github/release-notes-header.md \
             --generate-notes
           echo "Draft created: $(gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json url -q .url)" >> "$GITHUB_STEP_SUMMARY"

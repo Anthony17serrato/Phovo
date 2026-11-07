@@ -67,11 +67,16 @@ The `.tar.gz` needs no installing: unpack it anywhere and run `Phovo/bin/Phovo`.
 entry. The Raspberry Pi builds need the 64-bit edition of Raspberry Pi OS; 32-bit
 systems can't run them.
 
-The desktop builds aren't code signed yet, so the first launch shows a warning:
+The desktop builds aren't code signed yet (tracked in #214), so the first launch shows a warning:
 
-- **macOS:** "Phovo can't be opened" or "cannot be verified". Open **System Settings → Privacy &
-  Security**, scroll down, and click **Open Anyway** next to the Phovo message.
+- **macOS:** **"Phovo" Not Opened** ("Apple could not verify "Phovo" is free of malware…"). Click
+  **Done**, not Move to Trash. Then open **System Settings → Privacy & Security**, scroll down to
+  Security, click **Open Anyway** next to the Phovo message, confirm with your password or Touch ID, and
+  click **Open**. This is needed once per version.
 - **Windows:** "Windows protected your PC". Click **More info**, then **Run anyway**.
+
+Every release's notes start with these steps too, from
+[`.github/release-notes-header.md`](.github/release-notes-header.md).
 
 ## 🌿 Branching and Releases
 
