@@ -90,7 +90,9 @@ actual fun EntryProviderScope<NavKey>.flavorConnectionsEntries(
                         containerColor = defaultColors.containerColor.copy(alpha = 0f),
                         scrolledContainerColor = defaultColors.containerColor.copy(alpha = 0f)
                     )
-                }
+                },
+                // The pane scrolls inside its card, so the bar stays put.
+                collapseTopAppBarOnScroll = false
             )
         }
         LaunchedEffect(navigationViewModel.state.currentKey) {

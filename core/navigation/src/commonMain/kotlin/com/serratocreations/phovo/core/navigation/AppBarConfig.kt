@@ -26,6 +26,11 @@ data class AppBarConfig(
     val showBottomAppBar: Boolean = true,
     val showBottomToolbar: Boolean = false,
     val showTopAppBar: Boolean = true,
+    /**
+     * Whether scrolling the content hides the top app bar. Set to false for screens that scroll
+     * inside their own container and should keep the bar pinned.
+     */
+    val collapseTopAppBarOnScroll: Boolean = true,
     /** Shown under the top app bar's row, see [ExpandableHeader]. */
     val expandableHeader: ExpandableHeader? = null
 ) {
