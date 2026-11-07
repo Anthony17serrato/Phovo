@@ -63,8 +63,8 @@ release has one file per system, named `Phovo-<version>-<os>-<arch>.<ext>`:
 | Raspberry Pi 3, 4, 5 or Zero 2 W on 64-bit Raspberry Pi OS | `…-linux-arm64.deb` (or `…-linux-arm64.tar.gz`) |
 | Android | `…-android.apk` |
 
-The `.tar.gz` needs no installing: unpack it anywhere and run the launcher in the unpacked folder's `bin`
-directory. It doesn't add a menu entry. The Raspberry Pi builds need the 64-bit edition of Raspberry Pi OS; 32-bit
+The `.tar.gz` needs no installing: unpack it anywhere and run `Phovo/bin/Phovo`. It doesn't add a menu
+entry. The Raspberry Pi builds need the 64-bit edition of Raspberry Pi OS; 32-bit
 systems can't run them.
 
 The desktop builds aren't code signed yet, so the first launch shows a warning:
