@@ -1,8 +1,9 @@
 name: Main source guard
 
 # main only takes stable releases and hotfixes: PRs into it must come from
-# develop or a hotfix/* branch in this repository. The job is a required
-# check in the "main (stable)" ruleset.
+# develop, a release/* beta line or a hotfix/* branch in this repository.
+# The job is a required check in the "main (stable)" ruleset. See
+# "Branching and releases" in the README.
 on:
   pull_request:
     branches: [main]
@@ -15,7 +16,7 @@ jobs:
   main-source-guard:
     runs-on: ubuntu-latest
     steps:
-      - name: Allow only develop or hotfix/* into main
+      - name: Allow only develop, release/* or hotfix/* into main
         env:
           HEAD_REF: ${{ github.head_ref }}
           HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
@@ -25,6 +26,6 @@ jobs:
             exit 1
           fi
           case "$HEAD_REF" in
-            develop|hotfix/*) echo "OK: $HEAD_REF may merge into main." ;;
-            *) echo "::error::PRs into main must come from develop or hotfix/*, not $HEAD_REF."; exit 1 ;;
+            develop|release/*|hotfix/*) echo "OK: $HEAD_REF may merge into main." ;;
+            *) echo "::error::PRs into main must come from develop, release/* or hotfix/*, not $HEAD_REF."; exit 1 ;;
           esac
