@@ -30,18 +30,30 @@
   <img alt="Phovo on iOS: onboarding, finding a server and backing up" src="docs/images/ios_walkthrough.gif" width="300">
 </p>
 
-## Contents
+<table align="center">
+  <tr>
+    <th align="left" width="280">📱&nbsp; Using Phovo</th>
+    <th align="left" width="280">🛠️&nbsp; Working on Phovo</th>
+  </tr>
+  <tr>
+    <td valign="top">
+      <a href="#why-phovo">Why Phovo</a><br>
+      <a href="#how-it-works">How it works</a><br>
+      <a href="#screenshots">Screenshots</a><br>
+      <a href="#downloads">Downloads</a><br>
+      <a href="#roadmap">Roadmap</a>
+    </td>
+    <td valign="top">
+      <a href="#technical-details">Technical details</a><br>
+      <a href="#build-and-run">Build and run</a><br>
+      <a href="#source-sets">Source sets</a><br>
+      <a href="#troubleshooting-wasm">Troubleshooting WASM</a><br>
+      <a href="#branching-and-releases">Branching and Releases</a>
+    </td>
+  </tr>
+</table>
 
-- [Why Phovo](#why-phovo)
-- [How it works](#how-it-works)
-- [Screenshots](#screenshots)
-- [Downloads](#downloads)
-- [Roadmap](#roadmap)
-- [Technical details](#technical-details)
-  - [Build and run](#build-and-run)
-  - [Source sets](#source-sets)
-  - [Troubleshooting WASM](#troubleshooting-wasm)
-  - [Branching and Releases](#branching-and-releases)
+<br>
 
 ## Why Phovo
 
