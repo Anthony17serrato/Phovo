@@ -75,11 +75,22 @@ kobweb {
 kotlin {
     configAsKobwebApplication("website")
 
+    // Unit tests run on Node, so neither CI nor a developer machine needs a browser for them.
+    js {
+        nodejs()
+        browser {
+            testTask { enabled = false }
+        }
+    }
+
     sourceSets {
         jsMain.dependencies {
             implementation(libs.kobweb.compose.runtime)
             implementation(libs.compose.html.core)
             implementation(libs.kobweb.core)
+        }
+        jsTest.dependencies {
+            implementation(kotlin("test"))
         }
     }
 }

@@ -215,7 +215,7 @@ its server running, hence the `kobwebStop`.
 
 The download buttons ask GitHub's API for the newest release when the page loads, so a new release
 needs no change to the site. Add `?device=iphone` to the URL (or `android`, `mac`, `mac-intel`,
-`windows`, `linux`, `fedora`, `pi`, `other`) to see what another device's visitors get.
+`windows`, `linux`, `fedora`, `pi`, `pi32`, `other`) to see what another device's visitors get.
 
 ### Branching and Releases
 

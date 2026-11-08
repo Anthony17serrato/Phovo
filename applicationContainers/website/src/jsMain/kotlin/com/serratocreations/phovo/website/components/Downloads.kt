@@ -17,6 +17,7 @@ import com.serratocreations.phovo.website.downloads.detectVisitor
 import com.serratocreations.phovo.website.downloads.isExportSnapshot
 import com.serratocreations.phovo.website.downloads.loadLatestRelease
 import kotlinx.browser.window
+import kotlin.js.Promise
 import org.jetbrains.compose.web.dom.A
 import org.jetbrains.compose.web.dom.B
 import org.jetbrains.compose.web.dom.Button
@@ -99,6 +100,7 @@ fun HeroDownload(state: DownloadState) {
                 Div({ classes("cta-meta") }) {
                     Text("Free for macOS, Windows, Linux, Raspberry Pi and Android")
                 }
+                visitor?.unsupportedNote?.let { note -> P({ classes("hint") }) { Text(note) } }
             }
             else -> {
                 val file = state.fileFor(target)
@@ -217,29 +219,47 @@ private fun IphoneNotice() {
  */
 @Composable
 private fun ShareToComputer(asButton: Boolean = false) {
-    var copied by remember { mutableStateOf(false) }
+    // Some in-app browsers have neither a share sheet nor a usable clipboard. Then the address is
+    // shown instead, and "Link copied" only appears once the copy has actually happened.
+    var result by remember { mutableStateOf(CopyResult.NONE) }
     val nav = window.navigator.asDynamic()
     val canShare = nav.share != undefined
+    if (result == CopyResult.FAILED) {
+        Span({ classes(if (asButton) "hint" else "link") }) { Text("Open phovo.app on your computer") }
+        return
+    }
     Button({
         classes(*(if (asButton) arrayOf("btn", "btn-primary", "btn-small") else arrayOf("link")))
         onClick {
             if (canShare) {
-                nav.share(kotlin.js.json("title" to "Phovo", "url" to "https://phovo.app/"))
+                // A dismissed share sheet rejects the promise; that's not an error worth showing.
+                (nav.share(kotlin.js.json("title" to "Phovo", "url" to SITE_URL)) as Promise<Any?>).catch { }
             } else {
-                nav.clipboard?.writeText("https://phovo.app/")
-                copied = true
+                val clipboard = nav.clipboard
+                if (clipboard == null || clipboard == undefined) {
+                    result = CopyResult.FAILED
+                } else {
+                    (clipboard.writeText(SITE_URL) as Promise<Any?>).then(
+                        { result = CopyResult.COPIED },
+                        { result = CopyResult.FAILED },
+                    )
+                }
             }
         }
     }) {
         Text(
             when {
-                copied -> "Link copied"
+                result == CopyResult.COPIED -> "Link copied"
                 canShare -> "Send this page to your computer"
                 else -> "Copy the link for your computer"
             }
         )
     }
 }
+
+private enum class CopyResult { NONE, COPIED, FAILED }
+
+private const val SITE_URL = "https://phovo.app/"
 
 /** Shown once a download starts: what to do with the file, including the unsigned-build warnings. */
 @Composable

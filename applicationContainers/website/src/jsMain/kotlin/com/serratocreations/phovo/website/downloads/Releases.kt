@@ -89,43 +89,62 @@ private val fileName = Regex("""^Phovo-(.+)-(android|macos|windows|linux)(?:-(ar
 
 /**
  * The newest published release, pre-releases included (GitHub's "latest" skips those, and every
- * build is a pre-release until 1.0). Null when GitHub can't be reached or rate-limits the visitor;
- * the page then links to the releases page instead.
+ * build is a pre-release until 1.0). Null when GitHub can't be reached, rate-limits the visitor or
+ * sends something unexpected; the page then links to the releases page instead.
  */
 suspend fun loadLatestRelease(): Release? {
-    readCache()?.let { return parseReleases(it) }
     return try {
-        val init = RequestInit(headers = json("Accept" to "application/vnd.github+json"))
-        val response = window.fetch(RELEASES_API, init).await()
-        if (!response.ok) return null
-        val text = response.text().await()
-        writeCache(text)
-        parseReleases(text)
+        readCache()?.let { parseReleases(it) } ?: fetchLatestRelease()
     } catch (e: Throwable) {
         null
     }
 }
 
-private fun parseReleases(text: String): Release? {
-    val releases = JSON.parse<Array<dynamic>>(text)
-    val newest = releases.firstOrNull { it.draft != true && (it.assets as Array<dynamic>).isNotEmpty() }
-        ?: return null
-    val assets = newest.assets as Array<dynamic>
-    val files = assets.mapNotNull { asset ->
-        val name = asset.name as String
-        val (_, os, arch, ext) = fileName.find(name)?.destructured ?: return@mapNotNull null
-        val target = Target.entries.firstOrNull { it.matches(os, arch.ifEmpty { null }, ext) }
-            ?: return@mapNotNull null
-        ReleaseFile(target, name, asset.browser_download_url as String, (asset.size as Number).toDouble())
-    }
-    val tag = newest.tag_name as String
+private suspend fun fetchLatestRelease(): Release? {
+    val init = RequestInit(headers = json("Accept" to "application/vnd.github+json"))
+    val response = window.fetch(RELEASES_API, init).await()
+    if (!response.ok) return null
+    val text = response.text().await()
+    // Cache only a response that parsed, so a bad one isn't replayed on every reload.
+    return parseReleases(text)?.also { writeCache(text) }
+}
+
+/**
+ * Reads GitHub's "list releases" response. Null when it isn't a list (GitHub sends an object for
+ * errors, such as rate limiting) or has no published release with files.
+ */
+internal fun parseReleases(text: String): Release? {
+    val parsed: dynamic = JSON.parse(text)
+    if (!js("Array.isArray")(parsed).unsafeCast<Boolean>()) return null
+    val releases = parsed.unsafeCast<Array<dynamic>>()
+    val newest = releases.firstOrNull { release ->
+        val assets = release.assets
+        release.draft != true && js("Array.isArray")(assets).unsafeCast<Boolean>() && assets.length > 0
+    } ?: return null
+    val assets = newest.assets.unsafeCast<Array<dynamic>>()
+    val files = assets.mapNotNull { asset -> fileFor(asset) }
+    val tag = newest.tag_name as? String ?: return null
     return Release(
         version = tag.removePrefix("v"),
-        pageUrl = newest.html_url as String,
+        pageUrl = newest.html_url as? String ?: RELEASES_URL,
         isPrerelease = newest.prerelease == true,
         files = files,
-        checksumsUrl = assets.firstOrNull { it.name == "SHA256SUMS" }?.browser_download_url as String?,
+        checksumsUrl = assets.firstOrNull { it.name == "SHA256SUMS" }?.browser_download_url as? String,
     )
+}
+
+private fun fileFor(asset: dynamic): ReleaseFile? {
+    val name = asset.name as? String ?: return null
+    val url = asset.browser_download_url as? String ?: return null
+    val size = (asset.size as? Number)?.toDouble() ?: return null
+    val target = targetForFileName(name) ?: return null
+    return ReleaseFile(target, name, url, size)
+}
+
+/** Which [Target] a release file is for, from the `Phovo-<version>-<os>[-<arch>].<ext>` name. */
+internal fun targetForFileName(name: String): Target? {
+    val (_, os, arch, ext) = fileName.find(name)?.destructured ?: return null
+    return Target.entries.firstOrNull { it.matches(os, arch.ifEmpty { null }, ext) }
 }
 
 // A short session cache, so moving around the page or reloading it doesn't spend the visitor's

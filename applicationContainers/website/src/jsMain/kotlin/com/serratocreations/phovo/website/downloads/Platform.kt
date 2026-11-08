@@ -10,7 +10,17 @@ import kotlin.js.Promise
  * A best guess at the visitor's device. [archIsGuess] is true when nothing in the browser said
  * which processor a Mac has, so the page also offers the other build next to the recommended one.
  */
-class Visitor(val os: Os, val arch: Arch?, val archIsGuess: Boolean, val target: Target?)
+class Visitor(
+    val os: Os,
+    val arch: Arch?,
+    val archIsGuess: Boolean,
+    val target: Target?,
+    /** Why there's no build for this device, when there's a known reason. */
+    val unsupportedNote: String? = null,
+)
+
+private const val NEEDS_64_BIT =
+    "This looks like a 32-bit ARM system. Phovo Desktop needs a 64-bit OS, such as 64-bit Raspberry Pi OS."
 
 /**
  * True while Kobweb's export renders the page in headless Chromium. The exported HTML must not
@@ -20,7 +30,7 @@ class Visitor(val os: Os, val arch: Arch?, val archIsGuess: Boolean, val target:
 fun isExportSnapshot(): Boolean = window.navigator.asDynamic().webdriver == true
 
 /**
- * `?device=iphone`, `android`, `mac`, `mac-intel`, `windows`, `linux`, `fedora`, `pi` or `other`
+ * `?device=iphone`, `android`, `mac`, `mac-intel`, `windows`, `linux`, `fedora`, `pi`, `pi32` or `other`
  * shows the page as that device would see it, for checking each download path from one browser.
  */
 private fun deviceOverride(): Visitor? = when (org.w3c.dom.url.URLSearchParams(window.location.search).get("device")) {
@@ -32,6 +42,7 @@ private fun deviceOverride(): Visitor? = when (org.w3c.dom.url.URLSearchParams(w
     "linux" -> Visitor(Os.LINUX, Arch.X64, archIsGuess = false, Target.LINUX_DEB)
     "fedora" -> Visitor(Os.LINUX, Arch.X64, archIsGuess = false, Target.LINUX_RPM)
     "pi" -> Visitor(Os.LINUX, Arch.ARM64, archIsGuess = false, Target.PI_DEB)
+    "pi32" -> Visitor(Os.LINUX, null, archIsGuess = false, null, NEEDS_64_BIT)
     "other" -> Visitor(Os.OTHER, null, archIsGuess = false, null)
     else -> null
 }
@@ -40,7 +51,7 @@ suspend fun detectVisitor(): Visitor {
     deviceOverride()?.let { return it }
     val ua = window.navigator.userAgent
     val touchPoints = (window.navigator.asDynamic().maxTouchPoints as? Number)?.toInt() ?: 0
-    val hints = highEntropyArchitecture()
+    val hints = highEntropyHints()
 
     val os = when {
         Regex("iPhone|iPad|iPod").containsMatchIn(ua) -> Os.IOS
@@ -56,13 +67,18 @@ suspend fun detectVisitor(): Visitor {
 
     return when (os) {
         Os.MACOS -> {
-            val arch = hints ?: macArchFromGpu()
+            val arch = hints.arch ?: macArchFromGpu()
             val resolved = arch ?: Arch.ARM64 // Every Mac sold since 2023 is Apple Silicon.
             Visitor(os, resolved, archIsGuess = arch == null, if (resolved == Arch.ARM64) Target.MAC_ARM else Target.MAC_INTEL)
         }
         Os.LINUX -> {
             val platform = window.navigator.platform
-            val isArm = hints == Arch.ARM64 || Regex("aarch64|arm64|armv8", RegexOption.IGNORE_CASE).containsMatchIn("$ua $platform")
+            val reported = "$ua $platform"
+            // Chromium says "arm" for 32- and 64-bit alike, so bitness decides; Firefox puts armv7l in the UA.
+            val is32BitArm = (hints.arch == Arch.ARM64 && hints.is32Bit) ||
+                Regex("armv7|armv6|armhf", RegexOption.IGNORE_CASE).containsMatchIn(reported)
+            if (is32BitArm) return Visitor(os, null, archIsGuess = false, null, NEEDS_64_BIT)
+            val isArm = hints.arch == Arch.ARM64 || Regex("aarch64|arm64|armv8", RegexOption.IGNORE_CASE).containsMatchIn(reported)
             val target = when {
                 isArm -> Target.PI_DEB
                 Regex("Fedora|Red Hat|CentOS|Rocky|SUSE", RegexOption.IGNORE_CASE).containsMatchIn(ua) -> Target.LINUX_RPM
@@ -76,21 +92,27 @@ suspend fun detectVisitor(): Visitor {
     }
 }
 
-/** Chromium browsers report the CPU architecture through User-Agent Client Hints. */
-private suspend fun highEntropyArchitecture(): Arch? = try {
+private class CpuHints(val arch: Arch?, val is32Bit: Boolean)
+
+/**
+ * Chromium browsers report the CPU through User-Agent Client Hints. "architecture" is "arm" or
+ * "x86" for both widths, so "bitness" is what separates 32-bit ARM from arm64.
+ */
+private suspend fun highEntropyHints(): CpuHints = try {
     val data = window.navigator.asDynamic().userAgentData
     if (data == null || data == undefined) {
-        null
+        CpuHints(null, is32Bit = false)
     } else {
-        val values = (data.getHighEntropyValues(arrayOf("architecture")) as Promise<dynamic>).await()
-        when (values.architecture as? String) {
+        val values = (data.getHighEntropyValues(arrayOf("architecture", "bitness")) as Promise<dynamic>).await()
+        val arch = when (values.architecture as? String) {
             "arm" -> Arch.ARM64
             "x86" -> Arch.X64
             else -> null
         }
+        CpuHints(arch, is32Bit = values.bitness == "32")
     }
 } catch (e: Throwable) {
-    null
+    CpuHints(null, is32Bit = false)
 }
 
 /**
