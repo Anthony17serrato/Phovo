@@ -30,18 +30,30 @@
   <img alt="Phovo on iOS: onboarding, finding a server and backing up" src="docs/images/ios_walkthrough.gif" width="300">
 </p>
 
-## Contents
+<table align="center">
+  <tr>
+    <th align="left" width="280">📱&nbsp; Using Phovo</th>
+    <th align="left" width="280">🛠️&nbsp; Working on Phovo</th>
+  </tr>
+  <tr>
+    <td valign="top">
+      <a href="#why-phovo">Why Phovo</a><br>
+      <a href="#how-it-works">How it works</a><br>
+      <a href="#screenshots">Screenshots</a><br>
+      <a href="#downloads">Downloads</a><br>
+      <a href="#roadmap">Roadmap</a>
+    </td>
+    <td valign="top">
+      <a href="#technical-details">Technical details</a><br>
+      <a href="#build-and-run">Build and run</a><br>
+      <a href="#source-sets">Source sets</a><br>
+      <a href="#troubleshooting-wasm">Troubleshooting WASM</a><br>
+      <a href="#branching-and-releases">Branching and Releases</a>
+    </td>
+  </tr>
+</table>
 
-- [Why Phovo](#why-phovo)
-- [How it works](#how-it-works)
-- [Screenshots](#screenshots)
-- [Downloads](#downloads)
-- [Roadmap](#roadmap)
-- [Technical details](#technical-details)
-  - [Build and run](#build-and-run)
-  - [Source sets](#source-sets)
-  - [Troubleshooting WASM](#troubleshooting-wasm)
-  - [Branching and Releases](#branching-and-releases)
+<br>
 
 ## Why Phovo
 
@@ -63,18 +75,19 @@ Cloud photo storage charges you every month for space on someone else's servers,
 ## Screenshots
 
 <p align="center">
-  <img src="docs/images/Screenshot_20261014-204941.png" width="250">
-  <img src="docs/images/Screenshot%202026-10-14%20at%208.27.57%E2%80%AFPM.png" width="250">
-  <img src="docs/images/Screenshot%202026-10-14%20at%208.51.58%E2%80%AFPM.png" width="250">
+  <img alt="Android: welcome and photo access" src="docs/images/screenshots/android_welcome.webp" width="250">
+  <img alt="iOS: photo timeline" src="docs/images/screenshots/ios_timeline.webp" width="250">
+  <img alt="iOS: discovered servers" src="docs/images/screenshots/ios_connect_to_server.webp" width="250">
 </p>
 <p align="center">
-  <img src="docs/images/Screenshot%202026-10-14%20at%208.34.43%E2%80%AFPM.png" width="250">
-  <img src="docs/images/Screenshot_20261014-204740.png" width="250">
+  <img alt="iOS: connections and setup" src="docs/images/screenshots/ios_connections.webp" width="250">
+  <img alt="Android: backup in progress" src="docs/images/screenshots/android_backup_progress.webp" width="250">
+  <img alt="Android: photo details" src="docs/images/screenshots/android_details.webp" width="250">
 </p>
 
 <p align="center"><b>Phovo Desktop</b></p>
 <p align="center">
-  <img alt="Phovo Desktop" src="docs/images/Screenshot%202026-10-14%20at%208.56.34%E2%80%AFPM.png" width="860">
+  <img alt="Phovo Desktop: photo timeline" src="docs/images/screenshots/desktop_timeline.webp" width="860">
 </p>
 
 ## Downloads
