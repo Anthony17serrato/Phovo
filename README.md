@@ -15,7 +15,7 @@
 <p align="center">
   <a href="https://phovo.app"><b>phovo.app</b></a>
   &nbsp;·&nbsp;
-  <a href="#download"><b>Download</b></a>
+  <a href="#downloads"><b>Downloads</b></a>
   &nbsp;·&nbsp;
   <a href="#roadmap"><b>Roadmap</b></a>
 </p>
@@ -35,13 +35,13 @@
 - [Why Phovo](#why-phovo)
 - [How it works](#how-it-works)
 - [Screenshots](#screenshots)
-- [Download](#download)
+- [Downloads](#downloads)
 - [Roadmap](#roadmap)
 - [Technical details](#technical-details)
   - [Build and run](#build-and-run)
   - [Source sets](#source-sets)
   - [Troubleshooting WASM](#troubleshooting-wasm)
-  - [Branching and releases](#branching-and-releases)
+  - [Branching and Releases](#branching-and-releases)
 
 ## Why Phovo
 
@@ -77,7 +77,7 @@ Cloud photo storage charges you every month for space on someone else's servers,
   <img alt="Phovo Desktop" src="docs/images/Screenshot%202026-10-14%20at%208.56.34%E2%80%AFPM.png" width="860">
 </p>
 
-## Download
+## Downloads
 
 Phovo is in alpha. Expect bugs, and expect breaking changes between releases until the beta.
 
@@ -183,7 +183,7 @@ After adding a dependency, the WASM build may need its yarn lock upgraded:
 ./gradlew kotlinUpgradeYarnLock
 ```
 
-### Branching and releases
+### Branching and Releases
 
 Releases are published on [GitHub Releases](https://github.com/Anthony17serrato/Phovo/releases). Alphas and
 betas are marked as pre-releases, so the "Latest" badge always points at the newest stable build.
