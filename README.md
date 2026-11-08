@@ -75,18 +75,19 @@ Cloud photo storage charges you every month for space on someone else's servers,
 ## Screenshots
 
 <p align="center">
-  <img src="docs/images/Screenshot_20261014-204941.png" width="250">
-  <img src="docs/images/Screenshot%202026-10-14%20at%208.27.57%E2%80%AFPM.png" width="250">
-  <img src="docs/images/Screenshot%202026-10-14%20at%208.51.58%E2%80%AFPM.png" width="250">
+  <img alt="Android: welcome and photo access" src="docs/images/screenshots/android_welcome.webp" width="250">
+  <img alt="iOS: photo timeline" src="docs/images/screenshots/ios_timeline.webp" width="250">
+  <img alt="iOS: discovered servers" src="docs/images/screenshots/ios_connect_to_server.webp" width="250">
 </p>
 <p align="center">
-  <img src="docs/images/Screenshot%202026-10-14%20at%208.34.43%E2%80%AFPM.png" width="250">
-  <img src="docs/images/Screenshot_20261014-204740.png" width="250">
+  <img alt="iOS: connections and setup" src="docs/images/screenshots/ios_connections.webp" width="250">
+  <img alt="Android: backup in progress" src="docs/images/screenshots/android_backup_progress.webp" width="250">
+  <img alt="Android: photo details" src="docs/images/screenshots/android_details.webp" width="250">
 </p>
 
 <p align="center"><b>Phovo Desktop</b></p>
 <p align="center">
-  <img alt="Phovo Desktop" src="docs/images/Screenshot%202026-10-14%20at%208.56.34%E2%80%AFPM.png" width="860">
+  <img alt="Phovo Desktop: photo timeline" src="docs/images/screenshots/desktop_timeline.webp" width="860">
 </p>
 
 ## Downloads
