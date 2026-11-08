@@ -1,0 +1,3 @@
+# Kobweb output (the exported site lands in .kobweb/site)
+.kobweb/*
+!.kobweb/conf.yaml

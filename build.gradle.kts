@@ -12,6 +12,7 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform) apply false
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.compose.compiler) apply false
+    alias(libs.plugins.kobweb.application) apply false
     alias(libs.plugins.serialization) apply false
     alias(libs.plugins.kotlin.ksp) apply false
     alias(libs.plugins.room) apply false
