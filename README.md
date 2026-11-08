@@ -1,53 +1,85 @@
-![phovo_banner](https://github.com/user-attachments/assets/eb4b5750-7355-459a-b186-40460d80b61a)
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/phovo_readme_banner_dark.png">
+    <img alt="Phovo" src="docs/images/phovo_readme_banner_light.png" width="520">
+  </picture>
+</p>
 
-## Self hosted Photo/Video backup
-This is a Kotlin Multiplatform project targeting Android, iOS, Desktop and WASM(WEB) clients. Phovo is intended to be a self hosted cloud storage solution that enables seamless access to photos and videos on all compatible target devices. While initially support for 4 clients is planned, if there is strong market demand for this product Wear OS, Android XR, and Android TV may eventually be targeted.
+<h3 align="center">Your photos and videos, backed up to a computer you own.</h3>
 
-### iOS, Android, Browser and Desktop Applications
-All applications are developed within a single codebase using [Kotlin Multiplatform technology](https://kotlinlang.org/docs/multiplatform.html). The UI is implemented using [Compose Multiplatform UI framework](https://www.jetbrains.com/lp/compose-multiplatform/).
+<p align="center">
+  Phovo turns the desktop or laptop you already have into a private photo cloud.<br>
+  Your phone backs up to it over Wi-Fi, at full quality, with no subscription.
+</p>
 
-### Screenshots
-| ![android_optimized](https://github.com/Anthony17serrato/Phovo/blob/main/docs/images/android_optimized.gif?raw=true) | <img src="https://github.com/Anthony17serrato/Phovo/blob/main/docs/images/Screenshot_20261014-204941.png" width="900" /> | <img src="https://github.com/Anthony17serrato/Phovo/blob/main/docs/images/Screenshot%202026-10-14%20at%208.27.57%E2%80%AFPM.png" width="900" /> |
-| --- | --- | --- |
-| <img src="https://github.com/Anthony17serrato/Phovo/blob/main/docs/images/Screenshot%202026-10-14%20at%208.51.58%E2%80%AFPM.png" width="900" /> | <img src="https://github.com/Anthony17serrato/Phovo/blob/main/docs/images/Screenshot%202026-10-14%20at%208.34.43%E2%80%AFPM.png" width="900" /> | <img src="https://github.com/Anthony17serrato/Phovo/blob/main/docs/images/Screenshot_20261014-204740.png" width="900" /> |
+<p align="center">
+  <a href="https://phovo.app"><b>phovo.app</b></a>
+  &nbsp;·&nbsp;
+  <a href="#downloads"><b>Downloads</b></a>
+  &nbsp;·&nbsp;
+  <a href="#roadmap"><b>Roadmap</b></a>
+</p>
 
-#### Desktop
-<img src="https://github.com/Anthony17serrato/Phovo/blob/main/docs/images/Screenshot%202026-10-14%20at%208.56.34%E2%80%AFPM.png" style="max-width: 100%; height: auto;" />
+<p align="center">
+  <a href="https://github.com/Anthony17serrato/Phovo/releases"><img alt="Latest release" src="https://img.shields.io/github/v/release/Anthony17serrato/Phovo?include_prereleases&label=release&color=006B5F"></a>
+  <img alt="Platforms: Android, iOS, macOS, Windows, Linux" src="https://img.shields.io/badge/platforms-Android%20%C2%B7%20iOS%20%C2%B7%20macOS%20%C2%B7%20Windows%20%C2%B7%20Linux-006B5F">
+  <img alt="Built with Kotlin Multiplatform" src="https://img.shields.io/badge/built%20with-Kotlin%20Multiplatform-7F52FF?logo=kotlin&logoColor=white">
+</p>
 
-## 🗓️ Phovo Release Schedule
+<p align="center">
+  <img alt="Phovo on iOS: onboarding, finding a server and backing up" src="docs/images/ios_walkthrough.gif" width="300">
+</p>
 
-Phovo is currently undergoing active development. Core logic, architecture, and UI foundations are still being refined. The following is the planned release timeline:
+## Contents
 
----
+- [Why Phovo](#why-phovo)
+- [How it works](#how-it-works)
+- [Screenshots](#screenshots)
+- [Downloads](#downloads)
+- [Roadmap](#roadmap)
+- [Technical details](#technical-details)
+  - [Build and run](#build-and-run)
+  - [Source sets](#source-sets)
+  - [Troubleshooting WASM](#troubleshooting-wasm)
+  - [Branching and Releases](#branching-and-releases)
 
-### 🚩 October 31, 2026 — Alpha Release
-**Availability:** Internal  
-**Focus:**  
-- Early testing of core features  
-- Rapid iteration  
-- Expect bugs, instability, and breaking changes without backward compatibility  
-- Continued development of initial feature set
+## Why Phovo
 
----
+Cloud photo storage charges you every month for space on someone else's servers, and the bill grows with your library. Phovo keeps your library on your own computer. The phone app uploads new photos and videos to it automatically, and Phovo Desktop shows the whole library as one timeline.
 
-### 🚩 February 28, 2027 — Beta Release
-**Availability:** Public  
-**Focus:**  
-- Initial feature development complete  
-- No further breaking changes  
-- Begin stabilization efforts  
-- Resolve remaining functional issues
+- **Storage that grows with your drive.** Phovo has no quota or storage plan. Plug in a bigger disk when you need more room.
+- **Originals, untouched.** Photos and videos are stored at their original resolution, with no cloud compression.
+- **Private by design.** Your media travels from your phone to your computer over your own network, and no company in between sees it.
+- **Finds your computer for you.** Open the app on the same Wi-Fi as Phovo Desktop and it discovers the server on its own. You can type an address in instead if your network blocks discovery.
+- **Backs up in the background.** Uploads carry on after you switch to another app.
+- **One app on every device.** Android, iPhone, macOS, Windows and Linux all run the same Phovo, down to a Raspberry Pi.
 
----
+## How it works
 
-### 🏁 May 31, 2027 — Stable Release
-**Availability:** Android, iOS & Desktop  
-**Focus:**  
-- Production-ready release  
-- All critical and high-priority bugs resolved  
-- Full cross-platform support
+1. **Install Phovo Desktop** on the computer that will hold your library. It hosts the backup server.
+2. **Open Phovo on your phone** and allow access to your photo library.
+3. **Connect.** Phovo lists the servers it finds on your network. Tap yours and your library starts uploading.
 
-## ⬇️ Downloads
+## Screenshots
+
+<p align="center">
+  <img src="docs/images/Screenshot_20261014-204941.png" width="250">
+  <img src="docs/images/Screenshot%202026-10-14%20at%208.27.57%E2%80%AFPM.png" width="250">
+  <img src="docs/images/Screenshot%202026-10-14%20at%208.51.58%E2%80%AFPM.png" width="250">
+</p>
+<p align="center">
+  <img src="docs/images/Screenshot%202026-10-14%20at%208.34.43%E2%80%AFPM.png" width="250">
+  <img src="docs/images/Screenshot_20261014-204740.png" width="250">
+</p>
+
+<p align="center"><b>Phovo Desktop</b></p>
+<p align="center">
+  <img alt="Phovo Desktop" src="docs/images/Screenshot%202026-10-14%20at%208.56.34%E2%80%AFPM.png" width="860">
+</p>
+
+## Downloads
+
+Phovo is in alpha. Expect bugs, and expect breaking changes between releases until the beta.
 
 Builds are published on [GitHub Releases](https://github.com/Anthony17serrato/Phovo/releases). Each
 release has one file per system, named `Phovo-<version>-<os>-<arch>.<ext>`:
@@ -63,11 +95,13 @@ release has one file per system, named `Phovo-<version>-<os>-<arch>.<ext>`:
 | Raspberry Pi 3, 4, 5 or Zero 2 W on 64-bit Raspberry Pi OS | `…-linux-arm64.deb` (or `…-linux-arm64.tar.gz`) |
 | Android | `…-android.apk` |
 
+The iPhone app isn't available to download yet.
+
 The `.tar.gz` needs no installing: unpack it anywhere and run `Phovo/bin/Phovo`. It doesn't add a menu
 entry. The Raspberry Pi builds need the 64-bit edition of Raspberry Pi OS; 32-bit
 systems can't run them.
 
-The desktop builds aren't code signed yet (tracked in #214), so the first launch shows a warning:
+The desktop builds aren't code signed yet (tracked in [#214](https://github.com/Anthony17serrato/Phovo/issues/214)), so the first launch shows a warning:
 
 - **macOS:** **"Phovo" Not Opened** ("Apple could not verify "Phovo" is free of malware…"). Click
   **Done**, not Move to Trash. Then open **System Settings → Privacy & Security**, scroll down to
@@ -78,12 +112,83 @@ The desktop builds aren't code signed yet (tracked in #214), so the first launch
 Every release's notes start with these steps too, from
 [`.github/release-notes-header.md`](.github/release-notes-header.md).
 
-## 🌿 Branching and Releases
+## Roadmap
+
+| Milestone | Date | Who can use it | What to expect |
+| --- | --- | --- | --- |
+| **Alpha** | October 31, 2026 | Early testers | Core features under test. Bugs, instability and breaking changes with no backward compatibility. |
+| **Beta** | February 28, 2027 | Public | Initial features complete and no more breaking changes. Work shifts to stability and remaining bugs. |
+| **Stable** | May 31, 2027 | Android, iOS and desktop | Production ready, with all critical and high-priority bugs fixed. |
+
+Wear OS, Android XR and Android TV apps may follow if there's demand for them.
+
+<br>
+
+---
+
+## Technical details
+
+Everything below is for people working on Phovo itself.
+
+Every Phovo app comes from one codebase. [Kotlin Multiplatform](https://kotlinlang.org/docs/multiplatform.html) shares the logic across Android, iOS, desktop and web (WASM), and the UI is written once in [Compose Multiplatform](https://www.jetbrains.com/lp/compose-multiplatform/).
+
+### Build and run
+
+Set up your machine for Kotlin Multiplatform development first, following the [official guide](https://kotlinlang.org/docs/multiplatform/quickstart.html#set-up-the-environment).
+
+The desktop build embeds an FFmpeg binary, used for thumbnail generation. It is downloaded and
+verified against a pinned SHA-256 on the first build, so that build needs network access. The
+archive is cached under `~/.gradle/caches/phovo-ffmpeg`, which survives `clean`, so later builds
+work offline. Only the binary for the platform running the build is fetched. The pinned builds, and
+notes on updating them, live in `build-logic`'s `FfmpegDistribution.kt`.
+
+#### Windows: x64 only
+Phovo publishes Windows builds for x64 only. Windows on ARM devices run the x64 build through
+Windows' built-in x64 emulation, so there is no separate ARM64 release.
+
+The reason is SQLite. Room uses `BundledSQLiteDriver` from `androidx.sqlite:sqlite-bundled`, and its
+JVM artifact ships a native library for `windows_x64` but none for `windows_arm64` (checked on 2.6.2
+and 2.7.0). A native ARM64 build compiles and launches, but every database call then fails with
+`Cannot find a suitable SQLite binary for windows 11 | aarch64`.
+
+##### Building the x64 release on a Windows on ARM machine
+The packaged app bundles the JVM that runs Gradle, and the Skiko and FFmpeg binaries are picked by
+that JVM's architecture. To get an x64 app on an ARM machine, Gradle has to run on an x64 JVM:
+
+1. Set `JAVA_HOME` to an **x64 JetBrains Runtime 17**. `gradle/gradle-daemon-jvm.properties`
+   requires a JetBrains 17 daemon, so with any other JDK Gradle falls back to an ARM64 JetBrains
+   Runtime and the result is ARM64 again.
+2. Stop any running daemons so an ARM64 daemon is not reused.
+3. Force `createRuntimeImage` to run. It does not notice an architecture change when the JDK
+   version is the same, and would otherwise keep a stale ARM64 runtime next to an x64 launcher,
+   which fails to start.
+
+```
+./gradlew --stop
+./gradlew :applicationContainers:desktopApp:createRuntimeImage --rerun :applicationContainers:desktopApp:createDistributable --no-configuration-cache
+```
+
+The same `--rerun` applies when switching back to an ARM64 JVM on the same checkout, or run `clean`
+first.
+
+### Source sets
+
+Some features only exist on some platforms, so the modules use custom source sets (for example `commonIosAndroid`) to share that code between just the platforms that need it. See [Declaring custom source sets](https://kotlinlang.org/docs/multiplatform/multiplatform-advanced-project-structure.html#declaring-custom-source-sets) in the Kotlin docs.
+
+### Troubleshooting WASM
+
+After adding a dependency, the WASM build may need its yarn lock upgraded:
+
+```
+./gradlew kotlinUpgradeYarnLock
+```
+
+### Branching and Releases
 
 Releases are published on [GitHub Releases](https://github.com/Anthony17serrato/Phovo/releases). Alphas and
 betas are marked as pre-releases, so the "Latest" badge always points at the newest stable build.
 
-### Branches
+#### Branches
 
 | Branch | Holds | Releases tagged from it |
 |---|---|---|
@@ -106,7 +211,7 @@ release/1.1   │        ●──────●────●─────�
 develop     ──●──────●──────────────●──────────────▶  next features (1.2 alpha)
 ```
 
-### Release notes
+#### Release notes
 
 GitHub writes each release's notes from the PRs merged since the previous release on the same line (see
 "Releasing" below). A workflow labels every PR
@@ -123,7 +228,7 @@ PRs from `develop`, `main` or `release/*` (promotions and merge-forwards) get `s
 PRs they carry are already listed. Anything else lands under "Other changes". Add `skip-changelog` by hand
 to keep any other PR out of the notes.
 
-### Releasing
+#### Releasing
 
 [`release.yml`](.github/workflows/release.yml) builds every file on its own runner and creates a **draft**
 release. Nothing is public until the draft is published by hand.
@@ -147,7 +252,7 @@ release. Nothing is public until the draft is published by hand.
 release, and the files are on the run's summary page. `draft` creates a draft from the chosen branch, which
 is how a version already in `version.properties` gets released without a bump PR.
 
-### Patching stable and beta together
+#### Patching stable and beta together
 
 A fix goes on the oldest line that has the bug and is then merged forward into every newer line. Each
 newer branch picks the fix up through an ordinary merge, which also leaves a record in history of which
@@ -162,7 +267,7 @@ A bug that only exists in the beta gets its fix on `release/1.1`, which is then 
 Avoid fixing on `develop` and cherry-picking backwards: the copies aren't linked in history, so it's easy
 to miss a line.
 
-### Versioning
+#### Versioning
 
 Versions follow [SemVer](https://semver.org) with a pre-release suffix, and every release is a tag of the
 form `v<version>`:
@@ -202,12 +307,12 @@ it. `build-logic`'s `PhovoVersion.kt` does the calculation and fails the build o
 Run `./gradlew -q printVersion` to see what a build will use. App code reads the version from the generated
 `PhovoBuildInfo` object in `core:common`, which the About screen (overflow menu → About) shows.
 
-### Build flavors
+#### Build flavors
 
 Local builds use the flavor in `gradle/flavor.properties`, which stays `dev` and adds the Dev Menu. Release
 builds pass `-Pphovo.flavor=prod`, which overrides the file, so the file never has to change for a release.
 
-### Android release signing
+#### Android release signing
 
 Every Android release is signed with the same release key. Android only installs an update signed with the
 key the installed app was signed with, so a different key would force testers to uninstall and lose their
@@ -233,53 +338,3 @@ maps those secrets to the `PHOVO_SIGNING_*` variables and passes `-Pphovo.requir
 debug-signed APK can't be published. It then compares the APK's signing certificate with the
 `ANDROID_SIGNING_CERT_SHA256` repository variable (the key's public SHA-256 fingerprint) and fails on a
 mismatch.
-
-# Project Structure
-## How to build and run
-The project can be assembled in an environment which has been configured for Kotlin Multiplatform development, please follow the official guide:
-https://kotlinlang.org/docs/multiplatform/quickstart.html#set-up-the-environment
-
-The desktop build embeds an FFmpeg binary, used for thumbnail generation. It is downloaded and
-verified against a pinned SHA-256 on the first build, so that build needs network access. The
-archive is cached under `~/.gradle/caches/phovo-ffmpeg`, which survives `clean`, so later builds
-work offline. Only the binary for the platform running the build is fetched. The pinned builds, and
-notes on updating them, live in `build-logic`'s `FfmpegDistribution.kt`.
-
-### Windows: x64 only
-Phovo publishes Windows builds for x64 only. Windows on ARM devices run the x64 build through
-Windows' built-in x64 emulation, so there is no separate ARM64 release.
-
-The reason is SQLite. Room uses `BundledSQLiteDriver` from `androidx.sqlite:sqlite-bundled`, and its
-JVM artifact ships a native library for `windows_x64` but none for `windows_arm64` (checked on 2.6.2
-and 2.7.0). A native ARM64 build compiles and launches, but every database call then fails with
-`Cannot find a suitable SQLite binary for windows 11 | aarch64`.
-
-#### Building the x64 release on a Windows on ARM machine
-The packaged app bundles the JVM that runs Gradle, and the Skiko and FFmpeg binaries are picked by
-that JVM's architecture. To get an x64 app on an ARM machine, Gradle has to run on an x64 JVM:
-
-1. Set `JAVA_HOME` to an **x64 JetBrains Runtime 17**. `gradle/gradle-daemon-jvm.properties`
-   requires a JetBrains 17 daemon, so with any other JDK Gradle falls back to an ARM64 JetBrains
-   Runtime and the result is ARM64 again.
-2. Stop any running daemons so an ARM64 daemon is not reused.
-3. Force `createRuntimeImage` to run. It does not notice an architecture change when the JDK
-   version is the same, and would otherwise keep a stale ARM64 runtime next to an x64 launcher,
-   which fails to start.
-
-```
-./gradlew --stop
-./gradlew :applicationContainers:desktopApp:createRuntimeImage --rerun :applicationContainers:desktopApp:createDistributable --no-configuration-cache
-```
-
-The same `--rerun` applies when switching back to an ARM64 JVM on the same checkout, or run `clean`
-first.
-
-## Source Sets
-The Phovo project makes use of custom source sets to maximize code re-usability when certain features
-are supported only by a subset of platforms. To learn more about custom source sets visit:
-https://kotlinlang.org/docs/multiplatform/multiplatform-advanced-project-structure.html#declaring-custom-source-sets
-
-## Troubleshooting WASM issues
-When adding new dependencies WASM may require a yarn lock upgrade
-
-`./gradlew kotlinUpgradeYarnLock`

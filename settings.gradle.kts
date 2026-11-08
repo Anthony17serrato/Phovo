@@ -48,3 +48,6 @@ include(":data:photos")
 include(":data:server")
 include(":data:thumbnails")
 include(":data:permissions")
+
+// Tools
+include(":tools:branding")

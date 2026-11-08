@@ -16,8 +16,11 @@ the Google Fonts release of https://github.com/undercasetype/Fraunces.
 
 ## Where it is used
 
-Only the splash screen, under the icon. Nothing else in the app uses this face — the UI runs on the
-Material 3 type scale in `core/designsystem`.
+In the app, only the splash screen, under the icon. Nothing else in the app uses this face — the UI
+runs on the Material 3 type scale in `core/designsystem`.
+
+Outside the app, the repo README banner: `docs/images/phovo_readme_banner_light.png` and `_dark.png`,
+the icon beside the wordmark on a transparent ground, picked by GitHub's theme through `<picture>`.
 
 The mark is **baked into art, not rendered at runtime**, because none of the three splash screens
 can draw text:
@@ -33,9 +36,10 @@ No font file is bundled into any app binary; only outlines are.
 ## Regenerating
 
 ```
-docs/branding/render_wordmark.sh
+./gradlew :tools:branding:run
 ```
 
-Requires macOS — the renderers use CoreText for variable-font support. Edit the axis values in
-`wordmark.swift` and `compose_desktop.swift` if the typography changes, then rerun; do not hand-edit
-the generated `pathData` or PNGs.
+The renderer is a small Kotlin/JVM module in `tools/branding` that draws with Skia (Skiko, the same
+library Compose Desktop renders through), so it runs on macOS, Linux or Windows. If the typography
+changes, edit the axis values and tracking in `Wordmark.kt`; layouts and ink colors live in
+`RenderBranding.kt`. Then rerun. Do not hand-edit the generated `pathData` or PNGs.
