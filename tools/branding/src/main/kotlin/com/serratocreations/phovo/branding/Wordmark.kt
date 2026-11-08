@@ -50,7 +50,8 @@ class Wordmark(fontFile: File) {
             builder.addPath(outline, positions[2 * i] + i * tracking, positions[2 * i + 1])
         }
         path = builder.detach()
-        bounds = path.bounds
+        // Not path.bounds: that box includes off-curve control points, which can sit outside the ink.
+        bounds = path.computeTightBounds()
     }
 
     val aspect: Float get() = bounds.width / bounds.height
