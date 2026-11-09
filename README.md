@@ -196,6 +196,27 @@ After adding a dependency, the WASM build may need its yarn lock upgraded:
 ./gradlew kotlinUpgradeYarnLock
 ```
 
+### Website
+
+[phovo.app](https://phovo.app) is a [Kobweb](https://kobweb.varabyte.com) site in
+`applicationContainers/website`, written with Compose HTML on Kotlin/JS. Kobweb's static export renders
+it into plain HTML in `applicationContainers/website/.kobweb/site`, which Firebase Hosting serves as
+static files.
+
+```
+./gradlew :applicationContainers:website:kobwebExport -PkobwebReuseServer=false -PkobwebEnv=DEV -PkobwebRunLayout=STATIC -PkobwebBuildTarget=RELEASE -PkobwebExportLayout=STATIC
+./gradlew :applicationContainers:website:kobwebStop
+firebase deploy --only hosting
+```
+
+The export renders the page in a headless browser. The first run downloads a Chromium build for it
+(about 90 MB) unless `-Pkobweb.export.browserPath=...` points at an installed Chrome. The export leaves
+its server running, hence the `kobwebStop`.
+
+The download buttons ask GitHub's API for the newest release when the page loads, so a new release
+needs no change to the site. Add `?device=iphone` to the URL (or `android`, `mac`, `mac-intel`,
+`windows`, `linux`, `fedora`, `pi`, `pi32`, `other`) to see what another device's visitors get.
+
 ### Branching and Releases
 
 Releases are published on [GitHub Releases](https://github.com/Anthony17serrato/Phovo/releases). Alphas and
