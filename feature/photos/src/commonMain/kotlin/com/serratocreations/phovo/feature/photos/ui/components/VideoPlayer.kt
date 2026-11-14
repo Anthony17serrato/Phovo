@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -25,15 +26,16 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -50,6 +52,8 @@ import com.serratocreations.phovo.core.domain.model.DomainAssetLocation
 import io.github.kdroidfilter.composemediaplayer.VideoPlayerState
 import io.github.kdroidfilter.composemediaplayer.VideoPlayerSurface
 import io.github.kdroidfilter.composemediaplayer.rememberVideoPlayerState
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.first
 import org.jetbrains.compose.resources.stringResource
 import phovo.feature.photos.generated.resources.Res
 import phovo.feature.photos.generated.resources.video_error_local
@@ -71,8 +75,8 @@ import phovo.feature.photos.generated.resources.video_unmute
  *   16:9 on iOS and on Android is a 16:9 placeholder until the first frame has already been drawn,
  *   squashed into that shape.
  *
- * @param poster drawn under the video, so there is something on screen while the player loads and
- *   for the shared element transition to carry.
+ * @param poster covers the video until playback starts, so there is something on screen while the
+ *   player loads and for the shared element transition to carry.
  * @param surfaceModifier applied to the video and [poster] only, not the controls. This is where a
  *   shared element goes, so the controls don't fly along with the video.
  * @param controlsBottomPadding keeps the controls clear of whatever overlaps the bottom of the
@@ -94,23 +98,29 @@ internal fun VideoPlayer(
     //  open the video in an external application, see handleVideoDesktop().
     // Bumped by the retry button to open the video again.
     var attempt by rememberSaveable { mutableIntStateOf(0) }
+    var hasPlaybackStarted by remember(source, attempt) { mutableStateOf(false) }
     LaunchedEffect(source, attempt) {
         playerState.clearError()
         playerState.openVideo(source)
+        playerState.awaitPlaybackStart()
+        hasPlaybackStarted = true
     }
     val hasError = playerState.error != null
+    val isStreamed = source is DomainAssetLocation.RemoteAssetLocation
 
     Box(modifier = modifier.fillMaxSize()) {
         Box(
             modifier = surfaceModifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            poster()
             // Sized here and filled by the player, rather than trusting the player's own fit.
             VideoPlayerSurface(
                 playerState = playerState,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.aspectRatio(aspectRatio)
+                modifier = Modifier.aspectRatio(aspectRatio),
+                // Over the video rather than under it, because the player's view is opaque on iOS
+                // from the moment the video is ready, which is before it has a frame to show.
+                overlay = { if (!hasPlaybackStarted) poster() }
             )
         }
         // On Android and iOS the video is a native view, which takes any touch that lands on it.
@@ -127,22 +137,14 @@ internal fun VideoPlayer(
         )
         when {
             hasError -> VideoErrorMessage(
-                isRemote = source is DomainAssetLocation.RemoteAssetLocation,
+                isStreamed = isStreamed,
                 onRetry = { attempt++ },
                 modifier = Modifier.align(Alignment.Center)
             )
             // Only for streamed videos. A local one opens fast enough that a spinner would just
             // flash over the poster.
-            playerState.isLoading && source is DomainAssetLocation.RemoteAssetLocation -> {
-                val loadingDescription = stringResource(Res.string.video_loading)
-                CircularProgressIndicator(
-                    color = Color.White,
-                    trackColor = Color.White.copy(alpha = 0.3f),
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .semantics { contentDescription = loadingDescription }
-                )
-            }
+            isStreamed && (playerState.isLoading || !hasPlaybackStarted) ->
+                VideoLoadingIndicator(modifier = Modifier.align(Alignment.Center))
         }
         AnimatedVisibility(
             // There is nothing to control when the video didn't open.
@@ -167,10 +169,29 @@ internal fun VideoPlayer(
     }
 }
 
+/**
+ * Suspends until the playback position first moves. The players only advance it once frames are
+ * being shown, and it is the one sign of that which every platform lets Compose observe.
+ */
+private suspend fun VideoPlayerState.awaitPlaybackStart() {
+    // The first value is where the position already was, so the second is the first movement.
+    snapshotFlow { sliderPos }.drop(1).first()
+}
+
+@Composable
+private fun VideoLoadingIndicator(modifier: Modifier = Modifier) {
+    val description = stringResource(Res.string.video_loading)
+    CircularProgressIndicator(
+        color = Color.White,
+        trackColor = Color.White.copy(alpha = 0.3f),
+        modifier = modifier.semantics { contentDescription = description }
+    )
+}
+
 /** Shown over the poster when the video didn't open or stopped part way. */
 @Composable
 private fun VideoErrorMessage(
-    isRemote: Boolean,
+    isStreamed: Boolean,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -183,7 +204,7 @@ private fun VideoErrorMessage(
     ) {
         Text(
             text = stringResource(
-                if (isRemote) Res.string.video_error_server else Res.string.video_error_local
+                if (isStreamed) Res.string.video_error_server else Res.string.video_error_local
             ),
             style = MaterialTheme.typography.bodyMedium,
             color = Color.White,
