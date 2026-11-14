@@ -33,7 +33,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import io.ktor.server.application.*
 import io.ktor.server.http.content.staticResources
+import io.ktor.server.plugins.autohead.AutoHeadResponse
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.plugins.partialcontent.PartialContent
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.request.receive
 import io.ktor.server.request.receiveChannel
@@ -124,6 +126,11 @@ class DesktopServerConfigManagerImpl(
         install(ContentNegotiation) {
             json(Json { prettyPrint = true; isLenient = true; ignoreUnknownKeys = true })
         }
+        // Video players fetch source files in byte ranges. AVPlayer won't play a file from a server
+        // that ignores Range, and without it other players can't seek without downloading the
+        // whole file first.
+        install(PartialContent)
+        install(AutoHeadResponse)
 
         routing {
             staticResources("/content", "mycontent")
@@ -191,12 +198,12 @@ class DesktopServerConfigManagerImpl(
                 val hash = call.parameters["hash"] ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing hash parameter")
 
                 val localItem = localMediaRepository.getLocalMediaByAssetHash(hash)
-                    ?: return@get call.respond(HttpStatusCode.InternalServerError, "Asset not found locally")
+                    ?: return@get call.respond(HttpStatusCode.NotFound, "Asset not found")
 
-                val thumbnailFile = PlatformFile(localItem.localUri)
+                val sourceFile = PlatformFile(localItem.localUri)
 
-                if (thumbnailFile.exists()) {
-                    call.respondFile(thumbnailFile.file)
+                if (sourceFile.exists()) {
+                    call.respondFile(sourceFile.file)
                 } else {
                     call.respond(HttpStatusCode.NotFound, "Source file not found")
                 }

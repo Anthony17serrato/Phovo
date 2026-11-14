@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -22,9 +24,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,20 +46,25 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.serratocreations.phovo.core.designsystem.icon.PhovoIcons
+import com.serratocreations.phovo.core.domain.model.DomainAssetLocation
 import io.github.kdroidfilter.composemediaplayer.VideoPlayerState
 import io.github.kdroidfilter.composemediaplayer.VideoPlayerSurface
 import io.github.kdroidfilter.composemediaplayer.rememberVideoPlayerState
-import io.github.vinceglb.filekit.PlatformFile
 import org.jetbrains.compose.resources.stringResource
 import phovo.feature.photos.generated.resources.Res
+import phovo.feature.photos.generated.resources.video_error_local
+import phovo.feature.photos.generated.resources.video_error_server
+import phovo.feature.photos.generated.resources.video_loading
 import phovo.feature.photos.generated.resources.video_mute
 import phovo.feature.photos.generated.resources.video_pause
 import phovo.feature.photos.generated.resources.video_play
+import phovo.feature.photos.generated.resources.video_retry
 import phovo.feature.photos.generated.resources.video_seek
 import phovo.feature.photos.generated.resources.video_unmute
 
 /**
- * Plays [videoPlatformFile] with playback controls along the bottom.
+ * Plays [source] with playback controls along the bottom. A video that is only on the server is
+ * streamed from it.
  *
  * @param aspectRatio the video's width over its height as displayed, recorded when the media was
  *   processed. The video is sized from it rather than from the player, whose own value is stuck at
@@ -67,7 +80,7 @@ import phovo.feature.photos.generated.resources.video_unmute
  */
 @Composable
 internal fun VideoPlayer(
-    videoPlatformFile: PlatformFile,
+    source: DomainAssetLocation,
     aspectRatio: Float,
     controlsVisible: Boolean,
     controlsBottomPadding: Dp,
@@ -79,9 +92,13 @@ internal fun VideoPlayer(
     val playerState = rememberVideoPlayerState()
     // TODO: Need to add alternate UI for unsupported video formats that would allow the user to
     //  open the video in an external application, see handleVideoDesktop().
-    LaunchedEffect(videoPlatformFile) {
-        playerState.openVideo(videoPlatformFile)
+    // Bumped by the retry button to open the video again.
+    var attempt by rememberSaveable { mutableIntStateOf(0) }
+    LaunchedEffect(source, attempt) {
+        playerState.clearError()
+        playerState.openVideo(source)
     }
+    val hasError = playerState.error != null
 
     Box(modifier = modifier.fillMaxSize()) {
         Box(
@@ -108,8 +125,28 @@ internal fun VideoPlayer(
                     onClick = onClick
                 )
         )
+        when {
+            hasError -> VideoErrorMessage(
+                isRemote = source is DomainAssetLocation.RemoteAssetLocation,
+                onRetry = { attempt++ },
+                modifier = Modifier.align(Alignment.Center)
+            )
+            // Only for streamed videos. A local one opens fast enough that a spinner would just
+            // flash over the poster.
+            playerState.isLoading && source is DomainAssetLocation.RemoteAssetLocation -> {
+                val loadingDescription = stringResource(Res.string.video_loading)
+                CircularProgressIndicator(
+                    color = Color.White,
+                    trackColor = Color.White.copy(alpha = 0.3f),
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .semantics { contentDescription = loadingDescription }
+                )
+            }
+        }
         AnimatedVisibility(
-            visible = controlsVisible,
+            // There is nothing to control when the video didn't open.
+            visible = controlsVisible && !hasError,
             enter = fadeIn(),
             exit = fadeOut(),
             modifier = Modifier.align(Alignment.BottomCenter)
@@ -126,6 +163,37 @@ internal fun VideoPlayer(
                     )
                     .padding(bottom = controlsBottomPadding)
             )
+        }
+    }
+}
+
+/** Shown over the poster when the video didn't open or stopped part way. */
+@Composable
+private fun VideoErrorMessage(
+    isRemote: Boolean,
+    onRetry: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier
+            .padding(24.dp)
+            .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(16.dp))
+            .padding(horizontal = 24.dp, vertical = 12.dp)
+    ) {
+        Text(
+            text = stringResource(
+                if (isRemote) Res.string.video_error_server else Res.string.video_error_local
+            ),
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.White,
+            textAlign = TextAlign.Center
+        )
+        TextButton(
+            onClick = onRetry,
+            colors = ButtonDefaults.textButtonColors(contentColor = Color.White)
+        ) {
+            Text(stringResource(Res.string.video_retry))
         }
     }
 }

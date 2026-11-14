@@ -22,7 +22,7 @@ import kotlin.coroutines.resume
  * player the same as in the thumbnail. A slow motion video's current version is an AVComposition
  * with no file behind it though, so that falls back to the original.
  */
-internal actual suspend fun VideoPlayerState.openVideo(file: PlatformFile) {
+internal actual suspend fun VideoPlayerState.openLocalVideo(file: PlatformFile) {
     val asset = file.toPhAsset() ?: return
     val url = asset.requestVideoUrl(PHVideoRequestOptionsVersionCurrent)
         ?: asset.requestVideoUrl(PHVideoRequestOptionsVersionOriginal)
