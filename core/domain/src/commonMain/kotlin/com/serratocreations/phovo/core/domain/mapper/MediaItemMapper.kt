@@ -47,7 +47,7 @@ fun MediaItem.toMediaItemWithThumbnails(
             MediaItemWithThumbnails.MediaVideoItem(
                 assetLocation = assetLocation.toDomainAssetLocation(
                     assetHash = assetHash,
-                    endpoint = ApiEndpoints.GET_ALL_MEDIA_API,
+                    endpoint = ApiEndpoints.SOURCE_FILE_API,
                     baseUrl = baseUrl
                 ) ?: return null,
                 lowResThumbnailLocation = lowResThumbnailLocation?.toDomainAssetLocation(
