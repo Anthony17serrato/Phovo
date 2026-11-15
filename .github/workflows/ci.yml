@@ -19,6 +19,9 @@ concurrency:
 jobs:
   compile-kmp:
     runs-on: self-hosted
+    # Normal runs take 35-60 minutes. Without a limit, a runner that stalls
+    # (for example, swapping itself to a halt) holds the job for hours.
+    timeout-minutes: 90
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -33,8 +36,15 @@ jobs:
       # Currently Raspberry Pi cannot build WASM due to ARM64 issues https://youtrack.jetbrains.com/issue/KT-70100/wasmJs-Target-Fails-to-Compile-on-ARM64-Linux
       # - name: Yarn
       #  run: ./gradlew kotlinUpgradeYarnLock
+      # The release iOS framework links run Kotlin/Native's whole-program
+      # optimisation, which needs more memory than the 8 GB runner has. The
+      # debug framework links still run, so linking is still checked; release
+      # frameworks are only built by Xcode archives.
       - name: Build Project
-        run: ./gradlew build
+        run: >-
+          ./gradlew build
+          -x :sharedumbrella:linkReleaseFrameworkIosArm64
+          -x :sharedumbrella:linkReleaseFrameworkIosSimulatorArm64
       # build-logic is an included build, so the root build doesn't run its tests.
       - name: Test build logic
         run: ./gradlew -p build-logic test
