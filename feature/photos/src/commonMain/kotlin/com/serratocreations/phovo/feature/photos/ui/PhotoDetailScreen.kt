@@ -30,6 +30,7 @@ import com.serratocreations.phovo.feature.photos.ui.model.VideoPhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.components.VideoPlayer
 import com.serratocreations.phovo.feature.photos.ui.components.SystemBarsController
 import com.serratocreations.phovo.feature.photos.util.CycleZoomOnDoubleClick
+import kotlinx.datetime.LocalDateTime
 import me.saket.telephoto.ExperimentalTelephotoApi
 import me.saket.telephoto.flick.FlickToDismiss
 import me.saket.telephoto.flick.FlickToDismissState.GestureState.Dismissing
@@ -49,6 +50,7 @@ internal fun PhotoViewerScreen(
     areBarsVisible: Boolean,
     onToggleBars: () -> Unit,
     onDismiss: () -> Unit,
+    onActivePhotoDateChanged: (LocalDateTime?) -> Unit,
     controlsBottomPadding: Dp,
     modifier: Modifier = Modifier
 ) {
@@ -57,6 +59,13 @@ internal fun PhotoViewerScreen(
     val viewerState = rememberPhotoViewerState(state.mediaItems, openedPhotoKey)
 
     if (viewerState.photos.isEmpty()) return
+
+    // The app bar is drawn outside this screen, so it is told which photo the pager is on.
+    val activePhotoDate = viewerState.photos
+        .getOrNull(viewerState.pagerState.currentPage)?.dateInFeed
+    LaunchedEffect(activePhotoDate) {
+        onActivePhotoDateChanged(activePhotoDate)
+    }
 
     HorizontalPager(
         state = viewerState.pagerState,

@@ -27,8 +27,9 @@ open class PhotosViewModel(
 ): ViewModel() {
 
     protected open val defaultUiState = PhotosUiState(shouldShowWelcomeBottomSheet = false)
+    /** The year dates are shown relative to: a date in this year is shown without its year. */
     @OptIn(ExperimentalTime::class)
-    private val currentYear = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).year
+    val currentYear: Int = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).year
     protected val _photosUiState = MutableStateFlow(PhotosUiState(shouldShowWelcomeBottomSheet = false))
     val photosUiState = _photosUiState.asStateFlow()
 

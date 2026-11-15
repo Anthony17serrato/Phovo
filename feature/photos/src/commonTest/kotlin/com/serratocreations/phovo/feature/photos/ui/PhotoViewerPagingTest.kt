@@ -3,6 +3,7 @@ package com.serratocreations.phovo.feature.photos.ui
 import coil3.toUri
 import com.serratocreations.phovo.core.domain.model.DomainAssetLocation
 import com.serratocreations.phovo.feature.photos.ui.model.ImagePhotoUiItem
+import kotlinx.datetime.LocalDateTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -74,7 +75,8 @@ class PhotoViewerPagingTest {
             lowResThumbnail = null,
             thumbnail = location,
             key = key,
-            aspectRatio = 1f
+            aspectRatio = 1f,
+            dateInFeed = LocalDateTime(2026, 5, 2, 10, 31)
         )
     }
 }

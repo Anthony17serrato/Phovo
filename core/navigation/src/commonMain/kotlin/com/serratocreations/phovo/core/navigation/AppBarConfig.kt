@@ -14,12 +14,17 @@ import androidx.compose.material3.TopAppBarColors
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 
 @Immutable
 data class AppBarConfig(
     val title: @Composable (() -> Unit) = {},
+    /** A second, smaller line under [title]. */
+    val subtitle: @Composable (() -> Unit)? = null,
+    /** Where [title] and [subtitle] sit in the space between the navigation icon and the actions. */
+    val titleHorizontalAlignment: Alignment.Horizontal = Alignment.Start,
     val navigationIcon: @Composable (() -> Unit) = { NoNavigationIcon() },
     val topAppBarColors: @Composable (() -> TopAppBarColors) = { TopAppBarDefaults.topAppBarColors() },
     val shouldOverlayTopAppBar: Boolean = false,
