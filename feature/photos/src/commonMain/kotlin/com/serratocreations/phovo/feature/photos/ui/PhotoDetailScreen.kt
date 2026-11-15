@@ -24,7 +24,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.serratocreations.phovo.feature.photos.ui.components.LoadMultiResImage
-import com.serratocreations.phovo.core.domain.model.DomainAssetLocation
 import com.serratocreations.phovo.feature.photos.ui.model.ImagePhotoUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.MediaUiItem
 import com.serratocreations.phovo.feature.photos.ui.model.VideoPhotoUiItem
@@ -170,46 +169,43 @@ internal fun PhotoViewerScreen(
                     }
 
                     is VideoPhotoUiItem -> {
-                        // TODO Support both local and remote video
-                        if (item.sourceAsset is DomainAssetLocation.LocalAssetLocation) {
-                            if (isActivePage) {
-                                VideoPlayer(
-                                    videoPlatformFile = item.sourceAsset.localAssetLocation,
-                                    aspectRatio = item.aspectRatio,
-                                    controlsVisible = areBarsVisible,
-                                    controlsBottomPadding = controlsBottomPadding,
-                                    onClick = onToggleBars,
-                                    poster = {
-                                        LoadMultiResImage(
-                                            lowRes = item.lowResThumbnail,
-                                            highRes = item.thumbnail,
-                                            contentScale = ContentScale.Fit,
-                                            modifier = Modifier.fillMaxSize()
-                                        )
-                                    },
-                                    surfaceModifier = Modifier.sharedElement(
-                                        sharedContentState = sharedElementTransition
-                                            .rememberSharedContentState(key = "image-$key"),
-                                        animatedVisibilityScope = animatedContentScope
+                        if (isActivePage) {
+                            VideoPlayer(
+                                source = item.sourceAsset,
+                                aspectRatio = item.aspectRatio,
+                                controlsVisible = areBarsVisible,
+                                controlsBottomPadding = controlsBottomPadding,
+                                onClick = onToggleBars,
+                                poster = {
+                                    LoadMultiResImage(
+                                        lowRes = item.lowResThumbnail,
+                                        highRes = item.thumbnail,
+                                        contentScale = ContentScale.Fit,
+                                        modifier = Modifier.fillMaxSize()
                                     )
+                                },
+                                surfaceModifier = Modifier.sharedElement(
+                                    sharedContentState = sharedElementTransition
+                                        .rememberSharedContentState(key = "image-$key"),
+                                    animatedVisibilityScope = animatedContentScope
                                 )
-                            } else {
-                                // Show static thumbnail for non-active video pages. No shared
-                                // bounds here for the same reason as above: this page is not the one
-                                // the transition is for.
-                                LoadMultiResImage(
-                                    lowRes = item.lowResThumbnail,
-                                    highRes = item.thumbnail,
-                                    contentScale = ContentScale.Fit,
-                                    modifier = Modifier
-                                        .clickable(
-                                            interactionSource = remember { MutableInteractionSource() },
-                                            indication = null,
-                                            onClick = onToggleBars
-                                        )
-                                        .fillMaxSize()
-                                )
-                            }
+                            )
+                        } else {
+                            // Show static thumbnail for non-active video pages. No shared
+                            // bounds here for the same reason as above: this page is not the one
+                            // the transition is for.
+                            LoadMultiResImage(
+                                lowRes = item.lowResThumbnail,
+                                highRes = item.thumbnail,
+                                contentScale = ContentScale.Fit,
+                                modifier = Modifier
+                                    .clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null,
+                                        onClick = onToggleBars
+                                    )
+                                    .fillMaxSize()
+                            )
                         }
                     }
                 }

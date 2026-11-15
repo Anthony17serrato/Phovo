@@ -28,6 +28,8 @@ kotlin {
         jvmMain.dependencies {
             implementation(libs.ktor.server.core)
             implementation(libs.ktor.server.status.pages)
+            implementation(libs.ktor.server.partial.content)
+            implementation(libs.ktor.server.auto.head.response)
             implementation(libs.ktor.server.netty)
             implementation(libs.ktor.serialization)
             implementation(libs.ktor.server.content.negotiation)
