@@ -14,7 +14,8 @@ fun MediaItemWithThumbnails.toMediaUiItem(): MediaUiItem {
                 lowResThumbnail = lowResThumbnailLocation,
                 thumbnail = highResThumbnailLocation,
                 key = this.localUuid,
-                aspectRatio = dimensions.aspectRatio
+                aspectRatio = dimensions.aspectRatio,
+                dateInFeed = dateInFeed
             )
         }
         is MediaItemWithThumbnails.MediaVideoItem -> {
@@ -24,7 +25,8 @@ fun MediaItemWithThumbnails.toMediaUiItem(): MediaUiItem {
                 lowResThumbnail = lowResThumbnailLocation,
                 thumbnail = highResThumbnailLocation,
                 key = this.localUuid,
-                aspectRatio = dimensions.aspectRatio
+                aspectRatio = dimensions.aspectRatio,
+                dateInFeed = dateInFeed
             )
         }
     }

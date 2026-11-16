@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingToolbarDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.LaunchedEffect
@@ -13,7 +14,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
@@ -33,6 +36,9 @@ import com.serratocreations.phovo.feature.photos.ui.PhotosHomeScreen
 import com.serratocreations.phovo.feature.photos.ui.PhotosViewModel
 import com.serratocreations.phovo.feature.photos.ui.components.PhotosHomeHeaderContent
 import com.serratocreations.phovo.feature.photos.ui.components.PhotosHomeTitleContent
+import com.serratocreations.phovo.feature.photos.util.toViewerDateString
+import com.serratocreations.phovo.feature.photos.util.toViewerTimeString
+import kotlinx.datetime.LocalDateTime
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -105,10 +111,33 @@ fun EntryProviderScope<NavKey>.photosEntries(
     ) {
         val photosViewModel: PhotosViewModel = koinViewModel()
         var areBarsVisible by remember { mutableStateOf(true) }
+        // Null until the viewer reports the photo it is on, and the bar's text is empty until then.
+        var activePhotoDate by remember { mutableStateOf<LocalDateTime?>(null) }
         val appBarConfig = remember(areBarsVisible) {
             AppBarConfig(
-                // TODO Display photo date instead
-                title = { Text("Details") },
+                title = {
+                    Text(
+                        text = activePhotoDate?.let { date ->
+                            remember(date) { date.toViewerDateString(photosViewModel.currentYear) }
+                        }.orEmpty(),
+                        // Lighter and smaller than the bar's default title, which is sized for a
+                        // screen name rather than a line of metadata.
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Normal,
+                        maxLines = 1
+                    )
+                },
+                subtitle = {
+                    Text(
+                        text = activePhotoDate?.let { date ->
+                            remember(date) { date.toViewerTimeString() }
+                        }.orEmpty(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1
+                    )
+                },
+                titleHorizontalAlignment = Alignment.CenterHorizontally,
                 navigationIcon = {
                     DefaultNavigationIcon(navigationViewModel::goBack)
                 },
@@ -137,6 +166,7 @@ fun EntryProviderScope<NavKey>.photosEntries(
             areBarsVisible = areBarsVisible,
             onToggleBars = { areBarsVisible = !areBarsVisible },
             onDismiss = navigationViewModel::goBack,
+            onActivePhotoDateChanged = { activePhotoDate = it },
             // The bottom toolbar floats ScreenOffset above the space the scaffold reserves for it.
             controlsBottomPadding = scaffoldPadding.calculateBottomPadding() +
                 FloatingToolbarDefaults.ScreenOffset,

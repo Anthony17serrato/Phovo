@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -14,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
 import org.jetbrains.compose.resources.painterResource
@@ -41,7 +43,7 @@ import com.serratocreations.phovo.ui.model.OverflowMenuOption
 import com.serratocreations.phovo.util.animated
 import org.jetbrains.compose.resources.stringResource
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun PhovoTopAppBar(
     appBarState: AppBarConfig,
@@ -67,48 +69,64 @@ fun PhovoTopAppBar(
                     ?: Modifier
             )
         ) {
-            TopAppBar(
-                title = appBarState.title,
-                navigationIcon = appBarState.navigationIcon,
-                actions = {
-                    Box(modifier = Modifier.wrapContentSize(Alignment.TopStart)) {
-                        // Icon button should have a tooltip associated with it for a11y.
-                        TooltipBox(
-                            positionProvider =
-                                TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-                            tooltip = { PlainTooltip { Text("Localized description") } },
-                            state = rememberTooltipState(),
-                        ) {
-                            IconButton(onClick = { expanded = true }) {
-                                Icon(
-                                    imageVector = actionIcon,
-                                    contentDescription = actionIconContentDescription,
-                                    tint = MaterialTheme.colorScheme.onSurface,
-                                )
-                            }
-                        }
-                        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                            menuOptions.forEach { menuOption ->
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(menuOption.title)) },
-                                    onClick = {
-                                        expanded = false
-                                        onMenuActionClick(menuOption.route)
-                                    },
-                                    leadingIcon = {
-                                        Icon(
-                                            painter = painterResource(menuOption.icon),
-                                            contentDescription = null
-                                        )
-                                    },
-                                )
-                            }
+            val actions: @Composable RowScope.() -> Unit = {
+                Box(modifier = Modifier.wrapContentSize(Alignment.TopStart)) {
+                    // Icon button should have a tooltip associated with it for a11y.
+                    TooltipBox(
+                        positionProvider =
+                            TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
+                        tooltip = { PlainTooltip { Text("Localized description") } },
+                        state = rememberTooltipState(),
+                    ) {
+                        IconButton(onClick = { expanded = true }) {
+                            Icon(
+                                imageVector = actionIcon,
+                                contentDescription = actionIconContentDescription,
+                                tint = MaterialTheme.colorScheme.onSurface,
+                            )
                         }
                     }
-                },
-                colors = animatedAppBarColors,
-                scrollBehavior = scrollBehavior
-            )
+                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                        menuOptions.forEach { menuOption ->
+                            DropdownMenuItem(
+                                text = { Text(stringResource(menuOption.title)) },
+                                onClick = {
+                                    expanded = false
+                                    onMenuActionClick(menuOption.route)
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        painter = painterResource(menuOption.icon),
+                                        contentDescription = null
+                                    )
+                                },
+                            )
+                        }
+                    }
+                }
+            }
+            val subtitle = appBarState.subtitle
+            // Only the overload with a subtitle takes an alignment, so an aligned title without one
+            // goes through it too, with nothing in the subtitle.
+            if (subtitle != null || appBarState.titleHorizontalAlignment != Alignment.Start) {
+                TopAppBar(
+                    title = appBarState.title,
+                    subtitle = subtitle ?: {},
+                    navigationIcon = appBarState.navigationIcon,
+                    actions = actions,
+                    titleHorizontalAlignment = appBarState.titleHorizontalAlignment,
+                    colors = animatedAppBarColors,
+                    scrollBehavior = scrollBehavior
+                )
+            } else {
+                TopAppBar(
+                    title = appBarState.title,
+                    navigationIcon = appBarState.navigationIcon,
+                    actions = actions,
+                    colors = animatedAppBarColors,
+                    scrollBehavior = scrollBehavior
+                )
+            }
             // Under the bar's row rather than in its title slot, so it takes the full width and the
             // actions keep their place.
             if (header != null) {
