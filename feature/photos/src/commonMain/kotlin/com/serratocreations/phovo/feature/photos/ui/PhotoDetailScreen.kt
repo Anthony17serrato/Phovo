@@ -55,17 +55,23 @@ internal fun PhotoViewerScreen(
     modifier: Modifier = Modifier
 ) {
     val state by photosViewModel.photosUiState.collectAsStateWithLifecycle()
-    val openedPhotoKey = state.openedPhotoKey ?: return
-    val viewerState = rememberPhotoViewerState(state.mediaItems, openedPhotoKey)
+    val openedPhotoKey = state.openedPhotoKey
+    val viewerState = if (openedPhotoKey != null) {
+        rememberPhotoViewerState(state.mediaItems, openedPhotoKey)
+    } else {
+        null
+    }
 
-    if (viewerState.photos.isEmpty()) return
-
-    // The app bar is drawn outside this screen, so it is told which photo the pager is on.
-    val activePhotoDate = viewerState.photos
-        .getOrNull(viewerState.pagerState.currentPage)?.dateInFeed
+    // The app bar is drawn outside this screen, so it is told which photo the pager is on. This
+    // runs before the returns below so that the bar is also told when there is no photo to show.
+    val activePhotoDate = viewerState?.let {
+        it.photos.getOrNull(it.pagerState.currentPage)?.dateInFeed
+    }
     LaunchedEffect(activePhotoDate) {
         onActivePhotoDateChanged(activePhotoDate)
     }
+
+    if (viewerState == null || viewerState.photos.isEmpty()) return
 
     HorizontalPager(
         state = viewerState.pagerState,

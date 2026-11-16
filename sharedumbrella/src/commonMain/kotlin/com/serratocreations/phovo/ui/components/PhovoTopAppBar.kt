@@ -106,10 +106,12 @@ fun PhovoTopAppBar(
                 }
             }
             val subtitle = appBarState.subtitle
-            if (subtitle != null) {
+            // Only the overload with a subtitle takes an alignment, so an aligned title without one
+            // goes through it too, with nothing in the subtitle.
+            if (subtitle != null || appBarState.titleHorizontalAlignment != Alignment.Start) {
                 TopAppBar(
                     title = appBarState.title,
-                    subtitle = subtitle,
+                    subtitle = subtitle ?: {},
                     navigationIcon = appBarState.navigationIcon,
                     actions = actions,
                     titleHorizontalAlignment = appBarState.titleHorizontalAlignment,
