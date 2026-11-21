@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "7d04d90e4f89a111663dadedfce77d51",
+    "identityHash": "cf6846f820de236c48ed3da38f8048ca",
     "entities": [
       {
         "tableName": "ServerConfigEntity",
@@ -264,11 +264,46 @@
             "permissionId"
           ]
         }
+      },
+      {
+        "tableName": "CatalogEntryEntity",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`catalogSeq` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `assetHash` TEXT NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "catalogSeq",
+            "columnName": "catalogSeq",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "assetHash",
+            "columnName": "assetHash",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "catalogSeq"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_CatalogEntryEntity_assetHash",
+            "unique": true,
+            "columnNames": [
+              "assetHash"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_CatalogEntryEntity_assetHash` ON `${TABLE_NAME}` (`assetHash`)"
+          }
+        ]
       }
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '7d04d90e4f89a111663dadedfce77d51')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'cf6846f820de236c48ed3da38f8048ca')"
     ]
   }
 }

@@ -7,6 +7,8 @@ import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
 import androidx.room.Upsert
+import com.serratocreations.phovo.core.database.entities.CatalogEntryEntity
+import com.serratocreations.phovo.core.database.entities.CatalogMediaItem
 import com.serratocreations.phovo.core.database.entities.MediaItemMetadataEntity
 import com.serratocreations.phovo.core.database.entities.LocalMediaEntity
 import com.serratocreations.phovo.core.database.entities.LocalMediaItemWithMetadata
@@ -50,6 +52,54 @@ interface PhovoMediaDao {
 
     @Update(onConflict = OnConflictStrategy.REPLACE)
     suspend fun update(item: MediaItemMetadataEntity)
+
+    /**
+     * Server only. With REPLACE, an asset that already has an entry gets a new
+     * [CatalogEntryEntity.catalogSeq].
+     */
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun replaceCatalogEntry(entry: CatalogEntryEntity)
+
+    /**
+     * Server only: writes the metadata row and moves it to the end of the catalog, so clients
+     * paging the catalog fetch it (again, if it existed).
+     */
+    @Transaction
+    suspend fun upsertCatalogedMetadata(item: MediaItemMetadataEntity) {
+        upsertMetadata(item)
+        replaceCatalogEntry(CatalogEntryEntity(assetHash = item.assetHash))
+    }
+
+    /** Server only: [upsertCatalogedMetadata] and the local row in one transaction. */
+    @Transaction
+    suspend fun upsertCatalogedMetadataWithLocalEntity(
+        metadata: MediaItemMetadataEntity,
+        local: LocalMediaEntity
+    ) {
+        upsertCatalogedMetadata(metadata)
+        upsertLocal(local)
+    }
+
+    /**
+     * One page of the server's catalog: rows cataloged after [afterCatalogSeq], oldest first. The
+     * last row's sequence is the cursor for the next page.
+     */
+    @Query(
+        """
+        SELECT m.*, c.catalogSeq
+        FROM CatalogEntryEntity c
+        INNER JOIN MediaItemMetadataEntity m
+            ON m.assetHash = c.assetHash
+        WHERE c.catalogSeq > :afterCatalogSeq
+        ORDER BY c.catalogSeq ASC
+        LIMIT :limit
+        """
+    )
+    suspend fun getCatalogPage(afterCatalogSeq: Long, limit: Int): List<CatalogMediaItem>
+
+    /** The highest catalog sequence of any entry, or null when the catalog is empty. */
+    @Query("SELECT MAX(catalogSeq) FROM CatalogEntryEntity")
+    suspend fun getLatestCatalogSeq(): Long?
 
     @Transaction
     @Query("SELECT * FROM MediaItemMetadataEntity ORDER BY timeStampUtcMs DESC")
@@ -261,12 +311,16 @@ interface PhovoMediaDao {
     @Query("DELETE FROM LocalMediaEntity")
     suspend fun clearAllMediaItemUris()
 
-    // Deletes all records from both tables in a single transaction
+    @Query("DELETE FROM CatalogEntryEntity")
+    suspend fun clearCatalog()
+
+    // Deletes all media records in a single transaction
     @Transaction
     suspend fun clearAllMediaData() {
         // It's usually good practice to delete the child/dependent table first
         // in case you ever add foreign key constraints later!
         clearAllMediaItemUris()
         clearAllMediaItems()
+        clearCatalog()
     }
 }
