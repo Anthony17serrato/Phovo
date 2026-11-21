@@ -8,6 +8,7 @@ import com.serratocreations.phovo.core.database.dao.ServerConfigDao
 import com.serratocreations.phovo.core.database.dao.PhovoMediaDao
 import com.serratocreations.phovo.core.database.dao.ClientConfigDao
 import com.serratocreations.phovo.core.database.dao.PermissionsDao
+import com.serratocreations.phovo.core.database.entities.CatalogEntryEntity
 import com.serratocreations.phovo.core.database.entities.ServerConfigEntity
 import com.serratocreations.phovo.core.database.entities.MediaItemMetadataEntity
 import com.serratocreations.phovo.core.database.entities.LocalMediaEntity
@@ -24,7 +25,8 @@ import com.serratocreations.phovo.core.database.entities.PermissionsEntity
         ProcessingMediaEntity::class,
         SyncLogEntity::class,
         ClientConfigEntity::class,
-        PermissionsEntity::class
+        PermissionsEntity::class,
+        CatalogEntryEntity::class
     ],
     version = 1
 )
